@@ -212,3 +212,167 @@
   box-sizing: border-box;
   background-color: white;
 }
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-edit {
+  color: #007bff; /* Màu xanh dương */
+}
+.btn-edit:hover {
+  background-color: #e7f3ff;
+}
+
+.btn-delete {
+  color: #dc3545; /* Màu đỏ */
+}
+.btn-delete:hover {
+  background-color: #fbebee;
+}
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.form-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.item-details-grid {
+  display: grid;
+  /* Định nghĩa 10 cột với độ rộng khác nhau để tối ưu không gian */
+  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
+  gap: 10px;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.grid-header {
+  font-weight: bold;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.grid-cell {
+  padding: 5px 0;
+  /* Đảm bảo các dòng có chiều cao bằng nhau */
+  display: flex;
+  align-items: center;
+}
+
+.grid-cell input,
+.grid-cell textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* Cho phép textarea tự động thay đổi chiều cao */
+.grid-cell textarea {
+  resize: vertical;
+  min-height: 38px;
+}
+
+/* Các ô chỉ đọc sẽ có nền xám nhẹ */
+.grid-cell input[readOnly],
+.grid-cell textarea[readOnly] {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  color: white;
+  font-weight: bold;
+}
+
+.status-pending {
+  background-color: #ffc107; /* Màu vàng */
+  color: #333;
+}
+
+.status-completed {
+  background-color: #28a745; /* Màu xanh lá */
+}
+
+.item-details-grid-edit {
+  display: grid;
+  /* Thêm 1 cột nhỏ cho nút xóa */
+  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr auto; 
+  gap: 10px;
+}
+/* Các style khác cho grid-header, grid-cell sẽ được kế thừa */
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.table-container {
+  max-height: 80vh; /* Giới hạn chiều cao của bảng */
+  overflow-y: auto; /* Thêm thanh cuộn dọc khi cần */
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inventory-table th, 
+.inventory-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap; /* Ngăn text xuống dòng */
+}
+
+.inventory-table th {
+  background-color: #f8f9fa;
+  position: sticky; /* Giúp header cố định khi cuộn */
+  top: 0;
+  z-index: 1;
+}
+
+.inventory-table tbody tr:hover {
+  background-color: #e9ecef;
+}

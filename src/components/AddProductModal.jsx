@@ -1,31 +1,50 @@
 // src/components/AddProductModal.jsx
-import React, {useState} from 'react';
-import '../styles/AdminLayout.css';
+import React, { useState } from 'react';
+import { db } from '../firebaseConfig'; // Import db
+import { doc, setDoc } from 'firebase/firestore'; // Import các hàm của Firestore
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
-  // Tạo state cho tất cả các trường thông tin
   const [productId, setProductId] = useState('');
   const [productName, setProductName] = useState('');
   const [unit, setUnit] = useState('');
   const [packaging, setPackaging] = useState('');
   const [storageTemp, setStorageTemp] = useState('');
   const [manufacturer, setManufacturer] = useState('');
-  const [team, setTeam] = useState('Med'); // Mặc định là team Med
+  const [team, setTeam] = useState('Med');
+  const [isSaving, setIsSaving] = useState(false); // Thêm state loading
 
-  const handleSubmit = (e) => {
+  // Chuyển hàm thành async để xử lý việc lưu dữ liệu
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logic để thêm sản phẩm vào Firestore sẽ được thêm ở bước sau
-    console.log({ 
-      productId, 
-      productName, 
-      unit,
-      packaging,
-      storageTemp,
-      manufacturer,
-      team 
-    });
-    
-    onProductAdded(); 
+    setIsSaving(true); // Bắt đầu quá trình lưu, vô hiệu hóa nút
+
+    try {
+      // Tạo một object chứa tất cả dữ liệu sản phẩm
+      const newProduct = {
+        productName,
+        unit,
+        packaging,
+        storageTemp,
+        manufacturer,
+        team
+      };
+      
+      // Tạo một tham chiếu đến document mới trong collection 'products'
+      // với ID là productId người dùng đã nhập
+      const productRef = doc(db, 'products', productId);
+
+      // Dùng setDoc để ghi đè hoặc tạo mới document
+      await setDoc(productRef, newProduct);
+      
+      alert('Thêm sản phẩm thành công!');
+      onProductAdded(); // Gọi hàm để đóng modal và tải lại danh sách
+
+    } catch (error) {
+      console.error("Lỗi khi thêm sản phẩm: ", error);
+      alert('Đã xảy ra lỗi khi thêm sản phẩm. Vui lòng thử lại.');
+    } finally {
+      setIsSaving(false); // Kết thúc quá trình lưu
+    }
   };
 
   return (
@@ -33,7 +52,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       <div className="modal-content">
         <h2>Thêm sản phẩm mới</h2>
         <form onSubmit={handleSubmit}>
-          {/* Mã hàng và Tên hàng */}
+          {/* ... các trường nhập liệu giữ nguyên như cũ ... */}
           <div className="form-row">
             <div className="form-group">
               <label>Mã hàng (ID)</label>
@@ -44,8 +63,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} required />
             </div>
           </div>
-
-          {/* ĐVT và Quy cách */}
           <div className="form-row">
             <div className="form-group">
               <label>Đơn vị tính</label>
@@ -56,8 +73,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               <input type="text" value={packaging} onChange={(e) => setPackaging(e.target.value)} />
             </div>
           </div>
-          
-          {/* Nhiệt độ và Hãng SX */}
           <div className="form-row">
             <div className="form-group">
               <label>Nhiệt độ bảo quản</label>
@@ -68,8 +83,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               <input type="text" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
             </div>
           </div>
-
-          {/* Team */}
           <div className="form-group">
             <label>Team</label>
             <select value={team} onChange={(e) => setTeam(e.target.value)}>
@@ -80,8 +93,11 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
           </div>
           
           <div className="modal-actions">
-            <button type="button" onClick={onClose} className="btn-secondary">Hủy</button>
-            <button type="submit" className="btn-primary">Lưu</button>
+            <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Hủy</button>
+            {/* Vô hiệu hóa nút Lưu khi đang trong quá trình xử lý */}
+            <button type="submit" className="btn-primary" disabled={isSaving}>
+              {isSaving ? 'Đang lưu...' : 'Lưu'}
+            </button>
           </div>
         </form>
       </div>
