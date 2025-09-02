@@ -12,41 +12,30 @@ const InventoryPage = ({ user, userRole }) => {
       setLoading(true);
       try {
         const inventoryCollection = collection(db, "inventory_lots");
-        let finalInventoryList = [];
+        let q;
 
         if (userRole === 'med') {
-          const q = query(inventoryCollection, where("team", "==", "Med"));
-          const querySnapshot = await getDocs(q);
-          finalInventoryList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          q = query(inventoryCollection, where("team", "==", "MED"));
         } else if (userRole === 'bio') {
-          // Tạo 2 truy vấn riêng biệt
-          const bioQuery = query(inventoryCollection, where("team", "==", "Bio"));
-          const sparePartQuery = query(inventoryCollection, where("team", "==", "Spare Part"));
-          
-          // Thực thi cả 2 truy vấn
-          const [bioSnapshot, sparePartSnapshot] = await Promise.all([
-            getDocs(bioQuery),
-            getDocs(sparePartQuery)
-          ]);
-
-          // Chuyển đổi kết quả sang dạng mảng, đảm bảo không bị lỗi nếu một trong hai rỗng
-          const bioList = bioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) || [];
-          const sparePartList = sparePartSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) || [];
-          
-          // Gộp 2 mảng lại với nhau
-          finalInventoryList = bioList.concat(sparePartList);
-
-        } else {
-          // Admin và Owner lấy tất cả
-          const q = query(inventoryCollection);
-          const querySnapshot = await getDocs(q);
-          finalInventoryList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          q = query(inventoryCollection, where("team", "in", ["BIO", "Spare Part"]));
+        } else { // admin, owner
+          q = query(inventoryCollection);
         }
         
-        // Sắp xếp toàn bộ kết quả theo ngày nhập
-        finalInventoryList.sort((a, b) => b.importDate.toDate() - a.importDate.toDate());
+        const querySnapshot = await getDocs(q);
+        const inventoryList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        // Sắp xếp dữ liệu bằng JavaScript sau khi đã lấy về
+        inventoryList.sort((a, b) => {
+          const dateA = a.importDate?.toDate() || 0;
+          const dateB = b.importDate?.toDate() || 0;
+          return dateB - dateA;
+        });
 
-        setInventory(finalInventoryList);
+        setInventory(inventoryList);
       } catch (error) {
         console.error("Lỗi khi lấy dữ liệu tồn kho: ", error);
       } finally {
@@ -55,7 +44,7 @@ const InventoryPage = ({ user, userRole }) => {
     };
 
     if (userRole) {
-      fetchInventory();
+        fetchInventory();
     }
   }, [userRole]);
 
