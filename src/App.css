@@ -1,14 +1,14 @@
 /* src/App.css */
 
-.App {
+/* Class mới này chỉ dùng để căn giữa trang đăng nhập */
+.login-page-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f4f4f4;
-  font-family: sans-serif;
+  min-height: 100vh;
 }
 
+/* Các style cho form đăng nhập, giữ nguyên như cũ */
 .login-container {
   padding: 40px;
   border-radius: 8px;
@@ -39,7 +39,7 @@
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  box-sizing: border-box; /* Quan trọng */
+  box-sizing: border-box;
 }
 
 button {
@@ -58,18 +58,8 @@ button:hover {
   background-color: #0056b3;
 }
 
-/* Thêm vào cuối file src/App.css */
-
-.homepage-container {
-  text-align: center;
-  padding: 50px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
 .logout-button {
-  background-color: #dc3545; /* Màu đỏ */
+  background-color: #dc3545;
   margin-top: 20px;
 }
 
