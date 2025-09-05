@@ -108,14 +108,11 @@
   margin-bottom: 20px;
 }
 
-/* --- CÁC BẢNG (products-table, inventory-table) --- */
-.products-table, .inventory-table {
+/* --- BẢNG products-table (Đơn giản) --- */
+.products-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-}
-
-.products-table {
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -136,11 +133,22 @@
   background-color: #f8f9fa;
 }
 
+.products-table tbody tr:hover {
+  background-color: #e9ecef;
+}
+
+/* --- BẢNG inventory-table (Phức tạp với đóng băng cột) --- */
 .table-container {
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: 8px;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .inventory-table th, 
@@ -150,79 +158,69 @@
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   white-space: nowrap;
-  background-color: #ffffff; /* Nền trắng mặc định cho tất cả các ô */
 }
 
-/* HIỆU ỨNG TƯƠNG TÁC */
+.inventory-table th {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Các cột không bị đóng băng */
+.inventory-table td {
+  background-color: #ffffff;
+}
 .inventory-table tbody tr:hover td {
-  background-color: #e9ecef; /* Áp dụng cho TẤT CẢ các ô khi hover */
+  background-color: #e9ecef;
 }
-
 .inventory-table tbody tr.selected-row td {
-  background-color: #d6eaff !important; /* Áp dụng cho TẤT CẢ các ô khi được chọn */
+  background-color: #d6eaff !important;
 }
-
 .inventory-table tbody tr.selected-row {
   font-weight: 500;
 }
 
-/* --- LOGIC ĐÓNG BĂNG CỘT VÀ TIÊU ĐỀ --- */
 
-/* 1. Đóng băng hàng tiêu đề (header) khi cuộn dọc */
-.inventory-table th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: #f8f9fa; /* Nền cho header */
-}
-
-/* 2. Áp dụng position: sticky cho các ô ở 3 cột đầu tiên */
+/* Cột 1, 2, 3 - ĐÓNG BĂNG */
 .inventory-table th:nth-child(1), .inventory-table td:nth-child(1),
 .inventory-table th:nth-child(2), .inventory-table td:nth-child(2),
 .inventory-table th:nth-child(3), .inventory-table td:nth-child(3) {
   position: sticky;
-  z-index: 1; /* z-index thấp hơn header */
-}
-
-/* 3. Thiết lập vị trí 'left' và chiều rộng cho từng cột */
-.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { left: 0; }
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { left: 130px; }
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { left: 280px; }
-
-/*
-  Lưu ý: Bạn có thể đặt width/min-width cho các cột này ở một
-  rule CSS riêng để dễ quản lý hơn, ví dụ:
-  .inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { width: 130px; }
-  .inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { width: 150px; }
-  .inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { width: 300px; }
-*/
-
-
-/* 4. Thêm màu nền cho các ô DỮ LIỆU (td) bị đóng băng để sửa lỗi trong suốt */
-.inventory-table td:nth-child(1),
-.inventory-table td:nth-child(2),
-.inventory-table td:nth-child(3) {
+  z-index: 1;
   background-color: #ffffff;
 }
 
-/* 5. Đồng bộ màu nền khi hover hoặc chọn hàng */
-/* Rule có sẵn của bạn đã xử lý việc này nhưng thêm vào đây để chắc chắn */
-.inventory-table tbody tr:hover td:nth-child(1),
-.inventory-table tbody tr:hover td:nth-child(2),
-.inventory-table tbody tr:hover td:nth-child(3) {
-  background-color: #e9ecef;
-}
-.inventory-table tbody tr.selected-row td:nth-child(1),
-.inventory-table tbody tr.selected-row td:nth-child(2),
-.inventory-table tbody tr.selected-row td:nth-child(3) {
-  background-color: #d6eaff !important;
-}
-
-/* 6. Đặt z-index CAO NHẤT cho các ô TIÊU ĐỀ (th) bị đóng băng */
+/* Style cho tiêu đề bị đóng băng */
 .inventory-table th:nth-child(1),
 .inventory-table th:nth-child(2),
 .inventory-table th:nth-child(3) {
   z-index: 3;
+  background-color: #f8f9fa;
+}
+
+/* --- VỊ TRÍ VÀ KÍCH THƯỚC CÁC CỘT --- */
+/* Cột 1: Ngày nhập hàng */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { left: 0; width: 120px; }
+.inventory-table th:nth-child(1) { white-space: normal; }
+
+/* Cột 2: Mã hàng */
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { left: 120px; width: 150px; }
+
+/* Cột 3: Tên hàng (SỬA LẠI VỊ TRÍ) */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { 
+  left: 270px; /* Vị trí đúng = 120px (cột 1) + 150px (cột 2) */
+  width: 300px;
+  min-width: 300px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Cột 7: Quy cách */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) {
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 250px;
 }
 
 /* --- MODAL (POPUP) --- */
