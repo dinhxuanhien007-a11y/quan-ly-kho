@@ -153,7 +153,7 @@ const InventoryPage = ({ user, userRole }) => {
               <th>Team</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="inventory-table-body">
   {filteredInventory.length > 0 ? (
     filteredInventory.map(lot => (
       <tr 
