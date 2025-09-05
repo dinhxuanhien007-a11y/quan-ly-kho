@@ -17,6 +17,7 @@
   min-height: 100vh;
 }
 
+/* --- SIDEBAR --- */
 .sidebar {
   width: var(--sidebar-width);
   background-color: var(--sidebar-bg);
@@ -34,17 +35,17 @@
   height: var(--header-height);
   display: flex;
   align-items: center;
-  padding: 0 20px; /* Xóa justify-content */
+  padding: 0 20px;
   border-bottom: 1px solid var(--border-color);
 }
 
 .logo {
   color: var(--text-color);
-  font-size: 20px; /* Giảm nhẹ kích thước phông chữ */
+  font-size: 20px;
   white-space: nowrap;
   overflow: hidden;
-  margin-right: 10px; /* Thêm khoảng cách giữa logo và nút */
-  flex-shrink: 0; /* Add this line */
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .toggle-btn {
@@ -53,7 +54,7 @@
   font-size: 24px;
   cursor: pointer;
   color: var(--sidebar-text);
-  margin-left: auto; /* Đẩy nút về phía bên phải */
+  margin-left: auto;
 }
 
 .menu-items {
@@ -93,16 +94,28 @@
   width: 0;
 }
 
+/* --- MAIN CONTENT --- */
 .main-content {
   flex-grow: 1;
   padding: 20px;
   background-color: var(--bg-color);
 }
 
-.products-table {
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* --- CÁC BẢNG (products-table, inventory-table) --- */
+.products-table, .inventory-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+}
+
+.products-table {
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -123,11 +136,96 @@
   background-color: #f8f9fa;
 }
 
-.products-table tbody tr:hover {
-  background-color: #e9ecef;
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
 }
 
-/* CSS cho Modal (Popup) */
+.inventory-table th, 
+.inventory-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  white-space: nowrap;
+  background-color: #ffffff; /* Nền trắng mặc định cho tất cả các ô */
+}
+
+/* HIỆU ỨNG TƯƠNG TÁC */
+.inventory-table tbody tr:hover td {
+  background-color: #e9ecef; /* Áp dụng cho TẤT CẢ các ô khi hover */
+}
+
+.inventory-table tbody tr.selected-row td {
+  background-color: #d6eaff !important; /* Áp dụng cho TẤT CẢ các ô khi được chọn */
+}
+
+.inventory-table tbody tr.selected-row {
+  font-weight: 500;
+}
+
+/* --- LOGIC ĐÓNG BĂNG CỘT VÀ TIÊU ĐỀ --- */
+
+/* 1. Đóng băng hàng tiêu đề (header) khi cuộn dọc */
+.inventory-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #f8f9fa; /* Nền cho header */
+}
+
+/* 2. Áp dụng position: sticky cho các ô ở 3 cột đầu tiên */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1),
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2),
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) {
+  position: sticky;
+  z-index: 1; /* z-index thấp hơn header */
+}
+
+/* 3. Thiết lập vị trí 'left' và chiều rộng cho từng cột */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { left: 0; }
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { left: 130px; }
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { left: 280px; }
+
+/*
+  Lưu ý: Bạn có thể đặt width/min-width cho các cột này ở một
+  rule CSS riêng để dễ quản lý hơn, ví dụ:
+  .inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { width: 130px; }
+  .inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { width: 150px; }
+  .inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { width: 300px; }
+*/
+
+
+/* 4. Thêm màu nền cho các ô DỮ LIỆU (td) bị đóng băng để sửa lỗi trong suốt */
+.inventory-table td:nth-child(1),
+.inventory-table td:nth-child(2),
+.inventory-table td:nth-child(3) {
+  background-color: #ffffff;
+}
+
+/* 5. Đồng bộ màu nền khi hover hoặc chọn hàng */
+/* Rule có sẵn của bạn đã xử lý việc này nhưng thêm vào đây để chắc chắn */
+.inventory-table tbody tr:hover td:nth-child(1),
+.inventory-table tbody tr:hover td:nth-child(2),
+.inventory-table tbody tr:hover td:nth-child(3) {
+  background-color: #e9ecef;
+}
+.inventory-table tbody tr.selected-row td:nth-child(1),
+.inventory-table tbody tr.selected-row td:nth-child(2),
+.inventory-table tbody tr.selected-row td:nth-child(3) {
+  background-color: #d6eaff !important;
+}
+
+/* 6. Đặt z-index CAO NHẤT cho các ô TIÊU ĐỀ (th) bị đóng băng */
+.inventory-table th:nth-child(1),
+.inventory-table th:nth-child(2),
+.inventory-table th:nth-child(3) {
+  z-index: 3;
+}
+
+/* --- MODAL (POPUP) --- */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -160,7 +258,7 @@
   margin-top: 20px;
 }
 
-/* Style chung cho các nút và header của trang */
+/* --- BUTTONS & FORMS --- */
 .btn-primary {
   background-color: var(--primary-color);
   color: white;
@@ -185,36 +283,6 @@
   opacity: 0.9;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-/* Thêm vào cuối file src/styles/AdminLayout.css */
-
-.form-row {
-  display: flex;
-  gap: 20px;
-}
-
-.form-row .form-group {
-  flex: 1; /* Chia đều không gian cho các trường */
-}
-
-/* Style cho thẻ select */
-.form-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  background-color: white;
-}
-
-/* Thêm vào cuối file src/styles/AdminLayout.css */
-
 .action-buttons {
   display: flex;
   gap: 10px;
@@ -231,20 +299,18 @@
 }
 
 .btn-edit {
-  color: #007bff; /* Màu xanh dương */
+  color: #007bff;
 }
 .btn-edit:hover {
   background-color: #e7f3ff;
 }
 
 .btn-delete {
-  color: #dc3545; /* Màu đỏ */
+  color: #dc3545;
 }
 .btn-delete:hover {
   background-color: #fbebee;
 }
-
-/* Thêm vào cuối file src/styles/AdminLayout.css */
 
 .form-section {
   background-color: #fff;
@@ -254,6 +320,16 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group select,
 .form-group textarea {
   width: 100%;
   padding: 10px;
@@ -263,6 +339,9 @@
   font-family: inherit;
   font-size: 14px;
 }
+.form-group select {
+  background-color: white;
+}
 
 .page-actions {
   display: flex;
@@ -270,17 +349,22 @@
   margin-top: 20px;
 }
 
-/* Thêm vào cuối file src/styles/AdminLayout.css */
-
-.item-details-grid {
+/* --- GRID NHẬP LIỆU --- */
+.item-details-grid, .item-details-grid-edit {
   display: grid;
-  /* Định nghĩa 10 cột với độ rộng khác nhau để tối ưu không gian */
-  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
   gap: 10px;
   background-color: #fff;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+}
+
+.item-details-grid {
+  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
+}
+
+.item-details-grid-edit {
+  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr auto;
 }
 
 .grid-header {
@@ -291,7 +375,6 @@
 
 .grid-cell {
   padding: 5px 0;
-  /* Đảm bảo các dòng có chiều cao bằng nhau */
   display: flex;
   align-items: center;
 }
@@ -305,20 +388,18 @@
   box-sizing: border-box;
 }
 
-/* Cho phép textarea tự động thay đổi chiều cao */
 .grid-cell textarea {
   resize: vertical;
   min-height: 38px;
 }
 
-/* Các ô chỉ đọc sẽ có nền xám nhẹ */
 .grid-cell input[readOnly],
 .grid-cell textarea[readOnly] {
   background-color: #f0f0f0;
   cursor: not-allowed;
 }
 
-/* Thêm vào cuối file src/styles/AdminLayout.css */
+/* --- BỘ LỌC & TRẠNG THÁI --- */
 .status-badge {
   padding: 5px 10px;
   border-radius: 15px;
@@ -328,51 +409,49 @@
 }
 
 .status-pending {
-  background-color: #ffc107; /* Màu vàng */
+  background-color: #ffc107;
   color: #333;
 }
 
 .status-completed {
-  background-color: #28a745; /* Màu xanh lá */
+  background-color: #28a745;
 }
 
-.item-details-grid-edit {
-  display: grid;
-  /* Thêm 1 cột nhỏ cho nút xóa */
-  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr auto; 
-  gap: 10px;
-}
-/* Các style khác cho grid-header, grid-cell sẽ được kế thừa */
-
-/* Thêm vào cuối file src/styles/AdminLayout.css */
-
-.table-container {
-  max-height: 80vh; /* Giới hạn chiều cao của bảng */
-  overflow-y: auto; /* Thêm thanh cuộn dọc khi cần */
-  border: 1px solid var(--border-color);
+.filters-container {
+  background-color: #fff;
+  padding: 15px;
   border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
-.inventory-table {
-  width: 100%;
-  border-collapse: collapse;
+.filter-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-.inventory-table th, 
-.inventory-table td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap; /* Ngăn text xuống dòng */
+.filter-group button {
+  background-color: #ffffff;
+  border: 1px solid #adb5bd;
+  color: #495057;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.inventory-table th {
-  background-color: #f8f9fa;
-  position: sticky; /* Giúp header cố định khi cuộn */
-  top: 0;
-  z-index: 1;
-}
-
-.inventory-table tbody tr:hover {
+.filter-group button:hover {
   background-color: #e9ecef;
+  border-color: #495057;
+}
+
+.filter-group button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
 }
