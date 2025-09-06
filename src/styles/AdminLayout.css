@@ -133,7 +133,11 @@
   background-color: #f8f9fa;
 }
 
-/* --- BẢNG inventory-table (Phức tạp với đóng băng cột) --- */
+.products-table tbody tr:hover {
+  background-color: #e9ecef;
+}
+
+/* --- BẢNG inventory-table (PHIÊN BẢN SỬA LỖI HOÀN CHỈNH) --- */
 .table-container {
   width: 100%;
   overflow-x: auto;
@@ -143,16 +147,14 @@
 
 .inventory-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse; /* Đổi về collapse để tính toán dễ hơn */
 }
 
 .inventory-table th, 
 .inventory-table td {
   padding: 12px 15px;
   text-align: left;
-  border-bottom: 1px solid var(--border-color);
-  border-right: 1px solid var(--border-color);
+  border: 1px solid var(--border-color);
   white-space: nowrap;
 }
 
@@ -163,46 +165,81 @@
   z-index: 2;
 }
 
-/* Style mặc định cho các ô trong thân bảng */
-.inventory-table-body td {
+/* Các cột không bị đóng băng */
+.inventory-table td {
   background-color: #ffffff;
 }
-.inventory-table-body tr:hover td {
+.inventory-table tbody tr:hover td {
   background-color: #e9ecef;
 }
-.inventory-table-body tr.selected-row td {
+.inventory-table tbody tr.selected-row td {
   background-color: #d6eaff !important;
 }
+.inventory-table tbody tr.selected-row {
+  font-weight: 500;
+}
 
-
-/* Cột 1, 2, 3 - ĐÓNG BĂNG */
-.inventory-table th:nth-child(1), .inventory-table td:nth-child(1),
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2),
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) {
+/* Cột 1 - Đóng băng */
+.inventory-table th:nth-child(1),
+.inventory-table td:nth-child(1) {
   position: sticky;
+  left: 0;
+  width: 120px;
+  min-width: 120px;
   z-index: 1;
 }
 
-/* Vị trí và kích thước các cột */
-.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { left: 0; width: 120px; }
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { left: 120px; width: 150px; }
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { 
+/* Cột 2 - Đóng băng */
+.inventory-table th:nth-child(2),
+.inventory-table td:nth-child(2) {
+  position: sticky;
+  left: 120px; /* Bắt đầu ngay sau cột 1 */
+  width: 150px;
+  min-width: 150px;
+  z-index: 1;
+}
+
+/* Cột 3 - Đóng băng */
+.inventory-table th:nth-child(3),
+.inventory-table td:nth-child(3) {
+  position: sticky;
   left: 270px; /* 120 + 150 */
   width: 300px;
   min-width: 300px;
+  z-index: 1;
 }
 
-/* Style cho tiêu đề bị đóng băng */
+/* Đảm bảo tiêu đề bị đóng băng luôn có nền đúng và nằm trên cùng */
 .inventory-table th:nth-child(1),
 .inventory-table th:nth-child(2),
 .inventory-table th:nth-child(3) {
   z-index: 3;
+  background-color: #f8f9fa;
 }
 
-/* Cho phép xuống dòng */
-.inventory-table th:nth-child(1),
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3),
-.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) {
+/* Đảm bảo các ô nội dung bị đóng băng có nền đúng */
+.inventory-table td:nth-child(1),
+.inventory-table td:nth-child(2),
+.inventory-table td:nth-child(3) {
+  background-color: #ffffff;
+}
+
+/* Áp dụng lại hiệu ứng hover và selected cho các ô bị đóng băng */
+.inventory-table tbody tr:hover td:nth-child(1),
+.inventory-table tbody tr:hover td:nth-child(2),
+.inventory-table tbody tr:hover td:nth-child(3) {
+  background-color: #e9ecef;
+}
+.inventory-table tbody tr.selected-row td:nth-child(1),
+.inventory-table tbody tr.selected-row td:nth-child(2),
+.inventory-table tbody tr.selected-row td:nth-child(3) {
+  background-color: #d6eaff !important;
+}
+
+/* Cho phép xuống dòng ở các cột cần thiết */
+.inventory-table th:nth-child(1), /* Ngày nhập hàng */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3), /* Tên hàng */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { /* Quy cách */
   white-space: normal;
   word-wrap: break-word;
 }

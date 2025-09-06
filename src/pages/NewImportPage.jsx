@@ -24,7 +24,7 @@ const NewImportPage = () => {
   const [supplier, setSupplier] = useState('');
   const [description, setDescription] = useState('');
   const [items, setItems] = useState([
-    { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '' }
+    { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '' }
   ]);
   const [isSaving, setIsSaving] = useState(false);
   const inputRefs = useRef([]);
@@ -53,33 +53,36 @@ const NewImportPage = () => {
 
   // Chỉ tìm kiếm sản phẩm khi người dùng rời khỏi ô Mã hàng
   const handleProductSearch = async (index, productId) => {
-    if (!productId) return;
+  if (!productId) return;
 
-    const newItems = [...items];
-    try {
-      const productRef = doc(db, 'products', productId);
-      const productSnap = await getDoc(productRef);
-      if (productSnap.exists()) {
-        const productData = productSnap.data();
-        newItems[index].productName = productData.productName || '';
-        newItems[index].unit = productData.unit || '';
-        newItems[index].packaging = productData.packaging || '';
-        newItems[index].storageTemp = productData.storageTemp || '';
-        newItems[index].team = productData.team || '';
-      } else {
-        newItems[index].productName = 'Không tìm thấy mã hàng!';
-        newItems[index].unit = '';
-        newItems[index].packaging = '';
-        newItems[index].storageTemp = '';
-        newItems[index].team = '';
-      }
-    } catch (error) {
-      console.error("Lỗi khi tìm kiếm sản phẩm:", error);
-      newItems[index].productName = 'Lỗi khi tìm kiếm!';
-    } finally {
-        setItems(newItems);
+  const newItems = [...items];
+  try {
+    const productRef = doc(db, 'products', productId);
+    const productSnap = await getDoc(productRef);
+
+    if (productSnap.exists()) {
+      const productData = productSnap.data();
+      newItems[index].productName = productData.productName || '';
+      newItems[index].unit = productData.unit || '';
+      newItems[index].packaging = productData.packaging || '';
+      newItems[index].storageTemp = productData.storageTemp || '';
+      newItems[index].team = productData.team || '';
+      newItems[index].manufacturer = productData.manufacturer || ''; // <-- DÒNG MỚI
+    } else {
+      newItems[index].productName = 'Không tìm thấy mã hàng!';
+      newItems[index].unit = '';
+      newItems[index].packaging = '';
+      newItems[index].storageTemp = '';
+      newItems[index].team = '';
+      newItems[index].manufacturer = ''; // <-- DÒNG MỚI
     }
-  };
+  } catch (error) {
+    console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+    newItems[index].productName = 'Lỗi khi tìm kiếm!';
+  } finally {
+      setItems(newItems);
+  }
+};
 
   const handleKeyDown = (e, rowIndex, inputIndex) => {
     if (e.key === 'Tab' && !e.shiftKey) {
@@ -95,7 +98,7 @@ const NewImportPage = () => {
   const addNewRow = () => {
     setItems([
       ...items,
-      { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '' }
+      { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '' }
     ]);
   };
 
@@ -167,6 +170,7 @@ const NewImportPage = () => {
           packaging: item.packaging,
           storageTemp: item.storageTemp,
           team: item.team,
+          manufacturer: item.manufacturer,
           quantityImported: Number(item.quantity),
           quantityRemaining: Number(item.quantity),
           notes: item.notes,
