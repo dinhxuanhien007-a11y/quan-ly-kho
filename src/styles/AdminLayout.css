@@ -143,6 +143,9 @@
   overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  /* Giới hạn chiều cao và tạo thanh cuộn dọc */
+  max-height: calc(100vh - 250px); /* 100vh trừ đi chiều cao của header, filter... */
+  overflow-y: auto;
 }
 
 .inventory-table {
@@ -150,12 +153,22 @@
   border-collapse: collapse; /* Đổi về collapse để tính toán dễ hơn */
 }
 
-.inventory-table th, 
 .inventory-table td {
   padding: 12px 15px;
   text-align: left;
-  border: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
   white-space: nowrap;
+  vertical-align: top; /* Căn lề trên cho nội dung trong ô */
+}
+
+/* Đặt chiều cao tối đa cho các ô có thể xuống dòng */
+.inventory-table td:nth-child(3), /* Tên hàng */
+.inventory-table td:nth-child(7) { /* Quy cách */
+  max-height: 75px; /* Chiều cao tối đa (tương đương 3-4 dòng) */
+  overflow-y: auto; /* Thêm thanh cuộn dọc bên trong ô khi cần */
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .inventory-table th {
@@ -236,12 +249,20 @@
   background-color: #d6eaff !important;
 }
 
-/* Cho phép xuống dòng ở các cột cần thiết */
-.inventory-table th:nth-child(1), /* Ngày nhập hàng */
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3), /* Tên hàng */
-.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { /* Quy cách */
+/* Đặt chiều rộng tối thiểu cho cột Tên hàng */
+.inventory-table th:nth-child(3), 
+.inventory-table td:nth-child(3) {
   white-space: normal;
   word-wrap: break-word;
+  min-width: 350px; /* Chiều rộng mong muốn của bạn */
+}
+
+/* Đặt chiều rộng tối thiểu cho Quy cách và Hãng SX */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7),
+.inventory-table th:nth-child(12), .inventory-table td:nth-child(12) {
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 175px; /* Chiều rộng mong muốn của bạn */
 }
 
 /* --- MODAL (POPUP) --- */
@@ -473,4 +494,14 @@
   background-color: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+}
+
+/* Căn giữa nội dung trong bảng tồn kho */
+.inventory-table td {
+  text-align: center;
+}
+
+/* Giữ lại căn trái cho cột Tên hàng (cột thứ 3) */
+.inventory-table td:nth-child(3) {
+  text-align: left;
 }
