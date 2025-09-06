@@ -505,3 +505,91 @@
 .inventory-table td:nth-child(3) {
   text-align: left;
 }
+
+/* --- CSS CHO CẢNH BÁO HẠN SỬ DỤNG (CẬP NHẬT MÀU SẮC) --- */
+
+/* Áp dụng màu nền trực tiếp cho các Ô (td) để tăng độ ưu tiên */
+.inventory-table-body tr.near-expiry-yellow td { background-color: #ffe08a; } /* Vàng đậm hơn */
+.inventory-table-body tr.near-expiry-orange td { background-color: #ffb74d; } /* Cam đậm hơn */
+.inventory-table-body tr.near-expiry-red td { background-color: #ef9a9a; } /* Đỏ đậm hơn */
+.inventory-table-body tr.expired-black td { background-color: #a0a0a0; color: #fff; } /* Nền xám đậm, chữ trắng */
+
+/* Màu chữ đậm hơn cho các dòng cảnh báo */
+.inventory-table-body tr.near-expiry-yellow td,
+.inventory-table-body tr.near-expiry-orange td,
+.inventory-table-body tr.near-expiry-red td {
+    font-weight: 500;
+}
+
+/* Đặc biệt cho hàng hết hạn */
+.inventory-table-body tr.expired-black td {
+    font-weight: bold;
+    text-decoration: line-through;
+}
+
+/* Khi di chuột qua hoặc chọn một dòng cảnh báo, nó sẽ có màu xanh như bình thường */
+.inventory-table-body tr.near-expiry-yellow:hover td,
+.inventory-table-body tr.near-expiry-orange:hover td,
+.inventory-table-body tr.near-expiry-red:hover td,
+.inventory-table-body tr.expired-black:hover td,
+.inventory-table-body tr.near-expiry-yellow.selected-row td,
+.inventory-table-body tr.near-expiry-orange.selected-row td,
+.inventory-table-body tr.near-expiry-red.selected-row td,
+.inventory-table-body tr.expired-black.selected-row td {
+  background-color: #d6eaff !important;
+}
+
+/* --- CSS CHO TEAM BADGE --- */
+.team-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.team-badge.team-med {
+  background-color: #007bff; /* Xanh dương */
+}
+
+.team-badge.team-bio {
+  background-color: #28a745; /* Xanh lá */
+}
+
+.team-badge.team-sparepart {
+  background-color: #6c757d; /* Xám */
+}
+
+/* --- CSS CHO TEMP BADGE --- */
+.temp-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500; /* Thêm độ đậm cho chữ */
+  display: inline-block; 
+}
+
+/* 2 → 8°C: Xanh dương đậm hơn */
+.temp-badge.temp-cool {
+  background-color: #a7d9f2; /* Màu xanh dương sáng hơn, dễ nhìn */
+  color: #0056b3; /* Chữ xanh dương đậm */
+}
+
+/* -25 → -15°C: Tím đậm hơn */
+.temp-badge.temp-frozen {
+  background-color: #c9b6e7; /* Màu tím sáng hơn */
+  color: #4a148c; /* Chữ tím đậm */
+}
+
+/* Nhiệt độ phòng: Xanh lá đậm hơn */
+.temp-badge.temp-room {
+  background-color: #b3e6b3; /* Màu xanh lá sáng hơn */
+  color: #28a745; /* Chữ xanh lá đậm */
+}
+
+/* Các loại khác: Xám đậm hơn */
+.temp-badge.temp-other {
+  background-color: #ced4da; /* Màu xám đậm hơn */
+  color: #343a40; /* Chữ đen đậm */
+  border: 1px solid #adb5bd;
+}

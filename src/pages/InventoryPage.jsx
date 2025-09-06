@@ -3,6 +3,39 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query } from 'firebase/firestore';
 import InventoryFilters from '../components/InventoryFilters'; // Import component bộ lọc
+import TeamBadge from '../components/TeamBadge';
+import TempBadge from '../components/TempBadge';
+
+// Thêm hàm này vào đầu file InventoryPage.jsx
+
+const getRowColorByExpiry = (expiryDate) => {
+  if (!expiryDate || !expiryDate.toDate) return ''; // Bỏ qua nếu không có HSD
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Chuẩn hóa về đầu ngày
+
+  const expDate = expiryDate.toDate();
+  expDate.setHours(0, 0, 0, 0);
+
+  // Tính số ngày còn lại
+  const diffTime = expDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return 'expired-black'; // Đã hết hạn -> màu đen
+  }
+  if (diffDays <= 60) {
+    return 'near-expiry-red'; // Dưới 60 ngày -> màu đỏ
+  }
+  if (diffDays <= 90) {
+    return 'near-expiry-orange'; // Từ 61 - 90 ngày -> màu cam
+  }
+  if (diffDays <= 120) {
+    return 'near-expiry-yellow'; // Từ 91 - 120 ngày -> màu vàng
+  }
+
+  return ''; // Mặc định không có màu
+};
 
 // Thêm hàm này vào đầu file InventoryPage.jsx
 const formatDate = (timestamp) => {
@@ -156,11 +189,12 @@ const InventoryPage = ({ user, userRole }) => {
           <tbody className="inventory-table-body">
   {filteredInventory.length > 0 ? (
     filteredInventory.map(lot => (
-      <tr 
-        key={lot.id}
-        onClick={() => handleRowClick(lot.id)}
-        className={selectedRowId === lot.id ? 'selected-row' : ''}
-      >
+      <tr
+  key={lot.id}
+  onClick={() => handleRowClick(lot.id)}
+  // Kết hợp các class lại với nhau
+  className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+>
         <td>{formatDate(lot.importDate)}</td>
         <td>{lot.productId}</td>
         <td>{lot.productName}</td>
@@ -171,9 +205,9 @@ const InventoryPage = ({ user, userRole }) => {
         <td>{lot.quantityImported}</td>
         <td>{lot.quantityRemaining}</td>
         <td>{lot.notes}</td>
-        <td>{lot.storageTemp}</td>
+        <td><TempBadge temperature={lot.storageTemp} /></td>
         <td>{lot.manufacturer}</td>
-        <td>{lot.team}</td>
+        <td><TeamBadge team={lot.team} /></td>
       </tr>
     ))
   ) : (
