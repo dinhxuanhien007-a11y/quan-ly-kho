@@ -1,100 +1,74 @@
 :root {
-  --sidebar-width: 250px;
-  --sidebar-width-collapsed: 80px;
   --header-height: 60px;
   --primary-color: #007bff;
   --text-color: #333;
   --bg-color: #f8f9fa;
-  --sidebar-bg: #ffffff;
-  --sidebar-text: #555;
-  --sidebar-hover-bg: #f1f1f1;
   --border-color: #dee2e6;
   --transition-speed: 0.3s ease;
 }
 
-.admin-layout {
+/* --- BỐ CỤC LAYOUT NGANG MỚI --- */
+.admin-layout-horizontal {
   display: flex;
+  flex-direction: column; /* Xếp chồng Navbar và Main Content */
   min-height: 100vh;
 }
 
-/* --- SIDEBAR --- */
-.sidebar {
-  width: var(--sidebar-width);
-  background-color: var(--sidebar-bg);
-  border-right: 1px solid var(--border-color);
-  transition: width var(--transition-speed);
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar.collapsed {
-  width: var(--sidebar-width-collapsed);
-}
-
-.sidebar-header {
+/* --- THANH NAVBAR TRÊN CÙNG --- */
+.top-navbar {
   height: var(--header-height);
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px solid var(--border-color);
+  
+  /* --- Quan trọng: Giữ thanh menu cố định khi cuộn --- */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-.logo {
+.navbar-brand {
   color: var(--text-color);
-  font-size: 20px;
-  white-space: nowrap;
-  overflow: hidden;
-  margin-right: 10px;
-  flex-shrink: 0;
+  margin-right: auto; /* Đẩy các icon menu về bên phải */
 }
 
-.toggle-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: var(--sidebar-text);
-  margin-left: auto;
-}
-
-.menu-items {
+.nav-items {
   list-style: none;
-  padding: 20px 0;
+  padding: 0;
   margin: 0;
+  display: flex;
+  gap: 15px; /* Khoảng cách giữa các icon */
 }
 
-.menu-items li a {
+.nav-items li a {
   display: flex;
   align-items: center;
-  padding: 15px 25px;
+  justify-content: center;
+  padding: 10px;
   text-decoration: none;
-  color: var(--sidebar-text);
-  white-space: nowrap;
-  overflow: hidden;
+  color: #555;
+  border-radius: 8px;
   transition: background-color var(--transition-speed);
 }
 
-.menu-items li a:hover {
-  background-color: var(--sidebar-hover-bg);
+.nav-items li a:hover {
+  background-color: #f1f1f1;
 }
 
-.menu-icon {
-  font-size: 20px;
-  min-width: 30px;
+/* Thêm style cho mục menu đang được chọn (active) */
+.nav-items li a.active {
+  background-color: var(--primary-color);
+  color: #ffffff;
 }
 
-.menu-text {
-  margin-left: 20px;
-  opacity: 1;
-  transition: opacity var(--transition-speed);
+.nav-icon {
+  font-size: 24px; /* Kích thước icon to, rõ ràng */
 }
 
-.sidebar.collapsed .menu-text {
-  opacity: 0;
-  width: 0;
-}
-
-/* --- MAIN CONTENT --- */
+/* --- NỘI DUNG CHÍNH --- */
 .main-content {
   flex-grow: 1;
   padding: 20px;
@@ -143,14 +117,14 @@
   overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  /* Giới hạn chiều cao và tạo thanh cuộn dọc */
-  max-height: calc(100vh - 250px); /* 100vh trừ đi chiều cao của header, filter... */
+  /* Giới hạn chiều cao và tạo thanh cuộn dọc - ĐÃ CẬP NHẬT */
+  max-height: calc(100vh - 150px); 
   overflow-y: auto;
 }
 
 .inventory-table {
   width: 100%;
-  border-collapse: collapse; /* Đổi về collapse để tính toán dễ hơn */
+  border-collapse: collapse;
 }
 
 .inventory-table td {
@@ -159,14 +133,13 @@
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
   white-space: nowrap;
-  vertical-align: top; /* Căn lề trên cho nội dung trong ô */
+  vertical-align: top;
 }
 
-/* Đặt chiều cao tối đa cho các ô có thể xuống dòng */
 .inventory-table td:nth-child(3), /* Tên hàng */
 .inventory-table td:nth-child(7) { /* Quy cách */
-  max-height: 75px; /* Chiều cao tối đa (tương đương 3-4 dòng) */
-  overflow-y: auto; /* Thêm thanh cuộn dọc bên trong ô khi cần */
+  max-height: 75px;
+  overflow-y: auto;
   white-space: normal;
   word-wrap: break-word;
 }
@@ -178,7 +151,6 @@
   z-index: 2;
 }
 
-/* Các cột không bị đóng băng */
 .inventory-table td {
   background-color: #ffffff;
 }
@@ -192,7 +164,6 @@
   font-weight: 500;
 }
 
-/* Cột 1 - Đóng băng */
 .inventory-table th:nth-child(1),
 .inventory-table td:nth-child(1) {
   position: sticky;
@@ -202,27 +173,24 @@
   z-index: 1;
 }
 
-/* Cột 2 - Đóng băng */
 .inventory-table th:nth-child(2),
 .inventory-table td:nth-child(2) {
   position: sticky;
-  left: 120px; /* Bắt đầu ngay sau cột 1 */
+  left: 120px;
   width: 150px;
   min-width: 150px;
   z-index: 1;
 }
 
-/* Cột 3 - Đóng băng */
 .inventory-table th:nth-child(3),
 .inventory-table td:nth-child(3) {
   position: sticky;
-  left: 270px; /* 120 + 150 */
+  left: 270px;
   width: 300px;
   min-width: 300px;
   z-index: 1;
 }
 
-/* Đảm bảo tiêu đề bị đóng băng luôn có nền đúng và nằm trên cùng */
 .inventory-table th:nth-child(1),
 .inventory-table th:nth-child(2),
 .inventory-table th:nth-child(3) {
@@ -230,14 +198,12 @@
   background-color: #f8f9fa;
 }
 
-/* Đảm bảo các ô nội dung bị đóng băng có nền đúng */
 .inventory-table td:nth-child(1),
 .inventory-table td:nth-child(2),
 .inventory-table td:nth-child(3) {
   background-color: #ffffff;
 }
 
-/* Áp dụng lại hiệu ứng hover và selected cho các ô bị đóng băng */
 .inventory-table tbody tr:hover td:nth-child(1),
 .inventory-table tbody tr:hover td:nth-child(2),
 .inventory-table tbody tr:hover td:nth-child(3) {
@@ -249,20 +215,18 @@
   background-color: #d6eaff !important;
 }
 
-/* Đặt chiều rộng tối thiểu cho cột Tên hàng */
 .inventory-table th:nth-child(3), 
 .inventory-table td:nth-child(3) {
   white-space: normal;
   word-wrap: break-word;
-  min-width: 350px; /* Chiều rộng mong muốn của bạn */
+  min-width: 350px;
 }
 
-/* Đặt chiều rộng tối thiểu cho Quy cách và Hãng SX */
 .inventory-table th:nth-child(7), .inventory-table td:nth-child(7),
 .inventory-table th:nth-child(12), .inventory-table td:nth-child(12) {
   white-space: normal;
   word-wrap: break-word;
-  min-width: 175px; /* Chiều rộng mong muốn của bạn */
+  min-width: 175px;
 }
 
 /* --- MODAL (POPUP) --- */
@@ -276,7 +240,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1010; /* Tăng z-index để nổi trên navbar */
 }
 
 .modal-content {
@@ -285,6 +249,9 @@
   border-radius: 8px;
   width: 500px;
   max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
 }
 
 .modal-content h2 {
@@ -296,6 +263,12 @@
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+}
+
+.modal-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 10px 0;
 }
 
 /* --- BUTTONS & FORMS --- */
@@ -338,19 +311,17 @@
   transition: background-color 0.2s;
 }
 
-.btn-edit {
-  color: #007bff;
-}
-.btn-edit:hover {
-  background-color: #e7f3ff;
-}
+.btn-edit { color: #007bff; }
+.btn-edit:hover { background-color: #e7f3ff; }
 
-.btn-delete {
-  color: #dc3545;
-}
-.btn-delete:hover {
-  background-color: #fbebee;
-}
+.btn-delete { color: #dc3545; }
+.btn-delete:hover { background-color: #fbebee; }
+
+.btn-confirm { color: #28a745; }
+.btn-confirm:hover { background-color: #eaf6ec; }
+
+.btn-view { color: #17a2b8; }
+.btn-view:hover { background-color: #e8f6f8; }
 
 .form-section {
   background-color: #fff;
@@ -387,6 +358,7 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 20px;
+  gap: 10px;
 }
 
 /* --- GRID NHẬP LIỆU --- */
@@ -457,6 +429,10 @@
   background-color: #28a745;
 }
 
+.status-cancelled {
+  background-color: #6c757d;
+}
+
 .filters-container {
   background-color: #fff;
   padding: 15px;
@@ -496,50 +472,37 @@
   border-color: var(--primary-color);
 }
 
-/* Căn giữa nội dung trong bảng tồn kho */
 .inventory-table td {
   text-align: center;
 }
 
-/* Giữ lại căn trái cho cột Tên hàng (cột thứ 3) */
 .inventory-table td:nth-child(3) {
   text-align: left;
 }
 
-/* --- CSS CHO CẢNH BÁO HẠN SỬ DỤNG (CẬP NHẬT MÀU SẮC) --- */
+/* --- CSS CHO CẢNH BÁO HẠN SỬ DỤNG --- */
+.inventory-table-body tr.near-expiry-yellow td { background-color: #ffe08a; }
+.inventory-table-body tr.near-expiry-orange td { background-color: #ffb74d; }
+.inventory-table-body tr.near-expiry-red td { background-color: #ef9a9a; }
+.inventory-table-body tr.expired-black td { background-color: #a0a0a0; color: #fff; }
 
-/* Áp dụng màu nền trực tiếp cho các Ô (td) để tăng độ ưu tiên */
-.inventory-table-body tr.near-expiry-yellow td { background-color: #ffe08a; } /* Vàng đậm hơn */
-.inventory-table-body tr.near-expiry-orange td { background-color: #ffb74d; } /* Cam đậm hơn */
-.inventory-table-body tr.near-expiry-red td { background-color: #ef9a9a; } /* Đỏ đậm hơn */
-.inventory-table-body tr.expired-black td { background-color: #a0a0a0; color: #fff; } /* Nền xám đậm, chữ trắng */
-
-/* Màu chữ đậm hơn cho các dòng cảnh báo */
 .inventory-table-body tr.near-expiry-yellow td,
 .inventory-table-body tr.near-expiry-orange td,
 .inventory-table-body tr.near-expiry-red td {
     font-weight: 500;
 }
 
-/* Đặc biệt cho hàng hết hạn */
 .inventory-table-body tr.expired-black td {
     font-weight: bold;
     text-decoration: line-through;
 }
 
-/* Khi di chuột qua hoặc chọn một dòng cảnh báo, nó sẽ có màu xanh như bình thường */
-.inventory-table-body tr.near-expiry-yellow:hover td,
-.inventory-table-body tr.near-expiry-orange:hover td,
-.inventory-table-body tr.near-expiry-red:hover td,
-.inventory-table-body tr.expired-black:hover td,
-.inventory-table-body tr.near-expiry-yellow.selected-row td,
-.inventory-table-body tr.near-expiry-orange.selected-row td,
-.inventory-table-body tr.near-expiry-red.selected-row td,
-.inventory-table-body tr.expired-black.selected-row td {
+.inventory-table-body tr:hover td,
+.inventory-table-body tr.selected-row td {
   background-color: #d6eaff !important;
 }
 
-/* --- CSS CHO TEAM BADGE --- */
+/* --- BADGES (TEAM & TEMP) --- */
 .team-badge {
   padding: 4px 10px;
   border-radius: 12px;
@@ -547,49 +510,134 @@
   font-weight: 500;
   color: #fff;
 }
+.team-badge.team-med { background-color: #007bff; }
+.team-badge.team-bio { background-color: #28a745; }
+.team-badge.team-sparepart { background-color: #6c757d; }
 
-.team-badge.team-med {
-  background-color: #007bff; /* Xanh dương */
-}
-
-.team-badge.team-bio {
-  background-color: #28a745; /* Xanh lá */
-}
-
-.team-badge.team-sparepart {
-  background-color: #6c757d; /* Xám */
-}
-
-/* --- CSS CHO TEMP BADGE --- */
 .temp-badge {
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 13px;
-  font-weight: 500; /* Thêm độ đậm cho chữ */
+  font-weight: 500;
   display: inline-block; 
 }
+.temp-badge.temp-cool { background-color: #a7d9f2; color: #0056b3; }
+.temp-badge.temp-frozen { background-color: #c9b6e7; color: #4a148c; }
+.temp-badge.temp-room { background-color: #b3e6b3; color: #28a745; }
+.temp-badge.temp-other { background-color: #ced4da; color: #343a40; border: 1px solid #adb5bd; }
 
-/* 2 → 8°C: Xanh dương đậm hơn */
-.temp-badge.temp-cool {
-  background-color: #a7d9f2; /* Màu xanh dương sáng hơn, dễ nhìn */
-  color: #0056b3; /* Chữ xanh dương đậm */
+/* --- TÌM KIẾM & BỘ LỌC --- */
+.controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-/* -25 → -15°C: Tím đậm hơn */
-.temp-badge.temp-frozen {
-  background-color: #c9b6e7; /* Màu tím sáng hơn */
-  color: #4a148c; /* Chữ tím đậm */
+.search-container {
+  flex-grow: 1;
+  max-width: 400px;
 }
 
-/* Nhiệt độ phòng: Xanh lá đậm hơn */
-.temp-badge.temp-room {
-  background-color: #b3e6b3; /* Màu xanh lá sáng hơn */
-  color: #28a745; /* Chữ xanh lá đậm */
+.search-input {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 14px;
+  border-radius: 20px;
+  border: 1px solid #dee2e6;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-/* Các loại khác: Xám đậm hơn */
-.temp-badge.temp-other {
-  background-color: #ced4da; /* Màu xám đậm hơn */
-  color: #343a40; /* Chữ đen đậm */
-  border: 1px solid #adb5bd;
+.search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.filters-container {
+  margin-bottom: 0;
+  box-shadow: none;
+  padding: 0;
+  background-color: transparent;
+}
+
+/* --- DROPDOWN SỐ LÔ (FEFO) --- */
+.lot-option-near-expiry { background-color: #ffe08a; color: #333; }
+.lot-option-expired { background-color: #ef9a9a; color: #fff; font-weight: bold; text-decoration: line-through; }
+
+/* --- HIỂN THỊ LÔ ĐÃ CHỌN --- */
+.selected-lot-view {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 38px;
+}
+
+.selected-lot-input {
+  width: calc(100% - 38px); 
+  height: 100%;
+  border-right: none !important;
+  border-radius: 4px 0 0 4px !important;
+  background-color: #e9ecef !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+
+.change-lot-btn {
+  width: 38px;
+  height: 100%;
+  border: 1px solid #ced4da;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  background: #f8f9fa;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+
+.change-lot-btn svg {
+  width: 16px;
+  height: 16px;
+  color: #495057;
+}
+
+.change-lot-btn:hover {
+  background-color: #e2e6ea;
+}
+
+/* --- GIAO DIỆN XEM CHI TIẾT NHỎ GỌN --- */
+.compact-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0px 20px;
+  border: 1px solid var(--border-color);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.compact-info-grid div {
+  margin-bottom: 5px;
+}
+
+.compact-info-grid label {
+  font-size: 13px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.compact-info-grid p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.compact-info-grid .info-description {
+  grid-column: 1 / -1;
+  margin-top: 5px;
 }

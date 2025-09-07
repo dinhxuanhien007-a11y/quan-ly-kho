@@ -1,0 +1,3456 @@
+﻿--- FILE: D:\quan-ly-kho\src\components\AddProductModal.jsx ---
+
+
+// src/components/AddProductModal.jsx
+import React, { useState } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore'; // Import cÃ¡c hÃ m cá»§a Firestore
+
+const AddProductModal = ({ onClose, onProductAdded }) => {
+  // State cho táº¥t cáº£ cÃ¡c trÆ°á»ng thÃ´ng tin
+  const [productId, setProductId] = useState('');
+  const [productName, setProductName] = useState('');
+  const [unit, setUnit] = useState('');
+  const [packaging, setPackaging] = useState('');
+  const [storageTemp, setStorageTemp] = useState('');
+  const [manufacturer, setManufacturer] = useState('');
+  const [team, setTeam] = useState('MED'); // Máº·c Ä‘á»‹nh lÃ  team MED
+  const [isSaving, setIsSaving] = useState(false);
+
+  // HÃ m handleSubmit Ä‘Ã£ Ä‘Æ°á»£c cáº­p nháº­t
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!productId) {
+      alert('MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.');
+      return;
+    }
+    setIsSaving(true);
+
+    try {
+      // Táº¡o object dá»¯ liá»‡u hoÃ n chá»‰nh
+      const newProductData = {
+        productName,
+        unit,
+        packaging,
+        storageTemp,
+        manufacturer,
+        team,
+      };
+
+      // Tham chiáº¿u Ä‘áº¿n document sáº£n pháº©m
+      const productRef = doc(db, 'products', productId);
+      // Ghi dá»¯ liá»‡u vÃ o Firestore
+      await setDoc(productRef, newProductData);
+
+      alert('ThÃªm sáº£n pháº©m má»›i thÃ nh cÃ´ng!');
+      onProductAdded(); // Gá»i hÃ m Ä‘á»ƒ Ä‘Ã³ng modal vÃ  táº£i láº¡i danh sÃ¡ch
+
+    } catch (error) {
+      console.error("Lá»—i khi thÃªm sáº£n pháº©m: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi thÃªm sáº£n pháº©m.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content">
+        <h2>ThÃªm sáº£n pháº©m má»›i</h2>
+        <form onSubmit={handleSubmit}>
+          {/* MÃ£ hÃ ng vÃ  TÃªn hÃ ng */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>MÃ£ hÃ ng (ID)</label>
+              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>TÃªn hÃ ng</label>
+              <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} required />
+            </div>
+          </div>
+
+          {/* ÄVT vÃ  Quy cÃ¡ch */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>ÄÆ¡n vá»‹ tÃ­nh</label>
+              <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>Quy cÃ¡ch Ä‘Ã³ng gÃ³i</label>
+              <input type="text" value={packaging} onChange={(e) => setPackaging(e.target.value)} />
+            </div>
+          </div>
+          
+          {/* Nhiá»‡t Ä‘á»™ vÃ  HÃ£ng SX */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Nhiá»‡t Ä‘á»™ báº£o quáº£n</label>
+              <input type="text" value={storageTemp} onChange={(e) => setStorageTemp(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>HÃ£ng sáº£n xuáº¥t</label>
+              <input type="text" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+            </div>
+          </div>
+
+          {/* Team */}
+          <div className="form-group">
+            <label>Team</label>
+            <select value={team} onChange={(e) => setTeam(e.target.value)}>
+              <option value="MED">MED</option>
+              <option value="BIO">BIO</option>
+              <option value="Spare Part">Spare Part</option>
+            </select>
+          </div>
+          
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
+            <button type="submit" className="btn-primary" disabled={isSaving}>
+              {isSaving ? 'Äang lÆ°u...' : 'LÆ°u'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddProductModal;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\AdminLayout.jsx ---
+
+
+// src/components/AdminLayout.jsx
+import React from 'react';
+import Sidebar from './Sidebar';
+import '../styles/AdminLayout.css';
+import { Routes, Route } from 'react-router-dom';
+import DashboardPage from '../pages/DashboardPage';
+import ProductsPage from '../pages/ProductsPage';
+import NewImportPage from '../pages/NewImportPage';
+import ImportListPage from '../pages/ImportListPage';
+import NewExportPage from '../pages/NewExportPage'; // Má»šI: Import trang má»›i
+import ExportListPage from '../pages/ExportListPage';
+
+const AdminLayout = () => {
+  return (
+    <div className="admin-layout">
+      <Sidebar />
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/new-import" element={<NewImportPage />} />
+          {/* Cáº¬P NHáº¬T: Sá»­ dá»¥ng trang NewExportPage tháº­t */}
+          <Route path="/new-export" element={<NewExportPage />} />
+          <Route path="/imports" element={<ImportListPage />} />
+          <Route path="/exports" element={<ExportListPage />} />
+        </Routes>
+      </main>
+    </div>
+  );
+};
+
+export default AdminLayout;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
+
+
+// src/components/EditImportSlipModal.jsx
+
+import React, { useState } from 'react';
+import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
+
+const EditImportSlipModal = ({ slip, onClose, onSave }) => {
+  const [slipData, setSlipData] = useState({ ...slip });
+
+  const handleItemChange = (index, field, value) => {
+    const updatedItems = [...slipData.items];
+    updatedItems[index][field] = value;
+    setSlipData({ ...slipData, items: updatedItems });
+  };
+
+  const addNewRow = () => {
+    const newItems = [
+      ...slipData.items,
+      {
+        id: Date.now(),
+        productId: '', productName: '', lotNumber: '', expiryDate: '',
+        unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: ''
+      }
+    ];
+    setSlipData({ ...slipData, items: newItems });
+  };
+
+  const removeRow = (indexToRemove) => {
+    const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
+    setSlipData({ ...slipData, items: newItems });
+  };
+
+  const handleSaveChanges = () => {
+    onSave(slipData);
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
+        <h2>Chá»‰nh sá»­a Phiáº¿u Nháº­p Kho (ID: {slipData.id})</h2>
+
+        <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
+        {/* Sá»¬ Dá»¤NG Láº I LAYOUT GRID Äáº¦Y Äá»¦ */}
+        <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+          {/* TiÃªu Ä‘á» Grid */}
+          <div className="grid-header">MÃ£ hÃ ng</div>
+          <div className="grid-header">TÃªn hÃ ng</div>
+          <div className="grid-header">Sá»‘ lÃ´</div>
+          <div className="grid-header">HSD</div>
+          <div className="grid-header">ÄVT</div>
+          <div className="grid-header">Quy cÃ¡ch</div>
+          <div className="grid-header">Sá»‘ lÆ°á»£ng</div>
+          <div className="grid-header">Ghi chÃº</div>
+          <div className="grid-header">Thao tÃ¡c</div>
+
+          {/* Láº·p qua danh sÃ¡ch hÃ ng hÃ³a vÃ  hiá»ƒn thá»‹ trong cÃ¡c Ã´ input */}
+          {slipData.items.map((item, index) => (
+            <React.Fragment key={index}>
+              <div className="grid-cell"><input type="text" value={item.productId} onChange={e => handleItemChange(index, 'productId', e.target.value)} /></div>
+              <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+              <div className="grid-cell"><input type="text" value={item.lotNumber} onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} /></div>
+              <div className="grid-cell"><input type="text" placeholder="dd/mm/yyyy" value={item.expiryDate} onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} /></div>
+              <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+              <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+              <div className="grid-cell"><input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} /></div>
+              <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+              <div className="grid-cell">
+                <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
+                  <FiXCircle />
+                </button>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+
+        <button type="button" onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>
+          <FiPlusCircle style={{ marginRight: '5px' }} />
+          ThÃªm dÃ²ng
+        </button>
+
+        <div className="modal-actions">
+          <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
+          <button type="button" onClick={handleSaveChanges} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditImportSlipModal;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\EditProductModal.jsx ---
+
+
+// src/components/EditProductModal.jsx
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, updateDoc } from 'firebase/firestore';
+
+// Component nháº­n vÃ o productToEdit chá»©a thÃ´ng tin sáº£n pháº©m cáº§n sá»­a
+const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
+  // DÃ¹ng useState Ä‘á»ƒ quáº£n lÃ½ state cá»§a form, vá»›i giÃ¡ trá»‹ khá»Ÿi táº¡o lÃ  thÃ´ng tin sáº£n pháº©m cÅ©
+  const [productData, setProductData] = useState({ ...productToEdit });
+  const [isSaving, setIsSaving] = useState(false);
+
+  // HÃ m Ä‘á»ƒ cáº­p nháº­t state khi ngÆ°á»i dÃ¹ng thay Ä‘á»•i input
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProductData(prevData => ({ ...prevData, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      // Tham chiáº¿u Ä‘áº¿n document cáº§n cáº­p nháº­t
+      const productDocRef = doc(db, 'products', productToEdit.id);
+      // DÃ¹ng hÃ m updateDoc Ä‘á»ƒ cáº­p nháº­t
+      await updateDoc(productDocRef, productData);
+      
+      alert('Cáº­p nháº­t sáº£n pháº©m thÃ nh cÃ´ng!');
+      onProductUpdated(); // BÃ¡o cho trang cha Ä‘á»ƒ Ä‘Ã³ng modal vÃ  táº£i láº¡i danh sÃ¡ch
+    } catch (error) {
+      console.error("Lá»—i khi cáº­p nháº­t sáº£n pháº©m: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t sáº£n pháº©m.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content">
+        <h2>Sá»­a thÃ´ng tin sáº£n pháº©m</h2>
+        {/* MÃ£ hÃ ng sáº½ khÃ´ng Ä‘Æ°á»£c sá»­a */}
+        <p><strong>MÃ£ hÃ ng:</strong> {productToEdit.id}</p>
+        <form onSubmit={handleSubmit}>
+          {/* TÃªn hÃ ng */}
+          <div className="form-group">
+            <label>TÃªn hÃ ng</label>
+            <input type="text" name="productName" value={productData.productName || ''} onChange={handleChange} required />
+          </div>
+          {/* ÄVT vÃ  Quy cÃ¡ch */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>ÄÆ¡n vá»‹ tÃ­nh</label>
+              <input type="text" name="unit" value={productData.unit || ''} onChange={handleChange} required />
+            </div>
+            <div className="form-group">
+              <label>Quy cÃ¡ch Ä‘Ã³ng gÃ³i</label>
+              <input type="text" name="packaging" value={productData.packaging || ''} onChange={handleChange} />
+            </div>
+          </div>
+          {/* Nhiá»‡t Ä‘á»™ vÃ  HÃ£ng SX */}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Nhiá»‡t Ä‘á»™ báº£o quáº£n</label>
+              <input type="text" name="storageTemp" value={productData.storageTemp || ''} onChange={handleChange} />
+            </div>
+            <div className="form-group">
+              <label>HÃ£ng sáº£n xuáº¥t</label>
+              <input type="text" name="manufacturer" value={productData.manufacturer || ''} onChange={handleChange} />
+            </div>
+          </div>
+          {/* Team */}
+          <div className="form-group">
+            <label>Team</label>
+            <select name="team" value={productData.team} onChange={handleChange}>
+              <option value="Med">Med</option>
+              <option value="Bio">Bio</option>
+              <option value="Spare Part">Spare Part</option>
+            </select>
+          </div>
+          
+          <div className="modal-actions">
+            <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
+            <button type="submit" className="btn-primary" disabled={isSaving}>
+              {isSaving ? 'Äang lÆ°u...' : 'LÆ°u thay Ä‘á»•i'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default EditProductModal;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\HomePage.jsx ---
+
+
+// src/components/HomePage.jsx
+
+import React from 'react';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+
+function HomePage({ user }) {
+  // THAY THáº¾ CONSOLE.LOG CÅ¨ Báº°NG 4 DÃ’NG NÃ€Y
+  console.log('--- DEBUGGING HOMEPAGE ---');
+  console.log('ToÃ n bá»™ object user:', user);
+  console.log('GiÃ¡ trá»‹ cá»§a user.email lÃ :', user?.email);
+  console.log('Kiá»ƒu dá»¯ liá»‡u cá»§a user.email lÃ :', typeof user?.email);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('ÄÄƒng xuáº¥t thÃ nh cÃ´ng!');
+    } catch (error) {
+      console.error('Lá»—i Ä‘Äƒng xuáº¥t:', error);
+    }
+  };
+
+  return (
+    <div className="homepage-container">
+      <h1>ChÃ o má»«ng trá»Ÿ láº¡i, {user?.email}!</h1>
+      <p>ÄÃ¢y lÃ  trang quáº£n trá»‹ kho cá»§a báº¡n.</p>
+      <button onClick={handleLogout} className="logout-button">
+        ÄÄƒng xuáº¥t
+      </button>
+    </div>
+  );
+}
+
+export default HomePage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\InventoryFilters.jsx ---
+
+
+// src/components/InventoryFilters.jsx
+import React from 'react';
+
+const InventoryFilters = ({ userRole, onFilterChange, activeFilters }) => {
+    
+  const handleTeamFilter = (team) => {
+    if (activeFilters.team === team) {
+      onFilterChange('team', 'all');
+    } else {
+      onFilterChange('team', team);
+    }
+  };
+
+  const handleDateFilter = (status) => {
+    if (activeFilters.dateStatus === status) {
+      onFilterChange('dateStatus', 'all');
+    } else {
+      onFilterChange('dateStatus', status);
+    }
+  };
+
+  return (
+    <div className="filters-container">
+      {/* Bá»™ lá»c theo Team */}
+      {/* Chá»‰ hiá»ƒn thá»‹ bá»™ lá»c team náº¿u lÃ  admin, owner, hoáº·c bio */}
+      {(userRole === 'admin' || userRole === 'owner' || userRole === 'bio') && (
+        <div className="filter-group">
+          {/* Chá»‰ admin/owner má»›i tháº¥y nÃºt lá»c MED vÃ  BIO */}
+          {(userRole === 'admin' || userRole === 'owner') && (
+            <>
+              <button
+                className={activeFilters.team === 'MED' ? 'active' : ''}
+                onClick={() => handleTeamFilter('MED')}
+              >
+                Lá»c hÃ ng MED
+              </button>
+              <button
+                className={activeFilters.team === 'BIO' ? 'active' : ''}
+                onClick={() => handleTeamFilter('BIO')}
+              >
+                Lá»c hÃ ng BIO
+              </button>
+            </>
+          )}
+          
+          {/* Admin/owner vÃ  bio Ä‘á»u tháº¥y nÃºt nÃ y */}
+          <button
+            className={activeFilters.team === 'Spare Part' ? 'active' : ''}
+            onClick={() => handleTeamFilter('Spare Part')}
+          >
+            Lá»c hÃ ng Spare Part
+          </button>
+        </div>
+      )}
+      
+      {/* Bá»™ lá»c theo HSD */}
+      <div className="filter-group">
+        <button
+          className={activeFilters.dateStatus === 'near_expiry' ? 'active' : ''}
+          onClick={() => handleDateFilter('near_expiry')}
+        >
+          Lá»c hÃ ng cáº­n date (&lt;120 ngÃ y)
+        </button>
+        <button
+          className={activeFilters.dateStatus === 'expired' ? 'active' : ''}
+          onClick={() => handleDateFilter('expired')}
+        >
+          Lá»c hÃ ng Ä‘Ã£ háº¿t HSD
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default InventoryFilters;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\LoginPage.jsx ---
+
+
+// src/components/LoginPage.jsx
+
+import React, { useState } from 'react';
+// BÆ°á»›c 1: Import cÃ¡c hÃ m cáº§n thiáº¿t tá»« Firebase
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebaseConfig'; // Import Ä‘á»‘i tÆ°á»£ng 'auth'
+
+function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // BÆ°á»›c 2: Cáº­p nháº­t hÃ m handleLogin
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // ÄÄƒng nháº­p thÃ nh cÃ´ng
+      console.log('ÄÄƒng nháº­p thÃ nh cÃ´ng!', userCredential.user);
+      alert('ÄÄƒng nháº­p thÃ nh cÃ´ng!');
+    } catch (error) {
+      // Xá»­ lÃ½ lá»—i
+      console.error('Lá»—i Ä‘Äƒng nháº­p:', error.code, error.message);
+      alert('Sai email hoáº·c máº­t kháº©u. Vui lÃ²ng thá»­ láº¡i!');
+    }
+  };
+
+  return (
+    <div className="login-container">
+      <h2>ÄÄƒng Nháº­p Há»‡ Thá»‘ng</h2>
+      <form onSubmit={handleLogin}>
+        <div className="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>Máº­t kháº©u</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit">ÄÄƒng nháº­p</button>
+      </form>
+    </div>
+  );
+}
+
+export default LoginPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\Sidebar.jsx ---
+
+
+// src/components/Sidebar.jsx
+
+import React, { useState } from 'react';
+// Cáº¬P NHáº¬T: Thay Ä‘á»•i bá»™ icon cho phÃ¹ há»£p
+import { FiHome, FiArchive, FiPlusCircle, FiMinusCircle, FiFileText, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
+import { NavLink } from 'react-router-dom';
+import '../styles/AdminLayout.css';
+
+const Sidebar = () => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div className={collapsed ? "sidebar collapsed" : "sidebar"}>
+      <div className="sidebar-header">
+        <h2 className="logo">{collapsed ? "K" : "Kho PT Biomed"}</h2>
+        <button className="toggle-btn" onClick={() => setCollapsed(!collapsed)}>
+          {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
+        </button>
+      </div>
+      <ul className="menu-items">
+        <li>
+          <NavLink to="/">
+            <FiHome className="menu-icon" />
+            <span className="menu-text">Báº£ng Ä‘iá»u khiá»ƒn</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/products">
+            <FiArchive className="menu-icon" />
+            <span className="menu-text">Quáº£n lÃ½ hÃ ng hÃ³a</span>
+          </NavLink>
+        </li>
+        {/* Cáº¬P NHáº¬T: Äá»•i icon thÃ nh FiPlusCircle */}
+        <li>
+          <NavLink to="/new-import">
+            <FiPlusCircle className="menu-icon" />
+            <span className="menu-text">Táº¡o Phiáº¿u Nháº­p</span>
+          </NavLink>
+        </li>
+        {/* Cáº¬P NHáº¬T: Äá»•i icon thÃ nh FiMinusCircle */}
+        <li>
+          <NavLink to="/new-export">
+            <FiMinusCircle className="menu-icon" />
+            <span className="menu-text">Táº¡o Phiáº¿u Xuáº¥t</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/imports">
+            <FiFileText className="menu-icon" />
+            <span className="menu-text">DS Phiáº¿u Nháº­p</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/exports">
+            <FiFileText className="menu-icon" />
+            <span className="menu-text">DS Phiáº¿u Xuáº¥t</span>
+          </NavLink>
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+export default Sidebar;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\TeamBadge.jsx ---
+
+
+// src/components/TeamBadge.jsx
+import React from 'react';
+
+const TeamBadge = ({ team }) => {
+  let className = 'team-badge';
+  switch (team) {
+    case 'MED':
+      className += ' team-med';
+      break;
+    case 'BIO':
+      className += ' team-bio';
+      break;
+    case 'Spare Part':
+      className += ' team-sparepart';
+      break;
+    default:
+      break;
+  }
+
+  return <span className={className}>{team}</span>;
+};
+
+export default TeamBadge;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\TempBadge.jsx ---
+
+
+// src/components/TempBadge.jsx
+import React from 'react';
+
+const TempBadge = ({ temperature }) => {
+  let className = 'temp-badge';
+  const tempString = temperature?.toLowerCase() || '';
+
+  if (tempString.includes('2') && tempString.includes('8')) {
+    className += ' temp-cool'; // 2 -> 8Â°C
+  } else if (tempString.includes('-15') || tempString.includes('-25')) {
+    className += ' temp-frozen'; // -25 -> -15Â°C
+  } else if (tempString.includes('phÃ²ng')) {
+    className += ' temp-room'; // Nhiá»‡t Ä‘á»™ phÃ²ng
+  } else {
+    className += ' temp-other'; // CÃ¡c loáº¡i khÃ¡c
+  }
+
+  return <span className={className}>{temperature}</span>;
+};
+
+export default TempBadge;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\ViewerLayout.jsx ---
+
+
+// src/components/ViewerLayout.jsx
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import InventoryPage from '../pages/InventoryPage';
+
+// Nháº­n props tá»« App.jsx
+const ViewerLayout = ({ user, userRole }) => {
+  return (
+    <div style={{ padding: '20px' }}>
+      <Routes>
+        {/* Truyá»n props xuá»‘ng cho InventoryPage */}
+        <Route path="/" element={<InventoryPage user={user} userRole={userRole} />} />
+      </Routes>
+    </div>
+  );
+};
+
+export default ViewerLayout;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
+
+
+// src/components/ViewExportSlipModal.jsx
+
+import React from 'react';
+
+const ViewExportSlipModal = ({ slip, onClose }) => {
+  if (!slip) return null;
+
+  const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
+
+  const handlePrint = () => {
+    window.print();
+  };
+  
+  const renderStatusBadge = (status) => {
+    let text = status;
+    switch (status) {
+        case 'pending': text = 'Äang soáº¡n hÃ ng'; break;
+        case 'completed': text = 'HoÃ n thÃ nh'; break;
+        case 'cancelled': text = 'ÄÃ£ há»§y'; break;
+        default: text = status;
+    }
+    return <span className={`status-badge status-${status}`}>{text}</span>;
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
+        <h2>Chi Tiáº¿t Phiáº¿u Xuáº¥t Kho</h2>
+        
+        <div className="compact-info-grid">
+            <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
+            <div><label>KhÃ¡ch hÃ ng</label><p><strong>{slip.customer}</strong></p></div>
+            <div><label>NgÃ y táº¡o</label><p><strong>{slip.createdAt?.toDate().toLocaleString('vi-VN')}</strong></p></div>
+            <div><label>Tráº¡ng thÃ¡i</label><p>{renderStatusBadge(slip.status)}</p></div>
+            <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
+        </div>
+        
+        <div className="modal-body">
+            <h3 style={{marginTop: '10px'}}>Chi tiáº¿t hÃ ng hÃ³a</h3>
+            <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
+                <table className="products-table">
+                    <thead>
+                        <tr>
+                            <th>MÃ£ hÃ ng</th>
+                            <th>TÃªn hÃ ng</th>
+                            <th>Sá»‘ lÃ´</th>
+                            <th>HSD</th>
+                            <th>ÄVT</th>
+                            <th>Quy cÃ¡ch</th>
+                            <th>SL xuáº¥t</th>
+                            <th>Nhiá»‡t Ä‘á»™ BQ</th>
+                            {hasNotes && <th>Ghi chÃº</th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {slip.items.map((item, index) => (
+                            <tr key={index}>
+                                <td>{item.productId}</td>
+                                <td>{item.productName}</td>
+                                <td>{item.lotNumber}</td>
+                                <td>{item.expiryDate}</td>
+                                <td>{item.unit}</td>
+                                <td>{item.packaging}</td>
+                                <td>{item.quantityToExport || item.quantityExported}</td>
+                                <td>{item.storageTemp}</td>
+                                {hasNotes && <td>{item.notes}</td>}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" onClick={handlePrint} className="btn-secondary">In Phiáº¿u</button>
+          <button type="button" onClick={onClose} className="btn-primary">ÄÃ³ng</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ViewExportSlipModal;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
+
+
+// src/components/ViewImportSlipModal.jsx
+
+import React from 'react';
+
+const ViewImportSlipModal = ({ slip, onClose }) => {
+  if (!slip) return null;
+
+  const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
+        <h2>Chi Tiáº¿t Phiáº¿u Nháº­p Kho</h2>
+        
+        <div className="compact-info-grid">
+            <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
+            <div><label>NhÃ  cung cáº¥p</label><p><strong>{slip.supplier}</strong></p></div>
+            <div><label>NgÃ y táº¡o</label><p><strong>{slip.createdAt?.toDate().toLocaleString('vi-VN')}</strong></p></div>
+            <div><label>Tráº¡ng thÃ¡i</label><p><span className={`status-badge status-${slip.status}`}>{slip.status === 'pending' ? 'Äang chá»' : 'HoÃ n thÃ nh'}</span></p></div>
+            <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
+        </div>
+
+        <div className="modal-body">
+            <h3 style={{marginTop: '10px'}}>Chi tiáº¿t hÃ ng hÃ³a</h3>
+            <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
+                <table className="products-table">
+                    <thead>
+                        <tr>
+                            <th>MÃ£ hÃ ng</th>
+                            <th>TÃªn hÃ ng</th>
+                            <th>Sá»‘ lÃ´</th>
+                            <th>HSD</th>
+                            <th>Sá»‘ lÆ°á»£ng</th>
+                            <th>ÄVT</th>
+                            <th>Quy cÃ¡ch</th>
+                            {hasNotes && <th>Ghi chÃº</th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {slip.items.map((item, index) => (
+                            <tr key={index}>
+                                <td>{item.productId}</td>
+                                <td>{item.productName}</td>
+                                <td>{item.lotNumber}</td>
+                                <td>{item.expiryDate}</td>
+                                <td>{item.quantity}</td>
+                                <td>{item.unit}</td>
+                                <td>{item.packaging}</td>
+                                {hasNotes && <td>{item.notes}</td>}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" onClick={handlePrint} className="btn-secondary">In Phiáº¿u</button>
+          <button type="button" onClick={onClose} className="btn-primary">ÄÃ³ng</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ViewImportSlipModal;
+
+
+
+--- FILE: D:\quan-ly-kho\src\pages\DashboardPage.jsx ---
+
+
+// src/pages/DashboardPage.jsx
+
+import React, { useState, useEffect } from 'react';
+import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import { FiArchive, FiAlertTriangle, FiFileText } from 'react-icons/fi';
+import '../styles/DashboardPage.css'; // File CSS riÃªng cho trang Dashboard
+
+// Component tÃ¡i sá»­ dá»¥ng Ä‘á»ƒ hiá»ƒn thá»‹ cÃ¡c tháº» thÃ´ng sá»‘
+const DashboardCard = ({ icon, tieuDe, giaTri, mauSac }) => (
+  <div className="dashboard-card" style={{ borderLeftColor: mauSac }}>
+    <div className="card-icon" style={{ backgroundColor: mauSac }}>{icon}</div>
+    <div className="card-info">
+      <div className="card-title">{tieuDe}</div>
+      <div className="card-value">{giaTri}</div>
+    </div>
+  </div>
+);
+
+const DashboardPage = () => {
+  const [thongKe, setThongKe] = useState({
+    tongSanPham: 0,
+    sapHetHan: 0,
+    phieuChoDuyet: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const layDuLieuDashboard = async () => {
+      setLoading(true);
+      try {
+        // 1. Láº¥y tá»•ng sá»‘ mÃ£ sáº£n pháº©m
+        const sanPhamSnapshot = await getDocs(collection(db, 'products'));
+        const tongSanPham = sanPhamSnapshot.size;
+
+        // 2. Láº¥y sá»‘ lÃ´ hÃ ng sáº¯p háº¿t háº¡n (trong vÃ²ng 30 ngÃ y tá»›i)
+        const baMuoiNgayToi = new Date();
+        baMuoiNgayToi.setDate(baMuoiNgayToi.getDate() + 30);
+        const qSapHetHan = query(
+          collection(db, 'inventory_lots'),
+          where('expiryDate', '<=', Timestamp.fromDate(baMuoiNgayToi)),
+          where('expiryDate', '>=', Timestamp.now()) // ThÃªm Ä‘iá»u kiá»‡n Ä‘á»ƒ khÃ´ng Ä‘áº¿m hÃ ng Ä‘Ã£ háº¿t háº¡n
+        );
+        const sapHetHanSnapshot = await getDocs(qSapHetHan);
+        const sapHetHan = sapHetHanSnapshot.size;
+
+        // 3. Láº¥y sá»‘ phiáº¿u nháº­p Ä‘ang á»Ÿ tráº¡ng thÃ¡i "chá»"
+        const qPhieuCho = query(collection(db, 'import_tickets'), where('status', '==', 'pending'));
+        const phieuChoSnapshot = await getDocs(qPhieuCho);
+        const phieuChoDuyet = phieuChoSnapshot.size;
+
+        setThongKe({ tongSanPham, sapHetHan, phieuChoDuyet });
+      } catch (error) {
+        console.error("Lá»—i khi láº¥y dá»¯ liá»‡u dashboard: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    layDuLieuDashboard();
+  }, []);
+
+  if (loading) {
+    return <div>Äang táº£i báº£ng Ä‘iá»u khiá»ƒn...</div>;
+  }
+
+  return (
+    <div className="dashboard-container">
+      <h1>Báº£ng Ä‘iá»u khiá»ƒn</h1>
+      <div className="cards-grid">
+        <DashboardCard
+          icon={<FiArchive />}
+          tieuDe="Tá»•ng sá»‘ mÃ£ hÃ ng"
+          giaTri={thongKe.tongSanPham}
+          mauSac="#007bff"
+        />
+        <DashboardCard
+          icon={<FiAlertTriangle />}
+          tieuDe="Sáº¯p háº¿t háº¡n (30 ngÃ y)"
+          giaTri={thongKe.sapHetHan}
+          mauSac="#ffc107"
+        />
+        <DashboardCard
+          icon={<FiFileText />}
+          tieuDe="Phiáº¿u chá» duyá»‡t"
+          giaTri={thongKe.phieuChoDuyet}
+          mauSac="#6c757d"
+        />
+      </div>
+    </div>
+  );
+};
+
+export default DashboardPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\pages\ExportListPage.jsx ---
+
+
+// src/pages/ExportListPage.jsx
+
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, orderBy, doc, updateDoc, getDoc } from 'firebase/firestore';
+import ViewExportSlipModal from '../components/ViewExportSlipModal'; // Má»šI
+import { FiCheckCircle, FiXCircle, FiEdit, FiEye } from 'react-icons/fi'; // Má»šI
+
+const ExportListPage = () => {
+  const [exportSlips, setExportSlips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSlip, setSelectedSlip] = useState(null); // Má»šI
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // Má»šI
+
+  const fetchExportSlips = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, "export_tickets"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const slipsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setExportSlips(slipsList);
+    } catch (error) {
+      console.error("Lá»—i khi láº¥y danh sÃ¡ch phiáº¿u xuáº¥t: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExportSlips();
+  }, []);
+
+  const handleConfirmExport = async (slip) => {
+    if (!window.confirm(`Báº¡n cÃ³ cháº¯c muá»‘n xÃ¡c nháº­n xuáº¥t kho cho phiáº¿u cá»§a khÃ¡ch hÃ ng "${slip.customer}" khÃ´ng?`)) {
+      return;
+    }
+    try {
+      for (const item of slip.items) {
+        const lotRef = doc(db, 'inventory_lots', item.lotId);
+        const lotSnap = await getDoc(lotRef);
+        if (lotSnap.exists()) {
+          const currentQuantity = lotSnap.data().quantityRemaining;
+          const newQuantityRemaining = currentQuantity - item.quantityToExport;
+          if (newQuantityRemaining < 0) {
+            alert(`Lá»—i: Tá»“n kho cá»§a lÃ´ ${item.lotNumber} khÃ´ng Ä‘á»§ Ä‘á»ƒ xuáº¥t.`);
+            return;
+          }
+          await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
+        }
+      }
+      const slipRef = doc(db, 'export_tickets', slip.id);
+      await updateDoc(slipRef, { status: 'completed' });
+      alert('XÃ¡c nháº­n xuáº¥t kho thÃ nh cÃ´ng!');
+      fetchExportSlips();
+    } catch (error) {
+      console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n.');
+    }
+  };
+
+  const handleCancelSlip = async (slip) => {
+    if (!window.confirm(`Báº¡n cÃ³ cháº¯c muá»‘n Há»¦Y phiáº¿u xuáº¥t cá»§a khÃ¡ch hÃ ng "${slip.customer}" khÃ´ng?`)) {
+      return;
+    }
+    try {
+      const slipRef = doc(db, 'export_tickets', slip.id);
+      await updateDoc(slipRef, { status: 'cancelled' });
+      alert('Há»§y phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
+      fetchExportSlips();
+    } catch (error) {
+      console.error("Lá»—i khi há»§y phiáº¿u: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi há»§y phiáº¿u.');
+    }
+  };
+  
+  const openViewModal = (slip) => { // Má»šI
+    setSelectedSlip(slip);
+    setIsViewModalOpen(true);
+  };
+
+  const renderStatusBadge = (status) => {
+    let text = status;
+    switch (status) {
+        case 'pending': text = 'Äang soáº¡n hÃ ng'; break;
+        case 'completed': text = 'HoÃ n thÃ nh'; break;
+        case 'cancelled': text = 'ÄÃ£ há»§y'; break;
+        default: text = status;
+    }
+    return <span className={`status-badge status-${status}`}>{text}</span>;
+  };
+
+  if (loading) {
+    return <div>Äang táº£i danh sÃ¡ch phiáº¿u xuáº¥t...</div>;
+  }
+
+  return (
+    <div>
+      {isViewModalOpen && (
+        <ViewExportSlipModal 
+            slip={selectedSlip}
+            onClose={() => setIsViewModalOpen(false)}
+        />
+      )}
+      <div className="page-header">
+        <h1>Danh sÃ¡ch Phiáº¿u Xuáº¥t Kho</h1>
+      </div>
+      <table className="products-table">
+        <thead>
+          <tr>
+            <th>NgÃ y táº¡o</th>
+            <th>KhÃ¡ch hÃ ng / NÆ¡i nháº­n</th>
+            <th>Diá»…n giáº£i</th>
+            <th>Tráº¡ng thÃ¡i</th>
+            <th>Thao tÃ¡c</th>
+          </tr>
+        </thead>
+        <tbody>
+          {exportSlips.length > 0 ? (
+            exportSlips.map(slip => (
+              <tr key={slip.id}>
+                <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
+                <td>{slip.customer}</td>
+                <td>{slip.description}</td>
+                <td>{renderStatusBadge(slip.status)}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button className="btn-icon btn-view" title="Xem chi tiáº¿t" onClick={() => openViewModal(slip)}>
+                        <FiEye />
+                    </button>
+                    {slip.status === 'pending' && (
+                      <>
+                        <button className="btn-icon btn-confirm" title="XÃ¡c nháº­n xuáº¥t kho" onClick={() => handleConfirmExport(slip)}>
+                            <FiCheckCircle />
+                        </button>
+                        <button className="btn-icon btn-edit" title="Sá»­a phiáº¿u" onClick={() => alert('Chá»©c nÄƒng Sá»­a Ä‘ang Ä‘Æ°á»£c phÃ¡t triá»ƒn')}>
+                            <FiEdit />
+                        </button>
+                        <button className="btn-icon btn-delete" title="Há»§y phiáº¿u" onClick={() => handleCancelSlip(slip)}>
+                            <FiXCircle />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" style={{ textAlign: 'center' }}>ChÆ°a cÃ³ phiáº¿u xuáº¥t kho nÃ o.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default ExportListPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\pages\ImportListPage.jsx ---
+
+
+// src/pages/ImportListPage.jsx
+
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
+import EditImportSlipModal from '../components/EditImportSlipModal';
+import ViewImportSlipModal from '../components/ViewImportSlipModal'; // Má»šI: Import modal xem chi tiáº¿t
+import { FiEdit, FiEye } from 'react-icons/fi'; // Má»šI: ThÃªm icon FiEye
+
+const parseDateString = (dateString) => {
+  try {
+    const [day, month, year] = dateString.split('/');
+    return new Date(year, month - 1, day);
+  } catch (error) {
+    console.error("Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y thÃ¡ng:", dateString, error);
+    return null;
+  }
+};
+
+const ImportListPage = () => {
+  const [importSlips, setImportSlips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedSlip, setSelectedSlip] = useState(null);
+
+  // Má»šI: State Ä‘á»ƒ quáº£n lÃ½ modal xem chi tiáº¿t
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  const fetchImportSlips = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, "import_tickets"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const slipsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setImportSlips(slipsList);
+    } catch (error) {
+      console.error("Lá»—i khi láº¥y danh sÃ¡ch phiáº¿u nháº­p: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchImportSlips();
+  }, []);
+
+  const handleConfirmImport = async (slip) => {
+    if (!window.confirm(`Báº¡n cÃ³ cháº¯c muá»‘n xÃ¡c nháº­n nháº­p kho cho phiáº¿u cá»§a NCC "${slip.supplier}" khÃ´ng?`)) {
+      return;
+    }
+    try {
+      for (const item of slip.items) {
+        const expiryDateObject = parseDateString(item.expiryDate);
+        if (!expiryDateObject) {
+            alert(`HSD cá»§a máº·t hÃ ng ${item.productName} (${item.lotNumber}) cÃ³ Ä‘á»‹nh dáº¡ng sai. Vui lÃ²ng sá»­a láº¡i.`);
+            return;
+        }
+        const expiryTimestamp = Timestamp.fromDate(expiryDateObject);
+        const newLotData = {
+          importDate: Timestamp.now(),
+          productId: item.productId,
+          productName: item.productName,
+          lotNumber: item.lotNumber,
+          expiryDate: expiryTimestamp,
+          unit: item.unit,
+          packaging: item.packaging,
+          storageTemp: item.storageTemp,
+          team: item.team,
+          manufacturer: item.manufacturer,
+          quantityImported: Number(item.quantity),
+          quantityRemaining: Number(item.quantity),
+          notes: item.notes,
+        };
+        await addDoc(collection(db, "inventory_lots"), newLotData);
+      }
+      const slipDocRef = doc(db, "import_tickets", slip.id);
+      await updateDoc(slipDocRef, { status: "completed" });
+      alert('XÃ¡c nháº­n nháº­p kho thÃ nh cÃ´ng!');
+      fetchImportSlips();
+    } catch (error) {
+      console.error("Lá»—i khi xÃ¡c nháº­n nháº­p kho: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n nháº­p kho.');
+    }
+  };
+
+  // --- CÃC HÃ€M Xá»¬ LÃ MODAL ---
+  const openEditModal = (slip) => {
+    setSelectedSlip(slip);
+    setIsEditModalOpen(true);
+  };
+
+  // Má»šI: HÃ m Ä‘á»ƒ má»Ÿ modal xem chi tiáº¿t
+  const openViewModal = (slip) => {
+    setSelectedSlip(slip);
+    setIsViewModalOpen(true);
+  };
+
+  const handleSaveSlipChanges = async (updatedSlip) => {
+    try {
+      const slipDocRef = doc(db, "import_tickets", updatedSlip.id);
+      await updateDoc(slipDocRef, { items: updatedSlip.items });
+      setIsEditModalOpen(false);
+      fetchImportSlips();
+      alert('Cáº­p nháº­t phiáº¿u nháº­p thÃ nh cÃ´ng!');
+    } catch (error) {
+      console.error("Lá»—i khi cáº­p nháº­t phiáº¿u nháº­p: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
+    }
+  };
+
+  if (loading) {
+    return <div>Äang táº£i danh sÃ¡ch phiáº¿u nháº­p...</div>;
+  }
+
+  return (
+    <div>
+      {/* Má»šI: ThÃªm modal xem chi tiáº¿t vÃ o giao diá»‡n */}
+      {isViewModalOpen && (
+        <ViewImportSlipModal 
+          slip={selectedSlip} 
+          onClose={() => setIsViewModalOpen(false)}
+        />
+      )}
+
+      {isEditModalOpen && (
+        <EditImportSlipModal 
+          slip={selectedSlip} 
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={handleSaveSlipChanges}
+        />
+      )}
+      <div className="page-header">
+        <h1>Danh sÃ¡ch Phiáº¿u Nháº­p Kho</h1>
+      </div>
+      <table className="products-table">
+        <thead>
+          <tr>
+            <th>NgÃ y táº¡o</th>
+            <th>NhÃ  cung cáº¥p</th>
+            <th>Diá»…n giáº£i</th>
+            <th>Tráº¡ng thÃ¡i</th>
+            <th>Thao tÃ¡c</th>
+          </tr>
+        </thead>
+        <tbody>
+          {importSlips.map(slip => (
+            <tr key={slip.id}>
+              <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
+              <td>{slip.supplier}</td>
+              <td>{slip.description}</td>
+              <td>
+                <span className={`status-badge status-${slip.status}`}>
+                   {slip.status === 'pending' ? 'Äang chá»' : 'HoÃ n thÃ nh'}
+                </span>
+              </td>
+              <td>
+                <div className="action-buttons">
+                  {/* Má»šI: ThÃªm nÃºt Xem chi tiáº¿t cho Táº¤T Cáº¢ cÃ¡c phiáº¿u */}
+                  <button className="btn-icon btn-view" title="Xem chi tiáº¿t" onClick={() => openViewModal(slip)}>
+                    <FiEye />
+                  </button>
+                  {slip.status === 'pending' && (
+                    <>
+                      <button className="btn-icon btn-edit" title="Sá»­a phiáº¿u" onClick={() => openEditModal(slip)}>
+                        <FiEdit />
+                      </button>
+                      <button className="btn-primary" onClick={() => handleConfirmImport(slip)}>
+                        XÃ¡c nháº­n
+                      </button>
+                    </>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default ImportListPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\pages\InventoryPage.jsx ---
+
+
+// src/pages/InventoryPage.jsx
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query } from 'firebase/firestore';
+import InventoryFilters from '../components/InventoryFilters';
+import TeamBadge from '../components/TeamBadge';
+import TempBadge from '../components/TempBadge';
+
+const getRowColorByExpiry = (expiryDate) => {
+  if (!expiryDate || !expiryDate.toDate) return ''; 
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); 
+
+  const expDate = expiryDate.toDate();
+  expDate.setHours(0, 0, 0, 0);
+
+  const diffTime = expDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return 'expired-black';
+  }
+  if (diffDays <= 60) {
+    return 'near-expiry-red';
+  }
+  if (diffDays <= 90) {
+    return 'near-expiry-orange';
+  }
+  if (diffDays <= 120) {
+    return 'near-expiry-yellow';
+  }
+
+  return '';
+};
+
+const formatDate = (timestamp) => {
+  if (!timestamp || !timestamp.toDate) return '';
+  const date = timestamp.toDate();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const InventoryPage = ({ user, userRole }) => {
+  const [masterInventory, setMasterInventory] = useState([]);
+  const [filteredInventory, setFilteredInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
+  const [selectedRowId, setSelectedRowId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(''); // Má»šI: State cho Ã´ tÃ¬m kiáº¿m
+
+  useEffect(() => {
+    const fetchAndFilterInventory = async () => {
+      setLoading(true);
+      try {
+        const q = query(collection(db, "inventory_lots"));
+        const querySnapshot = await getDocs(q);
+        const allInventory = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        let roleBasedInventory = [];
+        if (userRole === 'med') {
+          roleBasedInventory = allInventory.filter(item => item.team === 'MED');
+        } else if (userRole === 'bio') {
+          roleBasedInventory = allInventory.filter(item => item.team === 'BIO' || item.team === 'Spare Part');
+        } else {
+          roleBasedInventory = allInventory;
+        }
+
+        setMasterInventory(roleBasedInventory);
+
+      } catch (error) {
+        console.error("Lá»—i khi láº¥y dá»¯ liá»‡u tá»“n kho: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userRole) {
+        fetchAndFilterInventory();
+    }
+  }, [userRole]);
+
+  // Cáº¬P NHáº¬T: Má»Ÿ rá»™ng useEffect Ä‘á»ƒ xá»­ lÃ½ cáº£ viá»‡c tÃ¬m kiáº¿m
+  useEffect(() => {
+    let result = [...masterInventory];
+
+    // 1. Lá»c theo Team vÃ  TÃ¬nh tráº¡ng HSD (giá»¯ nguyÃªn)
+    if (filters.team !== 'all') {
+      result = result.filter(item => item.team === filters.team);
+    }
+    if (filters.dateStatus !== 'all') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (filters.dateStatus === 'expired') {
+        result = result.filter(item => item.expiryDate?.toDate() < today);
+      }
+      
+      if (filters.dateStatus === 'near_expiry') {
+        const nearExpiryLimit = new Date();
+        nearExpiryLimit.setDate(today.getDate() + 120);
+        result = result.filter(item => {
+          const expiryDate = item.expiryDate?.toDate();
+          return expiryDate >= today && expiryDate < nearExpiryLimit;
+        });
+      }
+    }
+    
+    // 2. Má»šI: Lá»c theo tá»« khÃ³a tÃ¬m kiáº¿m
+    if (searchTerm) {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      result = result.filter(item => {
+        return (
+          item.productId?.toLowerCase().includes(lowercasedFilter) ||
+          item.productName?.toLowerCase().includes(lowercasedFilter) ||
+          item.lotNumber?.toLowerCase().includes(lowercasedFilter)
+        );
+      });
+    }
+    
+    result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
+
+    setFilteredInventory(result);
+  }, [filters, masterInventory, searchTerm]); // Cáº¬P NHáº¬T: ThÃªm searchTerm vÃ o dependency array
+
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [filterName]: value,
+    }));
+  };
+
+  const handleRowClick = (lotId) => {
+    if (selectedRowId === lotId) {
+      setSelectedRowId(null);
+    } else {
+      setSelectedRowId(lotId);
+    }
+  };
+  
+  const getTitleByRole = (role) => {
+    switch (role) {
+      case 'med':
+        return 'Sá»• CÃ¡i Tá»“n Kho (Team Med)';
+      case 'bio':
+        return 'Sá»• CÃ¡i Tá»“n Kho (Team Bio)';
+      case 'admin':
+        return 'Sá»• CÃ¡i Tá»“n Kho (Admin)';
+      case 'owner':
+        return 'Sá»• CÃ¡i Tá»“n Kho (Owner)';
+      default:
+        return 'Sá»• CÃ¡i Tá»“n Kho';
+    }
+  };
+
+  if (loading) {
+    return <div>Äang táº£i dá»¯ liá»‡u tá»“n kho...</div>;
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h1>{getTitleByRole(userRole)}</h1>
+      </div>
+      
+      {/* Má»šI: Container cho toÃ n bá»™ khu vá»±c tÃ¬m kiáº¿m vÃ  bá»™ lá»c */}
+      <div className="controls-container">
+        <InventoryFilters 
+          userRole={userRole} 
+          onFilterChange={handleFilterChange} 
+          activeFilters={filters}
+        />
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="TÃ¬m theo MÃ£ hÃ ng, TÃªn hÃ ng, Sá»‘ lÃ´..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+      </div>
+
+
+      <div className="table-container">
+        <table className="inventory-table">
+          <thead>
+            <tr>
+              <th>NgÃ y nháº­p hÃ ng</th>
+              <th>MÃ£ hÃ ng</th>
+              <th>TÃªn hÃ ng</th>
+              <th>Sá»‘ lÃ´</th>
+              <th>HSD</th>
+              <th>ÄVT</th>
+              <th>Quy cÃ¡ch</th>
+              <th>SL Nháº­p</th>
+              <th>SL CÃ²n láº¡i</th>
+              <th>Ghi chÃº</th>
+              <th>Nhiá»‡t Ä‘á»™ BQ</th>
+              <th>HÃ£ng SX</th>
+              <th>Team</th>
+            </tr>
+          </thead>
+          <tbody className="inventory-table-body">
+            {filteredInventory.length > 0 ? (
+              filteredInventory.map(lot => (
+                <tr
+                  key={lot.id}
+                  onClick={() => handleRowClick(lot.id)}
+                  className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+                >
+                  <td>{formatDate(lot.importDate)}</td>
+                  <td>{lot.productId}</td>
+                  <td>{lot.productName}</td>
+                  <td>{lot.lotNumber}</td>
+                  <td>{formatDate(lot.expiryDate)}</td>
+                  <td>{lot.unit}</td>
+                  <td>{lot.packaging}</td>
+                  <td>{lot.quantityImported}</td>
+                  <td>{lot.quantityRemaining}</td>
+                  <td>{lot.notes}</td>
+                  <td><TempBadge temperature={lot.storageTemp} /></td>
+                  <td>{lot.manufacturer}</td>
+                  <td><TeamBadge team={lot.team} /></td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="13" style={{ textAlign: 'center' }}>KhÃ´ng cÃ³ dá»¯ liá»‡u tá»“n kho phÃ¹ há»£p.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default InventoryPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\pages\NewExportPage.jsx ---
+
+
+// src/pages/NewExportPage.jsx
+
+import React, { useState, useRef } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+// ÄÃƒ Sá»¬A Lá»–I: Gá»™p cÃ¡c icon vÃ o chung má»™t dÃ²ng import
+import { FiXCircle, FiChevronDown } from 'react-icons/fi';
+
+const formatDate = (timestamp) => {
+  if (!timestamp || !timestamp.toDate) return '';
+  const date = timestamp.toDate();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const getExpiryStatus = (expiryDate) => {
+    if (!expiryDate || !expiryDate.toDate) return 'normal';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDate = expiryDate.toDate();
+    expDate.setHours(0, 0, 0, 0);
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'expired';
+    if (diffDays <= 120) return 'near-expiry';
+    return 'normal';
+};
+
+const NewExportPage = () => {
+  const today = new Date();
+  const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+  
+  const [exportDate, setExportDate] = useState(formattedDate);
+  const [customer, setCustomer] = useState('');
+  const [description, setDescription] = useState('');
+  const [items, setItems] = useState([{ 
+      id: Date.now(), 
+      productId: '', 
+      productName: '', 
+      unit: '', 
+      packaging: '',
+      storageTemp: '',
+      availableLots: [], 
+      selectedLotId: '', 
+      lotNumber: '',
+      displayLotText: '',
+      expiryDate: '',
+      quantityRemaining: 0,
+      quantityToExport: '', 
+      notes: '' 
+  }]);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const lotSelectRefs = useRef([]);
+  const quantityInputRefs = useRef([]);
+
+  const getValidSlipData = () => {
+    if (!customer) {
+      alert('Vui lÃ²ng nháº­p thÃ´ng tin KhÃ¡ch hÃ ng / NÆ¡i nháº­n.');
+      return null;
+    }
+    const validItems = items.filter(item => item.selectedLotId && Number(item.quantityToExport) > 0);
+    if (validItems.length === 0) {
+      alert('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng vÃ  nháº­p sá»‘ lÆ°á»£ng xuáº¥t.');
+      return null;
+    }
+    return {
+      exportDate,
+      customer,
+      description,
+      items: validItems.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          lotId: item.selectedLotId,
+          lotNumber: item.lotNumber,
+          expiryDate: item.expiryDate,
+          unit: item.unit,
+          packaging: item.packaging,
+          storageTemp: item.storageTemp,
+          quantityToExport: Number(item.quantityToExport),
+          notes: item.notes
+      })),
+      createdAt: serverTimestamp()
+    };
+  };
+
+  const handleSaveDraft = async () => {
+    const slipData = getValidSlipData();
+    if (!slipData) return;
+    setIsProcessing(true);
+    try {
+      await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'pending' });
+      alert('LÆ°u nhÃ¡p phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
+      setCustomer(''); setDescription('');
+      setItems([{ id: Date.now(), productId: '', productName: '', unit: '', packaging: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' }]);
+    } catch (error) {
+      console.error("Lá»—i khi lÆ°u nhÃ¡p phiáº¿u xuáº¥t: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi lÆ°u nhÃ¡p.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleDirectExport = async () => {
+    const slipData = getValidSlipData();
+    if (!slipData) return;
+    if (!window.confirm('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xuáº¥t kho trá»±c tiáº¿p?')) { return; }
+    setIsProcessing(true);
+    try {
+      for (const item of slipData.items) {
+        const lotRef = doc(db, 'inventory_lots', item.lotId);
+        const lotSnap = await getDoc(lotRef);
+        if(lotSnap.exists()){
+            const currentQuantity = lotSnap.data().quantityRemaining;
+            const newQuantityRemaining = currentQuantity - item.quantityToExport;
+            await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
+        }
+      }
+      await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'completed' });
+      alert('Xuáº¥t kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
+      setCustomer(''); setDescription('');
+      setItems([{ id: Date.now(), productId: '', productName: '', unit: '', packaging: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' }]);
+    } catch (error) {
+      console.error("Lá»—i khi xuáº¥t kho trá»±c tiáº¿p: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i trong quÃ¡ trÃ¬nh xuáº¥t kho.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleProductSearch = async (index, productId) => {
+    if (!productId) return;
+    const newItems = [...items];
+    const currentItem = newItems[index];
+    Object.assign(currentItem, { productName: '', unit: '', packaging: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0 });
+    setItems(newItems);
+
+    try {
+      const productRef = doc(db, 'products', productId);
+      const productSnap = await getDoc(productRef);
+      if (!productSnap.exists()) {
+        alert(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+        return;
+      }
+      const productData = productSnap.data();
+      currentItem.productName = productData.productName;
+      currentItem.unit = productData.unit;
+      currentItem.packaging = productData.packaging;
+       currentItem.storageTemp = productData.storageTemp;
+
+      const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
+      const lotsSnapshot = await getDocs(lotsQuery);
+      if (lotsSnapshot.empty) {
+        alert(`Cáº£nh bÃ¡o: Sáº£n pháº©m mÃ£ '${productId}' Ä‘Ã£ háº¿t hÃ ng tá»“n kho.`);
+        currentItem.availableLots = [];
+      } else {
+        let foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        foundLots.sort((a, b) => {
+          const dateA = a.expiryDate.toDate();
+          const dateB = b.expiryDate.toDate();
+          if (dateA < dateB) return -1;
+          if (dateA > dateB) return 1;
+          return a.importDate.toDate() - b.importDate.toDate();
+        });
+        
+        currentItem.availableLots = foundLots;
+        setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
+      }
+    } catch (error) {
+      console.error("Lá»—i khi tÃ¬m kiáº¿m:", error);
+      alert("ÄÃ£ cÃ³ lá»—i xáº£y ra khi tÃ¬m kiáº¿m.");
+    } finally {
+      setItems([...newItems]);
+    }
+  };
+
+  const handleLotSelection = (index, selectedLotId) => {
+    const newItems = [...items];
+    const currentItem = newItems[index];
+    currentItem.selectedLotId = selectedLotId;
+
+    const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+
+    if (selectedLot) {
+      currentItem.lotNumber = selectedLot.lotNumber;
+      currentItem.expiryDate = formatDate(selectedLot.expiryDate);
+      currentItem.quantityRemaining = selectedLot.quantityRemaining;
+      currentItem.displayLotText = selectedLot.lotNumber; 
+      setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
+    } else {
+        Object.assign(currentItem, { lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
+    }
+    setItems(newItems);
+  };
+  
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...items];
+    if (field === 'quantityToExport') {
+      const val = Number(value);
+      if (val < 0) return;
+      if (val > newItems[index].quantityRemaining) {
+        alert('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
+        newItems[index][field] = newItems[index].quantityRemaining;
+      } else {
+        newItems[index][field] = val;
+      }
+    } else {
+      newItems[index][field] = value;
+    }
+    setItems(newItems);
+  };
+
+  const addNewRow = () => {
+    setItems([...items, { id: Date.now(), productId: '', productName: '', unit: '', packaging: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' }]);
+  };
+
+  const handleRemoveRow = (indexToRemove) => {
+    if (items.length <= 1) return;
+    if (window.confirm("Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a dÃ²ng nÃ y khÃ´ng?")) {
+      setItems(prevItems => prevItems.filter((_, index) => index !== indexToRemove));
+    }
+  };
+
+  return (
+    <div>
+      <h1>Táº¡o Phiáº¿u Xuáº¥t Kho</h1>
+      <div className="form-section">
+        <div className="form-row">
+          <div className="form-group"><label>NgÃ y xuáº¥t</label><input type="text" value={exportDate} onChange={(e) => setExportDate(e.target.value)} /></div>
+          <div className="form-group"><label>KhÃ¡ch hÃ ng / NÆ¡i nháº­n</label><input type="text" placeholder="Nháº­p tÃªn khÃ¡ch hÃ ng..." value={customer} onChange={e => setCustomer(e.target.value)} /></div>
+        </div>
+        <div className="form-group"><label>Diá»…n giáº£i</label><textarea rows="2" placeholder="Ghi chÃº cho phiáº¿u xuáº¥t..." value={description} onChange={e => setDescription(e.target.value)}></textarea></div>
+      </div>
+
+      <h2>Chi Tiáº¿t HÃ ng HÃ³a Xuáº¥t Kho</h2>
+      <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 1.8fr 1fr 1fr 1fr 1.5fr 0.5fr' }}>
+        <div className="grid-header">MÃ£ hÃ ng</div>
+        <div className="grid-header">TÃªn hÃ ng</div>
+        <div className="grid-header">LÃ´ hÃ ng tá»“n kho</div>
+        <div className="grid-header">SL Tá»“n</div>
+        <div className="grid-header">SL Xuáº¥t</div>
+        <div className="grid-header">ÄVT</div>
+        <div className="grid-header">Ghi chÃº</div>
+        <div className="grid-header">XÃ³a</div>
+
+        {items.map((item, index) => (
+          <React.Fragment key={item.id}>
+            <div className="grid-cell">
+              <input type="text" placeholder="Nháº­p mÃ£ hÃ ng..." value={item.productId}
+                onChange={e => handleItemChange(index, 'productId', e.target.value)}
+                onBlur={e => handleProductSearch(index, e.target.value)} />
+            </div>
+            <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+            <div className="grid-cell">
+              {item.selectedLotId ? (
+                <div className="selected-lot-view">
+                  <input
+                    type="text"
+                    value={item.displayLotText}
+                    readOnly
+                    className="selected-lot-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleLotSelection(index, '')}
+                    className="change-lot-btn"
+                  >
+                    <FiChevronDown />
+                  </button>
+                </div>
+              ) : (
+                <select
+                  ref={el => lotSelectRefs.current[index] = el}
+                  value={item.selectedLotId}
+                  onChange={e => handleLotSelection(index, e.target.value)}
+                  disabled={item.availableLots.length === 0}
+                  style={{width: '100%'}}
+                >
+                  <option value="">-- Chá»n dÃ²ng tá»“n kho --</option>
+                  {item.availableLots.map(lot => (
+                    <option key={lot.id} value={lot.id}>
+                      {`LÃ´: ${lot.lotNumber} | HSD: ${formatDate(lot.expiryDate)} | Tá»“n: ${lot.quantityRemaining} | Nháº­p: ${formatDate(lot.importDate)}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div className="grid-cell"><input type="number" value={item.quantityRemaining} readOnly /></div>
+            <div className="grid-cell">
+              <input type="number" value={item.quantityToExport}
+                ref={el => quantityInputRefs.current[index] = el}
+                onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} />
+            </div>
+            <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+            <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+            <div className="grid-cell">
+              <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRow(index)}><FiXCircle /></button>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+        
+      <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
+      <div className="page-actions">
+        <button onClick={handleSaveDraft} className="btn-secondary" disabled={isProcessing}>
+          {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
+        </button>
+        <button onClick={handleDirectExport} className="btn-primary" disabled={isProcessing}>
+          {isProcessing ? 'Äang xá»­ lÃ½...' : 'Xuáº¥t Kho Trá»±c Tiáº¿p'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default NewExportPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\pages\NewImportPage.jsx ---
+
+
+// src/pages/NewImportPage.jsx
+import React, { useState, useRef } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+
+// HÃ m helper Ä‘á»ƒ chuyá»ƒn chuá»—i dd/mm/yyyy thÃ nh object Date
+const parseDateString = (dateString) => {
+  try {
+    const [day, month, year] = dateString.split('/');
+    // new Date(year, monthIndex, day) - month is 0-indexed
+    return new Date(year, month - 1, day);
+  } catch (error) {
+    console.error("Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y thÃ¡ng:", dateString, error);
+    return null; // Tráº£ vá» null náº¿u Ä‘á»‹nh dáº¡ng sai
+  }
+};
+
+const NewImportPage = () => {
+  // --- STATE MANAGEMENT ---
+  const today = new Date();
+  const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+
+  const [importDate, setImportDate] = useState(formattedDate);
+  const [supplier, setSupplier] = useState('');
+  const [description, setDescription] = useState('');
+  const [items, setItems] = useState([
+    { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '' }
+  ]);
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRefs = useRef([]);
+
+  // --- FUNCTIONS ---
+
+  // Chá»‰ cáº­p nháº­t state, khÃ´ng gá»i Firestore, tá»‘i Æ°u hiá»‡u suáº¥t
+  const handleItemChange = (index, field, value) => {
+    const newItems = [...items];
+    let currentValue = value;
+
+    if (field === 'expiryDate') {
+      let formattedValue = currentValue.replace(/\D/g, '');
+      if (formattedValue.length > 2) {
+        formattedValue = `${formattedValue.slice(0, 2)}/${formattedValue.slice(2)}`;
+      }
+      if (formattedValue.length > 5) {
+        formattedValue = `${formattedValue.slice(0, 5)}/${formattedValue.slice(5, 9)}`;
+      }
+      currentValue = formattedValue;
+    }
+    
+    newItems[index][field] = currentValue;
+    setItems(newItems);
+  };
+
+  // Chá»‰ tÃ¬m kiáº¿m sáº£n pháº©m khi ngÆ°á»i dÃ¹ng rá»i khá»i Ã´ MÃ£ hÃ ng
+  const handleProductSearch = async (index, productId) => {
+  if (!productId) return;
+
+  const newItems = [...items];
+  try {
+    const productRef = doc(db, 'products', productId);
+    const productSnap = await getDoc(productRef);
+
+    if (productSnap.exists()) {
+      const productData = productSnap.data();
+      newItems[index].productName = productData.productName || '';
+      newItems[index].unit = productData.unit || '';
+      newItems[index].packaging = productData.packaging || '';
+      newItems[index].storageTemp = productData.storageTemp || '';
+      newItems[index].team = productData.team || '';
+      newItems[index].manufacturer = productData.manufacturer || ''; // <-- DÃ’NG Má»šI
+    } else {
+      newItems[index].productName = 'KhÃ´ng tÃ¬m tháº¥y mÃ£ hÃ ng!';
+      newItems[index].unit = '';
+      newItems[index].packaging = '';
+      newItems[index].storageTemp = '';
+      newItems[index].team = '';
+      newItems[index].manufacturer = ''; // <-- DÃ’NG Má»šI
+    }
+  } catch (error) {
+    console.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m:", error);
+    newItems[index].productName = 'Lá»—i khi tÃ¬m kiáº¿m!';
+  } finally {
+      setItems(newItems);
+  }
+};
+
+  const handleKeyDown = (e, rowIndex, inputIndex) => {
+    if (e.key === 'Tab' && !e.shiftKey) {
+      e.preventDefault();
+      const nextInputIndex = (rowIndex * 3) + inputIndex + 1;
+      const nextInput = inputRefs.current[nextInputIndex];
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+  };
+
+  const addNewRow = () => {
+    setItems([
+      ...items,
+      { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '' }
+    ]);
+  };
+
+  // HÃ m lÆ°u phiáº¿u vá»›i tráº¡ng thÃ¡i "pending"
+  const handleSaveSlip = async () => {
+    if (!supplier) {
+      alert('Vui lÃ²ng nháº­p thÃ´ng tin NhÃ  cung cáº¥p.');
+      return;
+    }
+    const validItems = items.filter(item => item.productId && item.quantity > 0);
+    if (validItems.length === 0) {
+      alert('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡ vÃ o phiáº¿u.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const slipData = {
+        importDate,
+        supplier,
+        description,
+        items: validItems,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      };
+      const docRef = await addDoc(collection(db, 'import_tickets'), slipData);
+      alert(`LÆ°u táº¡m phiáº¿u nháº­p thÃ nh cÃ´ng! ID phiáº¿u: ${docRef.id}`);
+      setSupplier('');
+      setDescription('');
+      setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '' }]);
+    } catch (error) {
+      console.error("Lá»—i khi lÆ°u phiáº¿u nháº­p: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi lÆ°u phiáº¿u.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // HÃ m má»›i Ä‘á»ƒ nháº­p kho trá»±c tiáº¿p
+  const handleDirectImport = async () => {
+    if (!supplier) {
+      alert('Vui lÃ²ng nháº­p thÃ´ng tin NhÃ  cung cáº¥p.');
+      return;
+    }
+    const validItems = items.filter(item => item.productId && item.quantity > 0);
+    if (validItems.length === 0) {
+      alert('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.');
+      return;
+    }
+    if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n nháº­p kho trá»±c tiáº¿p? Thao tÃ¡c nÃ y sáº½ cáº­p nháº­t tá»“n kho ngay láº­p tá»©c.')) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      for (const item of validItems) {
+        const expiryDateObject = parseDateString(item.expiryDate);
+        if (!expiryDateObject) {
+          alert(`HSD cá»§a máº·t hÃ ng ${item.productName} (${item.lotNumber}) cÃ³ Ä‘á»‹nh dáº¡ng sai.`);
+          setIsSaving(false);
+          return;
+        }
+        const expiryTimestamp = Timestamp.fromDate(expiryDateObject);
+        const newLotData = {
+          importDate: Timestamp.now(),
+          productId: item.productId,
+          productName: item.productName,
+          lotNumber: item.lotNumber,
+          expiryDate: expiryTimestamp,
+          unit: item.unit,
+          packaging: item.packaging,
+          storageTemp: item.storageTemp,
+          team: item.team,
+          manufacturer: item.manufacturer,
+          quantityImported: Number(item.quantity),
+          quantityRemaining: Number(item.quantity),
+          notes: item.notes,
+        };
+        await addDoc(collection(db, "inventory_lots"), newLotData);
+      }
+
+      const slipData = {
+        importDate,
+        supplier,
+        description,
+        items: validItems,
+        status: 'completed',
+        createdAt: serverTimestamp()
+      };
+      await addDoc(collection(db, 'import_tickets'), slipData);
+
+      alert('Nháº­p kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
+      setSupplier('');
+      setDescription('');
+      setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '' }]);
+
+    } catch (error) {
+      console.error("Lá»—i khi nháº­p kho trá»±c tiáº¿p: ", error);
+      alert('ÄÃ£ xáº£y ra lá»—i khi nháº­p kho trá»±c tiáº¿p.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- RENDER ---
+  return (
+    <div>
+      <h1>Táº¡o Phiáº¿u Nháº­p Kho</h1>
+      <div className="form-section">
+        <div className="form-row">
+          <div className="form-group">
+            <label>NgÃ y nháº­p</label>
+            <input type="text" value={importDate} onChange={(e) => setImportDate(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>NhÃ  cung cáº¥p</label>
+            <input type="text" placeholder="Nháº­p mÃ£ hoáº·c tÃªn NCC" value={supplier} onChange={e => setSupplier(e.target.value)} />
+          </div>
+        </div>
+        <div className="form-group">
+          <label>Diá»…n giáº£i</label>
+          <textarea rows="2" placeholder="Ghi chÃº cho phiáº¿u nháº­p..." value={description} onChange={e => setDescription(e.target.value)}></textarea>
+        </div>
+      </div>
+
+      <h2>Chi tiáº¿t hÃ ng hÃ³a</h2>
+      <div className="item-details-grid">
+        <div className="grid-header">MÃ£ hÃ ng</div>
+        <div className="grid-header">TÃªn hÃ ng</div>
+        <div className="grid-header">Sá»‘ lÃ´</div>
+        <div className="grid-header">HSD</div>
+        <div className="grid-header">ÄVT</div>
+        <div className="grid-header">Quy cÃ¡ch</div>
+        <div className="grid-header">Sá»‘ lÆ°á»£ng</div>
+        <div className="grid-header">Ghi chÃº</div>
+        <div className="grid-header">Nhiá»‡t Ä‘á»™ BQ</div>
+        <div className="grid-header">Team</div>
+
+        {items.map((item, index) => (
+          <React.Fragment key={item.id}>
+            <div className="grid-cell">
+              <input 
+                ref={el => inputRefs.current[index * 3] = el} 
+                onKeyDown={(e) => handleKeyDown(e, index, 0)}
+                type="text" 
+                value={item.productId} 
+                onChange={e => handleItemChange(index, 'productId', e.target.value)}
+                onBlur={e => handleProductSearch(index, e.target.value)}
+              />
+            </div>
+            <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+            <div className="grid-cell">
+              <input 
+                ref={el => inputRefs.current[index * 3 + 1] = el}
+                onKeyDown={(e) => handleKeyDown(e, index, 1)}
+                type="text" 
+                value={item.lotNumber} 
+                onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} 
+              />
+            </div>
+            <div className="grid-cell"><input type="text" placeholder="dd/mm/yyyy" value={item.expiryDate} onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} /></div>
+            <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+            <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+            <div className="grid-cell">
+              <input 
+                ref={el => inputRefs.current[index * 3 + 2] = el}
+                type="number" 
+                value={item.quantity} 
+                onChange={e => handleItemChange(index, 'quantity', e.target.value)} 
+              />
+            </div>
+            <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+            <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
+            <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
+          </React.Fragment>
+        ))}
+      </div>
+      
+      <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
+      <div className="page-actions">
+        <button onClick={handleSaveSlip} className="btn-secondary" disabled={isSaving}>
+          {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
+        </button>
+        <button onClick={handleDirectImport} className="btn-primary" disabled={isSaving}>
+          {isSaving ? 'Äang xá»­ lÃ½...' : 'Nháº­p Kho Trá»±c Tiáº¿p'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default NewImportPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\pages\ProductsPage.jsx ---
+
+
+// src/pages/ProductsPage.jsx
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import AddProductModal from '../components/AddProductModal';
+import EditProductModal from '../components/EditProductModal'; // Import Edit Modal
+import { FiEdit, FiTrash2 } from 'react-icons/fi';
+
+const ProductsPage = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  // State má»›i Ä‘á»ƒ quáº£n lÃ½ viá»‡c sá»­a sáº£n pháº©m
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+
+  const fetchProducts = async () => {
+    // ... code fetchProducts giá»¯ nguyÃªn ...
+    setLoading(true);
+    try {
+      const productsCollection = collection(db, 'products');
+      const querySnapshot = await getDocs(productsCollection);
+      const productsList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProducts(productsList);
+    } catch (error) {
+      console.error("Lá»—i khi láº¥y danh sÃ¡ch sáº£n pháº©m: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+  
+  const handleProductAdded = () => {
+    setIsAddModalOpen(false);
+    fetchProducts();
+  };
+  
+  const handleProductUpdated = () => {
+    setIsEditModalOpen(false);
+    fetchProducts();
+  };
+
+  const handleDelete = async (productId, productName) => {
+    // ... code handleDelete giá»¯ nguyÃªn ...
+    if (window.confirm(`Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a sáº£n pháº©m "${productName}" (ID: ${productId}) khÃ´ng?`)) {
+      try {
+        await deleteDoc(doc(db, 'products', productId));
+        alert('XÃ³a sáº£n pháº©m thÃ nh cÃ´ng!');
+        fetchProducts();
+      } catch (error) {
+        console.error("Lá»—i khi xÃ³a sáº£n pháº©m: ", error);
+        alert('ÄÃ£ xáº£y ra lá»—i khi xÃ³a sáº£n pháº©m.');
+      }
+    }
+  };
+
+  // HÃ m Ä‘á»ƒ má»Ÿ modal Sá»­a
+  const openEditModal = (product) => {
+    setCurrentProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  if (loading) {
+    return <div>Äang táº£i dá»¯ liá»‡u sáº£n pháº©m...</div>;
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h1>Quáº£n LÃ½ HÃ ng HÃ³a</h1>
+        <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">ThÃªm sáº£n pháº©m</button>
+      </div>
+      <p>Tá»•ng cá»™ng cÃ³ {products.length} mÃ£ hÃ ng.</p>
+
+      {isAddModalOpen && <AddProductModal onClose={() => setIsAddModalOpen(false)} onProductAdded={handleProductAdded} />}
+      {isEditModalOpen && <EditProductModal onClose={() => setIsEditModalOpen(false)} onProductUpdated={handleProductUpdated} productToEdit={currentProduct} />}
+
+      <table className="products-table">
+        {/* ... thead giá»¯ nguyÃªn ... */}
+        <thead>
+          <tr>
+            <th>MÃ£ hÃ ng</th>
+            <th>TÃªn hÃ ng</th>
+            <th>ÄÆ¡n vá»‹ tÃ­nh</th>
+            <th>Quy cÃ¡ch Ä‘Ã³ng gÃ³i</th>
+            <th>Nhiá»‡t Ä‘á»™ BQ</th>
+            <th>HÃ£ng sáº£n xuáº¥t</th>
+            <th>Team</th>
+            <th>Thao tÃ¡c</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map(product => (
+            <tr key={product.id}>
+              <td>{product.id}</td>
+              <td>{product.productName}</td>
+              <td>{product.unit}</td>
+              <td>{product.packaging}</td>
+              <td>{product.storageTemp}</td>
+              <td>{product.manufacturer}</td>
+              <td>{product.team}</td>
+              <td>
+                <div className="action-buttons">
+                  {/* Gá»ŒI HÃ€M openEditModal KHI NHáº¤N NÃšT Sá»¬A */}
+                  <button className="btn-icon btn-edit" onClick={() => openEditModal(product)}>
+                    <FiEdit />
+                  </button>
+                  <button className="btn-icon btn-delete" onClick={() => handleDelete(product.id, product.productName)}>
+                    <FiTrash2 />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default ProductsPage;
+
+
+
+--- FILE: D:\quan-ly-kho\src\styles\AdminLayout.css ---
+
+
+:root {
+  --sidebar-width: 250px;
+  --sidebar-width-collapsed: 80px;
+  --header-height: 60px;
+  --primary-color: #007bff;
+  --text-color: #333;
+  --bg-color: #f8f9fa;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #555;
+  --sidebar-hover-bg: #f1f1f1;
+  --border-color: #dee2e6;
+  --transition-speed: 0.3s ease;
+}
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  transition: width var(--transition-speed);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+.sidebar-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+  color: var(--text-color);
+  font-size: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--sidebar-text);
+  margin-left: auto;
+}
+
+.menu-items {
+  list-style: none;
+  padding: 20px 0;
+  margin: 0;
+}
+
+.menu-items li a {
+  display: flex;
+  align-items: center;
+  padding: 15px 25px;
+  text-decoration: none;
+  color: var(--sidebar-text);
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background-color var(--transition-speed);
+}
+
+.menu-items li a:hover {
+  background-color: var(--sidebar-hover-bg);
+}
+
+.menu-icon {
+  font-size: 20px;
+  min-width: 30px;
+}
+
+.menu-text {
+  margin-left: 20px;
+  opacity: 1;
+  transition: opacity var(--transition-speed);
+}
+
+.sidebar.collapsed .menu-text {
+  opacity: 0;
+  width: 0;
+}
+
+/* --- MAIN CONTENT --- */
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: var(--bg-color);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* --- Báº¢NG products-table (ÄÆ¡n giáº£n) --- */
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.products-table th,
+.products-table td {
+  border: 1px solid var(--border-color);
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.products-table th {
+  background-color: var(--bg-color);
+  font-weight: bold;
+}
+
+.products-table tbody tr:nth-of-type(even) {
+  background-color: #f8f9fa;
+}
+
+.products-table tbody tr:hover {
+  background-color: #e9ecef;
+}
+
+/* --- Báº¢NG inventory-table (PHIÃŠN Báº¢N Sá»¬A Lá»–I HOÃ€N CHá»ˆNH) --- */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  /* Giá»›i háº¡n chiá»u cao vÃ  táº¡o thanh cuá»™n dá»c */
+  max-height: calc(100vh - 250px); /* 100vh trá»« Ä‘i chiá»u cao cá»§a header, filter... */
+  overflow-y: auto;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse; /* Äá»•i vá» collapse Ä‘á»ƒ tÃ­nh toÃ¡n dá»… hÆ¡n */
+}
+
+.inventory-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  white-space: nowrap;
+  vertical-align: top; /* CÄƒn lá» trÃªn cho ná»™i dung trong Ã´ */
+}
+
+/* Äáº·t chiá»u cao tá»‘i Ä‘a cho cÃ¡c Ã´ cÃ³ thá»ƒ xuá»‘ng dÃ²ng */
+.inventory-table td:nth-child(3), /* TÃªn hÃ ng */
+.inventory-table td:nth-child(7) { /* Quy cÃ¡ch */
+  max-height: 75px; /* Chiá»u cao tá»‘i Ä‘a (tÆ°Æ¡ng Ä‘Æ°Æ¡ng 3-4 dÃ²ng) */
+  overflow-y: auto; /* ThÃªm thanh cuá»™n dá»c bÃªn trong Ã´ khi cáº§n */
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.inventory-table th {
+  background-color: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* CÃ¡c cá»™t khÃ´ng bá»‹ Ä‘Ã³ng bÄƒng */
+.inventory-table td {
+  background-color: #ffffff;
+}
+.inventory-table tbody tr:hover td {
+  background-color: #e9ecef;
+}
+.inventory-table tbody tr.selected-row td {
+  background-color: #d6eaff !important;
+}
+.inventory-table tbody tr.selected-row {
+  font-weight: 500;
+}
+
+/* Cá»™t 1 - ÄÃ³ng bÄƒng */
+.inventory-table th:nth-child(1),
+.inventory-table td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  width: 120px;
+  min-width: 120px;
+  z-index: 1;
+}
+
+/* Cá»™t 2 - ÄÃ³ng bÄƒng */
+.inventory-table th:nth-child(2),
+.inventory-table td:nth-child(2) {
+  position: sticky;
+  left: 120px; /* Báº¯t Ä‘áº§u ngay sau cá»™t 1 */
+  width: 150px;
+  min-width: 150px;
+  z-index: 1;
+}
+
+/* Cá»™t 3 - ÄÃ³ng bÄƒng */
+.inventory-table th:nth-child(3),
+.inventory-table td:nth-child(3) {
+  position: sticky;
+  left: 270px; /* 120 + 150 */
+  width: 300px;
+  min-width: 300px;
+  z-index: 1;
+}
+
+/* Äáº£m báº£o tiÃªu Ä‘á» bá»‹ Ä‘Ã³ng bÄƒng luÃ´n cÃ³ ná»n Ä‘Ãºng vÃ  náº±m trÃªn cÃ¹ng */
+.inventory-table th:nth-child(1),
+.inventory-table th:nth-child(2),
+.inventory-table th:nth-child(3) {
+  z-index: 3;
+  background-color: #f8f9fa;
+}
+
+/* Äáº£m báº£o cÃ¡c Ã´ ná»™i dung bá»‹ Ä‘Ã³ng bÄƒng cÃ³ ná»n Ä‘Ãºng */
+.inventory-table td:nth-child(1),
+.inventory-table td:nth-child(2),
+.inventory-table td:nth-child(3) {
+  background-color: #ffffff;
+}
+
+/* Ãp dá»¥ng láº¡i hiá»‡u á»©ng hover vÃ  selected cho cÃ¡c Ã´ bá»‹ Ä‘Ã³ng bÄƒng */
+.inventory-table tbody tr:hover td:nth-child(1),
+.inventory-table tbody tr:hover td:nth-child(2),
+.inventory-table tbody tr:hover td:nth-child(3) {
+  background-color: #e9ecef;
+}
+.inventory-table tbody tr.selected-row td:nth-child(1),
+.inventory-table tbody tr.selected-row td:nth-child(2),
+.inventory-table tbody tr.selected-row td:nth-child(3) {
+  background-color: #d6eaff !important;
+}
+
+/* Äáº·t chiá»u rá»™ng tá»‘i thiá»ƒu cho cá»™t TÃªn hÃ ng */
+.inventory-table th:nth-child(3), 
+.inventory-table td:nth-child(3) {
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 350px; /* Chiá»u rá»™ng mong muá»‘n cá»§a báº¡n */
+}
+
+/* Äáº·t chiá»u rá»™ng tá»‘i thiá»ƒu cho Quy cÃ¡ch vÃ  HÃ£ng SX */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7),
+.inventory-table th:nth-child(12), .inventory-table td:nth-child(12) {
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 175px; /* Chiá»u rá»™ng mong muá»‘n cá»§a báº¡n */
+}
+
+/* --- MODAL (POPUP) --- */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* --- BUTTONS & FORMS --- */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  opacity: 0.9;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-edit {
+  color: #007bff;
+}
+.btn-edit:hover {
+  background-color: #e7f3ff;
+}
+
+.btn-delete {
+  color: #dc3545;
+}
+.btn-delete:hover {
+  background-color: #fbebee;
+}
+
+.form-section {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+}
+.form-group select {
+  background-color: white;
+}
+
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* --- GRID NHáº¬P LIá»†U --- */
+.item-details-grid, .item-details-grid-edit {
+  display: grid;
+  gap: 10px;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.item-details-grid {
+  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
+}
+
+.item-details-grid-edit {
+  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr auto;
+}
+
+.grid-header {
+  font-weight: bold;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.grid-cell {
+  padding: 5px 0;
+  display: flex;
+  align-items: center;
+}
+
+.grid-cell input,
+.grid-cell textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.grid-cell textarea {
+  resize: vertical;
+  min-height: 38px;
+}
+
+.grid-cell input[readOnly],
+.grid-cell textarea[readOnly] {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+/* --- Bá»˜ Lá»ŒC & TRáº NG THÃI --- */
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  color: white;
+  font-weight: bold;
+}
+
+.status-pending {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.status-completed {
+  background-color: #28a745;
+}
+
+.filters-container {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.filter-group button {
+  background-color: #ffffff;
+  border: 1px solid #adb5bd;
+  color: #495057;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.filter-group button:hover {
+  background-color: #e9ecef;
+  border-color: #495057;
+}
+
+.filter-group button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* CÄƒn giá»¯a ná»™i dung trong báº£ng tá»“n kho */
+.inventory-table td {
+  text-align: center;
+}
+
+/* Giá»¯ láº¡i cÄƒn trÃ¡i cho cá»™t TÃªn hÃ ng (cá»™t thá»© 3) */
+.inventory-table td:nth-child(3) {
+  text-align: left;
+}
+
+/* --- CSS CHO Cáº¢NH BÃO Háº N Sá»¬ Dá»¤NG (Cáº¬P NHáº¬T MÃ€U Sáº®C) --- */
+
+/* Ãp dá»¥ng mÃ u ná»n trá»±c tiáº¿p cho cÃ¡c Ã” (td) Ä‘á»ƒ tÄƒng Ä‘á»™ Æ°u tiÃªn */
+.inventory-table-body tr.near-expiry-yellow td { background-color: #ffe08a; } /* VÃ ng Ä‘áº­m hÆ¡n */
+.inventory-table-body tr.near-expiry-orange td { background-color: #ffb74d; } /* Cam Ä‘áº­m hÆ¡n */
+.inventory-table-body tr.near-expiry-red td { background-color: #ef9a9a; } /* Äá» Ä‘áº­m hÆ¡n */
+.inventory-table-body tr.expired-black td { background-color: #a0a0a0; color: #fff; } /* Ná»n xÃ¡m Ä‘áº­m, chá»¯ tráº¯ng */
+
+/* MÃ u chá»¯ Ä‘áº­m hÆ¡n cho cÃ¡c dÃ²ng cáº£nh bÃ¡o */
+.inventory-table-body tr.near-expiry-yellow td,
+.inventory-table-body tr.near-expiry-orange td,
+.inventory-table-body tr.near-expiry-red td {
+    font-weight: 500;
+}
+
+/* Äáº·c biá»‡t cho hÃ ng háº¿t háº¡n */
+.inventory-table-body tr.expired-black td {
+    font-weight: bold;
+    text-decoration: line-through;
+}
+
+/* Khi di chuá»™t qua hoáº·c chá»n má»™t dÃ²ng cáº£nh bÃ¡o, nÃ³ sáº½ cÃ³ mÃ u xanh nhÆ° bÃ¬nh thÆ°á»ng */
+.inventory-table-body tr.near-expiry-yellow:hover td,
+.inventory-table-body tr.near-expiry-orange:hover td,
+.inventory-table-body tr.near-expiry-red:hover td,
+.inventory-table-body tr.expired-black:hover td,
+.inventory-table-body tr.near-expiry-yellow.selected-row td,
+.inventory-table-body tr.near-expiry-orange.selected-row td,
+.inventory-table-body tr.near-expiry-red.selected-row td,
+.inventory-table-body tr.expired-black.selected-row td {
+  background-color: #d6eaff !important;
+}
+
+/* --- CSS CHO TEAM BADGE --- */
+.team-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.team-badge.team-med {
+  background-color: #007bff; /* Xanh dÆ°Æ¡ng */
+}
+
+.team-badge.team-bio {
+  background-color: #28a745; /* Xanh lÃ¡ */
+}
+
+.team-badge.team-sparepart {
+  background-color: #6c757d; /* XÃ¡m */
+}
+
+/* --- CSS CHO TEMP BADGE --- */
+.temp-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500; /* ThÃªm Ä‘á»™ Ä‘áº­m cho chá»¯ */
+  display: inline-block; 
+}
+
+/* 2 â†’ 8Â°C: Xanh dÆ°Æ¡ng Ä‘áº­m hÆ¡n */
+.temp-badge.temp-cool {
+  background-color: #a7d9f2; /* MÃ u xanh dÆ°Æ¡ng sÃ¡ng hÆ¡n, dá»… nhÃ¬n */
+  color: #0056b3; /* Chá»¯ xanh dÆ°Æ¡ng Ä‘áº­m */
+}
+
+/* -25 â†’ -15Â°C: TÃ­m Ä‘áº­m hÆ¡n */
+.temp-badge.temp-frozen {
+  background-color: #c9b6e7; /* MÃ u tÃ­m sÃ¡ng hÆ¡n */
+  color: #4a148c; /* Chá»¯ tÃ­m Ä‘áº­m */
+}
+
+/* Nhiá»‡t Ä‘á»™ phÃ²ng: Xanh lÃ¡ Ä‘áº­m hÆ¡n */
+.temp-badge.temp-room {
+  background-color: #b3e6b3; /* MÃ u xanh lÃ¡ sÃ¡ng hÆ¡n */
+  color: #28a745; /* Chá»¯ xanh lÃ¡ Ä‘áº­m */
+}
+
+/* CÃ¡c loáº¡i khÃ¡c: XÃ¡m Ä‘áº­m hÆ¡n */
+.temp-badge.temp-other {
+  background-color: #ced4da; /* MÃ u xÃ¡m Ä‘áº­m hÆ¡n */
+  color: #343a40; /* Chá»¯ Ä‘en Ä‘áº­m */
+  border: 1px solid #adb5bd;
+}
+
+/* --- CSS CHO TÃŒM KIáº¾M & Bá»˜ Lá»ŒC --- */
+.controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Cho phÃ©p xuá»‘ng dÃ²ng trÃªn mÃ n hÃ¬nh nhá» */
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.search-container {
+  flex-grow: 1; /* Cho phÃ©p Ã´ tÃ¬m kiáº¿m co giÃ£n */
+  max-width: 400px; /* Giá»›i háº¡n chiá»u rá»™ng tá»‘i Ä‘a */
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 14px;
+  border-radius: 20px;
+  border: 1px solid #dee2e6;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Ghi Ä‘Ã¨ láº¡i margin cá»§a filters-container Ä‘á»ƒ nÃ³ náº±m trong controls-container */
+.filters-container {
+  margin-bottom: 0;
+  box-shadow: none;
+  padding: 0;
+  background-color: transparent;
+}
+
+/* --- CSS CHO DROPDOWN Sá» LÃ” (FEFO) --- */
+.lot-option-near-expiry {
+  background-color: #ffe08a; /* VÃ ng */
+  color: #333;
+}
+
+.lot-option-expired {
+  background-color: #ef9a9a; /* Äá» */
+  color: #fff;
+  font-weight: bold;
+  text-decoration: line-through;
+}
+
+/* --- CSS Bá»” SUNG CHO TRáº NG THÃI PHIáº¾U XUáº¤T --- */
+
+/* Tráº¡ng thÃ¡i "ÄÃ£ há»§y" sáº½ cÃ³ mÃ u xÃ¡m */
+.status-cancelled {
+  background-color: #6c757d;
+}
+
+/* NÃºt "XÃ¡c nháº­n" má»›i mÃ u xanh lÃ¡ */
+.btn-confirm {
+  color: #28a745;
+}
+.btn-confirm:hover {
+  background-color: #eaf6ec;
+}
+
+/* --- CSS CHO HIá»‚N THá»Š LÃ” ÄÃƒ CHá»ŒN (Báº¢N Sá»¬A Lá»–I CUá»I CÃ™NG) --- */
+.selected-lot-view {
+  display: flex;
+  align-items: center; /* CÄƒn giá»¯a cÃ¡c item theo chiá»u dá»c */
+  width: 100%;
+  height: 38px; /* Cá»‘ Ä‘á»‹nh chiá»u cao cá»§a cáº£ container */
+}
+
+.selected-lot-input {
+  /* Input sáº½ chiáº¿m toÃ n bá»™ khÃ´ng gian trá»« Ä‘i chiá»u rá»™ng cá»§a nÃºt */
+  width: calc(100% - 38px); 
+  height: 100%; /* Chiá»u cao báº±ng container cha */
+  border-right: none !important;
+  border-radius: 4px 0 0 4px !important;
+  background-color: #e9ecef !important;
+  margin: 0 !important;
+  box-sizing: border-box; /* Äáº£m báº£o tÃ­nh toÃ¡n kÃ­ch thÆ°á»›c chÃ­nh xÃ¡c */
+}
+
+.change-lot-btn {
+  width: 38px;
+  height: 100%; /* Chiá»u cao báº±ng container cha */
+  border: 1px solid #ced4da;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  background: #f8f9fa;
+  cursor: pointer;
+  
+  /* CÄƒn giá»¯a icon bÃªn trong nÃºt */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box; /* Äáº£m báº£o tÃ­nh toÃ¡n kÃ­ch thÆ°á»›c chÃ­nh xÃ¡c */
+}
+
+.change-lot-btn svg { /* Style trá»±c tiáº¿p cho icon */
+  width: 16px;
+  height: 16px;
+  color: #495057;
+}
+
+.change-lot-btn:hover {
+  background-color: #e2e6ea;
+}
+
+/* --- CSS CHO NÃšT XEM CHI TIáº¾T --- */
+.btn-view {
+  color: #17a2b8; /* MÃ u xanh ngá»c */
+}
+.btn-view:hover {
+  background-color: #e8f6f8;
+}
+
+/* --- CSS Sá»¬A Lá»–I MODAL Bá»Š TRÃ€N --- */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh; /* Giá»›i háº¡n chiá»u cao tá»‘i Ä‘a cá»§a modal */
+}
+
+.modal-body {
+  flex-grow: 1; /* Cho phÃ©p pháº§n thÃ¢n co giÃ£n */
+  overflow-y: auto; /* Táº¡o thanh cuá»™n dá»c CHá»ˆ cho pháº§n thÃ¢n */
+  padding: 10px 0;
+}
+
+/* --- CSS CHO GIAO DIá»†N XEM CHI TIáº¾T NHá»Ž Gá»ŒN --- */
+.compact-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* Chia thÃ nh 3 cá»™t */
+  gap: 0px 20px; /* Khoáº£ng cÃ¡ch giá»¯a cÃ¡c dÃ²ng vÃ  cá»™t */
+  border: 1px solid var(--border-color);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.compact-info-grid div {
+  margin-bottom: 5px;
+}
+
+.compact-info-grid label {
+  font-size: 13px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.compact-info-grid p {
+  margin: 0;
+  font-size: 15px;
+}
+
+.compact-info-grid .info-description {
+  grid-column: 1 / -1; /* Cho phÃ©p diá»…n giáº£i chiáº¿m toÃ n bá»™ chiá»u rá»™ng */
+  margin-top: 5px;
+}
+
+
+
+--- FILE: D:\quan-ly-kho\src\styles\DashboardPage.css ---
+
+
+/* src/styles/DashboardPage.css */
+
+.dashboard-container {
+  padding: 20px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.dashboard-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border-left: 5px solid;
+}
+
+.card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 24px;
+  margin-right: 20px;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.card-value {
+  color: #343a40;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+
+
+--- FILE: D:\quan-ly-kho\src\styles\print.css ---
+
+
+/* src/styles/print.css */
+
+@media print {
+  @page {
+    size: landscape; /* In khá»• ngang */
+    margin: 20mm; /* CÄƒn lá» trang in */
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important; /* Äáº£m báº£o mÃ u sáº¯c Ä‘Æ°á»£c in Ä‘Ãºng trÃªn Chrome/Safari */
+    color-adjust: exact !important; /* TiÃªu chuáº©n */
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .printable-area .modal-actions {
+    display: none;
+  }
+  
+  /* Cáº¬P NHáº¬T TOÃ€N Bá»˜ Báº¢NG */
+  .printable-area .products-table {
+    margin-top: 20px;
+    box-shadow: none;
+    border: 1px solid #333; /* Viá»n Ä‘áº­m hÆ¡n cho chuyÃªn nghiá»‡p */
+    table-layout: fixed; 
+    width: 100%;
+    font-size: 14px; /* Cá»¡ chá»¯ to hÆ¡n */
+    border-collapse: collapse; /* Gá»™p viá»n */
+  }
+
+  .printable-area .products-table th,
+  .printable-area .products-table td {
+    border: 1px solid #333;
+    padding: 10px;
+    word-wrap: break-word; 
+    vertical-align: middle; /* CÄƒn giá»¯a theo chiá»u dá»c */
+    text-align: center; /* Máº·c Ä‘á»‹nh cÄƒn giá»¯a táº¥t cáº£ */
+  }
+  
+  .printable-area .products-table th {
+      background-color: #f2f2f2 !important; /* MÃ u ná»n cho tiÃªu Ä‘á» */
+      font-weight: bold;
+  }
+
+  /* CÄƒn lá» trÃ¡i cho cá»™t TÃªn hÃ ng */
+  .printable-area .products-table th:nth-child(2),
+  .printable-area .products-table td:nth-child(2) { 
+      text-align: left; 
+  }
+
+  /* TÃ´ Ä‘áº­m MÃ£ hÃ ng, Sá»‘ lÃ´, SL xuáº¥t */
+  .printable-area .products-table td:nth-child(1),
+  .printable-area .products-table td:nth-child(3),
+  .printable-area .products-table td:nth-child(7) { 
+      font-weight: bold;
+  }
+  
+  /* PhÃ¢n bá»• láº¡i Ä‘á»™ rá»™ng cá»™t Ä‘á»ƒ táº­n dá»¥ng tá»‘i Ä‘a */
+  .printable-area .products-table th:nth-child(1) { width: 10%; } /* MÃ£ hÃ ng */
+  .printable-area .products-table th:nth-child(2) { width: 30%; } /* TÃªn hÃ ng */
+  .printable-area .products-table th:nth-child(3) { width: 12%; } /* Sá»‘ lÃ´ */
+  .printable-area .products-table th:nth-child(4) { width: 10%; } /* HSD */
+  .printable-area .products-table th:nth-child(5) { width: 7%; }  /* ÄVT */
+  .printable-area .products-table th:nth-child(6) { width: 13%; } /* Quy cÃ¡ch */
+  .printable-area .products-table th:nth-child(7) { width: 8%; }  /* SL xuáº¥t */
+  .printable-area .products-table th:nth-child(8) { width: 10%; } /* Nhiá»‡t Ä‘á»™ BQ */
+
+  /* Äá»‹nh dáº¡ng láº¡i thÃ´ng tin chung */
+  .printable-area h2 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 25px;
+  }
+  .printable-area .compact-info-grid {
+      border: none;
+      padding: 0;
+      font-size: 14px;
+      margin-bottom: 25px;
+  }
+  .printable-area .compact-info-grid label {
+    font-size: 13px;
+  }
+  .printable-area .compact-info-grid p {
+    font-size: 15px;
+  }
+}
+
+
+
+--- FILE: D:\quan-ly-kho\src\App.css ---
+
+
+/* src/App.css */
+
+/* Class má»›i nÃ y chá»‰ dÃ¹ng Ä‘á»ƒ cÄƒn giá»¯a trang Ä‘Äƒng nháº­p */
+.login-page-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* CÃ¡c style cho form Ä‘Äƒng nháº­p, giá»¯ nguyÃªn nhÆ° cÅ© */
+.login-container {
+  padding: 40px;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 350px;
+}
+
+.login-container h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.logout-button {
+  background-color: #dc3545;
+  margin-top: 20px;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+}
+
+
+
+--- FILE: D:\quan-ly-kho\src\App.jsx ---
+
+
+// src/App.jsx
+import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from './firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+import LoginPage from './components/LoginPage';
+import AdminLayout from './components/AdminLayout';
+import ViewerLayout from './components/ViewerLayout';
+import './App.css';
+import { BrowserRouter } from 'react-router-dom';
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          setUserRole(userDocSnap.data().role);
+        } else {
+          setUserRole(null); // KhÃ´ng cÃ³ vai trÃ²
+        }
+      } else {
+        setUser(null);
+        setUserRole(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return <div>Äang táº£i...</div>;
+  }
+  
+  const renderLayout = () => {
+    // Chá»‰ 'owner' má»›i tháº¥y giao diá»‡n quáº£n trá»‹
+    if (userRole === 'owner') {
+      return <AdminLayout />;
+    }
+    // Táº¥t cáº£ cÃ¡c vai trÃ² cÃ²n láº¡i (admin, med, bio) Ä‘á»u lÃ  ngÆ°á»i xem
+    if (userRole) {
+      return <ViewerLayout user={user} userRole={userRole} />;
+    }
+    // Náº¿u khÃ´ng cÃ³ vai trÃ², cÃ³ thá»ƒ hiá»ƒn thá»‹ trang lá»—i hoáº·c trang viewer máº·c Ä‘á»‹nh
+    return <ViewerLayout user={user} userRole="viewer" />; 
+  };
+
+  return (
+    <BrowserRouter>
+      {user ? (
+        renderLayout()
+      ) : (
+        <div className="login-page-wrapper">
+          <LoginPage />
+        </div>
+      )}
+    </BrowserRouter>
+  );
+}
+
+export default App;
+
+
+
+--- FILE: D:\quan-ly-kho\src\firebaseConfig.js ---
+
+
+// src/firebaseConfig.js
+
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
+// == THÃ”NG TIN Cáº¤U HÃŒNH FIREBASE Cá»¦A Báº N ==
+const firebaseConfig = {
+  apiKey: "AIzaSyDLnv85ipAXZ4IXCIKMNFpQgZQCy_uF3PY",
+  authDomain: "kho-ptbiomed.firebaseapp.com",
+  projectId: "kho-ptbiomed",
+  storageBucket: "kho-ptbiomed.appspot.com",
+  messagingSenderId: "41298806902",
+  appId: "1:41298806902:web:7adb67dd5ee55918887757"
+};
+
+// Khá»Ÿi táº¡o á»©ng dá»¥ng Firebase
+const app = initializeApp(firebaseConfig);
+
+// Xuáº¥t ra cÃ¡c dá»‹ch vá»¥ Ä‘á»ƒ sá»­ dá»¥ng trong toÃ n bá»™ á»©ng dá»¥ng
+export const db = getFirestore(app);      // Dá»‹ch vá»¥ cÆ¡ sá»Ÿ dá»¯ liá»‡u Firestore
+export const auth = getAuth(app);         // Dá»‹ch vá»¥ xÃ¡c thá»±c ngÆ°á»i dÃ¹ng
+
+
+
+--- FILE: D:\quan-ly-kho\src\index.css ---
+
+
+/* src/index.css */
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f0f2f5; /* ThÃªm má»™t mÃ u ná»n xÃ¡m nháº¡t cho toÃ n bá»™ trang */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+
+
+--- FILE: D:\quan-ly-kho\src\main.jsx ---
+
+
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+import './styles/print.css'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+
+
+

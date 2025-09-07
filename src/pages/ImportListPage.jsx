@@ -1,19 +1,19 @@
 // src/pages/ImportListPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore'; // Import thêm Timestamp
+import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import EditImportSlipModal from '../components/EditImportSlipModal';
-import { FiEdit } from 'react-icons/fi';
+import ViewImportSlipModal from '../components/ViewImportSlipModal';
+import { FiEdit, FiEye } from 'react-icons/fi';
 
-// Hàm helper để chuyển chuỗi dd/mm/yyyy thành object Date
 const parseDateString = (dateString) => {
   try {
     const [day, month, year] = dateString.split('/');
-    // new Date(year, monthIndex, day) - month is 0-indexed
     return new Date(year, month - 1, day);
   } catch (error) {
     console.error("Lỗi định dạng ngày tháng:", dateString, error);
-    return null; // Trả về null nếu định dạng sai
+    return null;
   }
 };
 
@@ -22,6 +22,7 @@ const ImportListPage = () => {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const fetchImportSlips = async () => {
     setLoading(true);
@@ -45,40 +46,38 @@ const ImportListPage = () => {
     if (!window.confirm(`Bạn có chắc muốn xác nhận nhập kho cho phiếu của NCC "${slip.supplier}" không?`)) {
       return;
     }
-
     try {
       for (const item of slip.items) {
-        // Chuyển đổi HSD từ string sang Timestamp
         const expiryDateObject = parseDateString(item.expiryDate);
         if (!expiryDateObject) {
             alert(`HSD của mặt hàng ${item.productName} (${item.lotNumber}) có định dạng sai. Vui lòng sửa lại.`);
-            return; // Dừng lại nếu có lỗi
+            return;
         }
         const expiryTimestamp = Timestamp.fromDate(expiryDateObject);
-
         const newLotData = {
-          importDate: Timestamp.now(), // Ngày nhập kho là ngày xác nhận
+          importDate: Timestamp.now(),
           productId: item.productId,
           productName: item.productName,
           lotNumber: item.lotNumber,
-          expiryDate: expiryTimestamp, // <<-- SỬA Ở ĐÂY
+          expiryDate: expiryTimestamp,
           unit: item.unit,
           packaging: item.packaging,
           storageTemp: item.storageTemp,
           team: item.team,
+          manufacturer: item.manufacturer,
           quantityImported: Number(item.quantity),
           quantityRemaining: Number(item.quantity),
           notes: item.notes,
+          // --- THAY ĐỔI QUAN TRỌNG ---
+          // Thêm tên nhà cung cấp từ phiếu nhập vào dữ liệu lô hàng
+          supplier: slip.supplier,
         };
         await addDoc(collection(db, "inventory_lots"), newLotData);
       }
-
       const slipDocRef = doc(db, "import_tickets", slip.id);
       await updateDoc(slipDocRef, { status: "completed" });
-
       alert('Xác nhận nhập kho thành công!');
       fetchImportSlips();
-
     } catch (error) {
       console.error("Lỗi khi xác nhận nhập kho: ", error);
       alert('Đã xảy ra lỗi khi xác nhận nhập kho.');
@@ -86,25 +85,27 @@ const ImportListPage = () => {
   };
 
   const openEditModal = (slip) => {
-  setSelectedSlip(slip);
-  setIsEditModalOpen(true);
-};
+    setSelectedSlip(slip);
+    setIsEditModalOpen(true);
+  };
 
-const handleSaveSlipChanges = async (updatedSlip) => {
-  try {
-    const slipDocRef = doc(db, "import_tickets", updatedSlip.id);
-    // Chỉ cập nhật lại mảng items
-    await updateDoc(slipDocRef, {
-      items: updatedSlip.items
-    });
-    setIsEditModalOpen(false); // Đóng popup
-    fetchImportSlips(); // Tải lại danh sách cho mới
-    alert('Cập nhật phiếu nhập thành công!');
-  } catch (error) {
-    console.error("Lỗi khi cập nhật phiếu nhập: ", error);
-    alert('Đã xảy ra lỗi khi cập nhật.');
-  }
-};
+  const openViewModal = (slip) => {
+    setSelectedSlip(slip);
+    setIsViewModalOpen(true);
+  };
+
+  const handleSaveSlipChanges = async (updatedSlip) => {
+    try {
+      const slipDocRef = doc(db, "import_tickets", updatedSlip.id);
+      await updateDoc(slipDocRef, { items: updatedSlip.items });
+      setIsEditModalOpen(false);
+      fetchImportSlips();
+      alert('Cập nhật phiếu nhập thành công!');
+    } catch (error) {
+      console.error("Lỗi khi cập nhật phiếu nhập: ", error);
+      alert('Đã xảy ra lỗi khi cập nhật.');
+    }
+  };
 
   if (loading) {
     return <div>Đang tải danh sách phiếu nhập...</div>;
@@ -112,18 +113,24 @@ const handleSaveSlipChanges = async (updatedSlip) => {
 
   return (
     <div>
-        {isEditModalOpen && (
-  <EditImportSlipModal 
-    slip={selectedSlip} 
-    onClose={() => setIsEditModalOpen(false)}
-    onSave={handleSaveSlipChanges}
-  />
-)}
+      {isViewModalOpen && (
+        <ViewImportSlipModal 
+          slip={selectedSlip} 
+          onClose={() => setIsViewModalOpen(false)}
+        />
+      )}
+
+      {isEditModalOpen && (
+        <EditImportSlipModal 
+          slip={selectedSlip} 
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={handleSaveSlipChanges}
+        />
+      )}
       <div className="page-header">
         <h1>Danh sách Phiếu Nhập Kho</h1>
       </div>
       <table className="products-table">
-        {/* ... table content giữ nguyên ... */}
         <thead>
           <tr>
             <th>Ngày tạo</th>
@@ -145,20 +152,22 @@ const handleSaveSlipChanges = async (updatedSlip) => {
                 </span>
               </td>
               <td>
-  <div className="action-buttons">
-    {slip.status === 'pending' && (
-      <>
-        {/* Nút Sửa bị thiếu ở lần trước */}
-        <button className="btn-icon btn-edit" onClick={() => openEditModal(slip)}>
-          <FiEdit />
-        </button>
-        <button className="btn-primary" onClick={() => handleConfirmImport(slip)}>
-          Xác nhận
-        </button>
-      </>
-    )}
-  </div>
-</td>
+                <div className="action-buttons">
+                  <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
+                    <FiEye />
+                  </button>
+                  {slip.status === 'pending' && (
+                    <>
+                      <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
+                        <FiEdit />
+                      </button>
+                      <button className="btn-primary" onClick={() => handleConfirmImport(slip)}>
+                        Xác nhận
+                      </button>
+                    </>
+                  )}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

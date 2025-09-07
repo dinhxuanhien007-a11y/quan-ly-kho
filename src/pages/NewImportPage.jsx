@@ -3,20 +3,17 @@ import React, { useState, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
-// Hàm helper để chuyển chuỗi dd/mm/yyyy thành object Date
 const parseDateString = (dateString) => {
   try {
     const [day, month, year] = dateString.split('/');
-    // new Date(year, monthIndex, day) - month is 0-indexed
     return new Date(year, month - 1, day);
   } catch (error) {
     console.error("Lỗi định dạng ngày tháng:", dateString, error);
-    return null; // Trả về null nếu định dạng sai
+    return null;
   }
 };
 
 const NewImportPage = () => {
-  // --- STATE MANAGEMENT ---
   const today = new Date();
   const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
 
@@ -29,9 +26,6 @@ const NewImportPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const inputRefs = useRef([]);
 
-  // --- FUNCTIONS ---
-
-  // Chỉ cập nhật state, không gọi Firestore, tối ưu hiệu suất
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     let currentValue = value;
@@ -51,15 +45,12 @@ const NewImportPage = () => {
     setItems(newItems);
   };
 
-  // Chỉ tìm kiếm sản phẩm khi người dùng rời khỏi ô Mã hàng
   const handleProductSearch = async (index, productId) => {
   if (!productId) return;
-
   const newItems = [...items];
   try {
     const productRef = doc(db, 'products', productId);
     const productSnap = await getDoc(productRef);
-
     if (productSnap.exists()) {
       const productData = productSnap.data();
       newItems[index].productName = productData.productName || '';
@@ -67,14 +58,14 @@ const NewImportPage = () => {
       newItems[index].packaging = productData.packaging || '';
       newItems[index].storageTemp = productData.storageTemp || '';
       newItems[index].team = productData.team || '';
-      newItems[index].manufacturer = productData.manufacturer || ''; // <-- DÒNG MỚI
+      newItems[index].manufacturer = productData.manufacturer || '';
     } else {
       newItems[index].productName = 'Không tìm thấy mã hàng!';
       newItems[index].unit = '';
       newItems[index].packaging = '';
       newItems[index].storageTemp = '';
       newItems[index].team = '';
-      newItems[index].manufacturer = ''; // <-- DÒNG MỚI
+      newItems[index].manufacturer = '';
     }
   } catch (error) {
     console.error("Lỗi khi tìm kiếm sản phẩm:", error);
@@ -102,7 +93,6 @@ const NewImportPage = () => {
     ]);
   };
 
-  // Hàm lưu phiếu với trạng thái "pending"
   const handleSaveSlip = async () => {
     if (!supplier) {
       alert('Vui lòng nhập thông tin Nhà cung cấp.');
@@ -136,7 +126,6 @@ const NewImportPage = () => {
     }
   };
 
-  // Hàm mới để nhập kho trực tiếp
   const handleDirectImport = async () => {
     if (!supplier) {
       alert('Vui lòng nhập thông tin Nhà cung cấp.');
@@ -174,6 +163,9 @@ const NewImportPage = () => {
           quantityImported: Number(item.quantity),
           quantityRemaining: Number(item.quantity),
           notes: item.notes,
+          // --- THAY ĐỔI QUAN TRỌNG ---
+          // Thêm tên nhà cung cấp vào dữ liệu của lô hàng
+          supplier: supplier, 
         };
         await addDoc(collection(db, "inventory_lots"), newLotData);
       }
@@ -192,7 +184,6 @@ const NewImportPage = () => {
       setSupplier('');
       setDescription('');
       setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '' }]);
-
     } catch (error) {
       console.error("Lỗi khi nhập kho trực tiếp: ", error);
       alert('Đã xảy ra lỗi khi nhập kho trực tiếp.');
@@ -201,7 +192,6 @@ const NewImportPage = () => {
     }
   };
 
-  // --- RENDER ---
   return (
     <div>
       <h1>Tạo Phiếu Nhập Kho</h1>

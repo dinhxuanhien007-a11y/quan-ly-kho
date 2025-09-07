@@ -1,0 +1,96 @@
+/* src/styles/print.css (Phiên bản Hoàn Chỉnh) */
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 5mm; /* YÊU CẦU: Giảm lề trang in xuống 5mm */
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body * { visibility: hidden; }
+  .printable-area, .printable-area * { visibility: visible; }
+
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .printable-area .modal-actions { display: none; }
+  
+  .printable-area h2 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 25px;
+  }
+  .printable-area .compact-info-grid {
+    border: none;
+    padding: 0;
+    font-size: 14px;
+    margin-bottom: 25px;
+  }
+  .printable-area .compact-info-grid label { font-size: 13px; }
+  .printable-area .compact-info-grid p { font-size: 15px; }
+
+  /* --- ĐỊNH DẠNG BẢNG --- */
+  .printable-area .products-table {
+    margin-top: 20px;
+    table-layout: fixed; 
+    width: 100%;
+    font-size: 14px;
+    border-collapse: collapse;
+  }
+
+  .printable-area .products-table th,
+  .printable-area .products-table td {
+    border: 1px solid #333;
+    padding: 10px;
+    word-wrap: break-word; 
+    vertical-align: middle;
+    text-align: center; /* YÊU CẦU: Căn giữa làm mặc định */
+  }
+  
+  .printable-area .products-table th {
+    background-color: #f2f2f2 !important;
+    font-weight: bold;
+  }
+
+  /* YÊU CẦU: Chỉ căn lề trái cho nội dung cột "Tên hàng" */
+  .printable-area .products-table td:nth-child(2) { 
+    text-align: left; 
+  }
+
+  /* Tô đậm các ô dữ liệu quan trọng */
+  .printable-area .products-table td:nth-child(1),
+  .printable-area .products-table td:nth-child(3),
+  .printable-area .products-table td:nth-child(7) { 
+    font-weight: bold;
+  }
+  
+  /* --- PHÂN BỔ LẠI CHIỀU RỘNG CỘT --- */
+  .printable-area .products-table th:nth-child(1) { width: 10%; } /* Mã hàng */
+  .printable-area .products-table th:nth-child(2) { width: 26%; } /* Tên hàng */
+  .printable-area .products-table th:nth-child(3) { width: 12%; } /* Số lô */
+  .printable-area .products-table th:nth-child(4) { width: 10%; } /* HSD */
+  .printable-area .products-table th:nth-child(5) { width: 8%; }  /* ĐVT */
+  .printable-area .products-table th:nth-child(6) { width: 15%; } /* Quy cách */
+  .printable-area .products-table th:nth-child(7) { width: 9%; }  /* SL xuất (Rộng hơn) */
+  .printable-area .products-table th:nth-child(8) { width: 10%; } /* Nhiệt độ BQ */
+
+  /* YÊU CẦU: Hạn chế tối đa việc xuống dòng ở các cột dữ liệu ngắn */
+  .printable-area .products-table td:nth-child(1),
+  .printable-area .products-table td:nth-child(3),
+  .printable-area .products-table td:nth-child(4),
+  .printable-area .products-table td:nth-child(5),
+  .printable-area .products-table td:nth-child(7) {
+      white-space: nowrap;
+  }
+}

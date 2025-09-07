@@ -2,57 +2,54 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query } from 'firebase/firestore';
-import InventoryFilters from '../components/InventoryFilters'; // Import component bộ lọc
+import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 
-// Thêm hàm này vào đầu file InventoryPage.jsx
-
 const getRowColorByExpiry = (expiryDate) => {
-  if (!expiryDate || !expiryDate.toDate) return ''; // Bỏ qua nếu không có HSD
+  if (!expiryDate || !expiryDate.toDate) return ''; 
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Chuẩn hóa về đầu ngày
+  today.setHours(0, 0, 0, 0); 
 
   const expDate = expiryDate.toDate();
   expDate.setHours(0, 0, 0, 0);
 
-  // Tính số ngày còn lại
   const diffTime = expDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) {
-    return 'expired-black'; // Đã hết hạn -> màu đen
+    return 'expired-black';
   }
   if (diffDays <= 60) {
-    return 'near-expiry-red'; // Dưới 60 ngày -> màu đỏ
+    return 'near-expiry-red';
   }
   if (diffDays <= 90) {
-    return 'near-expiry-orange'; // Từ 61 - 90 ngày -> màu cam
+    return 'near-expiry-orange';
   }
   if (diffDays <= 120) {
-    return 'near-expiry-yellow'; // Từ 91 - 120 ngày -> màu vàng
+    return 'near-expiry-yellow';
   }
 
-  return ''; // Mặc định không có màu
+  return '';
 };
 
-// Thêm hàm này vào đầu file InventoryPage.jsx
 const formatDate = (timestamp) => {
   if (!timestamp || !timestamp.toDate) return '';
   const date = timestamp.toDate();
   const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
+  const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
   return `${day}/${month}/${year}`;
 };
 
 const InventoryPage = ({ user, userRole }) => {
-  const [masterInventory, setMasterInventory] = useState([]); // Danh sách gốc
-  const [filteredInventory, setFilteredInventory] = useState([]); // Danh sách đã lọc để hiển thị
+  const [masterInventory, setMasterInventory] = useState([]);
+  const [filteredInventory, setFilteredInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
   const [selectedRowId, setSelectedRowId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(''); // MỚI: State cho ô tìm kiếm
 
   useEffect(() => {
     const fetchAndFilterInventory = async () => {
@@ -88,13 +85,14 @@ const InventoryPage = ({ user, userRole }) => {
     }
   }, [userRole]);
 
+  // CẬP NHẬT: Mở rộng useEffect để xử lý cả việc tìm kiếm
   useEffect(() => {
     let result = [...masterInventory];
 
+    // 1. Lọc theo Team và Tình trạng HSD (giữ nguyên)
     if (filters.team !== 'all') {
       result = result.filter(item => item.team === filters.team);
     }
-
     if (filters.dateStatus !== 'all') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -113,10 +111,22 @@ const InventoryPage = ({ user, userRole }) => {
       }
     }
     
+    // 2. MỚI: Lọc theo từ khóa tìm kiếm
+    if (searchTerm) {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      result = result.filter(item => {
+        return (
+          item.productId?.toLowerCase().includes(lowercasedFilter) ||
+          item.productName?.toLowerCase().includes(lowercasedFilter) ||
+          item.lotNumber?.toLowerCase().includes(lowercasedFilter)
+        );
+      });
+    }
+    
     result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
 
     setFilteredInventory(result);
-  }, [filters, masterInventory]);
+  }, [filters, masterInventory, searchTerm]); // CẬP NHẬT: Thêm searchTerm vào dependency array
 
   const handleFilterChange = (filterName, value) => {
     setFilters(prevFilters => ({
@@ -126,16 +136,13 @@ const InventoryPage = ({ user, userRole }) => {
   };
 
   const handleRowClick = (lotId) => {
-  // Nếu click vào dòng đang được chọn thì bỏ chọn
-  if (selectedRowId === lotId) {
-    setSelectedRowId(null);
-  } else {
-    // Ngược lại, chọn dòng mới
-    setSelectedRowId(lotId);
-  }
-};
+    if (selectedRowId === lotId) {
+      setSelectedRowId(null);
+    } else {
+      setSelectedRowId(lotId);
+    }
+  };
   
-  // Hàm để lấy tiêu đề động
   const getTitleByRole = (role) => {
     switch (role) {
       case 'med':
@@ -160,12 +167,25 @@ const InventoryPage = ({ user, userRole }) => {
       <div className="page-header">
         <h1>{getTitleByRole(userRole)}</h1>
       </div>
+      
+      {/* MỚI: Container cho toàn bộ khu vực tìm kiếm và bộ lọc */}
+      <div className="controls-container">
+        <InventoryFilters 
+          userRole={userRole} 
+          onFilterChange={handleFilterChange} 
+          activeFilters={filters}
+        />
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Tìm theo Mã hàng, Tên hàng, Số lô..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+      </div>
 
-      <InventoryFilters 
-        userRole={userRole} 
-        onFilterChange={handleFilterChange} 
-        activeFilters={filters}
-      />
 
       <div className="table-container">
         <table className="inventory-table">
@@ -187,35 +207,34 @@ const InventoryPage = ({ user, userRole }) => {
             </tr>
           </thead>
           <tbody className="inventory-table-body">
-  {filteredInventory.length > 0 ? (
-    filteredInventory.map(lot => (
-      <tr
-  key={lot.id}
-  onClick={() => handleRowClick(lot.id)}
-  // Kết hợp các class lại với nhau
-  className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
->
-        <td>{formatDate(lot.importDate)}</td>
-        <td>{lot.productId}</td>
-        <td>{lot.productName}</td>
-        <td>{lot.lotNumber}</td>
-        <td>{formatDate(lot.expiryDate)}</td>
-        <td>{lot.unit}</td>
-        <td>{lot.packaging}</td>
-        <td>{lot.quantityImported}</td>
-        <td>{lot.quantityRemaining}</td>
-        <td>{lot.notes}</td>
-        <td><TempBadge temperature={lot.storageTemp} /></td>
-        <td>{lot.manufacturer}</td>
-        <td><TeamBadge team={lot.team} /></td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="13" style={{ textAlign: 'center' }}>Không có dữ liệu tồn kho phù hợp.</td>
-    </tr>
-  )}
-</tbody>
+            {filteredInventory.length > 0 ? (
+              filteredInventory.map(lot => (
+                <tr
+                  key={lot.id}
+                  onClick={() => handleRowClick(lot.id)}
+                  className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+                >
+                  <td>{formatDate(lot.importDate)}</td>
+                  <td>{lot.productId}</td>
+                  <td>{lot.productName}</td>
+                  <td>{lot.lotNumber}</td>
+                  <td>{formatDate(lot.expiryDate)}</td>
+                  <td>{lot.unit}</td>
+                  <td>{lot.packaging}</td>
+                  <td>{lot.quantityImported}</td>
+                  <td>{lot.quantityRemaining}</td>
+                  <td>{lot.notes}</td>
+                  <td><TempBadge temperature={lot.storageTemp} /></td>
+                  <td>{lot.manufacturer}</td>
+                  <td><TeamBadge team={lot.team} /></td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="13" style={{ textAlign: 'center' }}>Không có dữ liệu tồn kho phù hợp.</td>
+              </tr>
+            )}
+          </tbody>
         </table>
       </div>
     </div>

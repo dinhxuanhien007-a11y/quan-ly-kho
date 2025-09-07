@@ -1,8 +1,8 @@
 // src/components/Sidebar.jsx
 
 import React, { useState } from 'react';
-// Gộp tất cả icon vào một dòng duy nhất
-import { FiHome, FiArchive, FiLogIn, FiFileText, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi'; 
+// CẬP NHẬT: Thay đổi bộ icon cho phù hợp
+import { FiHome, FiArchive, FiPlusCircle, FiMinusCircle, FiFileText, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
 import { NavLink } from 'react-router-dom';
 import '../styles/AdminLayout.css';
 
@@ -30,18 +30,30 @@ const Sidebar = () => {
             <span className="menu-text">Quản lý hàng hóa</span>
           </NavLink>
         </li>
-        {/* THÊM MỤC MENU MỚI */}
+        {/* CẬP NHẬT: Đổi icon thành FiPlusCircle */}
         <li>
           <NavLink to="/new-import">
-            <FiLogIn className="menu-icon" />
+            <FiPlusCircle className="menu-icon" />
             <span className="menu-text">Tạo Phiếu Nhập</span>
           </NavLink>
         </li>
-          {/* THÊM MỤC MENU MỚI */}
+        {/* CẬP NHẬT: Đổi icon thành FiMinusCircle */}
+        <li>
+          <NavLink to="/new-export">
+            <FiMinusCircle className="menu-icon" />
+            <span className="menu-text">Tạo Phiếu Xuất</span>
+          </NavLink>
+        </li>
         <li>
           <NavLink to="/imports">
             <FiFileText className="menu-icon" />
             <span className="menu-text">DS Phiếu Nhập</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/exports">
+            <FiFileText className="menu-icon" />
+            <span className="menu-text">DS Phiếu Xuất</span>
           </NavLink>
         </li>
       </ul>
