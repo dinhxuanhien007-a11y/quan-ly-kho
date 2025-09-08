@@ -9,9 +9,8 @@ import {
   getDocs,
   orderBy,
 } from 'firebase/firestore';
-import LotSankeyChart from '../components/LotSankeyChart';
+import LotJourneyExplorer from '../components/LotJourneyExplorer';
 
-// Hàm helper để định dạng ngày tháng
 const formatDate = (timestamp) => {
   if (!timestamp || !timestamp.toDate) return 'N/A';
   return timestamp.toDate().toLocaleDateString('vi-VN');
@@ -23,6 +22,7 @@ const LotTracePage = () => {
   const [importRecords, setImportRecords] = useState([]);
   const [exportHistory, setExportHistory] = useState([]);
   const [searchAttempted, setSearchAttempted] = useState(false);
+  const [selectedNode, setSelectedNode] = useState(null);
 
   const handleTrace = async () => {
     if (!lotNumber) {
@@ -33,6 +33,7 @@ const LotTracePage = () => {
     setImportRecords([]);
     setExportHistory([]);
     setSearchAttempted(true);
+    setSelectedNode(null);
 
     try {
       const lotQuery = query(
@@ -70,7 +71,7 @@ const LotTracePage = () => {
             ticketId: doc.id,
             exportDate: ticket.createdAt,
             customer: ticket.customer,
-            quantityExported: exportedItem.quantityToExport,
+            quantityExported: exportedItem.quantityToExport || exportedItem.quantityExported || 0,
           });
         }
       });
@@ -82,6 +83,18 @@ const LotTracePage = () => {
       setIsLoading(false);
     }
   };
+
+  const handleNodeClick = (event, node) => {
+    setSelectedNode(node.data);
+  };
+
+  const handlePaneClick = () => {
+    setSelectedNode(null);
+  };
+  
+  const filteredExportHistory = selectedNode && selectedNode.type === 'customer'
+    ? exportHistory.filter(item => item.customer === selectedNode.name)
+    : exportHistory;
 
   const masterInfo = importRecords.length > 0 ? importRecords[0] : null;
   const totalImported = importRecords.reduce(
@@ -133,16 +146,16 @@ const LotTracePage = () => {
 
       {!isLoading && importRecords.length > 0 && (
         <div>
-          {/* Phần 1: Sơ đồ dòng chảy */}
           <div className="form-section">
-            <h3 style={{ marginTop: 0 }}>Sơ Đồ Dòng Chảy</h3>
-            <LotSankeyChart 
+            <h3 style={{ marginTop: 0 }}>Hành Trình Lô Hàng: {masterInfo.lotNumber}</h3>
+            <LotJourneyExplorer
               importRecords={importRecords}
               exportHistory={exportHistory}
+              onNodeClick={handleNodeClick}
+              onPaneClick={handlePaneClick}
             />
           </div>
 
-          {/* Phần 2: Thông tin chung & Tóm tắt */}
           <div className="form-section">
             <h3 style={{ marginTop: 0 }}>Thông Tin Chung & Tóm Tắt</h3>
             <div className="compact-info-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
@@ -158,7 +171,6 @@ const LotTracePage = () => {
             </div>
           </div>
 
-          {/* Phần 3: Bảng chi tiết các lần nhập kho */}
           <div className="form-section">
             <h3 style={{ marginTop: 0 }}>Chi Tiết Các Lần Nhập Kho</h3>
             <table className="products-table">
@@ -182,11 +194,15 @@ const LotTracePage = () => {
               </tbody>
             </table>
           </div>
-          
-          {/* Phần 4: Bảng lịch sử xuất kho */}
+
           <div className="form-section">
-            <h3 style={{ marginTop: 0 }}>Lịch Sử Xuất Kho</h3>
-            {exportHistory.length > 0 ? (
+            <h3 style={{ marginTop: 0 }}>
+              {selectedNode && selectedNode.type === 'customer' 
+                ? `Lịch Sử Xuất Kho cho: ${selectedNode.name}`
+                : 'Toàn Bộ Lịch Sử Xuất Kho'
+              }
+            </h3>
+            {filteredExportHistory.length > 0 ? (
               <table className="products-table">
                 <thead>
                   <tr>
@@ -197,7 +213,7 @@ const LotTracePage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {exportHistory.map((item) => (
+                  {filteredExportHistory.map((item) => (
                     <tr key={item.ticketId}>
                       <td>{formatDate(item.exportDate)}</td>
                       <td>{item.ticketId}</td>
@@ -207,9 +223,7 @@ const LotTracePage = () => {
                   ))}
                 </tbody>
               </table>
-            ) : (
-              <p>Lô hàng này chưa được xuất kho lần nào.</p>
-            )}
+            ) : (<p>Lô hàng này chưa được xuất kho lần nào.</p>)}
           </div>
         </div>
       )}
