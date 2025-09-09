@@ -1,0 +1,102 @@
+/* src/styles/StocktakePage.css */
+
+/* Ẩn khu vực dùng để in ra khỏi màn hình hiển thị thông thường */
+.printable-stocktake-area {
+    display: none;
+}
+
+/* Mặc định, ẩn giao diện thẻ trên màn hình lớn */
+.stocktake-card-container {
+    display: none;
+}
+
+/* --- GIAO DIỆN DẠNG THẺ CHO ĐIỆN THOẠI --- */
+@media (max-width: 768px) {
+    /* Ẩn giao diện bảng trên màn hình nhỏ */
+    .stocktake-table-container {
+        display: none;
+    }
+
+    /* Hiển thị giao diện thẻ */
+    .stocktake-card-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .stocktake-card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 15px;
+        border-left: 5px solid var(--primary-color);
+    }
+
+    .stocktake-card .card-header {
+        margin-bottom: 10px;
+    }
+
+    .stocktake-card .card-product-id {
+        font-weight: bold;
+        font-size: 16px;
+        color: var(--text-color);
+        display: block;
+    }
+    .stocktake-card .card-product-name {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .stocktake-card .card-info-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: #666;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 10px;
+    }
+
+    .stocktake-card .card-count-area {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .stocktake-card .count-box {
+        flex: 1;
+    }
+
+    .stocktake-card .count-box label {
+        font-size: 12px;
+        color: #555;
+        margin-bottom: 4px;
+        display: block;
+    }
+    
+    .stocktake-card .system-count p {
+        font-size: 20px;
+        font-weight: bold;
+        color: var(--text-color);
+        margin: 0;
+        padding: 8px;
+    }
+
+    .stocktake-card .actual-count input {
+        width: 100%;
+        padding: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+    }
+
+    .stocktake-card .card-footer-info {
+        font-size: 12px;
+        color: #666;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-color);
+    }
+}

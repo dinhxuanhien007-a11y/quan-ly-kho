@@ -93,4 +93,29 @@
   .printable-area .products-table td:nth-child(7) {
       white-space: nowrap;
   }
+
+  /* --- CSS CHO IN PHIẾU KIỂM KÊ --- */
+@media print {
+    .printable-stocktake-area {
+        visibility: visible !important;
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    .printable-stocktake-area * {
+        visibility: visible;
+    }
+    
+    @page {
+        size: landscape;
+        margin: 5mm;
+    }
+}
 }

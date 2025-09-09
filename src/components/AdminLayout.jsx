@@ -10,7 +10,9 @@ import NewImportPage from '../pages/NewImportPage';
 import ImportListPage from '../pages/ImportListPage';
 import NewExportPage from '../pages/NewExportPage';
 import ExportListPage from '../pages/ExportListPage';
-import LotTracePage from '../pages/LotTracePage'; // Import trang mới
+import StocktakeListPage from '../pages/StocktakeListPage';
+import StocktakeSessionPage from '../pages/StocktakeSessionPage'; // Import trang mới
+import LotTracePage from '../pages/LotTracePage';
 
 const AdminLayout = () => {
   return (
@@ -24,7 +26,10 @@ const AdminLayout = () => {
           <Route path="/new-export" element={<NewExportPage />} />
           <Route path="/imports" element={<ImportListPage />} />
           <Route path="/exports" element={<ExportListPage />} />
-          <Route path="/lot-trace" element={<LotTracePage />} /> {/* Thêm route mới */}
+          {/* Cập nhật đường dẫn cho Kiểm Kê Kho */}
+          <Route path="/stocktakes" element={<StocktakeListPage />} />
+          <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} /> {/* Route mới cho trang chi tiết */}
+          <Route path="/lot-trace" element={<LotTracePage />} />
         </Routes>
       </main>
     </div>
