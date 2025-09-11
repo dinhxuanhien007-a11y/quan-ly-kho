@@ -1,20 +1,23 @@
 // src/components/AddProductModal.jsx
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore'; // Import các hàm của Firestore
+import { doc, setDoc } from 'firebase/firestore';
+
+// Danh sách các lựa chọn có sẵn
+const tempOptions = ["Nhiệt độ phòng", "2 → 8°C", "-25 → -15°C"];
+const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
+const unitOptions = ["Cái", "Hộp", "Thùng", "Chai", "Ống", "Lọ", "Sợi", "Cây", "Can", "Tuýp", "Bộ", "Máng", "Gói", "Khay"];
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
-  // State cho tất cả các trường thông tin
   const [productId, setProductId] = useState('');
   const [productName, setProductName] = useState('');
   const [unit, setUnit] = useState('');
   const [packaging, setPackaging] = useState('');
   const [storageTemp, setStorageTemp] = useState('');
   const [manufacturer, setManufacturer] = useState('');
-  const [team, setTeam] = useState('MED'); // Mặc định là team MED
+  const [team, setTeam] = useState('MED');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Hàm handleSubmit đã được cập nhật
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!productId) {
@@ -22,9 +25,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       return;
     }
     setIsSaving(true);
-
     try {
-      // Tạo object dữ liệu hoàn chỉnh
       const newProductData = {
         productName,
         unit,
@@ -33,14 +34,11 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
         manufacturer,
         team,
       };
-
-      // Tham chiếu đến document sản phẩm
       const productRef = doc(db, 'products', productId);
-      // Ghi dữ liệu vào Firestore
       await setDoc(productRef, newProductData);
 
       alert('Thêm sản phẩm mới thành công!');
-      onProductAdded(); // Gọi hàm để đóng modal và tải lại danh sách
+      onProductAdded();
 
     } catch (error) {
       console.error("Lỗi khi thêm sản phẩm: ", error);
@@ -55,11 +53,10 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       <div className="modal-content">
         <h2>Thêm sản phẩm mới</h2>
         <form onSubmit={handleSubmit}>
-          {/* Mã hàng và Tên hàng */}
           <div className="form-row">
             <div className="form-group">
               <label>Mã hàng (ID)</label>
-              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value)} required />
+              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value.toUpperCase())} required />
             </div>
             <div className="form-group">
               <label>Tên hàng</label>
@@ -67,11 +64,19 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
             </div>
           </div>
 
-          {/* ĐVT và Quy cách */}
           <div className="form-row">
             <div className="form-group">
               <label>Đơn vị tính</label>
-              <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} required />
+              <input
+                list="unit-options-add"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                required
+                placeholder="Chọn hoặc nhập ĐVT..."
+              />
+              <datalist id="unit-options-add">
+                {unitOptions.map(opt => <option key={opt} value={opt} />)}
+              </datalist>
             </div>
             <div className="form-group">
               <label>Quy cách đóng gói</label>
@@ -79,19 +84,33 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
             </div>
           </div>
           
-          {/* Nhiệt độ và Hãng SX */}
           <div className="form-row">
             <div className="form-group">
               <label>Nhiệt độ bảo quản</label>
-              <input type="text" value={storageTemp} onChange={(e) => setStorageTemp(e.target.value)} />
+              <input
+                list="temp-options-add"
+                value={storageTemp}
+                onChange={(e) => setStorageTemp(e.target.value)}
+                placeholder="Chọn hoặc nhập nhiệt độ..."
+              />
+              <datalist id="temp-options-add">
+                  {tempOptions.map(opt => <option key={opt} value={opt} />)}
+              </datalist>
             </div>
             <div className="form-group">
               <label>Hãng sản xuất</label>
-              <input type="text" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+              <input
+                list="manufacturer-options-add"
+                value={manufacturer}
+                onChange={(e) => setManufacturer(e.target.value)}
+                placeholder="Chọn hoặc nhập hãng SX..."
+              />
+              <datalist id="manufacturer-options-add">
+                  {manufacturerOptions.map(opt => <option key={opt} value={opt} />)}
+              </datalist>
             </div>
           </div>
 
-          {/* Team */}
           <div className="form-group">
             <label>Team</label>
             <select value={team} onChange={(e) => setTeam(e.target.value)}>

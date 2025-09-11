@@ -1,4 +1,143 @@
-﻿--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddProductModal.jsx ---
+﻿--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
+
+
+// src/components/AddNewProductAndLotModal.jsx
+import React, { useState } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+// Import hÃ m Ä‘á»‹nh dáº¡ng HSD tá»« file tiá»‡n Ã­ch
+import { formatExpiryDate } from '../utils/dateUtils';
+
+const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
+    // State cho táº¥t cáº£ cÃ¡c trÆ°á»ng thÃ´ng tin cáº§n thiáº¿t
+    const [productName, setProductName] = useState('');
+    const [lotNumber, setLotNumber] = useState('');
+    const [expiryDate, setExpiryDate] = useState('');
+    const [unit, setUnit] = useState('');
+    const [packaging, setPackaging] = useState('');
+    const [storageTemp, setStorageTemp] = useState('');
+    const [manufacturer, setManufacturer] = useState('');
+    const [team, setTeam] = useState('MED'); // Máº·c Ä‘á»‹nh lÃ  team MED
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        // Kiá»ƒm tra cÃ¡c trÆ°á»ng báº¯t buá»™c
+        if (!productName || !lotNumber || !unit) {
+            alert('Vui lÃ²ng Ä‘iá»n cÃ¡c thÃ´ng tin báº¯t buá»™c: TÃªn hÃ ng, Sá»‘ lÃ´, ÄVT.');
+            return;
+        }
+        setIsSaving(true);
+
+        const newProductData = {
+            productName,
+            unit,
+            packaging,
+            storageTemp,
+            manufacturer,
+            team,
+        };
+
+        try {
+            // BÆ°á»›c 1: Táº¡o document sáº£n pháº©m má»›i trong collection 'products'
+            const productRef = doc(db, 'products', productId);
+            await setDoc(productRef, newProductData);
+
+            // BÆ°á»›c 2: Gá»i hÃ m onSave vÃ  truyá»n toÃ n bá»™ dá»¯ liá»‡u vá» cho trang cha
+            onSave({
+                ...newProductData,
+                productId,
+                lotNumber,
+                expiryDate,
+                quantity: '', // Sá»‘ lÆ°á»£ng sáº½ Ä‘Æ°á»£c Ä‘iá»n sau
+                notes: '',
+            });
+
+        } catch (error) {
+            console.error("Lá»—i khi táº¡o sáº£n pháº©m má»›i: ", error);
+            alert('ÄÃ£ xáº£y ra lá»—i khi táº¡o sáº£n pháº©m.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    // Sá»­ dá»¥ng hÃ m Ä‘á»‹nh dáº¡ng má»›i Ä‘Ã£ Ä‘Æ°á»£c sá»­a lá»—i
+    const handleExpiryDateChange = (e) => {
+        setExpiryDate(formatExpiryDate(e.target.value));
+    };
+
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content" style={{width: '600px'}}>
+                <h2>Táº¡o Nhanh Sáº£n Pháº©m Má»›i</h2>
+                <p>MÃ£ hÃ ng <strong>{productId}</strong> chÆ°a tá»“n táº¡i. Vui lÃ²ng cung cáº¥p thÃ´ng tin chi tiáº¿t.</p>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>MÃ£ hÃ ng (ID)</label>
+                        <input type="text" value={productId} readOnly disabled />
+                    </div>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>TÃªn hÃ ng (*)</label>
+                            <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} required />
+                        </div>
+                        <div className="form-group">
+                            <label>Team</label>
+                            <select value={team} onChange={(e) => setTeam(e.target.value)}>
+                                <option value="MED">MED</option>
+                                <option value="BIO">BIO</option>
+                                <option value="Spare Part">Spare Part</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Sá»‘ lÃ´ (*)</label>
+                            <input type="text" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} required />
+                        </div>
+                        <div className="form-group">
+                            <label>HSD (dd/mm/yyyy)</label>
+                            <input type="text" value={expiryDate} onChange={handleExpiryDateChange} placeholder="dd/mm/yyyy" />
+                        </div>
+                    </div>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>ÄÆ¡n vá»‹ tÃ­nh (*)</label>
+                            <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} required />
+                        </div>
+                        <div className="form-group">
+                            <label>Quy cÃ¡ch Ä‘Ã³ng gÃ³i</label>
+                            <input type="text" value={packaging} onChange={(e) => setPackaging(e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Nhiá»‡t Ä‘á»™ báº£o quáº£n</label>
+                            <input type="text" value={storageTemp} onChange={(e) => setStorageTemp(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                            <label>HÃ£ng sáº£n xuáº¥t</label>
+                            <input type="text" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+                        </div>
+                    </div>
+                    
+                    <div className="modal-actions">
+                        <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
+                        <button type="submit" className="btn-primary" disabled={isSaving}>
+                            {isSaving ? 'Äang lÆ°u...' : 'LÆ°u vÃ  Chá»n'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default AddNewProductAndLotModal;
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddProductModal.jsx ---
 
 
 // src/components/AddProductModal.jsx
@@ -1177,88 +1316,92 @@ export default ViewerLayout;
 
 
 // src/components/ViewExportSlipModal.jsx
-
 import React from 'react';
+import { formatDate } from '../utils/dateUtils'; // BÆ¯á»šC 1: Import hÃ m tiá»‡n Ã­ch
 
 const ViewExportSlipModal = ({ slip, onClose }) => {
-  if (!slip) return null;
+    if (!slip) return null;
 
-  const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
+    const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
 
-  const handlePrint = () => {
-    window.print();
-  };
-  
-  const renderStatusBadge = (status) => {
-    let text = status;
-    switch (status) {
-        case 'pending': text = 'Äang soáº¡n hÃ ng'; break;
-        case 'completed': text = 'HoÃ n thÃ nh'; break;
-        case 'cancelled': text = 'ÄÃ£ há»§y'; break;
-        default: text = status;
-    }
-    return <span className={`status-badge status-${status}`}>{text}</span>;
-  };
+    const handlePrint = () => {
+        window.print();
+    };
+    
+    const renderStatusBadge = (status) => {
+        let text = status;
+        switch (status) {
+            case 'pending': text = 'Äang soáº¡n hÃ ng'; break;
+            case 'completed': text = 'HoÃ n thÃ nh'; break;
+            case 'cancelled': text = 'ÄÃ£ há»§y'; break;
+            default: text = status;
+        }
+        return <span className={`status-badge status-${status}`}>{text}</span>;
+    };
 
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
-        <h2>Chi Tiáº¿t Phiáº¿u Xuáº¥t Kho</h2>
-        
-        <div className="compact-info-grid">
-            <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
-            <div><label>KhÃ¡ch hÃ ng</label><p><strong>{slip.customer}</strong></p></div>
-            <div><label>NgÃ y táº¡o</label><p><strong>{slip.createdAt?.toDate().toLocaleString('vi-VN')}</strong></p></div>
-            <div><label>Tráº¡ng thÃ¡i</label><p>{renderStatusBadge(slip.status)}</p></div>
-            <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
-        </div>
-        
-        <div className="modal-body">
-            <h3 style={{marginTop: '10px'}}>Chi tiáº¿t hÃ ng hÃ³a</h3>
-            <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
-                <table className="products-table">
-                    <thead>
-                        <tr>
-                            <th>MÃ£ hÃ ng</th>
-                            <th>TÃªn hÃ ng</th>
-                            <th>Sá»‘ lÃ´</th>
-                            <th>HSD</th>
-                            <th>ÄVT</th>
-                            <th>Quy cÃ¡ch</th>
-                            <th>SL xuáº¥t</th>
-                            <th>Nhiá»‡t Ä‘á»™ BQ</th>
-                            {hasNotes && <th>Ghi chÃº</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {slip.items.map((item, index) => (
-                            <tr key={index}>
-                                <td>{item.productId}</td>
-                                <td>{item.productName}</td>
-                                <td>{item.lotNumber}</td>
-                                <td>{item.expiryDate}</td>
-                                <td>{item.unit}</td>
-                                <td>{item.packaging}</td>
-                                <td>{item.quantityToExport || item.quantityExported}</td>
-                                <td>{item.storageTemp}</td>
-                                {hasNotes && <td>{item.notes}</td>}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
+                <h2>Chi Tiáº¿t Phiáº¿u Xuáº¥t Kho</h2>
+                
+                <div className="compact-info-grid">
+                    <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
+                    <div><label>KhÃ¡ch hÃ ng</label><p><strong>{slip.customer}</strong></p></div>
+                    <div><label>NgÃ y táº¡o</label>
+                        {/* BÆ¯á»šC 2: Sá»­ dá»¥ng hÃ m formatDate */}
+                        <p><strong>{formatDate(slip.createdAt)}</strong></p>
+                    </div>
+                    <div><label>Tráº¡ng thÃ¡i</label><p>{renderStatusBadge(slip.status)}</p></div>
+                    <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
+                </div>
+                
+                <div className="modal-body">
+                    <h3 style={{marginTop: '10px'}}>Chi tiáº¿t hÃ ng hÃ³a</h3>
+                    <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
+                        <table className="products-table">
+                            <thead>
+                                <tr>
+                                    <th>MÃ£ hÃ ng</th>
+                                    <th>TÃªn hÃ ng</th>
+                                    <th>Sá»‘ lÃ´</th>
+                                    <th>HSD</th>
+                                    <th>ÄVT</th>
+                                    <th>Quy cÃ¡ch</th>
+                                    <th>SL xuáº¥t</th>
+                                    <th>Nhiá»‡t Ä‘á»™ BQ</th>
+                                    {hasNotes && <th>Ghi chÃº</th>}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {slip.items.map((item, index) => (
+                                    <tr key={index}>
+                                        <td>{item.productId}</td>
+                                        <td>{item.productName}</td>
+                                        <td>{item.lotNumber}</td>
+                                        <td>{item.expiryDate}</td>
+                                        <td>{item.unit}</td>
+                                        <td>{item.packaging}</td>
+                                        <td>{item.quantityToExport || item.quantityExported}</td>
+                                        <td>{item.storageTemp}</td>
+                                        {hasNotes && <td>{item.notes}</td>}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="modal-actions">
+                    <button type="button" onClick={handlePrint} className="btn-secondary">In Phiáº¿u</button>
+                    <button type="button" onClick={onClose} className="btn-primary">ÄÃ³ng</button>
+                </div>
             </div>
         </div>
-
-        <div className="modal-actions">
-          <button type="button" onClick={handlePrint} className="btn-secondary">In Phiáº¿u</button>
-          <button type="button" onClick={onClose} className="btn-primary">ÄÃ³ng</button>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default ViewExportSlipModal;
+
 
 
 
@@ -1266,75 +1409,79 @@ export default ViewExportSlipModal;
 
 
 // src/components/ViewImportSlipModal.jsx
-
 import React from 'react';
+import { formatDate } from '../utils/dateUtils'; // BÆ¯á»šC 1: Import hÃ m tiá»‡n Ã­ch
 
 const ViewImportSlipModal = ({ slip, onClose }) => {
-  if (!slip) return null;
+    if (!slip) return null;
 
-  const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
+    const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
 
-  const handlePrint = () => {
-    window.print();
-  };
+    const handlePrint = () => {
+        window.print();
+    };
 
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
-        <h2>Chi Tiáº¿t Phiáº¿u Nháº­p Kho</h2>
-        
-        <div className="compact-info-grid">
-            <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
-            <div><label>NhÃ  cung cáº¥p</label><p><strong>{slip.supplier}</strong></p></div>
-            <div><label>NgÃ y táº¡o</label><p><strong>{slip.createdAt?.toDate().toLocaleString('vi-VN')}</strong></p></div>
-            <div><label>Tráº¡ng thÃ¡i</label><p><span className={`status-badge status-${slip.status}`}>{slip.status === 'pending' ? 'Äang chá»' : 'HoÃ n thÃ nh'}</span></p></div>
-            <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
-        </div>
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
+                <h2>Chi Tiáº¿t Phiáº¿u Nháº­p Kho</h2>
+                
+                <div className="compact-info-grid">
+                    <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
+                    <div><label>NhÃ  cung cáº¥p</label><p><strong>{slip.supplier}</strong></p></div>
+                    <div><label>NgÃ y táº¡o</label>
+                        {/* BÆ¯á»šC 2: Sá»­ dá»¥ng hÃ m formatDate */}
+                        <p><strong>{formatDate(slip.createdAt)}</strong></p>
+                    </div>
+                    <div><label>Tráº¡ng thÃ¡i</label><p><span className={`status-badge status-${slip.status}`}>{slip.status === 'pending' ? 'Äang chá»' : 'HoÃ n thÃ nh'}</span></p></div>
+                    <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
+                </div>
 
-        <div className="modal-body">
-            <h3 style={{marginTop: '10px'}}>Chi tiáº¿t hÃ ng hÃ³a</h3>
-            <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
-                <table className="products-table">
-                    <thead>
-                        <tr>
-                            <th>MÃ£ hÃ ng</th>
-                            <th>TÃªn hÃ ng</th>
-                            <th>Sá»‘ lÃ´</th>
-                            <th>HSD</th>
-                            <th>Sá»‘ lÆ°á»£ng</th>
-                            <th>ÄVT</th>
-                            <th>Quy cÃ¡ch</th>
-                            {hasNotes && <th>Ghi chÃº</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {slip.items.map((item, index) => (
-                            <tr key={index}>
-                                <td>{item.productId}</td>
-                                <td>{item.productName}</td>
-                                <td>{item.lotNumber}</td>
-                                <td>{item.expiryDate}</td>
-                                <td>{item.quantity}</td>
-                                <td>{item.unit}</td>
-                                <td>{item.packaging}</td>
-                                {hasNotes && <td>{item.notes}</td>}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <div className="modal-body">
+                    <h3 style={{marginTop: '10px'}}>Chi tiáº¿t hÃ ng hÃ³a</h3>
+                    <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
+                        <table className="products-table">
+                            <thead>
+                                <tr>
+                                    <th>MÃ£ hÃ ng</th>
+                                    <th>TÃªn hÃ ng</th>
+                                    <th>Sá»‘ lÃ´</th>
+                                    <th>HSD</th>
+                                    <th>Sá»‘ lÆ°á»£ng</th>
+                                    <th>ÄVT</th>
+                                    <th>Quy cÃ¡ch</th>
+                                    {hasNotes && <th>Ghi chÃº</th>}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {slip.items.map((item, index) => (
+                                    <tr key={index}>
+                                        <td>{item.productId}</td>
+                                        <td>{item.productName}</td>
+                                        <td>{item.lotNumber}</td>
+                                        <td>{item.expiryDate}</td>
+                                        <td>{item.quantity}</td>
+                                        <td>{item.unit}</td>
+                                        <td>{item.packaging}</td>
+                                        {hasNotes && <td>{item.notes}</td>}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="modal-actions">
+                    <button type="button" onClick={handlePrint} className="btn-secondary">In Phiáº¿u</button>
+                    <button type="button" onClick={onClose} className="btn-primary">ÄÃ³ng</button>
+                </div>
             </div>
         </div>
-
-        <div className="modal-actions">
-          <button type="button" onClick={handlePrint} className="btn-secondary">In Phiáº¿u</button>
-          <button type="button" onClick={onClose} className="btn-primary">ÄÃ³ng</button>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default ViewImportSlipModal;
+
 
 
 
@@ -1652,16 +1799,7 @@ import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp 
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import { FiEdit, FiEye } from 'react-icons/fi';
-
-const parseDateString = (dateString) => {
-  try {
-    const [day, month, year] = dateString.split('/');
-    return new Date(year, month - 1, day);
-  } catch (error) {
-    console.error("Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y thÃ¡ng:", dateString, error);
-    return null;
-  }
-};
+import { parseDateString } from '../utils/dateUtils';
 
 const ImportListPage = () => {
   const [importSlips, setImportSlips] = useState([]);
@@ -1830,249 +1968,271 @@ export default ImportListPage;
 
 
 // src/pages/InventoryPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, query, getDocs, onSnapshot, where } from 'firebase/firestore';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
+import { formatDate } from '../utils/dateUtils';
 
+// HÃ m tÃ´ mÃ u HSD khÃ´ng thay Ä‘á»•i
 const getRowColorByExpiry = (expiryDate) => {
-  if (!expiryDate || !expiryDate.toDate) return ''; 
+    if (!expiryDate || !expiryDate.toDate) return '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDate = expiryDate.toDate();
+    expDate.setHours(0, 0, 0, 0);
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); 
-
-  const expDate = expiryDate.toDate();
-  expDate.setHours(0, 0, 0, 0);
-
-  const diffTime = expDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) {
-    return 'expired-black';
-  }
-  if (diffDays <= 60) {
-    return 'near-expiry-red';
-  }
-  if (diffDays <= 90) {
-    return 'near-expiry-orange';
-  }
-  if (diffDays <= 120) {
-    return 'near-expiry-yellow';
-  }
-
-  return '';
-};
-
-const formatDate = (timestamp) => {
-  if (!timestamp || !timestamp.toDate) return '';
-  const date = timestamp.toDate();
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+    if (diffDays < 0) return 'expired-black';
+    if (diffDays <= 60) return 'near-expiry-red';
+    if (diffDays <= 90) return 'near-expiry-orange';
+    if (diffDays <= 120) return 'near-expiry-yellow';
+    return '';
 };
 
 const InventoryPage = ({ user, userRole }) => {
-  const [masterInventory, setMasterInventory] = useState([]);
-  const [filteredInventory, setFilteredInventory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
-  const [selectedRowId, setSelectedRowId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(''); // Má»šI: State cho Ã´ tÃ¬m kiáº¿m
+    // State cho dá»¯ liá»‡u ná»n, lÃ m má»›i Ä‘á»‹nh ká»³
+    const [masterInventory, setMasterInventory] = useState([]);
+    // State cho káº¿t quáº£ tÃ¬m kiáº¿m real-time
+    const [searchResults, setSearchResults] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
+    const [selectedRowId, setSelectedRowId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    // State Ä‘á»ƒ xÃ¡c Ä‘á»‹nh Ä‘ang á»Ÿ cháº¿ Ä‘á»™ tÃ¬m kiáº¿m hay khÃ´ng
+    const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
-    const fetchAndFilterInventory = async () => {
-      setLoading(true);
-      try {
-        const q = query(collection(db, "inventory_lots"));
-        const querySnapshot = await getDocs(q);
-        const allInventory = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+    // HÃ m fetch dá»¯ liá»‡u thá»§ cÃ´ng cho toÃ n bá»™ kho
+    const fetchMasterInventory = useCallback(async () => {
+        // Chá»‰ setLoading náº¿u chÆ°a cÃ³ dá»¯ liá»‡u gÃ¬
+        if (masterInventory.length === 0) {
+            setLoading(true);
+        }
+        try {
+            const q = query(collection(db, "inventory_lots"));
+            const querySnapshot = await getDocs(q);
+            const allInventory = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        let roleBasedInventory = [];
-        if (userRole === 'med') {
-          roleBasedInventory = allInventory.filter(item => item.team === 'MED');
-        } else if (userRole === 'bio') {
-          roleBasedInventory = allInventory.filter(item => item.team === 'BIO' || item.team === 'Spare Part');
-        } else {
-          roleBasedInventory = allInventory;
+            let roleBasedInventory = [];
+            if (userRole === 'med') {
+                roleBasedInventory = allInventory.filter(item => item.team === 'MED');
+            } else if (userRole === 'bio') {
+                roleBasedInventory = allInventory.filter(item => item.team === 'BIO' || item.team === 'Spare Part');
+            } else {
+                roleBasedInventory = allInventory;
+            }
+            setMasterInventory(roleBasedInventory);
+        } catch (error) {
+            console.error("Lá»—i khi láº¥y dá»¯ liá»‡u tá»“n kho: ", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [userRole, masterInventory.length]);
+
+    // useEffect 1: Táº£i dá»¯ liá»‡u ban Ä‘áº§u vÃ  lÃ m má»›i Ä‘á»‹nh ká»³
+    useEffect(() => {
+        if (userRole) {
+            fetchMasterInventory();
+        }
+        const intervalId = setInterval(() => {
+            console.log("Tá»± Ä‘á»™ng lÃ m má»›i dá»¯ liá»‡u ná»n...");
+            fetchMasterInventory();
+        }, 900000); // 15 phÃºt
+
+        return () => clearInterval(intervalId);
+    }, [userRole, fetchMasterInventory]);
+
+    // useEffect 2: Xá»­ lÃ½ tÃ¬m kiáº¿m REAL-TIME
+    useEffect(() => {
+        const trimmedSearch = searchTerm.trim();
+        
+        // Náº¿u khÃ´ng cÃ³ tá»« khÃ³a, táº¯t cháº¿ Ä‘á»™ tÃ¬m kiáº¿m vÃ  há»§y listener
+        if (!trimmedSearch) {
+            setIsSearching(false);
+            setSearchResults([]);
+            return;
         }
 
-        setMasterInventory(roleBasedInventory);
+        // Báº­t cháº¿ Ä‘á»™ tÃ¬m kiáº¿m
+        setIsSearching(true);
+        setLoading(true);
 
-      } catch (error) {
-        console.error("Lá»—i khi láº¥y dá»¯ liá»‡u tá»“n kho: ", error);
-      } finally {
-        setLoading(false);
-      }
+        // Táº¡o cÃ¡c truy váº¥n real-time. Firestore yÃªu cáº§u cÃ¡c truy váº¥n riÃªng biá»‡t cho cÃ¡c trÆ°á»ng khÃ¡c nhau.
+        // ChÃºng ta sáº½ Æ°u tiÃªn MÃ£ hÃ ng vÃ  Sá»‘ lÃ´.
+        const productIdQuery = query(collection(db, "inventory_lots"), where("productId", "==", trimmedSearch));
+        const lotNumberQuery = query(collection(db, "inventory_lots"), where("lotNumber", "==", trimmedSearch));
+
+        // Láº¯ng nghe cáº£ hai truy váº¥n
+        const unsubProductId = onSnapshot(productIdQuery, (snapshot) => {
+            const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Cáº­p nháº­t káº¿t quáº£, trÃ¡nh trÃ¹ng láº·p
+            setSearchResults(prev => [...results, ...prev.filter(p => !results.some(r => r.id === p.id))]);
+            setLoading(false);
+        });
+
+        const unsubLotNumber = onSnapshot(lotNumberQuery, (snapshot) => {
+            const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setSearchResults(prev => [...results, ...prev.filter(p => !results.some(r => r.id === p.id))]);
+            setLoading(false);
+        });
+
+        // HÃ m dá»n dáº¹p: Há»§y cáº£ hai listener khi component unmount hoáº·c searchTerm thay Ä‘á»•i
+        return () => {
+            unsubProductId();
+            unsubLotNumber();
+        };
+    }, [searchTerm]);
+
+    // useMemo Ä‘á»ƒ quyáº¿t Ä‘á»‹nh danh sÃ¡ch nÃ o sáº½ Ä‘Æ°á»£c hiá»ƒn thá»‹
+    const displayedInventory = useMemo(() => {
+        let result;
+        // Náº¿u Ä‘ang tÃ¬m kiáº¿m, Æ°u tiÃªn hiá»ƒn thá»‹ káº¿t quáº£ real-time
+        if (isSearching) {
+            result = [...searchResults];
+            // Náº¿u khÃ´ng cÃ³ káº¿t quáº£ real-time, thá»­ tÃ¬m kiáº¿m trÃªn TÃªn hÃ ng tá»« dá»¯ liá»‡u ná»n
+            if (searchTerm.trim() && result.length === 0) {
+                 const lowercasedFilter = searchTerm.toLowerCase();
+                 result = masterInventory.filter(item => 
+                    item.productName?.toLowerCase().includes(lowercasedFilter)
+                );
+            }
+        } else {
+            // Náº¿u khÃ´ng tÃ¬m kiáº¿m, hiá»ƒn thá»‹ dá»¯ liá»‡u ná»n Ä‘Ã£ Ä‘Æ°á»£c lá»c
+            result = [...masterInventory];
+
+            if (filters.team !== 'all') {
+                result = result.filter(item => item.team === filters.team);
+            }
+            if (filters.dateStatus !== 'all') {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (filters.dateStatus === 'expired') {
+                    result = result.filter(item => item.expiryDate?.toDate() < today);
+                }
+                if (filters.dateStatus === 'near_expiry') {
+                    const nearExpiryLimit = new Date();
+                    nearExpiryLimit.setDate(today.getDate() + 120);
+                    result = result.filter(item => {
+                        const expiryDate = item.expiryDate?.toDate();
+                        return expiryDate >= today && expiryDate < nearExpiryLimit;
+                    });
+                }
+            }
+        }
+        
+        // LuÃ´n sáº¯p xáº¿p káº¿t quáº£ cuá»‘i cÃ¹ng
+        result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
+        return result;
+    }, [isSearching, searchResults, masterInventory, filters, searchTerm]);
+
+
+    const handleFilterChange = (filterName, value) => {
+        setFilters(prev => ({ ...prev, [filterName]: value }));
     };
 
-    if (userRole) {
-        fetchAndFilterInventory();
-    }
-  }, [userRole]);
-
-  // Cáº¬P NHáº¬T: Má»Ÿ rá»™ng useEffect Ä‘á»ƒ xá»­ lÃ½ cáº£ viá»‡c tÃ¬m kiáº¿m
-  useEffect(() => {
-    let result = [...masterInventory];
-
-    // 1. Lá»c theo Team vÃ  TÃ¬nh tráº¡ng HSD (giá»¯ nguyÃªn)
-    if (filters.team !== 'all') {
-      result = result.filter(item => item.team === filters.team);
-    }
-    if (filters.dateStatus !== 'all') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (filters.dateStatus === 'expired') {
-        result = result.filter(item => item.expiryDate?.toDate() < today);
-      }
-      
-      if (filters.dateStatus === 'near_expiry') {
-        const nearExpiryLimit = new Date();
-        nearExpiryLimit.setDate(today.getDate() + 120);
-        result = result.filter(item => {
-          const expiryDate = item.expiryDate?.toDate();
-          return expiryDate >= today && expiryDate < nearExpiryLimit;
-        });
-      }
-    }
+    const handleRowClick = (lotId) => {
+        setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
+    };
     
-    // 2. Má»šI: Lá»c theo tá»« khÃ³a tÃ¬m kiáº¿m
-    if (searchTerm) {
-      const lowercasedFilter = searchTerm.toLowerCase();
-      result = result.filter(item => {
-        return (
-          item.productId?.toLowerCase().includes(lowercasedFilter) ||
-          item.productName?.toLowerCase().includes(lowercasedFilter) ||
-          item.lotNumber?.toLowerCase().includes(lowercasedFilter)
-        );
-      });
-    }
+    const getTitleByRole = (role) => {
+        switch (role) {
+            case 'med': return 'Sá»• CÃ¡i Tá»“n Kho (Team Med)';
+            case 'bio': return 'Sá»• CÃ¡i Tá»“n Kho (Team Bio)';
+            case 'admin': return 'Sá»• CÃ¡i Tá»“n Kho (Admin)';
+            case 'owner': return 'Sá»• CÃ¡i Tá»“n Kho (Owner)';
+            default: return 'Sá»• CÃ¡i Tá»“n Kho';
+        }
+    };
     
-    result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
+    return (
+        <div>
+            <div className="page-header">
+                <h1>{getTitleByRole(userRole)}</h1>
+            </div>
+            
+            <div className="controls-container">
+                <InventoryFilters 
+                    userRole={userRole} 
+                    onFilterChange={handleFilterChange} 
+                    activeFilters={filters}
+                />
+                <div className="search-container">
+                    <input
+                        type="text"
+                        placeholder="TÃ¬m MÃ£ hÃ ng, TÃªn hÃ ng, Sá»‘ lÃ´..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                    />
+                </div>
+            </div>
 
-    setFilteredInventory(result);
-  }, [filters, masterInventory, searchTerm]); // Cáº¬P NHáº¬T: ThÃªm searchTerm vÃ o dependency array
-
-  const handleFilterChange = (filterName, value) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      [filterName]: value,
-    }));
-  };
-
-  const handleRowClick = (lotId) => {
-    if (selectedRowId === lotId) {
-      setSelectedRowId(null);
-    } else {
-      setSelectedRowId(lotId);
-    }
-  };
-  
-  const getTitleByRole = (role) => {
-    switch (role) {
-      case 'med':
-        return 'Sá»• CÃ¡i Tá»“n Kho (Team Med)';
-      case 'bio':
-        return 'Sá»• CÃ¡i Tá»“n Kho (Team Bio)';
-      case 'admin':
-        return 'Sá»• CÃ¡i Tá»“n Kho (Admin)';
-      case 'owner':
-        return 'Sá»• CÃ¡i Tá»“n Kho (Owner)';
-      default:
-        return 'Sá»• CÃ¡i Tá»“n Kho';
-    }
-  };
-
-  if (loading) {
-    return <div>Äang táº£i dá»¯ liá»‡u tá»“n kho...</div>;
-  }
-
-  return (
-    <div>
-      <div className="page-header">
-        <h1>{getTitleByRole(userRole)}</h1>
-      </div>
-      
-      {/* Má»šI: Container cho toÃ n bá»™ khu vá»±c tÃ¬m kiáº¿m vÃ  bá»™ lá»c */}
-      <div className="controls-container">
-        <InventoryFilters 
-          userRole={userRole} 
-          onFilterChange={handleFilterChange} 
-          activeFilters={filters}
-        />
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="TÃ¬m theo MÃ£ hÃ ng, TÃªn hÃ ng, Sá»‘ lÃ´..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+            <div className="table-container">
+                 {loading && displayedInventory.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '20px' }}>Äang táº£i dá»¯ liá»‡u...</div>
+                ) : (
+                    <table className="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>NgÃ y nháº­p hÃ ng</th>
+                                <th>MÃ£ hÃ ng</th>
+                                <th>TÃªn hÃ ng</th>
+                                <th>Sá»‘ lÃ´</th>
+                                <th>HSD</th>
+                                <th>ÄVT</th>
+                                <th>Quy cÃ¡ch</th>
+                                <th>SL Nháº­p</th>
+                                <th>SL CÃ²n láº¡i</th>
+                                <th>Ghi chÃº</th>
+                                <th>Nhiá»‡t Ä‘á»™ BQ</th>
+                                <th>HÃ£ng SX</th>
+                                <th>Team</th>
+                            </tr>
+                        </thead>
+                        <tbody className="inventory-table-body">
+                            {displayedInventory.length > 0 ? (
+                                displayedInventory.map(lot => (
+                                    <tr
+                                        key={lot.id}
+                                        onClick={() => handleRowClick(lot.id)}
+                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+                                    >
+                                        <td>{formatDate(lot.importDate)}</td>
+                                        <td>{lot.productId}</td>
+                                        <td>{lot.productName}</td>
+                                        <td>{lot.lotNumber}</td>
+                                        <td>{formatDate(lot.expiryDate)}</td>
+                                        <td>{lot.unit}</td>
+                                        <td>{lot.packaging}</td>
+                                        <td>{lot.quantityImported}</td>
+                                        <td>{lot.quantityRemaining}</td>
+                                        <td>{lot.notes}</td>
+                                        <td><TempBadge temperature={lot.storageTemp} /></td>
+                                        <td>{lot.manufacturer}</td>
+                                        <td><TeamBadge team={lot.team} /></td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="13" style={{ textAlign: 'center' }}>
+                                        {isSearching ? "KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£ real-time nÃ o." : "KhÃ´ng cÃ³ dá»¯ liá»‡u tá»“n kho phÃ¹ há»£p."}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                )}
+            </div>
         </div>
-      </div>
-
-
-      <div className="table-container">
-        <table className="inventory-table">
-          <thead>
-            <tr>
-              <th>NgÃ y nháº­p hÃ ng</th>
-              <th>MÃ£ hÃ ng</th>
-              <th>TÃªn hÃ ng</th>
-              <th>Sá»‘ lÃ´</th>
-              <th>HSD</th>
-              <th>ÄVT</th>
-              <th>Quy cÃ¡ch</th>
-              <th>SL Nháº­p</th>
-              <th>SL CÃ²n láº¡i</th>
-              <th>Ghi chÃº</th>
-              <th>Nhiá»‡t Ä‘á»™ BQ</th>
-              <th>HÃ£ng SX</th>
-              <th>Team</th>
-            </tr>
-          </thead>
-          <tbody className="inventory-table-body">
-            {filteredInventory.length > 0 ? (
-              filteredInventory.map(lot => (
-                <tr
-                  key={lot.id}
-                  onClick={() => handleRowClick(lot.id)}
-                  className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
-                >
-                  <td>{formatDate(lot.importDate)}</td>
-                  <td>{lot.productId}</td>
-                  <td>{lot.productName}</td>
-                  <td>{lot.lotNumber}</td>
-                  <td>{formatDate(lot.expiryDate)}</td>
-                  <td>{lot.unit}</td>
-                  <td>{lot.packaging}</td>
-                  <td>{lot.quantityImported}</td>
-                  <td>{lot.quantityRemaining}</td>
-                  <td>{lot.notes}</td>
-                  <td><TempBadge temperature={lot.storageTemp} /></td>
-                  <td>{lot.manufacturer}</td>
-                  <td><TeamBadge team={lot.team} /></td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="13" style={{ textAlign: 'center' }}>KhÃ´ng cÃ³ dá»¯ liá»‡u tá»“n kho phÃ¹ há»£p.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default InventoryPage;
+
+
 
 
 
@@ -2091,11 +2251,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import LotJourneyExplorer from '../components/LotJourneyExplorer';
-
-const formatDate = (timestamp) => {
-  if (!timestamp || !timestamp.toDate) return 'N/A';
-  return timestamp.toDate().toLocaleDateString('vi-VN');
-};
+import { formatDate } from '../utils/dateUtils';
 
 const LotTracePage = () => {
   const [lotNumber, setLotNumber] = useState('');
@@ -2325,15 +2481,7 @@ import React, { useState, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown } from 'react-icons/fi';
-
-const formatDate = (timestamp) => {
-  if (!timestamp || !timestamp.toDate) return '';
-  const date = timestamp.toDate();
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-};
+import { formatDate } from '../utils/dateUtils';
 
 const NewExportPage = () => {
   const today = new Date();
@@ -2625,280 +2773,314 @@ export default NewExportPage;
 import React, { useState, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-
-const parseDateString = (dateString) => {
-  try {
-    const [day, month, year] = dateString.split('/');
-    return new Date(year, month - 1, day);
-  } catch (error) {
-    console.error("Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y thÃ¡ng:", dateString, error);
-    return null;
-  }
-};
+import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal'; 
+// Import cÃ¡c hÃ m tiá»‡n Ã­ch, bao gá»“m hÃ m sá»­a lá»—i HSD
+import { parseDateString, formatExpiryDate } from '../utils/dateUtils'; 
 
 const NewImportPage = () => {
-  const today = new Date();
-  const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    const today = new Date();
+    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
 
-  const [importDate, setImportDate] = useState(formattedDate);
-  const [supplier, setSupplier] = useState('');
-  const [description, setDescription] = useState('');
-  const [items, setItems] = useState([
-    { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '' }
-  ]);
-  const [isSaving, setIsSaving] = useState(false);
-  const inputRefs = useRef([]);
-
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...items];
-    let currentValue = value;
-
-    if (field === 'expiryDate') {
-      let formattedValue = currentValue.replace(/\D/g, '');
-      if (formattedValue.length > 2) {
-        formattedValue = `${formattedValue.slice(0, 2)}/${formattedValue.slice(2)}`;
-      }
-      if (formattedValue.length > 5) {
-        formattedValue = `${formattedValue.slice(0, 5)}/${formattedValue.slice(5, 9)}`;
-      }
-      currentValue = formattedValue;
-    }
-    
-    newItems[index][field] = currentValue;
-    setItems(newItems);
-  };
-
-  const handleProductSearch = async (index, productId) => {
-  if (!productId) return;
-  const newItems = [...items];
-  try {
-    const productRef = doc(db, 'products', productId);
-    const productSnap = await getDoc(productRef);
-    if (productSnap.exists()) {
-      const productData = productSnap.data();
-      newItems[index].productName = productData.productName || '';
-      newItems[index].unit = productData.unit || '';
-      newItems[index].packaging = productData.packaging || '';
-      newItems[index].storageTemp = productData.storageTemp || '';
-      newItems[index].team = productData.team || '';
-      newItems[index].manufacturer = productData.manufacturer || '';
-    } else {
-      newItems[index].productName = 'KhÃ´ng tÃ¬m tháº¥y mÃ£ hÃ ng!';
-      newItems[index].unit = '';
-      newItems[index].packaging = '';
-      newItems[index].storageTemp = '';
-      newItems[index].team = '';
-      newItems[index].manufacturer = '';
-    }
-  } catch (error) {
-    console.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m:", error);
-    newItems[index].productName = 'Lá»—i khi tÃ¬m kiáº¿m!';
-  } finally {
-      setItems(newItems);
-  }
-};
-
-  const handleKeyDown = (e, rowIndex, inputIndex) => {
-    if (e.key === 'Tab' && !e.shiftKey) {
-      e.preventDefault();
-      const nextInputIndex = (rowIndex * 3) + inputIndex + 1;
-      const nextInput = inputRefs.current[nextInputIndex];
-      if (nextInput) {
-        nextInput.focus();
-      }
-    }
-  };
-
-  const addNewRow = () => {
-    setItems([
-      ...items,
-      { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '' }
+    const [importDate, setImportDate] = useState(formattedDate);
+    const [supplier, setSupplier] = useState('');
+    const [description, setDescription] = useState('');
+    const [items, setItems] = useState([
+        { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }
     ]);
-  };
+    const [isSaving, setIsSaving] = useState(false);
+    const [modalInfo, setModalInfo] = useState({ isOpen: false, productId: '', index: -1 });
+    const inputRefs = useRef([]);
 
-  const handleSaveSlip = async () => {
-    if (!supplier) {
-      alert('Vui lÃ²ng nháº­p thÃ´ng tin NhÃ  cung cáº¥p.');
-      return;
-    }
-    const validItems = items.filter(item => item.productId && item.quantity > 0);
-    if (validItems.length === 0) {
-      alert('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡ vÃ o phiáº¿u.');
-      return;
-    }
-    setIsSaving(true);
-    try {
-      const slipData = {
-        importDate,
-        supplier,
-        description,
-        items: validItems,
-        status: 'pending',
-        createdAt: serverTimestamp()
-      };
-      const docRef = await addDoc(collection(db, 'import_tickets'), slipData);
-      alert(`LÆ°u táº¡m phiáº¿u nháº­p thÃ nh cÃ´ng! ID phiáº¿u: ${docRef.id}`);
-      setSupplier('');
-      setDescription('');
-      setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '' }]);
-    } catch (error) {
-      console.error("Lá»—i khi lÆ°u phiáº¿u nháº­p: ", error);
-      alert('ÄÃ£ xáº£y ra lá»—i khi lÆ°u phiáº¿u.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDirectImport = async () => {
-    if (!supplier) {
-      alert('Vui lÃ²ng nháº­p thÃ´ng tin NhÃ  cung cáº¥p.');
-      return;
-    }
-    const validItems = items.filter(item => item.productId && item.quantity > 0);
-    if (validItems.length === 0) {
-      alert('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.');
-      return;
-    }
-    if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n nháº­p kho trá»±c tiáº¿p? Thao tÃ¡c nÃ y sáº½ cáº­p nháº­t tá»“n kho ngay láº­p tá»©c.')) {
-      return;
-    }
-    setIsSaving(true);
-    try {
-      for (const item of validItems) {
-        const expiryDateObject = parseDateString(item.expiryDate);
-        if (!expiryDateObject) {
-          alert(`HSD cá»§a máº·t hÃ ng ${item.productName} (${item.lotNumber}) cÃ³ Ä‘á»‹nh dáº¡ng sai.`);
-          setIsSaving(false);
-          return;
+    const handleItemChange = (index, field, value) => {
+        const newItems = [...items];
+        
+        // Sá»­ dá»¥ng hÃ m Ä‘á»‹nh dáº¡ng má»›i Ä‘Ã£ Ä‘Æ°á»£c sá»­a lá»—i cho HSD
+        if (field === 'expiryDate') {
+            newItems[index][field] = formatExpiryDate(value);
+        } else {
+            newItems[index][field] = value;
         }
-        const expiryTimestamp = Timestamp.fromDate(expiryDateObject);
-        const newLotData = {
-          importDate: Timestamp.now(),
-          productId: item.productId,
-          productName: item.productName,
-          lotNumber: item.lotNumber,
-          expiryDate: expiryTimestamp,
-          unit: item.unit,
-          packaging: item.packaging,
-          storageTemp: item.storageTemp,
-          team: item.team,
-          manufacturer: item.manufacturer,
-          quantityImported: Number(item.quantity),
-          quantityRemaining: Number(item.quantity),
-          notes: item.notes,
-          // --- THAY Äá»”I QUAN TRá»ŒNG ---
-          // ThÃªm tÃªn nhÃ  cung cáº¥p vÃ o dá»¯ liá»‡u cá»§a lÃ´ hÃ ng
-          supplier: supplier, 
+        
+        if (field === 'productId') {
+            newItems[index].productNotFound = false;
+            newItems[index].productName = ''; 
+        }
+        
+        setItems(newItems);
+    };
+
+    const handleProductSearch = async (index, productId) => {
+        if (!productId) return;
+        const newItems = [...items];
+        try {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+            if (productSnap.exists()) {
+                const productData = productSnap.data();
+                newItems[index] = {
+                    ...newItems[index],
+                    productName: productData.productName || '',
+                    unit: productData.unit || '',
+                    packaging: productData.packaging || '',
+                    storageTemp: productData.storageTemp || '',
+                    team: productData.team || '',
+                    manufacturer: productData.manufacturer || '',
+                    productNotFound: false,
+                };
+            } else {
+                newItems[index].productName = '';
+                newItems[index].productNotFound = true;
+            }
+        } catch (error) {
+            console.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m:", error);
+            newItems[index].productName = 'Lá»—i khi tÃ¬m kiáº¿m!';
+            newItems[index].productNotFound = false;
+        } finally {
+            setItems(newItems);
+        }
+    };
+    
+    const handleNewProductCreated = (newData) => {
+        const newItems = [...items];
+        const { index } = modalInfo;
+        
+        newItems[index] = {
+            ...newItems[index], 
+            ...newData,
+            productNotFound: false,
         };
-        await addDoc(collection(db, "inventory_lots"), newLotData);
-      }
+        
+        setItems(newItems);
+        setModalInfo({ isOpen: false, productId: '', index: -1 });
 
-      const slipData = {
-        importDate,
-        supplier,
-        description,
-        items: validItems,
-        status: 'completed',
-        createdAt: serverTimestamp()
-      };
-      await addDoc(collection(db, 'import_tickets'), slipData);
+        setTimeout(() => {
+            inputRefs.current[index * 3 + 2]?.focus();
+        }, 100);
+    };
 
-      alert('Nháº­p kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
-      setSupplier('');
-      setDescription('');
-      setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '' }]);
-    } catch (error) {
-      console.error("Lá»—i khi nháº­p kho trá»±c tiáº¿p: ", error);
-      alert('ÄÃ£ xáº£y ra lá»—i khi nháº­p kho trá»±c tiáº¿p.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    const handleKeyDown = (e, rowIndex, inputIndex) => {
+        if (e.key === 'Tab' && !e.shiftKey) {
+            e.preventDefault();
+            const nextInputIndex = (rowIndex * 3) + inputIndex + 1;
+            const nextInput = inputRefs.current[nextInputIndex];
+            if (nextInput) {
+                nextInput.focus();
+            }
+        }
+    };
 
-  return (
-    <div>
-      <h1>Táº¡o Phiáº¿u Nháº­p Kho</h1>
-      <div className="form-section">
-        <div className="form-row">
-          <div className="form-group">
-            <label>NgÃ y nháº­p</label>
-            <input type="text" value={importDate} onChange={(e) => setImportDate(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>NhÃ  cung cáº¥p</label>
-            <input type="text" placeholder="Nháº­p mÃ£ hoáº·c tÃªn NCC" value={supplier} onChange={e => setSupplier(e.target.value)} />
-          </div>
+    const addNewRow = () => {
+        setItems([
+            ...items,
+            { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }
+        ]);
+    };
+
+    const handleSaveSlip = async () => {
+        if (!supplier) {
+            alert('Vui lÃ²ng nháº­p thÃ´ng tin NhÃ  cung cáº¥p.');
+            return;
+        }
+        const validItems = items.filter(item => item.productId && item.quantity > 0);
+        if (validItems.length === 0) {
+            alert('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡ vÃ o phiáº¿u.');
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const slipData = {
+                importDate: formattedDate,
+                supplier,
+                description,
+                items: validItems,
+                status: 'pending',
+                createdAt: serverTimestamp()
+            };
+            const docRef = await addDoc(collection(db, 'import_tickets'), slipData);
+            alert(`LÆ°u táº¡m phiáº¿u nháº­p thÃ nh cÃ´ng! ID phiáº¿u: ${docRef.id}`);
+            setSupplier('');
+            setDescription('');
+            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }]);
+        } catch (error) {
+            console.error("Lá»—i khi lÆ°u phiáº¿u nháº­p: ", error);
+            alert('ÄÃ£ xáº£y ra lá»—i khi lÆ°u phiáº¿u.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDirectImport = async () => {
+        if (!supplier) {
+            alert('Vui lÃ²ng nháº­p thÃ´ng tin NhÃ  cung cáº¥p.');
+            return;
+        }
+        const validItems = items.filter(item => item.productId && item.quantity > 0);
+        if (validItems.length === 0) {
+            alert('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.');
+            return;
+        }
+        if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n nháº­p kho trá»±c tiáº¿p? Thao tÃ¡c nÃ y sáº½ cáº­p nháº­t tá»“n kho ngay láº­p tá»©c.')) {
+            return;
+        }
+        setIsSaving(true);
+        try {
+            for (const item of validItems) {
+                const expiryDateObject = parseDateString(item.expiryDate);
+                if (!expiryDateObject) {
+                    alert(`HSD cá»§a máº·t hÃ ng ${item.productName} (${item.lotNumber}) cÃ³ Ä‘á»‹nh dáº¡ng sai.`);
+                    setIsSaving(false);
+                    return;
+                }
+                const expiryTimestamp = Timestamp.fromDate(expiryDateObject);
+                const newLotData = {
+                    importDate: Timestamp.now(),
+                    productId: item.productId,
+                    productName: item.productName,
+                    lotNumber: item.lotNumber,
+                    expiryDate: expiryTimestamp,
+                    unit: item.unit,
+                    packaging: item.packaging,
+                    storageTemp: item.storageTemp,
+                    team: item.team,
+                    manufacturer: item.manufacturer,
+                    quantityImported: Number(item.quantity),
+                    quantityRemaining: Number(item.quantity),
+                    notes: item.notes,
+                    supplier: supplier,
+                };
+                await addDoc(collection(db, "inventory_lots"), newLotData);
+            }
+
+            const slipData = {
+                importDate: formattedDate,
+                supplier,
+                description,
+                items: validItems,
+                status: 'completed',
+                createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, 'import_tickets'), slipData);
+
+            alert('Nháº­p kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
+            setSupplier('');
+            setDescription('');
+            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }]);
+        } catch (error) {
+            console.error("Lá»—i khi nháº­p kho trá»±c tiáº¿p: ", error);
+            alert('ÄÃ£ xáº£y ra lá»—i khi nháº­p kho trá»±c tiáº¿p.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div>
+            {modalInfo.isOpen && (
+                <AddNewProductAndLotModal
+                    productId={modalInfo.productId}
+                    onClose={() => setModalInfo({ isOpen: false, productId: '', index: -1 })}
+                    onSave={handleNewProductCreated}
+                />
+            )}
+
+            <h1>Táº¡o Phiáº¿u Nháº­p Kho</h1>
+            <div className="form-section">
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>NgÃ y nháº­p</label>
+                        <input type="text" value={importDate} onChange={(e) => setImportDate(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                        <label>NhÃ  cung cáº¥p</label>
+                        <input type="text" placeholder="Nháº­p mÃ£ hoáº·c tÃªn NCC" value={supplier} onChange={e => setSupplier(e.target.value)} />
+                    </div>
+                </div>
+                <div className="form-group">
+                    <label>Diá»…n giáº£i</label>
+                    <textarea rows="2" placeholder="Ghi chÃº cho phiáº¿u nháº­p..." value={description} onChange={e => setDescription(e.target.value)}></textarea>
+                </div>
+            </div>
+
+            <h2>Chi tiáº¿t hÃ ng hÃ³a</h2>
+            <div className="item-details-grid">
+                <div className="grid-header">MÃ£ hÃ ng</div>
+                <div className="grid-header">TÃªn hÃ ng</div>
+                <div className="grid-header">Sá»‘ lÃ´</div>
+                <div className="grid-header">HSD</div>
+                <div className="grid-header">ÄVT</div>
+                <div className="grid-header">Quy cÃ¡ch</div>
+                <div className="grid-header">Sá»‘ lÆ°á»£ng</div>
+                <div className="grid-header">Ghi chÃº</div>
+                <div className="grid-header">Nhiá»‡t Ä‘á»™ BQ</div>
+                <div className="grid-header">Team</div>
+
+                {items.map((item, index) => (
+                    <React.Fragment key={item.id}>
+                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <input
+                                ref={el => inputRefs.current[index * 3] = el}
+                                onKeyDown={(e) => handleKeyDown(e, index, 0)}
+                                type="text"
+                                value={item.productId}
+                                onChange={e => handleItemChange(index, 'productId', e.target.value.toUpperCase())}
+                                onBlur={e => handleProductSearch(index, e.target.value)}
+                            />
+                            {item.productNotFound && (
+                                <button
+                                    onClick={() => setModalInfo({ isOpen: true, productId: item.productId, index: index })}
+                                    className="btn-link"
+                                    style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
+                                >
+                                    MÃ£ nÃ y khÃ´ng tá»“n táº¡i. Táº¡o má»›i...
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+                        <div className="grid-cell">
+                            <input
+                                ref={el => inputRefs.current[index * 3 + 1] = el}
+                                onKeyDown={(e) => handleKeyDown(e, index, 1)}
+                                type="text"
+                                value={item.lotNumber}
+                                onChange={e => handleItemChange(index, 'lotNumber', e.target.value)}
+                            />
+                        </div>
+                        <div className="grid-cell">
+                            <input 
+                                type="text" 
+                                placeholder="dd/mm/yyyy" 
+                                value={item.expiryDate} 
+                                onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} 
+                            />
+                        </div>
+                        <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                        <div className="grid-cell">
+                            <input
+                                ref={el => inputRefs.current[index * 3 + 2] = el}
+                                type="number"
+                                value={item.quantity}
+                                onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                            />
+                        </div>
+                        <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+                        <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
+                        <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
+                    </React.Fragment>
+                ))}
+            </div>
+            
+            <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
+            <div className="page-actions">
+                <button onClick={handleSaveSlip} className="btn-secondary" disabled={isSaving}>
+                    {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
+                </button>
+                <button onClick={handleDirectImport} className="btn-primary" disabled={isSaving}>
+                    {isSaving ? 'Äang xá»­ lÃ½...' : 'Nháº­p Kho Trá»±c Tiáº¿p'}
+                </button>
+            </div>
         </div>
-        <div className="form-group">
-          <label>Diá»…n giáº£i</label>
-          <textarea rows="2" placeholder="Ghi chÃº cho phiáº¿u nháº­p..." value={description} onChange={e => setDescription(e.target.value)}></textarea>
-        </div>
-      </div>
-
-      <h2>Chi tiáº¿t hÃ ng hÃ³a</h2>
-      <div className="item-details-grid">
-        <div className="grid-header">MÃ£ hÃ ng</div>
-        <div className="grid-header">TÃªn hÃ ng</div>
-        <div className="grid-header">Sá»‘ lÃ´</div>
-        <div className="grid-header">HSD</div>
-        <div className="grid-header">ÄVT</div>
-        <div className="grid-header">Quy cÃ¡ch</div>
-        <div className="grid-header">Sá»‘ lÆ°á»£ng</div>
-        <div className="grid-header">Ghi chÃº</div>
-        <div className="grid-header">Nhiá»‡t Ä‘á»™ BQ</div>
-        <div className="grid-header">Team</div>
-
-        {items.map((item, index) => (
-          <React.Fragment key={item.id}>
-            <div className="grid-cell">
-              <input 
-                ref={el => inputRefs.current[index * 3] = el} 
-                onKeyDown={(e) => handleKeyDown(e, index, 0)}
-                type="text" 
-                value={item.productId} 
-                onChange={e => handleItemChange(index, 'productId', e.target.value)}
-                onBlur={e => handleProductSearch(index, e.target.value)}
-              />
-            </div>
-            <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-            <div className="grid-cell">
-              <input 
-                ref={el => inputRefs.current[index * 3 + 1] = el}
-                onKeyDown={(e) => handleKeyDown(e, index, 1)}
-                type="text" 
-                value={item.lotNumber} 
-                onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} 
-              />
-            </div>
-            <div className="grid-cell"><input type="text" placeholder="dd/mm/yyyy" value={item.expiryDate} onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} /></div>
-            <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-            <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-            <div className="grid-cell">
-              <input 
-                ref={el => inputRefs.current[index * 3 + 2] = el}
-                type="number" 
-                value={item.quantity} 
-                onChange={e => handleItemChange(index, 'quantity', e.target.value)} 
-              />
-            </div>
-            <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
-            <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
-            <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
-          </React.Fragment>
-        ))}
-      </div>
-      
-      <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
-      <div className="page-actions">
-        <button onClick={handleSaveSlip} className="btn-secondary" disabled={isSaving}>
-          {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
-        </button>
-        <button onClick={handleDirectImport} className="btn-primary" disabled={isSaving}>
-          {isSaving ? 'Äang xá»­ lÃ½...' : 'Nháº­p Kho Trá»±c Tiáº¿p'}
-        </button>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default NewImportPage;
@@ -3203,11 +3385,7 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
-
-const formatDate = (timestamp) => {
-    if (!timestamp || !timestamp.toDate) return 'N/A';
-    return timestamp.toDate().toLocaleDateString('vi-VN');
-};
+import { formatDate } from '../utils/dateUtils';
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
@@ -4494,6 +4672,74 @@ export default StocktakeSessionPage;
         border-top: 1px solid var(--border-color);
     }
 }
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\dateUtils.js ---
+
+
+// src/utils/dateUtils.js
+
+/**
+ * Chuyá»ƒn Ä‘á»•i má»™t Ä‘á»‘i tÆ°á»£ng Firebase Timestamp hoáº·c Date thÃ nh chuá»—i dd/mm/yyyy.
+ * @param {object | Date} timestamp - Äá»‘i tÆ°á»£ng Timestamp cá»§a Firebase hoáº·c Ä‘á»‘i tÆ°á»£ng Date.
+ * @returns {string} - Chuá»—i ngÃ y thÃ¡ng Ä‘Ã£ Ä‘á»‹nh dáº¡ng hoáº·c chuá»—i rá»—ng.
+ */
+export const formatDate = (timestamp) => {
+  if (!timestamp) return '';
+  const date = timestamp.toDate ? timestamp.toDate() : timestamp;
+  
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+/**
+ * Chuyá»ƒn Ä‘á»•i má»™t chuá»—i dd/mm/yyyy thÃ nh Ä‘á»‘i tÆ°á»£ng Date.
+ * @param {string} dateString - Chuá»—i ngÃ y thÃ¡ng theo Ä‘á»‹nh dáº¡ng dd/mm/yyyy.
+ * @returns {Date | null} - Äá»‘i tÆ°á»£ng Date hoáº·c null náº¿u Ä‘á»‹nh dáº¡ng sai.
+ */
+export const parseDateString = (dateString) => {
+  if (!dateString) return null;
+  try {
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return null;
+    const [day, month, year] = parts;
+    return new Date(year, month - 1, day);
+  } catch (error) {
+    console.error("Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y thÃ¡ng:", dateString, error);
+    return null;
+  }
+};
+
+/**
+ * HÃ€M Má»šI: Äá»‹nh dáº¡ng má»™t chuá»—i sá»‘ thÃ nh Ä‘á»‹nh dáº¡ng ngÃ y dd/mm/yyyy khi ngÆ°á»i dÃ¹ng gÃµ.
+ * @param {string} value - GiÃ¡ trá»‹ tá»« Ã´ input.
+ * @returns {string} - Chuá»—i Ä‘Ã£ Ä‘Æ°á»£c Ä‘á»‹nh dáº¡ng.
+ */
+export const formatExpiryDate = (value) => {
+    if (!value) return '';
+
+    // 1. Chá»‰ giá»¯ láº¡i cÃ¡c kÃ½ tá»± sá»‘
+    const digitsOnly = value.replace(/\D/g, '');
+
+    // 2. Giá»›i háº¡n tá»‘i Ä‘a 8 kÃ½ tá»± (ddmmyyyy)
+    const truncatedDigits = digitsOnly.slice(0, 8);
+    const len = truncatedDigits.length;
+
+    // 3. Ãp dá»¥ng Ä‘á»‹nh dáº¡ng dá»±a trÃªn Ä‘á»™ dÃ i
+    if (len <= 2) {
+        return truncatedDigits; // GÃµ tá»›i ngÃ y (dd)
+    }
+    if (len <= 4) {
+        // GÃµ tá»›i thÃ¡ng (dd/mm)
+        return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2)}`;
+    }
+    // GÃµ tá»›i nÄƒm (dd/mm/yyyy)
+    return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2, 4)}/${truncatedDigits.slice(4)}`;
+};
+
 
 
 

@@ -6,11 +6,7 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
-
-const formatDate = (timestamp) => {
-    if (!timestamp || !timestamp.toDate) return 'N/A';
-    return timestamp.toDate().toLocaleDateString('vi-VN');
-};
+import { formatDate } from '../utils/dateUtils';
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();

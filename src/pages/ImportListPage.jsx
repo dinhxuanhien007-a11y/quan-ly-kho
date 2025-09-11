@@ -6,16 +6,7 @@ import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp 
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import { FiEdit, FiEye } from 'react-icons/fi';
-
-const parseDateString = (dateString) => {
-  try {
-    const [day, month, year] = dateString.split('/');
-    return new Date(year, month - 1, day);
-  } catch (error) {
-    console.error("Lỗi định dạng ngày tháng:", dateString, error);
-    return null;
-  }
-};
+import { parseDateString } from '../utils/dateUtils';
 
 const ImportListPage = () => {
   const [importSlips, setImportSlips] = useState([]);

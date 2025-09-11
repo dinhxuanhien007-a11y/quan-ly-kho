@@ -11,7 +11,8 @@ import {
     FiClipboard, 
     FiFileText, 
     FiShare2, 
-    FiCheckSquare 
+    FiCheckSquare,
+    FiTool, 
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
@@ -64,6 +65,11 @@ const Navbar = () => {
         <li>
           <NavLink to="/lot-trace" title="Truy Vết Lô Hàng">
             <FiShare2 className="nav-icon" />
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/test" title="Trang Test">
+            <FiTool className="nav-icon" />
           </NavLink>
         </li>
       </ul>

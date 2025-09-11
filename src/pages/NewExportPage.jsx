@@ -4,15 +4,7 @@ import React, { useState, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown } from 'react-icons/fi';
-
-const formatDate = (timestamp) => {
-  if (!timestamp || !timestamp.toDate) return '';
-  const date = timestamp.toDate();
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-};
+import { formatDate } from '../utils/dateUtils';
 
 const NewExportPage = () => {
   const today = new Date();

@@ -1,8 +1,8 @@
 // src/components/AddUnlistedItemModal.jsx
-
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
+import { formatExpiryDate } from '../utils/dateUtils';
 
 const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const [productId, setProductId] = useState('');
@@ -16,7 +16,6 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const [storageTemp, setStorageTemp] = useState('');
     const [manufacturer, setManufacturer] = useState('');
     const [team, setTeam] = useState('');
-
 
     const handleProductSearch = async () => {
         if (!productId) return;
@@ -67,6 +66,11 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
             team: team,
         });
     };
+    
+    // HÀM MỚI: Chỉ định dạng khi người dùng rời khỏi ô input
+    const handleExpiryDateBlur = (e) => {
+        setExpiryDate(formatExpiryDate(e.target.value));
+    };
 
     return (
         <div className="modal-backdrop">
@@ -88,7 +92,13 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
                         </div>
                         <div className="form-group">
                             <label>HSD (dd/mm/yyyy)</label>
-                            <input type="text" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} placeholder="dd/mm/yyyy" />
+                            <input 
+                                type="text" 
+                                value={expiryDate} 
+                                onChange={e => setExpiryDate(e.target.value)} 
+                                onBlur={handleExpiryDateBlur}
+                                placeholder="dd/mm/yyyy" 
+                            />
                         </div>
                     </div>
                     <div className="form-group">

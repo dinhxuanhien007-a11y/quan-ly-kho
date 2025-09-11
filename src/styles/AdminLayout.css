@@ -641,3 +641,18 @@
   grid-column: 1 / -1;
   margin-top: 5px;
 }
+
+/* CSS MỚI: Cho hộp thông tin lô hàng đã tồn tại */
+.existing-lot-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #004085; /* Màu chữ xanh đậm */
+  background-color: #cce5ff; /* Màu nền xanh nhạt */
+  padding: 5px 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+  width: 100%;
+  border: 1px solid #b8daff;
+}

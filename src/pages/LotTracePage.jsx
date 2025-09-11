@@ -10,11 +10,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import LotJourneyExplorer from '../components/LotJourneyExplorer';
-
-const formatDate = (timestamp) => {
-  if (!timestamp || !timestamp.toDate) return 'N/A';
-  return timestamp.toDate().toLocaleDateString('vi-VN');
-};
+import { formatDate } from '../utils/dateUtils';
 
 const LotTracePage = () => {
   const [lotNumber, setLotNumber] = useState('');
