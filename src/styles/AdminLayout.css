@@ -111,37 +111,20 @@
   background-color: #e9ecef;
 }
 
-/* --- BẢNG inventory-table (PHIÊN BẢN SỬA LỖI HOÀN CHỈNH) --- */
-.table-container {
-  width: 100%;
-  overflow-x: auto;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  /* Giới hạn chiều cao và tạo thanh cuộn dọc - ĐÃ CẬP NHẬT */
-  max-height: calc(100vh - 150px); 
-  overflow-y: auto;
-}
+/* src/styles/AdminLayout.css */
 
+/* --- BẢNG inventory-table (PHIÊN BẢN HOÀN CHỈNH MỚI) --- */
 .inventory-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.inventory-table td {
+.inventory-table th, .inventory-table td {
   padding: 12px 15px;
-  text-align: left;
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
-  white-space: nowrap;
-  vertical-align: top;
-}
-
-.inventory-table td:nth-child(3), /* Tên hàng */
-.inventory-table td:nth-child(7) { /* Quy cách */
-  max-height: 75px;
-  overflow-y: auto;
-  white-space: normal;
-  word-wrap: break-word;
+  white-space: nowrap; /* Giữ nội dung trên một dòng theo mặc định */
+  vertical-align: middle;
 }
 
 .inventory-table th {
@@ -160,74 +143,32 @@
 .inventory-table tbody tr.selected-row td {
   background-color: #d6eaff !important;
 }
-.inventory-table tbody tr.selected-row {
-  font-weight: 500;
-}
 
-.inventory-table th:nth-child(1),
-.inventory-table td:nth-child(1) {
-  position: sticky;
-  left: 0;
-  width: 120px;
-  min-width: 120px;
-  z-index: 1;
-}
+/* Các cột được ghim (sticky) */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { position: sticky; left: 0; z-index: 1; }
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 140px; z-index: 1; }
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 290px; z-index: 1; }
 
-.inventory-table th:nth-child(2),
-.inventory-table td:nth-child(2) {
-  position: sticky;
-  left: 120px;
-  width: 150px;
-  min-width: 150px;
-  z-index: 1;
-}
+.inventory-table th:nth-child(1), .inventory-table th:nth-child(2), .inventory-table th:nth-child(3) { z-index: 3; }
 
-.inventory-table th:nth-child(3),
-.inventory-table td:nth-child(3) {
-  position: sticky;
-  left: 270px;
-  width: 300px;
-  min-width: 300px;
-  z-index: 1;
-}
+.inventory-table td:nth-child(1), .inventory-table td:nth-child(2), .inventory-table td:nth-child(3) { background-color: #ffffff; }
+.inventory-table tbody tr:hover td:nth-child(1), .inventory-table tbody tr:hover td:nth-child(2), .inventory-table tbody tr:hover td:nth-child(3) { background-color: #e9ecef; }
+.inventory-table tbody tr.selected-row td:nth-child(1), .inventory-table tbody tr.selected-row td:nth-child(2), .inventory-table tbody tr.selected-row td:nth-child(3) { background-color: #d6eaff !important; }
 
-.inventory-table th:nth-child(1),
-.inventory-table th:nth-child(2),
-.inventory-table th:nth-child(3) {
-  z-index: 3;
-  background-color: #f8f9fa;
-}
-
-.inventory-table td:nth-child(1),
-.inventory-table td:nth-child(2),
-.inventory-table td:nth-child(3) {
-  background-color: #ffffff;
-}
-
-.inventory-table tbody tr:hover td:nth-child(1),
-.inventory-table tbody tr:hover td:nth-child(2),
-.inventory-table tbody tr:hover td:nth-child(3) {
-  background-color: #e9ecef;
-}
-.inventory-table tbody tr.selected-row td:nth-child(1),
-.inventory-table tbody tr.selected-row td:nth-child(2),
-.inventory-table tbody tr.selected-row td:nth-child(3) {
-  background-color: #d6eaff !important;
-}
-
-.inventory-table th:nth-child(3), 
-.inventory-table td:nth-child(3) {
-  white-space: normal;
-  word-wrap: break-word;
-  min-width: 350px;
-}
-
-.inventory-table th:nth-child(7), .inventory-table td:nth-child(7),
-.inventory-table th:nth-child(12), .inventory-table td:nth-child(12) {
-  white-space: normal;
-  word-wrap: break-word;
-  min-width: 175px;
-}
+/* --- ĐIỀU CHỈNH LẠI ĐỘ RỘNG CÁC CỘT --- */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { min-width: 140px; } /* Ngày nhập */
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { min-width: 150px; } /* Mã hàng */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { min-width: 350px; white-space: normal; text-align: left;} /* Tên hàng (xuống dòng, căn trái) */
+.inventory-table th:nth-child(4), .inventory-table td:nth-child(4) { min-width: 130px; } /* Số lô */
+.inventory-table th:nth-child(5), .inventory-table td:nth-child(5) { min-width: 120px; } /* HSD */
+.inventory-table th:nth-child(6), .inventory-table td:nth-child(6) { min-width: 80px; }  /* ĐVT */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { min-width: 180px; white-space: normal; } /* Quy cách (xuống dòng) */
+.inventory-table th:nth-child(8), .inventory-table td:nth-child(8) { min-width: 100px; } /* SL Nhập */
+.inventory-table th:nth-child(9), .inventory-table td:nth-child(9) { min-width: 120px; font-weight: bold; } /* SL Còn lại (TĂNG ĐỘ RỘNG) */
+.inventory-table th:nth-child(10),.inventory-table td:nth-child(10){ min-width: 200px; white-space: normal; } /* Ghi chú (xuống dòng) */
+.inventory-table th:nth-child(11),.inventory-table td:nth-child(11){ min-width: 150px; } /* Nhiệt độ BQ */
+.inventory-table th:nth-child(12),.inventory-table td:nth-child(12){ min-width: 180px; white-space: normal; } /* Hãng SX (xuống dòng) */
+.inventory-table th:nth-child(13),.inventory-table td:nth-child(13){ min-width: 120px; } /* Team */
 
 /* --- MODAL (POPUP) --- */
 .modal-backdrop {
@@ -480,35 +421,56 @@
   text-align: left;
 }
 
-/* --- CSS CHO CẢNH BÁO HẠN SỬ DỤNG --- */
-.inventory-table-body tr.near-expiry-yellow td { background-color: #ffe08a; }
-.inventory-table-body tr.near-expiry-orange td { background-color: #ffb74d; }
-.inventory-table-body tr.near-expiry-red td { background-color: #ef9a9a; }
-.inventory-table-body tr.expired-black td { background-color: #a0a0a0; color: #fff; }
+/* src/styles/AdminLayout.css */
 
-.inventory-table-body tr.near-expiry-yellow td,
-.inventory-table-body tr.near-expiry-orange td,
-.inventory-table-body tr.near-expiry-red td {
+/* src/styles/AdminLayout.css */
+
+/* --- CSS MỚI: CHO CẢNH BÁO HẠN SỬ DỤNG (Dùng chung, bỏ gạch ngang) --- */
+
+/* Áp dụng màu cho các ô của dòng có class tương ứng */
+tr.near-expiry-yellow td { background-color: #fff3cd !important; color: #5a5a5a !important; }
+tr.near-expiry-orange td { background-color: #ffe8cc !important; color: #5a5a5a !important; }
+tr.near-expiry-red td { background-color: #f8d7da !important; color: #5a5a5a !important; }
+/* THAY ĐỔI 1: Chuyển sang màu nền đen và chữ trắng */
+tr.expired-black td { background-color: #212529 !important; color: #fff !important; }
+
+/* In đậm chữ cho các dòng cảnh báo */
+tr.near-expiry-yellow td,
+tr.near-expiry-orange td,
+tr.near-expiry-red td {
     font-weight: 500;
 }
 
-.inventory-table-body tr.expired-black td {
+tr.expired-black td {
     font-weight: bold;
-    text-decoration: line-through;
+}
+/* THAY ĐỔI 2: Xóa hoàn toàn đoạn code có "text-decoration: line-through" */
+
+/* Đảm bảo màu hover vẫn hoạt động */
+tbody tr:hover td {
+  background-color: #d6eaff !important;
+  color: #000 !important; /* Đảm bảo chữ luôn đọc được khi hover */
 }
 
-.inventory-table-body tr:hover td,
-.inventory-table-body tr.selected-row td {
-  background-color: #d6eaff !important;
+/* Dòng được chọn có màu ưu tiên cao nhất */
+tbody tr.selected-row td {
+  background-color: #cce5ff !important;
+  color: #000 !important;
 }
 
 /* --- BADGES (TEAM & TEMP) --- */
 .team-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
+  display: inline-flex;  /* Chuyển sang inline-flex để căn giữa nội dung */
+  align-items: center;    /* Căn giữa theo chiều dọc */
+  justify-content: center; /* Căn giữa theo chiều ngang */
+  padding: 5px 10px;
+  border-radius: 15px;    /* Bo tròn hơn một chút */
   font-size: 12px;
   font-weight: 500;
   color: #fff;
+  line-height: 1.2;       /* Tăng khoảng cách dòng cho dễ đọc khi xuống dòng */
+  min-height: 38px;       /* Đặt chiều cao tối thiểu để chứa được 2 dòng */
+  box-sizing: border-box; /* Đảm bảo padding không làm tăng kích thước */
 }
 .team-badge.team-med { background-color: #007bff; }
 .team-badge.team-bio { background-color: #28a745; }
@@ -655,4 +617,146 @@
   margin-top: 5px;
   width: 100%;
   border: 1px solid #b8daff;
+}
+
+/* Dán đoạn code này vào cuối file src/styles/AdminLayout.css */
+
+/* CSS CHO GIAO DIỆN TỒN KHO TỔNG HỢP */
+.lot-details-row td {
+    padding: 0 !important;
+    background-color: #fff !important;
+    border-top: none !important;
+}
+
+.lot-details-container {
+    padding: 15px 20px 15px 50px; /* Thụt vào để tạo cấp bậc */
+    background-color: #fdfdfe;
+}
+
+.lot-details-container h4 {
+    margin: 0 0 10px 0;
+    font-weight: 500;
+}
+
+.lot-details-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lot-details-container li {
+    display: flex;
+    gap: 20px;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    font-size: 14px;
+}
+
+/* src/styles/AdminLayout.css */
+
+/* --- Dán đoạn code này vào cuối file --- */
+
+/* CĂN CHỈNH BẢNG TỒN KHO TỔNG HỢP (PHIÊN BẢN MỚI) */
+
+/* 1. Căn giữa làm mặc định cho tất cả các ô trong bảng */
+.products-table th,
+.products-table td {
+    text-align: center;
+    vertical-align: middle; /* Căn giữa theo chiều dọc */
+}
+
+/* 2. Ghi đè, chỉ căn trái cho cột Tên hàng */
+.products-table th:nth-child(3),
+.products-table td:nth-child(3) {
+    text-align: left;
+}
+
+/* 3. Phân bổ lại độ rộng các cột */
+
+/* Cột mũi tên (siêu nhỏ) */
+.products-table th:nth-child(1), .products-table td:nth-child(1) { width: 4%; }
+
+/* Mã hàng (nhỏ) */
+.products-table th:nth-child(2) { width: 10%; }
+
+/* Tên hàng (thu nhỏ lại) */
+.products-table th:nth-child(3) {
+    width: 28%; /* << THU NHỎ LẠI */
+    max-width: 350px;
+}
+.products-table td:nth-child(3) {
+    max-width: 350px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Tổng tồn (nhỏ) */
+.products-table th:nth-child(4) { width: 8%; }
+
+/* ĐVT (nhỏ) */
+.products-table th:nth-child(5) { width: 8%; }
+
+/* Quy cách (TĂNG KÍCH THƯỚC) */
+.products-table th:nth-child(6) {
+    width: 12%; /* << TĂNG LÊN */
+}
+.products-table td:nth-child(6) {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Nhiệt độ BQ (TĂNG KÍCH THƯỚC) */
+.products-table th:nth-child(7) {
+    width: 12%; /* << TĂNG LÊN */
+}
+.products-table td:nth-child(7) {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Hãng SX (vừa phải) */
+.products-table th:nth-child(8) { width: 10%; }
+
+/* Team (THU NHỎ LẠI và cho phép xuống dòng) */
+.products-table th:nth-child(9) {
+    width: 8%; /* << THU NHỎ LẠI */
+}
+.products-table td:nth-child(9) {
+    white-space: normal; /* << CHO PHÉP XUỐNG DÒNG */
+    word-wrap: break-word;
+}
+
+/* ... code CSS cũ ... */
+
+/* CSS MỚI: Cho màu nền của từng lô hàng con */
+.lot-item {
+    transition: background-color 0.2s; /* Hiệu ứng chuyển màu mượt mà */
+}
+
+/* Lô bình thường có màu nền mặc định */
+.lot-item {
+    background-color: #e9ecef;
+}
+
+/* Các lô có cảnh báo sẽ có màu riêng */
+.lot-item.lot-item-yellow {
+    background-color: #fff3cd;
+    border-left: 3px solid #ffeeba;
+}
+.lot-item.lot-item-orange {
+    background-color: #ffe8cc;
+    border-left: 3px solid #ffd8b8;
+}
+.lot-item.lot-item-red {
+    background-color: #f8d7da;
+    border-left: 3px solid #f5c6cb;
+}
+.lot-item.lot-item-expired {
+    background-color: #d6d8db;
+    border-left: 3px solid #c6c8ca;
+    font-weight: bold;
 }

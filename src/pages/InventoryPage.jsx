@@ -7,7 +7,6 @@ import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { formatDate } from '../utils/dateUtils';
 
-// Hàm tô màu HSD không thay đổi
 const getRowColorByExpiry = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
@@ -24,38 +23,33 @@ const getRowColorByExpiry = (expiryDate) => {
     return '';
 };
 
+
 const InventoryPage = ({ user, userRole }) => {
-    // State cho dữ liệu nền, làm mới định kỳ
     const [masterInventory, setMasterInventory] = useState([]);
-    // State cho kết quả tìm kiếm real-time
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    // State để xác định đang ở chế độ tìm kiếm hay không
     const [isSearching, setIsSearching] = useState(false);
 
-    // Hàm fetch dữ liệu thủ công cho toàn bộ kho
     const fetchMasterInventory = useCallback(async () => {
-        // Chỉ setLoading nếu chưa có dữ liệu gì
-        if (masterInventory.length === 0) {
-            setLoading(true);
-        }
+        if (masterInventory.length === 0) setLoading(true);
         try {
-            const q = query(collection(db, "inventory_lots"));
-            const querySnapshot = await getDocs(q);
-            const allInventory = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            let roleBasedInventory = [];
+            let q;
+            const lotsCollection = collection(db, "inventory_lots");
+            
             if (userRole === 'med') {
-                roleBasedInventory = allInventory.filter(item => item.team === 'MED');
+                q = query(lotsCollection, where("team", "==", "MED"));
             } else if (userRole === 'bio') {
-                roleBasedInventory = allInventory.filter(item => item.team === 'BIO' || item.team === 'Spare Part');
+                q = query(lotsCollection, where("team", "in", ["BIO", "Spare Part"]));
             } else {
-                roleBasedInventory = allInventory;
+                q = query(lotsCollection);
             }
-            setMasterInventory(roleBasedInventory);
+
+            const querySnapshot = await getDocs(q);
+            const inventoryList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMasterInventory(inventoryList);
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu tồn kho: ", error);
         } finally {
@@ -63,43 +57,34 @@ const InventoryPage = ({ user, userRole }) => {
         }
     }, [userRole, masterInventory.length]);
 
-    // useEffect 1: Tải dữ liệu ban đầu và làm mới định kỳ
     useEffect(() => {
         if (userRole) {
             fetchMasterInventory();
         }
         const intervalId = setInterval(() => {
-            console.log("Tự động làm mới dữ liệu nền...");
             fetchMasterInventory();
-        }, 900000); // 15 phút
+        }, 900000);
 
         return () => clearInterval(intervalId);
     }, [userRole, fetchMasterInventory]);
 
-    // useEffect 2: Xử lý tìm kiếm REAL-TIME
     useEffect(() => {
         const trimmedSearch = searchTerm.trim();
         
-        // Nếu không có từ khóa, tắt chế độ tìm kiếm và hủy listener
         if (!trimmedSearch) {
             setIsSearching(false);
             setSearchResults([]);
             return;
         }
 
-        // Bật chế độ tìm kiếm
         setIsSearching(true);
         setLoading(true);
 
-        // Tạo các truy vấn real-time. Firestore yêu cầu các truy vấn riêng biệt cho các trường khác nhau.
-        // Chúng ta sẽ ưu tiên Mã hàng và Số lô.
         const productIdQuery = query(collection(db, "inventory_lots"), where("productId", "==", trimmedSearch));
         const lotNumberQuery = query(collection(db, "inventory_lots"), where("lotNumber", "==", trimmedSearch));
 
-        // Lắng nghe cả hai truy vấn
         const unsubProductId = onSnapshot(productIdQuery, (snapshot) => {
             const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Cập nhật kết quả, tránh trùng lặp
             setSearchResults(prev => [...results, ...prev.filter(p => !results.some(r => r.id === p.id))]);
             setLoading(false);
         });
@@ -110,20 +95,16 @@ const InventoryPage = ({ user, userRole }) => {
             setLoading(false);
         });
 
-        // Hàm dọn dẹp: Hủy cả hai listener khi component unmount hoặc searchTerm thay đổi
         return () => {
             unsubProductId();
             unsubLotNumber();
         };
     }, [searchTerm]);
 
-    // useMemo để quyết định danh sách nào sẽ được hiển thị
     const displayedInventory = useMemo(() => {
         let result;
-        // Nếu đang tìm kiếm, ưu tiên hiển thị kết quả real-time
         if (isSearching) {
             result = [...searchResults];
-            // Nếu không có kết quả real-time, thử tìm kiếm trên Tên hàng từ dữ liệu nền
             if (searchTerm.trim() && result.length === 0) {
                  const lowercasedFilter = searchTerm.toLowerCase();
                  result = masterInventory.filter(item => 
@@ -131,7 +112,6 @@ const InventoryPage = ({ user, userRole }) => {
                 );
             }
         } else {
-            // Nếu không tìm kiếm, hiển thị dữ liệu nền đã được lọc
             result = [...masterInventory];
 
             if (filters.team !== 'all') {
@@ -154,7 +134,6 @@ const InventoryPage = ({ user, userRole }) => {
             }
         }
         
-        // Luôn sắp xếp kết quả cuối cùng
         result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
         return result;
     }, [isSearching, searchResults, masterInventory, filters, searchTerm]);
@@ -260,6 +239,4 @@ const InventoryPage = ({ user, userRole }) => {
         </div>
     );
 };
-
 export default InventoryPage;
-

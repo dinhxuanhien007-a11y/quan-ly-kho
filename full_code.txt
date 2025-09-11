@@ -1,15 +1,85 @@
-﻿--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
+﻿--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewLotModal.jsx ---
+
+
+// src/components/AddNewLotModal.jsx
+import React, { useState } from 'react';
+import { formatExpiryDate } from '../utils/dateUtils';
+
+const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) => {
+    const [expiryDate, setExpiryDate] = useState('');
+
+    const handleSave = () => {
+        // Kiá»ƒm tra HSD há»£p lá»‡ trÆ°á»›c khi lÆ°u
+        if (!expiryDate || expiryDate.length < 10) {
+            alert('Vui lÃ²ng nháº­p Háº¡n Sá»­ Dá»¥ng há»£p lá»‡ (dd/mm/yyyy).');
+            return;
+        }
+        onSave(expiryDate);
+    };
+
+    const handleExpiryDateBlur = (e) => {
+        setExpiryDate(formatExpiryDate(e.target.value));
+    };
+    
+    // Xá»­ lÃ½ nháº¥n Enter Ä‘á»ƒ lÆ°u
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSave();
+        }
+    };
+
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content" style={{ width: '450px' }}>
+                <h2>Khai BÃ¡o LÃ´ HÃ ng Má»›i</h2>
+                <div className="form-group">
+                    <label>MÃ£ hÃ ng</label>
+                    <input type="text" value={`${productId} - ${productName}`} readOnly disabled />
+                </div>
+                <div className="form-group">
+                    <label>Sá»‘ lÃ´ má»›i</label>
+                    <input type="text" value={lotNumber} readOnly disabled />
+                </div>
+                <div className="form-group">
+                    <label>Háº¡n Sá»­ Dá»¥ng (dd/mm/yyyy) (*)</label>
+                    <input
+                        type="text"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                        onBlur={handleExpiryDateBlur}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Nháº­p HSD cho lÃ´ má»›i..."
+                        autoFocus
+                    />
+                </div>
+                <div className="modal-actions">
+                    <button type="button" onClick={onClose} className="btn-secondary">Há»§y</button>
+                    <button type="button" onClick={handleSave} className="btn-primary">XÃ¡c nháº­n</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default AddNewLotModal;
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
 
 
 // src/components/AddNewProductAndLotModal.jsx
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
-// Import hÃ m Ä‘á»‹nh dáº¡ng HSD tá»« file tiá»‡n Ã­ch
 import { formatExpiryDate } from '../utils/dateUtils';
 
+// Danh sÃ¡ch cÃ¡c lá»±a chá»n cÃ³ sáºµn
+const tempOptions = ["Nhiá»‡t Ä‘á»™ phÃ²ng", "2 â†’ 8Â°C", "-25 â†’ -15Â°C"];
+const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
+const unitOptions = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»ng", "Lá»", "Sá»£i", "CÃ¢y", "Can", "TuÃ½p", "Bá»™", "MÃ¡ng", "GÃ³i", "Khay"];
+
 const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
-    // State cho táº¥t cáº£ cÃ¡c trÆ°á»ng thÃ´ng tin cáº§n thiáº¿t
     const [productName, setProductName] = useState('');
     const [lotNumber, setLotNumber] = useState('');
     const [expiryDate, setExpiryDate] = useState('');
@@ -17,42 +87,25 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [packaging, setPackaging] = useState('');
     const [storageTemp, setStorageTemp] = useState('');
     const [manufacturer, setManufacturer] = useState('');
-    const [team, setTeam] = useState('MED'); // Máº·c Ä‘á»‹nh lÃ  team MED
+    const [team, setTeam] = useState('MED');
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Kiá»ƒm tra cÃ¡c trÆ°á»ng báº¯t buá»™c
         if (!productName || !lotNumber || !unit) {
             alert('Vui lÃ²ng Ä‘iá»n cÃ¡c thÃ´ng tin báº¯t buá»™c: TÃªn hÃ ng, Sá»‘ lÃ´, ÄVT.');
             return;
         }
         setIsSaving(true);
-
         const newProductData = {
-            productName,
-            unit,
-            packaging,
-            storageTemp,
-            manufacturer,
-            team,
+            productName, unit, packaging, storageTemp, manufacturer, team,
         };
-
         try {
-            // BÆ°á»›c 1: Táº¡o document sáº£n pháº©m má»›i trong collection 'products'
             const productRef = doc(db, 'products', productId);
             await setDoc(productRef, newProductData);
-
-            // BÆ°á»›c 2: Gá»i hÃ m onSave vÃ  truyá»n toÃ n bá»™ dá»¯ liá»‡u vá» cho trang cha
             onSave({
-                ...newProductData,
-                productId,
-                lotNumber,
-                expiryDate,
-                quantity: '', // Sá»‘ lÆ°á»£ng sáº½ Ä‘Æ°á»£c Ä‘iá»n sau
-                notes: '',
+                ...newProductData, productId, lotNumber, expiryDate, quantity: '', notes: '',
             });
-
         } catch (error) {
             console.error("Lá»—i khi táº¡o sáº£n pháº©m má»›i: ", error);
             alert('ÄÃ£ xáº£y ra lá»—i khi táº¡o sáº£n pháº©m.');
@@ -61,8 +114,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
         }
     };
     
-    // Sá»­ dá»¥ng hÃ m Ä‘á»‹nh dáº¡ng má»›i Ä‘Ã£ Ä‘Æ°á»£c sá»­a lá»—i
-    const handleExpiryDateChange = (e) => {
+    const handleExpiryDateBlur = (e) => {
         setExpiryDate(formatExpiryDate(e.target.value));
     };
 
@@ -97,13 +149,28 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                         </div>
                         <div className="form-group">
                             <label>HSD (dd/mm/yyyy)</label>
-                            <input type="text" value={expiryDate} onChange={handleExpiryDateChange} placeholder="dd/mm/yyyy" />
+                            <input 
+                                type="text" 
+                                value={expiryDate} 
+                                onChange={(e) => setExpiryDate(e.target.value)} 
+                                onBlur={handleExpiryDateBlur}
+                                placeholder="dd/mm/yyyy" 
+                            />
                         </div>
                     </div>
                     <div className="form-row">
                         <div className="form-group">
                             <label>ÄÆ¡n vá»‹ tÃ­nh (*)</label>
-                            <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} required />
+                            <input
+                                list="unit-options"
+                                value={unit}
+                                onChange={(e) => setUnit(e.target.value)}
+                                required
+                                placeholder="Chá»n hoáº·c nháº­p ÄVT..."
+                            />
+                            <datalist id="unit-options">
+                                {unitOptions.map(opt => <option key={opt} value={opt} />)}
+                            </datalist>
                         </div>
                         <div className="form-group">
                             <label>Quy cÃ¡ch Ä‘Ã³ng gÃ³i</label>
@@ -113,11 +180,27 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                     <div className="form-row">
                         <div className="form-group">
                             <label>Nhiá»‡t Ä‘á»™ báº£o quáº£n</label>
-                            <input type="text" value={storageTemp} onChange={(e) => setStorageTemp(e.target.value)} />
+                            <input
+                                list="temp-options"
+                                value={storageTemp}
+                                onChange={(e) => setStorageTemp(e.target.value)}
+                                placeholder="Chá»n hoáº·c nháº­p nhiá»‡t Ä‘á»™..."
+                            />
+                            <datalist id="temp-options">
+                                {tempOptions.map(opt => <option key={opt} value={opt} />)}
+                            </datalist>
                         </div>
                         <div className="form-group">
                             <label>HÃ£ng sáº£n xuáº¥t</label>
-                            <input type="text" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+                            <input
+                                list="manufacturer-options"
+                                value={manufacturer}
+                                onChange={(e) => setManufacturer(e.target.value)}
+                                placeholder="Chá»n hoáº·c nháº­p hÃ£ng SX..."
+                            />
+                            <datalist id="manufacturer-options">
+                                {manufacturerOptions.map(opt => <option key={opt} value={opt} />)}
+                            </datalist>
                         </div>
                     </div>
                     
@@ -143,20 +226,23 @@ export default AddNewProductAndLotModal;
 // src/components/AddProductModal.jsx
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore'; // Import cÃ¡c hÃ m cá»§a Firestore
+import { doc, setDoc } from 'firebase/firestore';
+
+// Danh sÃ¡ch cÃ¡c lá»±a chá»n cÃ³ sáºµn
+const tempOptions = ["Nhiá»‡t Ä‘á»™ phÃ²ng", "2 â†’ 8Â°C", "-25 â†’ -15Â°C"];
+const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
+const unitOptions = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»ng", "Lá»", "Sá»£i", "CÃ¢y", "Can", "TuÃ½p", "Bá»™", "MÃ¡ng", "GÃ³i", "Khay"];
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
-  // State cho táº¥t cáº£ cÃ¡c trÆ°á»ng thÃ´ng tin
   const [productId, setProductId] = useState('');
   const [productName, setProductName] = useState('');
   const [unit, setUnit] = useState('');
   const [packaging, setPackaging] = useState('');
   const [storageTemp, setStorageTemp] = useState('');
   const [manufacturer, setManufacturer] = useState('');
-  const [team, setTeam] = useState('MED'); // Máº·c Ä‘á»‹nh lÃ  team MED
+  const [team, setTeam] = useState('MED');
   const [isSaving, setIsSaving] = useState(false);
 
-  // HÃ m handleSubmit Ä‘Ã£ Ä‘Æ°á»£c cáº­p nháº­t
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!productId) {
@@ -164,9 +250,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       return;
     }
     setIsSaving(true);
-
     try {
-      // Táº¡o object dá»¯ liá»‡u hoÃ n chá»‰nh
       const newProductData = {
         productName,
         unit,
@@ -175,14 +259,11 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
         manufacturer,
         team,
       };
-
-      // Tham chiáº¿u Ä‘áº¿n document sáº£n pháº©m
       const productRef = doc(db, 'products', productId);
-      // Ghi dá»¯ liá»‡u vÃ o Firestore
       await setDoc(productRef, newProductData);
 
       alert('ThÃªm sáº£n pháº©m má»›i thÃ nh cÃ´ng!');
-      onProductAdded(); // Gá»i hÃ m Ä‘á»ƒ Ä‘Ã³ng modal vÃ  táº£i láº¡i danh sÃ¡ch
+      onProductAdded();
 
     } catch (error) {
       console.error("Lá»—i khi thÃªm sáº£n pháº©m: ", error);
@@ -197,11 +278,10 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       <div className="modal-content">
         <h2>ThÃªm sáº£n pháº©m má»›i</h2>
         <form onSubmit={handleSubmit}>
-          {/* MÃ£ hÃ ng vÃ  TÃªn hÃ ng */}
           <div className="form-row">
             <div className="form-group">
               <label>MÃ£ hÃ ng (ID)</label>
-              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value)} required />
+              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value.toUpperCase())} required />
             </div>
             <div className="form-group">
               <label>TÃªn hÃ ng</label>
@@ -209,11 +289,19 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
             </div>
           </div>
 
-          {/* ÄVT vÃ  Quy cÃ¡ch */}
           <div className="form-row">
             <div className="form-group">
               <label>ÄÆ¡n vá»‹ tÃ­nh</label>
-              <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} required />
+              <input
+                list="unit-options-add"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                required
+                placeholder="Chá»n hoáº·c nháº­p ÄVT..."
+              />
+              <datalist id="unit-options-add">
+                {unitOptions.map(opt => <option key={opt} value={opt} />)}
+              </datalist>
             </div>
             <div className="form-group">
               <label>Quy cÃ¡ch Ä‘Ã³ng gÃ³i</label>
@@ -221,19 +309,33 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
             </div>
           </div>
           
-          {/* Nhiá»‡t Ä‘á»™ vÃ  HÃ£ng SX */}
           <div className="form-row">
             <div className="form-group">
               <label>Nhiá»‡t Ä‘á»™ báº£o quáº£n</label>
-              <input type="text" value={storageTemp} onChange={(e) => setStorageTemp(e.target.value)} />
+              <input
+                list="temp-options-add"
+                value={storageTemp}
+                onChange={(e) => setStorageTemp(e.target.value)}
+                placeholder="Chá»n hoáº·c nháº­p nhiá»‡t Ä‘á»™..."
+              />
+              <datalist id="temp-options-add">
+                  {tempOptions.map(opt => <option key={opt} value={opt} />)}
+              </datalist>
             </div>
             <div className="form-group">
               <label>HÃ£ng sáº£n xuáº¥t</label>
-              <input type="text" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
+              <input
+                list="manufacturer-options-add"
+                value={manufacturer}
+                onChange={(e) => setManufacturer(e.target.value)}
+                placeholder="Chá»n hoáº·c nháº­p hÃ£ng SX..."
+              />
+              <datalist id="manufacturer-options-add">
+                  {manufacturerOptions.map(opt => <option key={opt} value={opt} />)}
+              </datalist>
             </div>
           </div>
 
-          {/* Team */}
           <div className="form-group">
             <label>Team</label>
             <select value={team} onChange={(e) => setTeam(e.target.value)}>
@@ -263,10 +365,10 @@ export default AddProductModal;
 
 
 // src/components/AddUnlistedItemModal.jsx
-
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
+import { formatExpiryDate } from '../utils/dateUtils';
 
 const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const [productId, setProductId] = useState('');
@@ -280,7 +382,6 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const [storageTemp, setStorageTemp] = useState('');
     const [manufacturer, setManufacturer] = useState('');
     const [team, setTeam] = useState('');
-
 
     const handleProductSearch = async () => {
         if (!productId) return;
@@ -331,6 +432,11 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
             team: team,
         });
     };
+    
+    // HÃ€M Má»šI: Chá»‰ Ä‘á»‹nh dáº¡ng khi ngÆ°á»i dÃ¹ng rá»i khá»i Ã´ input
+    const handleExpiryDateBlur = (e) => {
+        setExpiryDate(formatExpiryDate(e.target.value));
+    };
 
     return (
         <div className="modal-backdrop">
@@ -352,7 +458,13 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
                         </div>
                         <div className="form-group">
                             <label>HSD (dd/mm/yyyy)</label>
-                            <input type="text" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} placeholder="dd/mm/yyyy" />
+                            <input 
+                                type="text" 
+                                value={expiryDate} 
+                                onChange={e => setExpiryDate(e.target.value)} 
+                                onBlur={handleExpiryDateBlur}
+                                placeholder="dd/mm/yyyy" 
+                            />
                         </div>
                     </div>
                     <div className="form-group">
@@ -374,6 +486,7 @@ export default AddUnlistedItemModal;
 
 
 
+
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AdminLayout.jsx ---
 
 
@@ -392,6 +505,7 @@ import ExportListPage from '../pages/ExportListPage';
 import StocktakeListPage from '../pages/StocktakeListPage';
 import StocktakeSessionPage from '../pages/StocktakeSessionPage'; // Import trang má»›i
 import LotTracePage from '../pages/LotTracePage';
+import TestPage from '../pages/TestPage';
 
 const AdminLayout = () => {
   return (
@@ -409,6 +523,7 @@ const AdminLayout = () => {
           <Route path="/stocktakes" element={<StocktakeListPage />} />
           <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} /> {/* Route má»›i cho trang chi tiáº¿t */}
           <Route path="/lot-trace" element={<LotTracePage />} />
+          <Route path="/test" element={<TestPage />} />
         </Routes>
       </main>
     </div>
@@ -592,13 +707,21 @@ export default EditExportSlipModal;
 
 
 // src/components/EditImportSlipModal.jsx
-
 import React, { useState } from 'react';
 import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
+import { formatExpiryDate } from '../utils/dateUtils';
 
 const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
 
+  // HÃ€M Má»šI: Chá»‰ Ä‘á»‹nh dáº¡ng HSD khi ngÆ°á»i dÃ¹ng rá»i khá»i Ã´ input
+  const handleExpiryDateBlur = (index, value) => {
+    const updatedItems = [...slipData.items];
+    updatedItems[index].expiryDate = formatExpiryDate(value);
+    setSlipData({ ...slipData, items: updatedItems });
+  };
+
+  // HÃ€M CÅ¨: Giá» chá»‰ cáº­p nháº­t giÃ¡ trá»‹ thÃ´, khÃ´ng Ä‘á»‹nh dáº¡ng HSD
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
     updatedItems[index][field] = value;
@@ -630,11 +753,8 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
     <div className="modal-backdrop">
       <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
         <h2>Chá»‰nh sá»­a Phiáº¿u Nháº­p Kho (ID: {slipData.id})</h2>
-
         <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
-        {/* Sá»¬ Dá»¤NG Láº I LAYOUT GRID Äáº¦Y Äá»¦ */}
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-          {/* TiÃªu Ä‘á» Grid */}
           <div className="grid-header">MÃ£ hÃ ng</div>
           <div className="grid-header">TÃªn hÃ ng</div>
           <div className="grid-header">Sá»‘ lÃ´</div>
@@ -645,13 +765,20 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
           <div className="grid-header">Ghi chÃº</div>
           <div className="grid-header">Thao tÃ¡c</div>
 
-          {/* Láº·p qua danh sÃ¡ch hÃ ng hÃ³a vÃ  hiá»ƒn thá»‹ trong cÃ¡c Ã´ input */}
           {slipData.items.map((item, index) => (
             <React.Fragment key={index}>
               <div className="grid-cell"><input type="text" value={item.productId} onChange={e => handleItemChange(index, 'productId', e.target.value)} /></div>
               <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
               <div className="grid-cell"><input type="text" value={item.lotNumber} onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} /></div>
-              <div className="grid-cell"><input type="text" placeholder="dd/mm/yyyy" value={item.expiryDate} onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} /></div>
+              <div className="grid-cell">
+                <input 
+                    type="text" 
+                    placeholder="dd/mm/yyyy" 
+                    value={item.expiryDate} 
+                    onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} 
+                    onBlur={e => handleExpiryDateBlur(index, e.target.value)}
+                />
+              </div>
               <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
               <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
               <div className="grid-cell"><input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} /></div>
@@ -680,6 +807,7 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 };
 
 export default EditImportSlipModal;
+
 
 
 
@@ -1098,7 +1226,8 @@ import {
     FiClipboard, 
     FiFileText, 
     FiShare2, 
-    FiCheckSquare 
+    FiCheckSquare,
+    FiTool, 
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
@@ -1151,6 +1280,11 @@ const Navbar = () => {
         <li>
           <NavLink to="/lot-trace" title="Truy Váº¿t LÃ´ HÃ ng">
             <FiShare2 className="nav-icon" />
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/test" title="Trang Test">
+            <FiTool className="nav-icon" />
           </NavLink>
         </li>
       </ul>
@@ -1292,18 +1426,55 @@ export default TempBadge;
 
 
 // src/components/ViewerLayout.jsx
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import InventoryPage from '../pages/InventoryPage';
+import InventorySummaryPage from '../pages/InventorySummaryPage';
 
-// Nháº­n props tá»« App.jsx
 const ViewerLayout = ({ user, userRole }) => {
+  // BÆ¯á»šC 1: XÃ¡c Ä‘á»‹nh quyá»n xem chi tiáº¿t. Chá»‰ 'admin' má»›i cÃ³ quyá»n.
+  const canViewDetail = userRole === 'admin';
+
+  // BÆ¯á»šC 2: Máº·c Ä‘á»‹nh cháº¿ Ä‘á»™ xem lÃ  'summary' (tá»•ng há»£p)
+  const [viewMode, setViewMode] = useState('summary');
+
+  // BÆ¯á»šC 3: Äáº£m báº£o cÃ¡c vai trÃ² khÃ´ng cÃ³ quyá»n luÃ´n á»Ÿ cháº¿ Ä‘á»™ 'summary'
+  useEffect(() => {
+    if (!canViewDetail) {
+      setViewMode('summary');
+    }
+  }, [canViewDetail]);
+
   return (
     <div style={{ padding: '20px' }}>
-      <Routes>
-        {/* Truyá»n props xuá»‘ng cho InventoryPage */}
-        <Route path="/" element={<InventoryPage user={user} userRole={userRole} />} />
-      </Routes>
+      {/* BÆ¯á»šC 4: Chá»‰ hiá»ƒn thá»‹ cÃ¡c nÃºt chuyá»ƒn Ä‘á»•i cho vai trÃ² 'admin' */}
+      {canViewDetail ? (
+        <div className="view-toggle" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => setViewMode('summary')}
+            className={viewMode === 'summary' ? 'btn-primary' : 'btn-secondary'}
+            style={{width: 'auto'}}
+          >
+            Xem Tá»•ng Há»£p
+          </button>
+          <button 
+            onClick={() => setViewMode('detail')}
+            className={viewMode === 'detail' ? 'btn-primary' : 'btn-secondary'}
+            style={{width: 'auto'}}
+          >
+            Xem Chi Tiáº¿t (Admin)
+          </button>
+        </div>
+      ) : (
+        // CÃ¡c vai trÃ² khÃ¡c (med, bio) khÃ´ng tháº¥y nÃºt nÃ o cáº£
+        null 
+      )}
+
+      {/* BÆ¯á»šC 5: Render component dá»±a trÃªn cháº¿ Ä‘á»™ xem vÃ  quyá»n truy cáº­p */}
+      {(viewMode === 'detail' && canViewDetail) ? (
+        <InventoryPage user={user} userRole={userRole} />
+      ) : (
+        <InventorySummaryPage user={user} userRole={userRole} />
+      )}
     </div>
   );
 };
@@ -1976,7 +2147,6 @@ import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { formatDate } from '../utils/dateUtils';
 
-// HÃ m tÃ´ mÃ u HSD khÃ´ng thay Ä‘á»•i
 const getRowColorByExpiry = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
@@ -1993,38 +2163,33 @@ const getRowColorByExpiry = (expiryDate) => {
     return '';
 };
 
+
 const InventoryPage = ({ user, userRole }) => {
-    // State cho dá»¯ liá»‡u ná»n, lÃ m má»›i Ä‘á»‹nh ká»³
     const [masterInventory, setMasterInventory] = useState([]);
-    // State cho káº¿t quáº£ tÃ¬m kiáº¿m real-time
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    // State Ä‘á»ƒ xÃ¡c Ä‘á»‹nh Ä‘ang á»Ÿ cháº¿ Ä‘á»™ tÃ¬m kiáº¿m hay khÃ´ng
     const [isSearching, setIsSearching] = useState(false);
 
-    // HÃ m fetch dá»¯ liá»‡u thá»§ cÃ´ng cho toÃ n bá»™ kho
     const fetchMasterInventory = useCallback(async () => {
-        // Chá»‰ setLoading náº¿u chÆ°a cÃ³ dá»¯ liá»‡u gÃ¬
-        if (masterInventory.length === 0) {
-            setLoading(true);
-        }
+        if (masterInventory.length === 0) setLoading(true);
         try {
-            const q = query(collection(db, "inventory_lots"));
-            const querySnapshot = await getDocs(q);
-            const allInventory = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            let roleBasedInventory = [];
+            let q;
+            const lotsCollection = collection(db, "inventory_lots");
+            
             if (userRole === 'med') {
-                roleBasedInventory = allInventory.filter(item => item.team === 'MED');
+                q = query(lotsCollection, where("team", "==", "MED"));
             } else if (userRole === 'bio') {
-                roleBasedInventory = allInventory.filter(item => item.team === 'BIO' || item.team === 'Spare Part');
+                q = query(lotsCollection, where("team", "in", ["BIO", "Spare Part"]));
             } else {
-                roleBasedInventory = allInventory;
+                q = query(lotsCollection);
             }
-            setMasterInventory(roleBasedInventory);
+
+            const querySnapshot = await getDocs(q);
+            const inventoryList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMasterInventory(inventoryList);
         } catch (error) {
             console.error("Lá»—i khi láº¥y dá»¯ liá»‡u tá»“n kho: ", error);
         } finally {
@@ -2032,43 +2197,34 @@ const InventoryPage = ({ user, userRole }) => {
         }
     }, [userRole, masterInventory.length]);
 
-    // useEffect 1: Táº£i dá»¯ liá»‡u ban Ä‘áº§u vÃ  lÃ m má»›i Ä‘á»‹nh ká»³
     useEffect(() => {
         if (userRole) {
             fetchMasterInventory();
         }
         const intervalId = setInterval(() => {
-            console.log("Tá»± Ä‘á»™ng lÃ m má»›i dá»¯ liá»‡u ná»n...");
             fetchMasterInventory();
-        }, 900000); // 15 phÃºt
+        }, 900000);
 
         return () => clearInterval(intervalId);
     }, [userRole, fetchMasterInventory]);
 
-    // useEffect 2: Xá»­ lÃ½ tÃ¬m kiáº¿m REAL-TIME
     useEffect(() => {
         const trimmedSearch = searchTerm.trim();
         
-        // Náº¿u khÃ´ng cÃ³ tá»« khÃ³a, táº¯t cháº¿ Ä‘á»™ tÃ¬m kiáº¿m vÃ  há»§y listener
         if (!trimmedSearch) {
             setIsSearching(false);
             setSearchResults([]);
             return;
         }
 
-        // Báº­t cháº¿ Ä‘á»™ tÃ¬m kiáº¿m
         setIsSearching(true);
         setLoading(true);
 
-        // Táº¡o cÃ¡c truy váº¥n real-time. Firestore yÃªu cáº§u cÃ¡c truy váº¥n riÃªng biá»‡t cho cÃ¡c trÆ°á»ng khÃ¡c nhau.
-        // ChÃºng ta sáº½ Æ°u tiÃªn MÃ£ hÃ ng vÃ  Sá»‘ lÃ´.
         const productIdQuery = query(collection(db, "inventory_lots"), where("productId", "==", trimmedSearch));
         const lotNumberQuery = query(collection(db, "inventory_lots"), where("lotNumber", "==", trimmedSearch));
 
-        // Láº¯ng nghe cáº£ hai truy váº¥n
         const unsubProductId = onSnapshot(productIdQuery, (snapshot) => {
             const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Cáº­p nháº­t káº¿t quáº£, trÃ¡nh trÃ¹ng láº·p
             setSearchResults(prev => [...results, ...prev.filter(p => !results.some(r => r.id === p.id))]);
             setLoading(false);
         });
@@ -2079,20 +2235,16 @@ const InventoryPage = ({ user, userRole }) => {
             setLoading(false);
         });
 
-        // HÃ m dá»n dáº¹p: Há»§y cáº£ hai listener khi component unmount hoáº·c searchTerm thay Ä‘á»•i
         return () => {
             unsubProductId();
             unsubLotNumber();
         };
     }, [searchTerm]);
 
-    // useMemo Ä‘á»ƒ quyáº¿t Ä‘á»‹nh danh sÃ¡ch nÃ o sáº½ Ä‘Æ°á»£c hiá»ƒn thá»‹
     const displayedInventory = useMemo(() => {
         let result;
-        // Náº¿u Ä‘ang tÃ¬m kiáº¿m, Æ°u tiÃªn hiá»ƒn thá»‹ káº¿t quáº£ real-time
         if (isSearching) {
             result = [...searchResults];
-            // Náº¿u khÃ´ng cÃ³ káº¿t quáº£ real-time, thá»­ tÃ¬m kiáº¿m trÃªn TÃªn hÃ ng tá»« dá»¯ liá»‡u ná»n
             if (searchTerm.trim() && result.length === 0) {
                  const lowercasedFilter = searchTerm.toLowerCase();
                  result = masterInventory.filter(item => 
@@ -2100,7 +2252,6 @@ const InventoryPage = ({ user, userRole }) => {
                 );
             }
         } else {
-            // Náº¿u khÃ´ng tÃ¬m kiáº¿m, hiá»ƒn thá»‹ dá»¯ liá»‡u ná»n Ä‘Ã£ Ä‘Æ°á»£c lá»c
             result = [...masterInventory];
 
             if (filters.team !== 'all') {
@@ -2123,7 +2274,6 @@ const InventoryPage = ({ user, userRole }) => {
             }
         }
         
-        // LuÃ´n sáº¯p xáº¿p káº¿t quáº£ cuá»‘i cÃ¹ng
         result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
         return result;
     }, [isSearching, searchResults, masterInventory, filters, searchTerm]);
@@ -2229,10 +2379,274 @@ const InventoryPage = ({ user, userRole }) => {
         </div>
     );
 };
-
 export default InventoryPage;
 
 
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
+
+
+// src/pages/InventorySummaryPage.jsx
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, query, getDocs, where, onSnapshot } from 'firebase/firestore';
+import { formatDate } from '../utils/dateUtils';
+import TeamBadge from '../components/TeamBadge';
+import TempBadge from '../components/TempBadge';
+import { FiChevronDown, FiChevronRight } from 'react-icons/fi';
+
+// CÃ¡c hÃ m tÃ´ mÃ u getSummaryRowColor vÃ  getLotItemColorClass giá»¯ nguyÃªn
+const getSummaryRowColor = (lots) => {
+    if (!lots || lots.length === 0) return '';
+    let nearestExpiryDays = Infinity;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (const lot of lots) {
+        if (lot.expiryDate && lot.expiryDate.toDate) {
+            const expDate = lot.expiryDate.toDate();
+            expDate.setHours(0, 0, 0, 0);
+            const diffTime = expDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays < nearestExpiryDays) {
+                nearestExpiryDays = diffDays;
+            }
+        }
+    }
+    if (nearestExpiryDays === Infinity) return '';
+    if (nearestExpiryDays < 0) return 'expired-black';
+    if (nearestExpiryDays <= 60) return 'near-expiry-red';
+    if (nearestExpiryDays <= 90) return 'near-expiry-orange';
+    if (nearestExpiryDays <= 120) return 'near-expiry-yellow';
+    return '';
+};
+const getLotItemColorClass = (expiryDate) => {
+    if (!expiryDate || !expiryDate.toDate) return '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDate = expiryDate.toDate();
+    expDate.setHours(0, 0, 0, 0);
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return 'lot-item-expired';
+    if (diffDays <= 60) return 'lot-item-red';
+    if (diffDays <= 90) return 'lot-item-orange';
+    if (diffDays <= 120) return 'lot-item-yellow';
+    return '';
+};
+
+const InventorySummaryPage = ({ user, userRole }) => {
+    const [productsMap, setProductsMap] = useState({});
+    const [masterInventory, setMasterInventory] = useState([]);
+    const [realtimeLots, setRealtimeLots] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [expandedRows, setExpandedRows] = useState({});
+    const [isRealtimeActive, setIsRealtimeActive] = useState(false);
+
+    const fetchAllData = useCallback(async () => {
+        if (masterInventory.length === 0) setLoading(true);
+        try {
+            const productsSnapshot = await getDocs(collection(db, "products"));
+            const productsData = {};
+            productsSnapshot.forEach(doc => { productsData[doc.id] = doc.data(); });
+            setProductsMap(productsData);
+
+            // --- Sá»¬A Lá»–I LOGIC TRUY Váº¤N Táº I ÄÃ‚Y ---
+            let lotsQuery;
+            const lotsCollection = collection(db, "inventory_lots");
+
+            if (userRole === 'med') {
+                lotsQuery = query(lotsCollection, where("team", "==", "MED"));
+            } else if (userRole === 'bio') {
+                lotsQuery = query(lotsCollection, where("team", "in", ["BIO", "Spare Part"]));
+            } else { // admin, owner
+                lotsQuery = query(lotsCollection);
+            }
+            
+            const lotsSnapshot = await getDocs(lotsQuery);
+            const visibleInventory = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setMasterInventory(visibleInventory);
+
+        } catch (error) {
+            console.error("Lá»—i khi láº¥y dá»¯ liá»‡u: ", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [userRole, masterInventory.length]);
+
+    useEffect(() => {
+        if (userRole) {
+            fetchAllData();
+        }
+        const intervalId = setInterval(() => {
+            fetchAllData();
+        }, 900000);
+
+        return () => clearInterval(intervalId);
+    }, [userRole, fetchAllData]);
+
+    useEffect(() => {
+        const trimmedSearch = searchTerm.trim().toUpperCase();
+        if (trimmedSearch.length > 3) {
+            setIsRealtimeActive(true);
+            const q = query(collection(db, "inventory_lots"), where("productId", "==", trimmedSearch));
+            
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const lots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setRealtimeLots(lots);
+            });
+            return () => unsubscribe();
+        } else {
+            setIsRealtimeActive(false);
+            setRealtimeLots([]);
+        }
+    }, [searchTerm]);
+
+    const summarizedAndFilteredInventory = useMemo(() => {
+        let summary = masterInventory.reduce((acc, lot) => {
+            if (lot.quantityRemaining > 0) {
+                if (!acc[lot.productId]) {
+                    const productInfo = productsMap[lot.productId] || {};
+                    acc[lot.productId] = {
+                        productId: lot.productId, productName: productInfo.productName || lot.productName,
+                        unit: productInfo.unit, packaging: productInfo.packaging,
+                        storageTemp: productInfo.storageTemp, manufacturer: productInfo.manufacturer,
+                        team: productInfo.team || lot.team,
+                        totalRemaining: 0, lots: []
+                    };
+                }
+                acc[lot.productId].totalRemaining += lot.quantityRemaining;
+                acc[lot.productId].lots.push({
+                    lotId: lot.id, lotNumber: lot.lotNumber,
+                    expiryDate: lot.expiryDate, quantityRemaining: lot.quantityRemaining
+                });
+            }
+            return acc;
+        }, {});
+
+        if (isRealtimeActive) {
+            const productId = searchTerm.trim().toUpperCase();
+            const productInfo = productsMap[productId] || {};
+            if (realtimeLots.length > 0) {
+                summary[productId] = {
+                    productId: productId, productName: productInfo.productName || realtimeLots[0].productName,
+                    unit: productInfo.unit, packaging: productInfo.packaging,
+                    storageTemp: productInfo.storageTemp, manufacturer: productInfo.manufacturer,
+                    team: productInfo.team || realtimeLots[0].team,
+                    totalRemaining: realtimeLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0),
+                    lots: realtimeLots.map(lot => ({
+                        lotId: lot.id, lotNumber: lot.lotNumber, expiryDate: lot.expiryDate,
+                        quantityRemaining: lot.quantityRemaining
+                    }))
+                };
+            } else {
+                 if(summary[productId]){
+                    summary[productId].totalRemaining = 0;
+                    summary[productId].lots = [];
+                 }
+            }
+        }
+
+        const summaryArray = Object.values(summary);
+        summaryArray.forEach(product => {
+            product.rowColorClass = getSummaryRowColor(product.lots);
+            product.lots.sort((a, b) => a.expiryDate.toDate() - b.expiryDate.toDate());
+        });
+
+        if (searchTerm && !isRealtimeActive) {
+            const lowercasedFilter = searchTerm.toLowerCase();
+            return summaryArray.filter(item => 
+                item.productId.toLowerCase().includes(lowercasedFilter) ||
+                (item.productName && item.productName.toLowerCase().includes(lowercasedFilter))
+            );
+        }
+
+        return summaryArray.sort((a, b) => a.productId.localeCompare(b.productId));
+    }, [masterInventory, productsMap, searchTerm, isRealtimeActive, realtimeLots]);
+    
+    const toggleRow = (productId) => {
+        setExpandedRows(prev => ({ ...prev, [productId]: !prev[productId] }));
+    };
+    
+    if (loading) return <div>Äang táº£i dá»¯ liá»‡u tá»“n kho...</div>;
+
+    return (
+        <div>
+            <div className="search-container" style={{maxWidth: '500px', marginBottom: '20px'}}>
+                <input
+                    type="text"
+                    placeholder="TÃ¬m theo MÃ£ hoáº·c TÃªn hÃ ng..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="search-input"
+                />
+            </div>
+
+            <div className="table-container" style={{maxHeight: 'calc(100vh - 180px)'}}>
+                <table className="products-table">
+                    <thead>
+                        <tr>
+                            <th style={{width: '50px'}}></th>
+                            <th>MÃ£ hÃ ng</th>
+                            <th>TÃªn hÃ ng</th>
+                            <th>Tá»•ng Tá»“n</th>
+                            <th>ÄVT</th>
+                            <th>Quy cÃ¡ch</th>
+                            <th>Nhiá»‡t Ä‘á»™ BQ</th>
+                            <th>HÃ£ng SX</th>
+                            <th>Team</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {summarizedAndFilteredInventory.length > 0 ? (
+                            summarizedAndFilteredInventory.map(product => (
+                                <React.Fragment key={product.productId}>
+                                    <tr 
+                                        onClick={() => toggleRow(product.productId)} 
+                                        className={product.rowColorClass}
+                                        style={{cursor: 'pointer'}}
+                                    >
+                                        <td>{expandedRows[product.productId] ? <FiChevronDown /> : <FiChevronRight />}</td>
+                                        <td><strong>{product.productId}</strong></td>
+                                        <td style={{textAlign: 'left', whiteSpace: 'normal'}}>{product.productName}</td>
+                                        <td><strong>{product.totalRemaining}</strong></td>
+                                        <td>{product.unit}</td>
+                                        <td style={{whiteSpace: 'normal'}}>{product.packaging}</td>
+                                        <td><TempBadge temperature={product.storageTemp} /></td>
+                                        <td>{product.manufacturer}</td>
+                                        <td><TeamBadge team={product.team} /></td>
+                                    </tr>
+                                    {expandedRows[product.productId] && (
+                                        <tr className="lot-details-row">
+                                            <td colSpan="9">
+                                                <div className="lot-details-container">
+                                                    <h4>Chi tiáº¿t cÃ¡c lÃ´ hÃ ng (FEFO):</h4>
+                                                    <ul>
+                                                        {product.lots.map(lot => (
+                                                            <li key={lot.lotId} className={`lot-item ${getLotItemColorClass(lot.expiryDate)}`}>
+                                                                <span>LÃ´: <strong>{lot.lotNumber}</strong></span>
+                                                                <span>HSD: <strong>{formatDate(lot.expiryDate)}</strong></span>
+                                                                <span>Tá»“n: <strong>{lot.quantityRemaining}</strong></span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <tr><td colSpan="9" style={{textAlign: 'center'}}>KhÃ´ng cÃ³ hÃ ng hÃ³a tá»“n kho.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
+export default InventorySummaryPage;
 
 
 
@@ -2772,10 +3186,11 @@ export default NewExportPage;
 // src/pages/NewImportPage.jsx
 import React, { useState, useRef } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal'; 
-// Import cÃ¡c hÃ m tiá»‡n Ã­ch, bao gá»“m hÃ m sá»­a lá»—i HSD
-import { parseDateString, formatExpiryDate } from '../utils/dateUtils'; 
+import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
+import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
+import AddNewLotModal from '../components/AddNewLotModal';
+import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
+import { FiInfo } from 'react-icons/fi';
 
 const NewImportPage = () => {
     const today = new Date();
@@ -2785,28 +3200,69 @@ const NewImportPage = () => {
     const [supplier, setSupplier] = useState('');
     const [description, setDescription] = useState('');
     const [items, setItems] = useState([
-        { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }
+        { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }
     ]);
     const [isSaving, setIsSaving] = useState(false);
-    const [modalInfo, setModalInfo] = useState({ isOpen: false, productId: '', index: -1 });
+    const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
+    const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const inputRefs = useRef([]);
+
+    const handleExpiryDateBlur = (index, value) => {
+        const newItems = [...items];
+        newItems[index].expiryDate = formatExpiryDate(value);
+        setItems(newItems);
+    };
 
     const handleItemChange = (index, field, value) => {
         const newItems = [...items];
+        newItems[index][field] = value;
         
-        // Sá»­ dá»¥ng hÃ m Ä‘á»‹nh dáº¡ng má»›i Ä‘Ã£ Ä‘Æ°á»£c sá»­a lá»—i cho HSD
-        if (field === 'expiryDate') {
-            newItems[index][field] = formatExpiryDate(value);
-        } else {
-            newItems[index][field] = value;
-        }
-        
-        if (field === 'productId') {
-            newItems[index].productNotFound = false;
-            newItems[index].productName = ''; 
+        if (field === 'productId' || field === 'lotNumber') {
+            newItems[index].lotStatus = 'unchecked';
+            newItems[index].expiryDate = '';
+            newItems[index].existingLotInfo = null;
         }
         
         setItems(newItems);
+    };
+
+    const checkExistingLot = async (index) => {
+        const currentItem = items[index];
+        if (!currentItem.productId || !currentItem.lotNumber) return;
+
+        try {
+            const q = query(
+                collection(db, "inventory_lots"),
+                where("productId", "==", currentItem.productId.trim()),
+                where("lotNumber", "==", currentItem.lotNumber.trim())
+            );
+            const querySnapshot = await getDocs(q);
+            
+            const newItems = [...items];
+            if (!querySnapshot.empty) {
+                const existingLotData = querySnapshot.docs[0].data();
+                newItems[index].lotStatus = 'exists';
+                newItems[index].expiryDate = formatDate(existingLotData.expiryDate);
+                newItems[index].existingLotInfo = {
+                    quantityRemaining: existingLotData.quantityRemaining,
+                    expiryDate: formatDate(existingLotData.expiryDate)
+                };
+            } else {
+                newItems[index].lotStatus = 'new';
+                newItems[index].existingLotInfo = null;
+            }
+            setItems(newItems);
+        } catch (error) {
+            console.error("Lá»—i khi kiá»ƒm tra lÃ´ tá»“n táº¡i: ", error);
+        }
+    };
+
+    const handleNewLotDeclared = (index, declaredExpiryDate) => {
+        const newItems = [...items];
+        newItems[index].expiryDate = declaredExpiryDate;
+        newItems[index].lotStatus = 'declared';
+        setItems(newItems);
+        setNewLotModal({ isOpen: false, index: -1 });
     };
 
     const handleProductSearch = async (index, productId) => {
@@ -2842,17 +3298,14 @@ const NewImportPage = () => {
     
     const handleNewProductCreated = (newData) => {
         const newItems = [...items];
-        const { index } = modalInfo;
-        
+        const { index } = newProductModal;
         newItems[index] = {
             ...newItems[index], 
             ...newData,
             productNotFound: false,
         };
-        
         setItems(newItems);
-        setModalInfo({ isOpen: false, productId: '', index: -1 });
-
+        setNewProductModal({ isOpen: false, productId: '', index: -1 });
         setTimeout(() => {
             inputRefs.current[index * 3 + 2]?.focus();
         }, 100);
@@ -2872,7 +3325,7 @@ const NewImportPage = () => {
     const addNewRow = () => {
         setItems([
             ...items,
-            { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }
+            { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }
         ]);
     };
 
@@ -2900,7 +3353,7 @@ const NewImportPage = () => {
             alert(`LÆ°u táº¡m phiáº¿u nháº­p thÃ nh cÃ´ng! ID phiáº¿u: ${docRef.id}`);
             setSupplier('');
             setDescription('');
-            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }]);
+            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
         } catch (error) {
             console.error("Lá»—i khi lÆ°u phiáº¿u nháº­p: ", error);
             alert('ÄÃ£ xáº£y ra lá»—i khi lÆ°u phiáº¿u.');
@@ -2964,7 +3417,7 @@ const NewImportPage = () => {
             alert('Nháº­p kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
             setSupplier('');
             setDescription('');
-            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false }]);
+            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
         } catch (error) {
             console.error("Lá»—i khi nháº­p kho trá»±c tiáº¿p: ", error);
             alert('ÄÃ£ xáº£y ra lá»—i khi nháº­p kho trá»±c tiáº¿p.');
@@ -2975,11 +3428,20 @@ const NewImportPage = () => {
 
     return (
         <div>
-            {modalInfo.isOpen && (
+            {newProductModal.isOpen && (
                 <AddNewProductAndLotModal
-                    productId={modalInfo.productId}
-                    onClose={() => setModalInfo({ isOpen: false, productId: '', index: -1 })}
+                    productId={newProductModal.productId}
+                    onClose={() => setNewProductModal({ isOpen: false, productId: '', index: -1 })}
                     onSave={handleNewProductCreated}
+                />
+            )}
+            {newLotModal.isOpen && (
+                <AddNewLotModal
+                    productId={items[newLotModal.index].productId}
+                    productName={items[newLotModal.index].productName}
+                    lotNumber={items[newLotModal.index].lotNumber}
+                    onClose={() => setNewLotModal({ isOpen: false, index: -1 })}
+                    onSave={(expiry) => handleNewLotDeclared(newLotModal.index, expiry)}
                 />
             )}
 
@@ -3027,7 +3489,7 @@ const NewImportPage = () => {
                             />
                             {item.productNotFound && (
                                 <button
-                                    onClick={() => setModalInfo({ isOpen: true, productId: item.productId, index: index })}
+                                    onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
                                     className="btn-link"
                                     style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
                                 >
@@ -3036,14 +3498,26 @@ const NewImportPage = () => {
                             )}
                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-                        <div className="grid-cell">
+                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
                                 ref={el => inputRefs.current[index * 3 + 1] = el}
                                 onKeyDown={(e) => handleKeyDown(e, index, 1)}
                                 type="text"
                                 value={item.lotNumber}
                                 onChange={e => handleItemChange(index, 'lotNumber', e.target.value)}
+                                onBlur={() => checkExistingLot(index)}
                             />
+                            {item.lotStatus === 'exists' && item.existingLotInfo && (
+                                <div className="existing-lot-info">
+                                    <FiInfo />
+                                    <span>LÃ´ Ä‘Ã£ cÃ³ | Tá»“n: {item.existingLotInfo.quantityRemaining} | HSD: {item.existingLotInfo.expiryDate}</span>
+                                </div>
+                            )}
+                            {item.lotStatus === 'new' && (
+                                <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
+                                    [+] Khai bÃ¡o lÃ´ má»›i...
+                                </button>
+                            )}
                         </div>
                         <div className="grid-cell">
                             <input 
@@ -3051,6 +3525,9 @@ const NewImportPage = () => {
                                 placeholder="dd/mm/yyyy" 
                                 value={item.expiryDate} 
                                 onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} 
+                                onBlur={e => handleExpiryDateBlur(index, e.target.value)}
+                                readOnly={item.lotStatus === 'exists'}
+                                style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
                             />
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
@@ -3734,6 +4211,58 @@ export default StocktakeSessionPage;
 
 
 
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\TestPage.jsx ---
+
+
+// src/pages/TestPage.jsx
+import React, { useState } from 'react';
+// ChÃºng ta váº«n cáº§n hÃ m nÃ y Ä‘á»ƒ Ä‘á»‹nh dáº¡ng
+import { formatExpiryDate } from '../utils/dateUtils';
+
+const TestPage = () => {
+  const [testDate, setTestDate] = useState('');
+
+  // HÃ€M Má»šI: Chá»‰ Ä‘á»‹nh dáº¡ng khi ngÆ°á»i dÃ¹ng rá»i khá»i Ã´ input
+  const handleBlurFormat = (e) => {
+    const formattedValue = formatExpiryDate(e.target.value);
+    setTestDate(formattedValue);
+  };
+
+  return (
+    <div style={{ padding: '40px' }}>
+      <h1>Trang Kiá»ƒm Tra Lá»—i HSD (Giáº£i PhÃ¡p Má»›i)</h1>
+      <p>
+        HÃ£y thá»­ gÃµ má»™t chuá»—i sá»‘ vÃ o Ã´ bÃªn dÆ°á»›i (vÃ­ dá»¥: 12122025), sau Ä‘Ã³ báº¥m phÃ­m Tab hoáº·c click chuá»™t ra ngoÃ i Ã´.
+      </p>
+
+      <div style={{ marginTop: '20px' }}>
+        <label htmlFor="test-input" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+          Ã” Input Test HSD (dd/mm/yyyy)
+        </label>
+        <input
+          id="test-input"
+          type="text"
+          value={testDate}
+          // HÃ€M CÅ¨: Giá» chá»‰ cáº­p nháº­t giÃ¡ trá»‹ thÃ´, khÃ´ng Ä‘á»‹nh dáº¡ng
+          onChange={(e) => setTestDate(e.target.value)}
+          // HÃ€M Má»šI: KÃ­ch hoáº¡t Ä‘á»‹nh dáº¡ng khi rá»i Ä‘i
+          onBlur={handleBlurFormat}
+          placeholder="dd/mm/yyyy"
+          style={{ padding: '10px', fontSize: '16px', width: '300px' }}
+        />
+      </div>
+
+      <div style={{ marginTop: '20px' }}>
+        <strong>GiÃ¡ trá»‹ hiá»‡n táº¡i cá»§a state:</strong> {testDate}
+      </div>
+    </div>
+  );
+};
+
+export default TestPage;
+
+
+
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\AdminLayout.css ---
 
 
@@ -3850,37 +4379,20 @@ export default StocktakeSessionPage;
   background-color: #e9ecef;
 }
 
-/* --- Báº¢NG inventory-table (PHIÃŠN Báº¢N Sá»¬A Lá»–I HOÃ€N CHá»ˆNH) --- */
-.table-container {
-  width: 100%;
-  overflow-x: auto;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  /* Giá»›i háº¡n chiá»u cao vÃ  táº¡o thanh cuá»™n dá»c - ÄÃƒ Cáº¬P NHáº¬T */
-  max-height: calc(100vh - 150px); 
-  overflow-y: auto;
-}
+/* src/styles/AdminLayout.css */
 
+/* --- Báº¢NG inventory-table (PHIÃŠN Báº¢N HOÃ€N CHá»ˆNH Má»šI) --- */
 .inventory-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.inventory-table td {
+.inventory-table th, .inventory-table td {
   padding: 12px 15px;
-  text-align: left;
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
-  white-space: nowrap;
-  vertical-align: top;
-}
-
-.inventory-table td:nth-child(3), /* TÃªn hÃ ng */
-.inventory-table td:nth-child(7) { /* Quy cÃ¡ch */
-  max-height: 75px;
-  overflow-y: auto;
-  white-space: normal;
-  word-wrap: break-word;
+  white-space: nowrap; /* Giá»¯ ná»™i dung trÃªn má»™t dÃ²ng theo máº·c Ä‘á»‹nh */
+  vertical-align: middle;
 }
 
 .inventory-table th {
@@ -3899,74 +4411,32 @@ export default StocktakeSessionPage;
 .inventory-table tbody tr.selected-row td {
   background-color: #d6eaff !important;
 }
-.inventory-table tbody tr.selected-row {
-  font-weight: 500;
-}
 
-.inventory-table th:nth-child(1),
-.inventory-table td:nth-child(1) {
-  position: sticky;
-  left: 0;
-  width: 120px;
-  min-width: 120px;
-  z-index: 1;
-}
+/* CÃ¡c cá»™t Ä‘Æ°á»£c ghim (sticky) */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { position: sticky; left: 0; z-index: 1; }
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 140px; z-index: 1; }
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 290px; z-index: 1; }
 
-.inventory-table th:nth-child(2),
-.inventory-table td:nth-child(2) {
-  position: sticky;
-  left: 120px;
-  width: 150px;
-  min-width: 150px;
-  z-index: 1;
-}
+.inventory-table th:nth-child(1), .inventory-table th:nth-child(2), .inventory-table th:nth-child(3) { z-index: 3; }
 
-.inventory-table th:nth-child(3),
-.inventory-table td:nth-child(3) {
-  position: sticky;
-  left: 270px;
-  width: 300px;
-  min-width: 300px;
-  z-index: 1;
-}
+.inventory-table td:nth-child(1), .inventory-table td:nth-child(2), .inventory-table td:nth-child(3) { background-color: #ffffff; }
+.inventory-table tbody tr:hover td:nth-child(1), .inventory-table tbody tr:hover td:nth-child(2), .inventory-table tbody tr:hover td:nth-child(3) { background-color: #e9ecef; }
+.inventory-table tbody tr.selected-row td:nth-child(1), .inventory-table tbody tr.selected-row td:nth-child(2), .inventory-table tbody tr.selected-row td:nth-child(3) { background-color: #d6eaff !important; }
 
-.inventory-table th:nth-child(1),
-.inventory-table th:nth-child(2),
-.inventory-table th:nth-child(3) {
-  z-index: 3;
-  background-color: #f8f9fa;
-}
-
-.inventory-table td:nth-child(1),
-.inventory-table td:nth-child(2),
-.inventory-table td:nth-child(3) {
-  background-color: #ffffff;
-}
-
-.inventory-table tbody tr:hover td:nth-child(1),
-.inventory-table tbody tr:hover td:nth-child(2),
-.inventory-table tbody tr:hover td:nth-child(3) {
-  background-color: #e9ecef;
-}
-.inventory-table tbody tr.selected-row td:nth-child(1),
-.inventory-table tbody tr.selected-row td:nth-child(2),
-.inventory-table tbody tr.selected-row td:nth-child(3) {
-  background-color: #d6eaff !important;
-}
-
-.inventory-table th:nth-child(3), 
-.inventory-table td:nth-child(3) {
-  white-space: normal;
-  word-wrap: break-word;
-  min-width: 350px;
-}
-
-.inventory-table th:nth-child(7), .inventory-table td:nth-child(7),
-.inventory-table th:nth-child(12), .inventory-table td:nth-child(12) {
-  white-space: normal;
-  word-wrap: break-word;
-  min-width: 175px;
-}
+/* --- ÄIá»€U CHá»ˆNH Láº I Äá»˜ Rá»˜NG CÃC Cá»˜T --- */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { min-width: 140px; } /* NgÃ y nháº­p */
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { min-width: 150px; } /* MÃ£ hÃ ng */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { min-width: 350px; white-space: normal; text-align: left;} /* TÃªn hÃ ng (xuá»‘ng dÃ²ng, cÄƒn trÃ¡i) */
+.inventory-table th:nth-child(4), .inventory-table td:nth-child(4) { min-width: 130px; } /* Sá»‘ lÃ´ */
+.inventory-table th:nth-child(5), .inventory-table td:nth-child(5) { min-width: 120px; } /* HSD */
+.inventory-table th:nth-child(6), .inventory-table td:nth-child(6) { min-width: 80px; }  /* ÄVT */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { min-width: 180px; white-space: normal; } /* Quy cÃ¡ch (xuá»‘ng dÃ²ng) */
+.inventory-table th:nth-child(8), .inventory-table td:nth-child(8) { min-width: 100px; } /* SL Nháº­p */
+.inventory-table th:nth-child(9), .inventory-table td:nth-child(9) { min-width: 120px; font-weight: bold; } /* SL CÃ²n láº¡i (TÄ‚NG Äá»˜ Rá»˜NG) */
+.inventory-table th:nth-child(10),.inventory-table td:nth-child(10){ min-width: 200px; white-space: normal; } /* Ghi chÃº (xuá»‘ng dÃ²ng) */
+.inventory-table th:nth-child(11),.inventory-table td:nth-child(11){ min-width: 150px; } /* Nhiá»‡t Ä‘á»™ BQ */
+.inventory-table th:nth-child(12),.inventory-table td:nth-child(12){ min-width: 180px; white-space: normal; } /* HÃ£ng SX (xuá»‘ng dÃ²ng) */
+.inventory-table th:nth-child(13),.inventory-table td:nth-child(13){ min-width: 120px; } /* Team */
 
 /* --- MODAL (POPUP) --- */
 .modal-backdrop {
@@ -4219,35 +4689,56 @@ export default StocktakeSessionPage;
   text-align: left;
 }
 
-/* --- CSS CHO Cáº¢NH BÃO Háº N Sá»¬ Dá»¤NG --- */
-.inventory-table-body tr.near-expiry-yellow td { background-color: #ffe08a; }
-.inventory-table-body tr.near-expiry-orange td { background-color: #ffb74d; }
-.inventory-table-body tr.near-expiry-red td { background-color: #ef9a9a; }
-.inventory-table-body tr.expired-black td { background-color: #a0a0a0; color: #fff; }
+/* src/styles/AdminLayout.css */
 
-.inventory-table-body tr.near-expiry-yellow td,
-.inventory-table-body tr.near-expiry-orange td,
-.inventory-table-body tr.near-expiry-red td {
+/* src/styles/AdminLayout.css */
+
+/* --- CSS Má»šI: CHO Cáº¢NH BÃO Háº N Sá»¬ Dá»¤NG (DÃ¹ng chung, bá» gáº¡ch ngang) --- */
+
+/* Ãp dá»¥ng mÃ u cho cÃ¡c Ã´ cá»§a dÃ²ng cÃ³ class tÆ°Æ¡ng á»©ng */
+tr.near-expiry-yellow td { background-color: #fff3cd !important; color: #5a5a5a !important; }
+tr.near-expiry-orange td { background-color: #ffe8cc !important; color: #5a5a5a !important; }
+tr.near-expiry-red td { background-color: #f8d7da !important; color: #5a5a5a !important; }
+/* THAY Äá»”I 1: Chuyá»ƒn sang mÃ u ná»n Ä‘en vÃ  chá»¯ tráº¯ng */
+tr.expired-black td { background-color: #212529 !important; color: #fff !important; }
+
+/* In Ä‘áº­m chá»¯ cho cÃ¡c dÃ²ng cáº£nh bÃ¡o */
+tr.near-expiry-yellow td,
+tr.near-expiry-orange td,
+tr.near-expiry-red td {
     font-weight: 500;
 }
 
-.inventory-table-body tr.expired-black td {
+tr.expired-black td {
     font-weight: bold;
-    text-decoration: line-through;
+}
+/* THAY Äá»”I 2: XÃ³a hoÃ n toÃ n Ä‘oáº¡n code cÃ³ "text-decoration: line-through" */
+
+/* Äáº£m báº£o mÃ u hover váº«n hoáº¡t Ä‘á»™ng */
+tbody tr:hover td {
+  background-color: #d6eaff !important;
+  color: #000 !important; /* Äáº£m báº£o chá»¯ luÃ´n Ä‘á»c Ä‘Æ°á»£c khi hover */
 }
 
-.inventory-table-body tr:hover td,
-.inventory-table-body tr.selected-row td {
-  background-color: #d6eaff !important;
+/* DÃ²ng Ä‘Æ°á»£c chá»n cÃ³ mÃ u Æ°u tiÃªn cao nháº¥t */
+tbody tr.selected-row td {
+  background-color: #cce5ff !important;
+  color: #000 !important;
 }
 
 /* --- BADGES (TEAM & TEMP) --- */
 .team-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
+  display: inline-flex;  /* Chuyá»ƒn sang inline-flex Ä‘á»ƒ cÄƒn giá»¯a ná»™i dung */
+  align-items: center;    /* CÄƒn giá»¯a theo chiá»u dá»c */
+  justify-content: center; /* CÄƒn giá»¯a theo chiá»u ngang */
+  padding: 5px 10px;
+  border-radius: 15px;    /* Bo trÃ²n hÆ¡n má»™t chÃºt */
   font-size: 12px;
   font-weight: 500;
   color: #fff;
+  line-height: 1.2;       /* TÄƒng khoáº£ng cÃ¡ch dÃ²ng cho dá»… Ä‘á»c khi xuá»‘ng dÃ²ng */
+  min-height: 38px;       /* Äáº·t chiá»u cao tá»‘i thiá»ƒu Ä‘á»ƒ chá»©a Ä‘Æ°á»£c 2 dÃ²ng */
+  box-sizing: border-box; /* Äáº£m báº£o padding khÃ´ng lÃ m tÄƒng kÃ­ch thÆ°á»›c */
 }
 .team-badge.team-med { background-color: #007bff; }
 .team-badge.team-bio { background-color: #28a745; }
@@ -4379,6 +4870,163 @@ export default StocktakeSessionPage;
 .compact-info-grid .info-description {
   grid-column: 1 / -1;
   margin-top: 5px;
+}
+
+/* CSS Má»šI: Cho há»™p thÃ´ng tin lÃ´ hÃ ng Ä‘Ã£ tá»“n táº¡i */
+.existing-lot-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #004085; /* MÃ u chá»¯ xanh Ä‘áº­m */
+  background-color: #cce5ff; /* MÃ u ná»n xanh nháº¡t */
+  padding: 5px 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+  width: 100%;
+  border: 1px solid #b8daff;
+}
+
+/* DÃ¡n Ä‘oáº¡n code nÃ y vÃ o cuá»‘i file src/styles/AdminLayout.css */
+
+/* CSS CHO GIAO DIá»†N Tá»’N KHO Tá»”NG Há»¢P */
+.lot-details-row td {
+    padding: 0 !important;
+    background-color: #fff !important;
+    border-top: none !important;
+}
+
+.lot-details-container {
+    padding: 15px 20px 15px 50px; /* Thá»¥t vÃ o Ä‘á»ƒ táº¡o cáº¥p báº­c */
+    background-color: #fdfdfe;
+}
+
+.lot-details-container h4 {
+    margin: 0 0 10px 0;
+    font-weight: 500;
+}
+
+.lot-details-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lot-details-container li {
+    display: flex;
+    gap: 20px;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    font-size: 14px;
+}
+
+/* src/styles/AdminLayout.css */
+
+/* --- DÃ¡n Ä‘oáº¡n code nÃ y vÃ o cuá»‘i file --- */
+
+/* CÄ‚N CHá»ˆNH Báº¢NG Tá»’N KHO Tá»”NG Há»¢P (PHIÃŠN Báº¢N Má»šI) */
+
+/* 1. CÄƒn giá»¯a lÃ m máº·c Ä‘á»‹nh cho táº¥t cáº£ cÃ¡c Ã´ trong báº£ng */
+.products-table th,
+.products-table td {
+    text-align: center;
+    vertical-align: middle; /* CÄƒn giá»¯a theo chiá»u dá»c */
+}
+
+/* 2. Ghi Ä‘Ã¨, chá»‰ cÄƒn trÃ¡i cho cá»™t TÃªn hÃ ng */
+.products-table th:nth-child(3),
+.products-table td:nth-child(3) {
+    text-align: left;
+}
+
+/* 3. PhÃ¢n bá»• láº¡i Ä‘á»™ rá»™ng cÃ¡c cá»™t */
+
+/* Cá»™t mÅ©i tÃªn (siÃªu nhá») */
+.products-table th:nth-child(1), .products-table td:nth-child(1) { width: 4%; }
+
+/* MÃ£ hÃ ng (nhá») */
+.products-table th:nth-child(2) { width: 10%; }
+
+/* TÃªn hÃ ng (thu nhá» láº¡i) */
+.products-table th:nth-child(3) {
+    width: 28%; /* << THU NHá»Ž Láº I */
+    max-width: 350px;
+}
+.products-table td:nth-child(3) {
+    max-width: 350px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Tá»•ng tá»“n (nhá») */
+.products-table th:nth-child(4) { width: 8%; }
+
+/* ÄVT (nhá») */
+.products-table th:nth-child(5) { width: 8%; }
+
+/* Quy cÃ¡ch (TÄ‚NG KÃCH THÆ¯á»šC) */
+.products-table th:nth-child(6) {
+    width: 12%; /* << TÄ‚NG LÃŠN */
+}
+.products-table td:nth-child(6) {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Nhiá»‡t Ä‘á»™ BQ (TÄ‚NG KÃCH THÆ¯á»šC) */
+.products-table th:nth-child(7) {
+    width: 12%; /* << TÄ‚NG LÃŠN */
+}
+.products-table td:nth-child(7) {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* HÃ£ng SX (vá»«a pháº£i) */
+.products-table th:nth-child(8) { width: 10%; }
+
+/* Team (THU NHá»Ž Láº I vÃ  cho phÃ©p xuá»‘ng dÃ²ng) */
+.products-table th:nth-child(9) {
+    width: 8%; /* << THU NHá»Ž Láº I */
+}
+.products-table td:nth-child(9) {
+    white-space: normal; /* << CHO PHÃ‰P XUá»NG DÃ’NG */
+    word-wrap: break-word;
+}
+
+/* ... code CSS cÅ© ... */
+
+/* CSS Má»šI: Cho mÃ u ná»n cá»§a tá»«ng lÃ´ hÃ ng con */
+.lot-item {
+    transition: background-color 0.2s; /* Hiá»‡u á»©ng chuyá»ƒn mÃ u mÆ°á»£t mÃ  */
+}
+
+/* LÃ´ bÃ¬nh thÆ°á»ng cÃ³ mÃ u ná»n máº·c Ä‘á»‹nh */
+.lot-item {
+    background-color: #e9ecef;
+}
+
+/* CÃ¡c lÃ´ cÃ³ cáº£nh bÃ¡o sáº½ cÃ³ mÃ u riÃªng */
+.lot-item.lot-item-yellow {
+    background-color: #fff3cd;
+    border-left: 3px solid #ffeeba;
+}
+.lot-item.lot-item-orange {
+    background-color: #ffe8cc;
+    border-left: 3px solid #ffd8b8;
+}
+.lot-item.lot-item-red {
+    background-color: #f8d7da;
+    border-left: 3px solid #f5c6cb;
+}
+.lot-item.lot-item-expired {
+    background-color: #d6d8db;
+    border-left: 3px solid #c6c8ca;
+    font-weight: bold;
 }
 
 
