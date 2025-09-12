@@ -13,6 +13,8 @@ import {
     FiShare2, 
     FiCheckSquare,
     FiTool, 
+    FiUsers,
+    FiBookOpen,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
@@ -24,6 +26,11 @@ const Navbar = () => {
       </div>
       <ul className="nav-items">
         <li>
+          <NavLink to="/view" title="Xem Sổ Cái Tồn Kho">
+            <FiBookOpen className="nav-icon" />
+          </NavLink>
+        </li>
+        <li>
           <NavLink to="/" title="Bảng điều khiển">
             <FiGrid className="nav-icon" />
           </NavLink>
@@ -32,6 +39,9 @@ const Navbar = () => {
           <NavLink to="/products" title="Quản lý hàng hóa">
             <FiArchive className="nav-icon" />
           </NavLink>
+        </li>
+        <li>
+          <NavLink to="/partners" title="Quản lý Đối tác"><FiUsers className="nav-icon" /></NavLink> {/* <-- LINK MỚI */}
         </li>
         {/* --- THAY ĐỔI: ICON TẠO PHIẾU NHẬP --- */}
         <li>

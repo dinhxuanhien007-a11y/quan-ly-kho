@@ -1,7 +1,7 @@
 // src/pages/InventoryPage.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, onSnapshot, where } from 'firebase/firestore';
+import { collection, query, getDocs, where } from 'firebase/firestore'; // Bỏ onSnapshot
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
@@ -23,15 +23,16 @@ const getRowColorByExpiry = (expiryDate) => {
     return '';
 };
 
-
 const InventoryPage = ({ user, userRole }) => {
     const [masterInventory, setMasterInventory] = useState([]);
-    const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isSearching, setIsSearching] = useState(false);
+
+    // --- XÓA BỎ: State cho tìm kiếm real-time ---
+    // const [searchResults, setSearchResults] = useState([]);
+    // const [isSearching, setIsSearching] = useState(false);
 
     const fetchMasterInventory = useCallback(async () => {
         if (masterInventory.length === 0) setLoading(true);
@@ -67,86 +68,55 @@ const InventoryPage = ({ user, userRole }) => {
         return () => clearInterval(intervalId);
     }, [userRole, fetchMasterInventory]);
 
-    useEffect(() => {
-        const trimmedSearch = searchTerm.trim();
-        
-        if (!trimmedSearch) {
-            setIsSearching(false);
-            setSearchResults([]);
-            return;
-        }
-
-        setIsSearching(true);
-        setLoading(true);
-
-        const productIdQuery = query(collection(db, "inventory_lots"), where("productId", "==", trimmedSearch));
-        const lotNumberQuery = query(collection(db, "inventory_lots"), where("lotNumber", "==", trimmedSearch));
-
-        const unsubProductId = onSnapshot(productIdQuery, (snapshot) => {
-            const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setSearchResults(prev => [...results, ...prev.filter(p => !results.some(r => r.id === p.id))]);
-            setLoading(false);
-        });
-
-        const unsubLotNumber = onSnapshot(lotNumberQuery, (snapshot) => {
-            const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setSearchResults(prev => [...results, ...prev.filter(p => !results.some(r => r.id === p.id))]);
-            setLoading(false);
-        });
-
-        return () => {
-            unsubProductId();
-            unsubLotNumber();
-        };
-    }, [searchTerm]);
+    // --- XÓA BỎ: useEffect cho tìm kiếm real-time ---
 
     const displayedInventory = useMemo(() => {
-        let result;
-        if (isSearching) {
-            result = [...searchResults];
-            if (searchTerm.trim() && result.length === 0) {
-                 const lowercasedFilter = searchTerm.toLowerCase();
-                 result = masterInventory.filter(item => 
-                    item.productName?.toLowerCase().includes(lowercasedFilter)
-                );
-            }
-        } else {
-            result = [...masterInventory];
+        let filteredResult = [...masterInventory];
 
-            if (filters.team !== 'all') {
-                result = result.filter(item => item.team === filters.team);
+        // --- THAY ĐỔI: Sắp xếp lại và thống nhất logic lọc/tìm kiếm ---
+        // 1. Lọc theo các nút bấm (team, date status)
+        if (filters.team !== 'all') {
+            filteredResult = filteredResult.filter(item => item.team === filters.team);
+        }
+        if (filters.dateStatus !== 'all') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (filters.dateStatus === 'expired') {
+                filteredResult = filteredResult.filter(item => item.expiryDate?.toDate() < today);
             }
-            if (filters.dateStatus !== 'all') {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                if (filters.dateStatus === 'expired') {
-                    result = result.filter(item => item.expiryDate?.toDate() < today);
-                }
-                if (filters.dateStatus === 'near_expiry') {
-                    const nearExpiryLimit = new Date();
-                    nearExpiryLimit.setDate(today.getDate() + 120);
-                    result = result.filter(item => {
-                        const expiryDate = item.expiryDate?.toDate();
-                        return expiryDate >= today && expiryDate < nearExpiryLimit;
-                    });
-                }
+            if (filters.dateStatus === 'near_expiry') {
+                const nearExpiryLimit = new Date();
+                nearExpiryLimit.setDate(today.getDate() + 120);
+                filteredResult = filteredResult.filter(item => {
+                    const expiryDate = item.expiryDate?.toDate();
+                    return expiryDate >= today && expiryDate < nearExpiryLimit;
+                });
             }
         }
         
-        // --- CẬP NHẬT LOGIC SẮP XẾP ---
-        result.sort((a, b) => {
-            // Ưu tiên 1: Sắp xếp theo Mã hàng (productId) từ bé đến lớn
+        // 2. Sau đó, lọc tiếp theo từ khóa tìm kiếm trên kết quả đã có
+        if (searchTerm) {
+            const lowercasedFilter = searchTerm.toLowerCase();
+            filteredResult = filteredResult.filter(item =>
+                item.productId?.toLowerCase().includes(lowercasedFilter) ||
+                item.productName?.toLowerCase().includes(lowercasedFilter) ||
+                item.lotNumber?.toLowerCase().includes(lowercasedFilter)
+            );
+        }
+
+        // 3. Cuối cùng, sắp xếp kết quả
+        filteredResult.sort((a, b) => {
             const productCompare = a.productId.localeCompare(b.productId);
             if (productCompare !== 0) {
                 return productCompare;
             }
-            // Ưu tiên 2: Nếu cùng Mã hàng, sắp xếp theo Ngày nhập (importDate) từ cũ đến mới
             const dateA = a.importDate?.toDate() || 0;
             const dateB = b.importDate?.toDate() || 0;
-            return dateA - dateB; // Sắp xếp tăng dần (cũ ở trên, mới ở dưới)
+            return dateA - dateB;
         });
-        return result;
-    }, [isSearching, searchResults, masterInventory, filters, searchTerm]);
+
+        return filteredResult;
+    }, [masterInventory, filters, searchTerm]); // Cập nhật dependencies
 
 
     const handleFilterChange = (filterName, value) => {
@@ -170,7 +140,7 @@ const InventoryPage = ({ user, userRole }) => {
     return (
         <div>
             <div className="page-header">
-                <h1>{getTitleByRole(userRole)}</h1>
+                <h1>PT Biomed - Kho</h1>
             </div>
             
             <div className="controls-container">
@@ -220,25 +190,26 @@ const InventoryPage = ({ user, userRole }) => {
                                         onClick={() => handleRowClick(lot.id)}
                                         className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
                                     >
-                                        <td>{formatDate(lot.importDate)}</td>
-                                        <td>{lot.productId}</td>
-                                        <td>{lot.productName}</td>
-                                        <td>{lot.lotNumber}</td>
-                                        <td>{formatDate(lot.expiryDate)}</td>
-                                        <td>{lot.unit}</td>
-                                        <td>{lot.packaging}</td>
-                                        <td>{lot.quantityImported}</td>
-                                        <td>{lot.quantityRemaining}</td>
-                                        <td>{lot.notes}</td>
-                                        <td><TempBadge temperature={lot.storageTemp} /></td>
-                                        <td>{lot.manufacturer}</td>
-                                        <td><TeamBadge team={lot.team} /></td>
+                                        <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
+                                        <td data-label="Mã hàng">{lot.productId}</td>
+                                        <td data-label="Tên hàng">{lot.productName}</td>
+                                        <td data-label="Số lô">{lot.lotNumber}</td>
+                                        <td data-label="HSD">{formatDate(lot.expiryDate)}</td>
+                                        <td data-label="ĐVT">{lot.unit}</td>
+                                        <td data-label="Quy cách">{lot.packaging}</td>
+                                        <td data-label="SL Nhập">{lot.quantityImported}</td>
+                                        <td data-label="SL Còn lại">{lot.quantityRemaining}</td>
+                                        <td data-label="Ghi chú">{lot.notes}</td>
+                                        <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
+                                        <td data-label="Hãng SX">{lot.manufacturer}</td>
+                                        <td data-label="Team"><TeamBadge team={lot.team} /></td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
                                     <td colSpan="13" style={{ textAlign: 'center' }}>
-                                        {isSearching ? "Không tìm thấy kết quả real-time nào." : "Không có dữ liệu tồn kho phù hợp."}
+                                        {/* Cập nhật lại thông báo khi không có kết quả */}
+                                        Không có dữ liệu tồn kho phù hợp với bộ lọc hoặc từ khóa tìm kiếm.
                                     </td>
                                 </tr>
                             )}

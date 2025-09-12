@@ -7,7 +7,7 @@ import LoginPage from './components/LoginPage';
 import AdminLayout from './components/AdminLayout';
 import ViewerLayout from './components/ViewerLayout';
 import './App.css';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -23,7 +23,7 @@ function App() {
         if (userDocSnap.exists()) {
           setUserRole(userDocSnap.data().role);
         } else {
-          setUserRole(null); // Không có vai trò
+          setUserRole(null); 
         }
       } else {
         setUser(null);
@@ -38,23 +38,22 @@ function App() {
     return <div>Đang tải...</div>;
   }
   
-  const renderLayout = () => {
-    // Chỉ 'owner' mới thấy giao diện quản trị
-    if (userRole === 'owner') {
-      return <AdminLayout />;
-    }
-    // Tất cả các vai trò còn lại (admin, med, bio) đều là người xem
-    if (userRole) {
-      return <ViewerLayout user={user} userRole={userRole} />;
-    }
-    // Nếu không có vai trò, có thể hiển thị trang lỗi hoặc trang viewer mặc định
-    return <ViewerLayout user={user} userRole="viewer" />; 
-  };
-
   return (
     <BrowserRouter>
       {user ? (
-        renderLayout()
+        <Routes>
+          {/* --- ROUTE CHO GIAO DIỆN QUẢN TRỊ (CHỈ OWNER) --- */}
+          {userRole === 'owner' ? (
+            <Route path="/*" element={<AdminLayout />} />
+          ) : (
+            // Nếu không phải owner, truy cập vào trang admin sẽ bị điều hướng
+            <Route path="/*" element={<Navigate to="/view" />} />
+          )}
+
+          {/* --- ROUTE CHO GIAO DIỆN NGƯỜI XEM (TẤT CẢ CÁC VAI TRÒ) --- */}
+          <Route path="/view/*" element={<ViewerLayout user={user} userRole={userRole} />} />
+          
+        </Routes>
       ) : (
         <div className="login-page-wrapper">
           <LoginPage />

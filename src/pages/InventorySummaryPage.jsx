@@ -1,13 +1,12 @@
 // src/pages/InventorySummaryPage.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, getDocs, where } from 'firebase/firestore';
 import { formatDate } from '../utils/dateUtils';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { FiChevronDown, FiChevronRight } from 'react-icons/fi';
 
-// Các hàm tô màu getSummaryRowColor và getLotItemColorClass giữ nguyên
 const getSummaryRowColor = (lots) => {
     if (!lots || lots.length === 0) return '';
     let nearestExpiryDays = Infinity;
@@ -49,12 +48,9 @@ const getLotItemColorClass = (expiryDate) => {
 const InventorySummaryPage = ({ user, userRole }) => {
     const [productsMap, setProductsMap] = useState({});
     const [masterInventory, setMasterInventory] = useState([]);
-    const [realtimeLots, setRealtimeLots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState({});
-    const [isRealtimeActive, setIsRealtimeActive] = useState(false);
-    // --- BỔ SUNG STATE MỚI ĐỂ QUẢN LÝ BỘ LỌC ---
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
 
     const fetchAllData = useCallback(async () => {
@@ -97,32 +93,12 @@ const InventorySummaryPage = ({ user, userRole }) => {
         return () => clearInterval(intervalId);
     }, [userRole, fetchAllData]);
 
-    useEffect(() => {
-        const trimmedSearch = searchTerm.trim().toUpperCase();
-        if (trimmedSearch.length > 3) {
-            setIsRealtimeActive(true);
-            const q = query(collection(db, "inventory_lots"), where("productId", "==", trimmedSearch));
-            
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const lots = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setRealtimeLots(lots);
-            });
-            return () => unsubscribe();
-        } else {
-            setIsRealtimeActive(false);
-            setRealtimeLots([]);
-        }
-    }, [searchTerm]);
-
-    // --- BỔ SUNG HÀM XỬ LÝ KHI NHẤN NÚT LỌC ---
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => {
             const currentFilterValue = prev[filterName];
-            // Nếu nhấn lại nút đang active thì tắt nó đi (quay về 'all')
             if (currentFilterValue === value) {
                 return { ...prev, [filterName]: 'all' };
             }
-            // Nếu không thì kích hoạt bộ lọc mới
             return { ...prev, [filterName]: value };
         });
     };
@@ -149,38 +125,12 @@ const InventorySummaryPage = ({ user, userRole }) => {
             return acc;
         }, {});
 
-        if (isRealtimeActive) {
-            const productId = searchTerm.trim().toUpperCase();
-            const productInfo = productsMap[productId] || {};
-            if (realtimeLots.length > 0) {
-                summary[productId] = {
-                    productId: productId, productName: productInfo.productName || realtimeLots[0].productName,
-                    unit: productInfo.unit, packaging: productInfo.packaging,
-                    storageTemp: productInfo.storageTemp, manufacturer: productInfo.manufacturer,
-                    team: productInfo.team || realtimeLots[0].team,
-                    totalRemaining: realtimeLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0),
-                    lots: realtimeLots.map(lot => ({
-                        lotId: lot.id, lotNumber: lot.lotNumber, expiryDate: lot.expiryDate,
-                        quantityRemaining: lot.quantityRemaining
-                    }))
-                };
-            } else {
-                 if(summary[productId]){
-                    summary[productId].totalRemaining = 0;
-                    summary[productId].lots = [];
-                 }
-            }
-        }
-
-        // --- CẬP NHẬT LOGIC LỌC DỮ LIỆU TẠI ĐÂY ---
         let summaryArray = Object.values(summary);
 
-        // Lọc theo Team 
         if (filters.team !== 'all') {
             summaryArray = summaryArray.filter(item => item.team === filters.team);
         }
 
-        // Lọc theo Tình trạng HSD
         if (filters.dateStatus !== 'all') {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -207,7 +157,7 @@ const InventorySummaryPage = ({ user, userRole }) => {
             product.lots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
         });
 
-        if (searchTerm && !isRealtimeActive) {
+        if (searchTerm) {
             const lowercasedFilter = searchTerm.toLowerCase();
             return summaryArray.filter(item => 
                 item.productId.toLowerCase().includes(lowercasedFilter) ||
@@ -216,7 +166,7 @@ const InventorySummaryPage = ({ user, userRole }) => {
         }
 
         return summaryArray.sort((a, b) => a.productId.localeCompare(b.productId));
-    }, [masterInventory, productsMap, searchTerm, isRealtimeActive, realtimeLots, filters]); // Thêm 'filters' vào dependencies
+    }, [masterInventory, productsMap, searchTerm, filters]);
 
     const toggleRow = (productId) => {
         setExpandedRows(prev => ({ ...prev, [productId]: !prev[productId] }));
@@ -224,12 +174,28 @@ const InventorySummaryPage = ({ user, userRole }) => {
     
     if (loading) return <div>Đang tải dữ liệu tồn kho...</div>;
 
+    const getSummaryTitleByRole = (role) => {
+    switch (role) {
+        case 'med':
+            return 'PT Biomed - Team MED';
+        case 'bio':
+            return 'PT Biomed - Team BIO';
+        case 'admin':
+            return 'PT Biomed - Kho';
+        case 'owner':
+            return 'PT Biomed - Owner'; // Thêm cho vai trò Owner
+        default:
+            return 'PT Biomed - Tồn Kho Tổng Hợp';
+    }
+};
+
     return (
         <div>
-            {/* --- GIAO DIỆN BỘ LỌC MỚI --- */}
+            <div className="page-header">
+    <h1>{getSummaryTitleByRole(userRole)}</h1>
+</div>
             <div className="filters-container" style={{ padding: '15px', marginBottom: '20px', justifyContent: 'flex-start' }}>
                 <div className="filter-group">
-                    {/* Chỉ admin/owner mới thấy nút lọc MED và BIO */}
                     {(userRole === 'admin' || userRole === 'owner') && (
                         <>
                             <button
@@ -247,7 +213,6 @@ const InventorySummaryPage = ({ user, userRole }) => {
                         </>
                     )}
                     
-                    {/* Admin/owner và bio đều thấy nút này */}
                     {(userRole === 'admin' || userRole === 'owner' || userRole === 'bio') && (
                         <button
                             className={filters.team === 'Spare Part' ? 'active' : ''}
@@ -307,15 +272,15 @@ const InventorySummaryPage = ({ user, userRole }) => {
                                         className={product.rowColorClass}
                                         style={{cursor: 'pointer'}}
                                     >
-                                        <td>{expandedRows[product.productId] ? <FiChevronDown /> : <FiChevronRight />}</td>
-                                        <td><strong>{product.productId}</strong></td>
-                                        <td style={{textAlign: 'left', whiteSpace: 'normal'}}>{product.productName}</td>
-                                        <td><strong>{product.totalRemaining}</strong></td>
-                                        <td>{product.unit}</td>
-                                        <td style={{whiteSpace: 'normal'}}>{product.packaging}</td>
-                                        <td><TempBadge temperature={product.storageTemp} /></td>
-                                        <td>{product.manufacturer}</td>
-                                        <td><TeamBadge team={product.team} /></td>
+                                        <td data-label="Chi tiết">{expandedRows[product.productId] ? <FiChevronDown /> : <FiChevronRight />}</td>
+                                        <td data-label="Mã hàng"><strong>{product.productId}</strong></td>
+                                        <td data-label="Tên hàng" style={{textAlign: 'left', whiteSpace: 'normal'}}>{product.productName}</td>
+                                        <td data-label="Tổng Tồn"><strong>{product.totalRemaining}</strong></td>
+                                        <td data-label="ĐVT">{product.unit}</td>
+                                        <td data-label="Quy cách" style={{whiteSpace: 'normal'}}>{product.packaging}</td>
+                                        <td data-label="Nhiệt độ BQ"><TempBadge temperature={product.storageTemp} /></td>
+                                        <td data-label="Hãng SX">{product.manufacturer}</td>
+                                        <td data-label="Team"><TeamBadge team={product.team} /></td>
                                     </tr>
                                     {expandedRows[product.productId] && (
                                         <tr className="lot-details-row">

@@ -751,3 +751,79 @@ tbody tr.selected-row td {
     border-left: 3px solid #c6c8ca;
     font-weight: bold;
 }
+
+/* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */
+@media (max-width: 768px) {
+    /* Phần này áp dụng cho cả 2 bảng:
+      - Bảng tồn kho chi tiết (inventory-table)
+      - Bảng tồn kho tổng hợp (products-table)
+    */
+
+    /* Bước 1: Ẩn đi phần tiêu đề (thead) của bảng gốc */
+    .inventory-table thead,
+    .products-table thead {
+        display: none;
+    }
+
+    /* Bước 2: Biến bảng và các dòng thành các khối card riêng biệt */
+    .inventory-table, 
+    .inventory-table tbody, 
+    .inventory-table tr,
+    .products-table,
+    .products-table tbody,
+    .products-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .inventory-table tr,
+    .products-table tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 10px;
+    }
+
+    /* Bước 3: Biến các ô (td) thành các hàng dọc và thêm nhãn cho chúng */
+    .inventory-table td,
+    .products-table td {
+        display: flex;
+        justify-content: space-between; /* Đẩy nhãn và giá trị về 2 phía */
+        align-items: center;
+        padding: 8px 5px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        text-align: right; /* Căn phải cho giá trị */
+        white-space: normal; /* Cho phép giá trị dài tự xuống dòng */
+    }
+
+    .inventory-table td:last-child,
+    .products-table td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Đây là phần quan trọng nhất: Lấy nội dung từ attribute 'data-label' làm nhãn */
+    .inventory-table td::before,
+    .products-table td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        text-align: left; /* Căn trái cho nhãn */
+        padding-right: 10px;
+        color: #333;
+    }
+    
+    /* Loại bỏ các style không cần thiết trên di động */
+    .inventory-table td,
+    .inventory-table th {
+        position: static !important; /* Bỏ đóng băng cột */
+        min-width: auto !important;
+    }
+
+    /* Điều chỉnh lại cho các ô chứa badge để hiển thị đẹp hơn */
+    .inventory-table td .team-badge,
+    .inventory-table td .temp-badge {
+       font-size: 13px;
+    }
+}

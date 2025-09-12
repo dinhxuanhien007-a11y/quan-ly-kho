@@ -6,6 +6,7 @@ import '../styles/AdminLayout.css';
 import { Routes, Route } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
+import PartnersPage from '../pages/PartnersPage';
 import NewImportPage from '../pages/NewImportPage';
 import ImportListPage from '../pages/ImportListPage';
 import NewExportPage from '../pages/NewExportPage';
@@ -23,6 +24,7 @@ const AdminLayout = () => {
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/partners" element={<PartnersPage />} />
           <Route path="/new-import" element={<NewImportPage />} />
           <Route path="/new-export" element={<NewExportPage />} />
           <Route path="/imports" element={<ImportListPage />} />

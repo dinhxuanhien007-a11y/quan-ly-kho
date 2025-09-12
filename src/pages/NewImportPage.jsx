@@ -1,5 +1,5 @@
 // src/pages/NewImportPage.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
 import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
@@ -12,7 +12,8 @@ const NewImportPage = () => {
     const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
 
     const [importDate, setImportDate] = useState(formattedDate);
-    const [supplier, setSupplier] = useState('');
+    const [supplierId, setSupplierId] = useState('');
+    const [supplierName, setSupplierName] = useState('');
     const [description, setDescription] = useState('');
     const [items, setItems] = useState([
         { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }
@@ -21,7 +22,39 @@ const NewImportPage = () => {
     const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const inputRefs = useRef([]);
+    
+    const [allSuppliers, setAllSuppliers] = useState([]);
 
+    useEffect(() => {
+        const fetchSuppliers = async () => {
+            const q = query(collection(db, "partners"), where("partnerType", "==", "supplier"));
+            const querySnapshot = await getDocs(q);
+            const supplierList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setAllSuppliers(supplierList);
+        };
+        fetchSuppliers();
+    }, []);
+
+    const handleSupplierSearch = async () => {
+        if (!supplierId) {
+            setSupplierName('');
+            return;
+        }
+        try {
+            const partnerRef = doc(db, 'partners', supplierId.toUpperCase());
+            const partnerSnap = await getDoc(partnerRef);
+            if (partnerSnap.exists() && partnerSnap.data().partnerType === 'supplier') {
+                setSupplierName(partnerSnap.data().partnerName);
+            } else {
+                setSupplierName('');
+                alert(`Không tìm thấy Nhà cung cấp với mã "${supplierId}" hoặc đối tác không phải là Nhà cung cấp.`);
+            }
+        } catch (error) {
+            console.error("Lỗi khi tìm nhà cung cấp:", error);
+            setSupplierName('');
+        }
+    };
+    
     const handleExpiryDateBlur = (index, value) => {
         const newItems = [...items];
         newItems[index].expiryDate = formatExpiryDate(value);
@@ -145,8 +178,8 @@ const NewImportPage = () => {
     };
 
     const handleSaveSlip = async () => {
-        if (!supplier) {
-            alert('Vui lòng nhập thông tin Nhà cung cấp.');
+        if (!supplierId || !supplierName) {
+            alert('Vui lòng nhập Mã Nhà cung cấp hợp lệ.');
             return;
         }
         const validItems = items.filter(item => item.productId && item.quantity > 0);
@@ -158,7 +191,8 @@ const NewImportPage = () => {
         try {
             const slipData = {
                 importDate: formattedDate,
-                supplier,
+                supplierId: supplierId.toUpperCase(),
+                supplier: supplierName,
                 description,
                 items: validItems,
                 status: 'pending',
@@ -166,7 +200,8 @@ const NewImportPage = () => {
             };
             const docRef = await addDoc(collection(db, 'import_tickets'), slipData);
             alert(`Lưu tạm phiếu nhập thành công! ID phiếu: ${docRef.id}`);
-            setSupplier('');
+            setSupplierId('');
+            setSupplierName('');
             setDescription('');
             setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
         } catch (error) {
@@ -178,8 +213,8 @@ const NewImportPage = () => {
     };
 
     const handleDirectImport = async () => {
-        if (!supplier) {
-            alert('Vui lòng nhập thông tin Nhà cung cấp.');
+        if (!supplierId || !supplierName) {
+            alert('Vui lòng nhập Mã Nhà cung cấp hợp lệ.');
             return;
         }
         const validItems = items.filter(item => item.productId && item.quantity > 0);
@@ -214,14 +249,15 @@ const NewImportPage = () => {
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
-                    supplier: supplier,
+                    supplier: supplierName,
                 };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
 
             const slipData = {
                 importDate: formattedDate,
-                supplier,
+                supplierId: supplierId.toUpperCase(),
+                supplier: supplierName,
                 description,
                 items: validItems,
                 status: 'completed',
@@ -230,7 +266,8 @@ const NewImportPage = () => {
             await addDoc(collection(db, 'import_tickets'), slipData);
 
             alert('Nhập kho trực tiếp thành công!');
-            setSupplier('');
+            setSupplierId('');
+            setSupplierName('');
             setDescription('');
             setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
         } catch (error) {
@@ -268,8 +305,31 @@ const NewImportPage = () => {
                         <input type="text" value={importDate} onChange={(e) => setImportDate(e.target.value)} />
                     </div>
                     <div className="form-group">
-                        <label>Nhà cung cấp</label>
-                        <input type="text" placeholder="Nhập mã hoặc tên NCC" value={supplier} onChange={e => setSupplier(e.target.value)} />
+                        <label>Mã Nhà Cung Cấp</label>
+                        <input 
+                            list="suppliers-list"
+                            type="text" 
+                            placeholder="Nhập hoặc chọn mã NCC..." 
+                            value={supplierId} 
+                            onChange={e => setSupplierId(e.target.value)}
+                            onBlur={handleSupplierSearch}
+                        />
+                        <datalist id="suppliers-list">
+                            {allSuppliers.map(sup => (
+                                <option key={sup.id} value={sup.id}>
+                                    {sup.partnerName}
+                                </option>
+                            ))}
+                        </datalist>
+                    </div>
+                    <div className="form-group">
+                        <label>Tên Nhà Cung Cấp</label>
+                        <input 
+                            type="text" 
+                            value={supplierName} 
+                            readOnly 
+                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                        />
                     </div>
                 </div>
                 <div className="form-group">
