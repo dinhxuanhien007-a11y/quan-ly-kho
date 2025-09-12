@@ -54,6 +54,8 @@ const InventorySummaryPage = ({ user, userRole }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState({});
     const [isRealtimeActive, setIsRealtimeActive] = useState(false);
+    // --- BỔ SUNG STATE MỚI ĐỂ QUẢN LÝ BỘ LỌC ---
+    const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
 
     const fetchAllData = useCallback(async () => {
         if (masterInventory.length === 0) setLoading(true);
@@ -63,7 +65,6 @@ const InventorySummaryPage = ({ user, userRole }) => {
             productsSnapshot.forEach(doc => { productsData[doc.id] = doc.data(); });
             setProductsMap(productsData);
 
-            // --- SỬA LỖI LOGIC TRUY VẤN TẠI ĐÂY ---
             let lotsQuery;
             const lotsCollection = collection(db, "inventory_lots");
 
@@ -78,7 +79,6 @@ const InventorySummaryPage = ({ user, userRole }) => {
             const lotsSnapshot = await getDocs(lotsQuery);
             const visibleInventory = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setMasterInventory(visibleInventory);
-
         } catch (error) {
             console.error("Lỗi khi lấy dữ liệu: ", error);
         } finally {
@@ -113,6 +113,19 @@ const InventorySummaryPage = ({ user, userRole }) => {
             setRealtimeLots([]);
         }
     }, [searchTerm]);
+
+    // --- BỔ SUNG HÀM XỬ LÝ KHI NHẤN NÚT LỌC ---
+    const handleFilterChange = (filterName, value) => {
+        setFilters(prev => {
+            const currentFilterValue = prev[filterName];
+            // Nếu nhấn lại nút đang active thì tắt nó đi (quay về 'all')
+            if (currentFilterValue === value) {
+                return { ...prev, [filterName]: 'all' };
+            }
+            // Nếu không thì kích hoạt bộ lọc mới
+            return { ...prev, [filterName]: value };
+        });
+    };
 
     const summarizedAndFilteredInventory = useMemo(() => {
         let summary = masterInventory.reduce((acc, lot) => {
@@ -159,10 +172,39 @@ const InventorySummaryPage = ({ user, userRole }) => {
             }
         }
 
-        const summaryArray = Object.values(summary);
+        // --- CẬP NHẬT LOGIC LỌC DỮ LIỆU TẠI ĐÂY ---
+        let summaryArray = Object.values(summary);
+
+        // Lọc theo Team 
+        if (filters.team !== 'all') {
+            summaryArray = summaryArray.filter(item => item.team === filters.team);
+        }
+
+        // Lọc theo Tình trạng HSD
+        if (filters.dateStatus !== 'all') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (filters.dateStatus === 'expired') {
+                summaryArray = summaryArray.filter(product => 
+                    product.lots.some(lot => lot.expiryDate?.toDate() < today)
+                );
+            }
+            if (filters.dateStatus === 'near_expiry') {
+                const nearExpiryLimit = new Date();
+                nearExpiryLimit.setDate(today.getDate() + 120);
+                summaryArray = summaryArray.filter(product => 
+                    product.lots.some(lot => {
+                        const expiryDate = lot.expiryDate?.toDate();
+                        return expiryDate >= today && expiryDate < nearExpiryLimit;
+                    })
+                );
+            }
+        }
+
         summaryArray.forEach(product => {
             product.rowColorClass = getSummaryRowColor(product.lots);
-            product.lots.sort((a, b) => a.expiryDate.toDate() - b.expiryDate.toDate());
+            product.lots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
         });
 
         if (searchTerm && !isRealtimeActive) {
@@ -174,8 +216,8 @@ const InventorySummaryPage = ({ user, userRole }) => {
         }
 
         return summaryArray.sort((a, b) => a.productId.localeCompare(b.productId));
-    }, [masterInventory, productsMap, searchTerm, isRealtimeActive, realtimeLots]);
-    
+    }, [masterInventory, productsMap, searchTerm, isRealtimeActive, realtimeLots, filters]); // Thêm 'filters' vào dependencies
+
     const toggleRow = (productId) => {
         setExpandedRows(prev => ({ ...prev, [productId]: !prev[productId] }));
     };
@@ -184,6 +226,53 @@ const InventorySummaryPage = ({ user, userRole }) => {
 
     return (
         <div>
+            {/* --- GIAO DIỆN BỘ LỌC MỚI --- */}
+            <div className="filters-container" style={{ padding: '15px', marginBottom: '20px', justifyContent: 'flex-start' }}>
+                <div className="filter-group">
+                    {/* Chỉ admin/owner mới thấy nút lọc MED và BIO */}
+                    {(userRole === 'admin' || userRole === 'owner') && (
+                        <>
+                            <button
+                                className={filters.team === 'MED' ? 'active' : ''}
+                                onClick={() => handleFilterChange('team', 'MED')}
+                            >
+                                Lọc hàng MED
+                            </button>
+                            <button
+                                className={filters.team === 'BIO' ? 'active' : ''}
+                                onClick={() => handleFilterChange('team', 'BIO')}
+                            >
+                                Lọc hàng BIO
+                            </button>
+                        </>
+                    )}
+                    
+                    {/* Admin/owner và bio đều thấy nút này */}
+                    {(userRole === 'admin' || userRole === 'owner' || userRole === 'bio') && (
+                        <button
+                            className={filters.team === 'Spare Part' ? 'active' : ''}
+                            onClick={() => handleFilterChange('team', 'Spare Part')}
+                        >
+                            Lọc hàng Spare Part
+                        </button>
+                    )}
+                </div>
+                <div className="filter-group">
+                    <button
+                        className={filters.dateStatus === 'near_expiry' ? 'active' : ''}
+                        onClick={() => handleFilterChange('dateStatus', 'near_expiry')}
+                    >
+                        Lọc hàng cận date (&lt;120 ngày)
+                    </button>
+                    <button
+                        className={filters.dateStatus === 'expired' ? 'active' : ''}
+                        onClick={() => handleFilterChange('dateStatus', 'expired')}
+                    >
+                        Lọc hàng đã hết HSD
+                    </button>
+                </div>
+            </div>
+
             <div className="search-container" style={{maxWidth: '500px', marginBottom: '20px'}}>
                 <input
                     type="text"
@@ -194,7 +283,7 @@ const InventorySummaryPage = ({ user, userRole }) => {
                 />
             </div>
 
-            <div className="table-container" style={{maxHeight: 'calc(100vh - 180px)'}}>
+            <div className="table-container" style={{maxHeight: 'calc(100vh - 240px)'}}>
                 <table className="products-table">
                     <thead>
                         <tr>
@@ -249,7 +338,7 @@ const InventorySummaryPage = ({ user, userRole }) => {
                                 </React.Fragment>
                             ))
                         ) : (
-                            <tr><td colSpan="9" style={{textAlign: 'center'}}>Không có hàng hóa tồn kho.</td></tr>
+                            <tr><td colSpan="9" style={{textAlign: 'center'}}>Không có hàng hóa tồn kho phù hợp với bộ lọc.</td></tr>
                         )}
                     </tbody>
                 </table>

@@ -127,6 +127,11 @@
   vertical-align: middle;
 }
 
+/* THAY ĐỔI: Thêm quy tắc mới để cho phép tiêu đề cột 1 xuống dòng */
+.inventory-table th:nth-child(1) {
+  white-space: normal;
+}
+
 .inventory-table th {
   background-color: #f8f9fa;
   position: sticky;
@@ -146,28 +151,28 @@
 
 /* Các cột được ghim (sticky) */
 .inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { position: sticky; left: 0; z-index: 1; }
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 140px; z-index: 1; }
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 290px; z-index: 1; }
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 90px; z-index: 1; } /* THAY ĐỔI: Cập nhật vị trí left */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 240px; z-index: 1; } /* THAY ĐỔI: Cập nhật vị trí left */
 
 .inventory-table th:nth-child(1), .inventory-table th:nth-child(2), .inventory-table th:nth-child(3) { z-index: 3; }
 
 .inventory-table td:nth-child(1), .inventory-table td:nth-child(2), .inventory-table td:nth-child(3) { background-color: #ffffff; }
 .inventory-table tbody tr:hover td:nth-child(1), .inventory-table tbody tr:hover td:nth-child(2), .inventory-table tbody tr:hover td:nth-child(3) { background-color: #e9ecef; }
-.inventory-table tbody tr.selected-row td:nth-child(1), .inventory-table tbody tr.selected-row td:nth-child(2), .inventory-table tbody tr.selected-row td:nth-child(3) { background-color: #d6eaff !important; }
+.inventory-table tbody tr.selected-row td:nth-child(1), .inventory-table tbody tr:selected-row td:nth-child(2), .inventory-table tbody tr.selected-row td:nth-child(3) { background-color: #d6eaff !important; }
 
 /* --- ĐIỀU CHỈNH LẠI ĐỘ RỘNG CÁC CỘT --- */
-.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { min-width: 140px; } /* Ngày nhập */
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { min-width: 150px; } /* Mã hàng */
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { min-width: 350px; white-space: normal; text-align: left;} /* Tên hàng (xuống dòng, căn trái) */
-.inventory-table th:nth-child(4), .inventory-table td:nth-child(4) { min-width: 130px; } /* Số lô */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { min-width: 90px; } /* THAY ĐỔI: Giảm từ 110px -> Ngày nhập */
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { min-width: 140px; } /* Mã hàng */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { min-width: 280px; white-space: normal; text-align: left;} /* Tên hàng (xuống dòng, căn trái) */
+.inventory-table th:nth-child(4), .inventory-table td:nth-child(4) { min-width: 150px; } /* Số lô */
 .inventory-table th:nth-child(5), .inventory-table td:nth-child(5) { min-width: 120px; } /* HSD */
 .inventory-table th:nth-child(6), .inventory-table td:nth-child(6) { min-width: 80px; }  /* ĐVT */
-.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { min-width: 180px; white-space: normal; } /* Quy cách (xuống dòng) */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { min-width: 150px; white-space: normal; } /* Quy cách (xuống dòng) */
 .inventory-table th:nth-child(8), .inventory-table td:nth-child(8) { min-width: 100px; } /* SL Nhập */
-.inventory-table th:nth-child(9), .inventory-table td:nth-child(9) { min-width: 120px; font-weight: bold; } /* SL Còn lại (TĂNG ĐỘ RỘNG) */
-.inventory-table th:nth-child(10),.inventory-table td:nth-child(10){ min-width: 200px; white-space: normal; } /* Ghi chú (xuống dòng) */
+.inventory-table th:nth-child(9), .inventory-table td:nth-child(9) { min-width: 100px; font-weight: bold; } /* SL Còn lại */
+.inventory-table th:nth-child(10),.inventory-table td:nth-child(10){ min-width: 200px; white-space: normal; } /* Ghi chú */
 .inventory-table th:nth-child(11),.inventory-table td:nth-child(11){ min-width: 150px; } /* Nhiệt độ BQ */
-.inventory-table th:nth-child(12),.inventory-table td:nth-child(12){ min-width: 180px; white-space: normal; } /* Hãng SX (xuống dòng) */
+.inventory-table th:nth-child(12),.inventory-table td:nth-child(12){ min-width: 180px; white-space: normal; } /* Hãng SX */
 .inventory-table th:nth-child(13),.inventory-table td:nth-child(13){ min-width: 120px; } /* Team */
 
 /* --- MODAL (POPUP) --- */
@@ -313,7 +318,7 @@
 }
 
 .item-details-grid {
-  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
+  grid-template-columns: 1fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
 }
 
 .item-details-grid-edit {
@@ -421,17 +426,12 @@
   text-align: left;
 }
 
-/* src/styles/AdminLayout.css */
-
-/* src/styles/AdminLayout.css */
-
 /* --- CSS MỚI: CHO CẢNH BÁO HẠN SỬ DỤNG (Dùng chung, bỏ gạch ngang) --- */
 
 /* Áp dụng màu cho các ô của dòng có class tương ứng */
 tr.near-expiry-yellow td { background-color: #fff3cd !important; color: #5a5a5a !important; }
 tr.near-expiry-orange td { background-color: #ffe8cc !important; color: #5a5a5a !important; }
 tr.near-expiry-red td { background-color: #f8d7da !important; color: #5a5a5a !important; }
-/* THAY ĐỔI 1: Chuyển sang màu nền đen và chữ trắng */
 tr.expired-black td { background-color: #212529 !important; color: #fff !important; }
 
 /* In đậm chữ cho các dòng cảnh báo */
@@ -444,7 +444,6 @@ tr.near-expiry-red td {
 tr.expired-black td {
     font-weight: bold;
 }
-/* THAY ĐỔI 2: Xóa hoàn toàn đoạn code có "text-decoration: line-through" */
 
 /* Đảm bảo màu hover vẫn hoạt động */
 tbody tr:hover td {
@@ -460,16 +459,16 @@ tbody tr.selected-row td {
 
 /* --- BADGES (TEAM & TEMP) --- */
 .team-badge {
-  display: inline-flex;  /* Chuyển sang inline-flex để căn giữa nội dung */
-  align-items: center;    /* Căn giữa theo chiều dọc */
+  display: inline-flex; /* Chuyển sang inline-flex để căn giữa nội dung */
+  align-items: center; /* Căn giữa theo chiều dọc */
   justify-content: center; /* Căn giữa theo chiều ngang */
   padding: 5px 10px;
-  border-radius: 15px;    /* Bo tròn hơn một chút */
+  border-radius: 15px; /* Bo tròn hơn một chút */
   font-size: 12px;
   font-weight: 500;
   color: #fff;
-  line-height: 1.2;       /* Tăng khoảng cách dòng cho dễ đọc khi xuống dòng */
-  min-height: 38px;       /* Đặt chiều cao tối thiểu để chứa được 2 dòng */
+  line-height: 1.2; /* Tăng khoảng cách dòng cho dễ đọc khi xuống dòng */
+  min-height: 38px; /* Đặt chiều cao tối thiểu để chứa được 2 dòng */
   box-sizing: border-box; /* Đảm bảo padding không làm tăng kích thước */
 }
 .team-badge.team-med { background-color: #007bff; }
@@ -481,7 +480,7 @@ tbody tr.selected-row td {
   border-radius: 4px;
   font-size: 13px;
   font-weight: 500;
-  display: inline-block; 
+  display: inline-block;
 }
 .temp-badge.temp-cool { background-color: #a7d9f2; color: #0056b3; }
 .temp-badge.temp-frozen { background-color: #c9b6e7; color: #4a148c; }
@@ -619,8 +618,6 @@ tbody tr.selected-row td {
   border: 1px solid #b8daff;
 }
 
-/* Dán đoạn code này vào cuối file src/styles/AdminLayout.css */
-
 /* CSS CHO GIAO DIỆN TỒN KHO TỔNG HỢP */
 .lot-details-row td {
     padding: 0 !important;
@@ -656,10 +653,6 @@ tbody tr.selected-row td {
     font-size: 14px;
 }
 
-/* src/styles/AdminLayout.css */
-
-/* --- Dán đoạn code này vào cuối file --- */
-
 /* CĂN CHỈNH BẢNG TỒN KHO TỔNG HỢP (PHIÊN BẢN MỚI) */
 
 /* 1. Căn giữa làm mặc định cho tất cả các ô trong bảng */
@@ -685,7 +678,7 @@ tbody tr.selected-row td {
 
 /* Tên hàng (thu nhỏ lại) */
 .products-table th:nth-child(3) {
-    width: 28%; /* << THU NHỎ LẠI */
+    width: 28%;
     max-width: 350px;
 }
 .products-table td:nth-child(3) {
@@ -702,7 +695,7 @@ tbody tr.selected-row td {
 
 /* Quy cách (TĂNG KÍCH THƯỚC) */
 .products-table th:nth-child(6) {
-    width: 12%; /* << TĂNG LÊN */
+    width: 12%;
 }
 .products-table td:nth-child(6) {
     white-space: normal;
@@ -711,7 +704,7 @@ tbody tr.selected-row td {
 
 /* Nhiệt độ BQ (TĂNG KÍCH THƯỚC) */
 .products-table th:nth-child(7) {
-    width: 12%; /* << TĂNG LÊN */
+    width: 12%;
 }
 .products-table td:nth-child(7) {
     white-space: normal;
@@ -723,14 +716,12 @@ tbody tr.selected-row td {
 
 /* Team (THU NHỎ LẠI và cho phép xuống dòng) */
 .products-table th:nth-child(9) {
-    width: 8%; /* << THU NHỎ LẠI */
+    width: 8%;
 }
 .products-table td:nth-child(9) {
-    white-space: normal; /* << CHO PHÉP XUỐNG DÒNG */
+    white-space: normal;
     word-wrap: break-word;
 }
-
-/* ... code CSS cũ ... */
 
 /* CSS MỚI: Cho màu nền của từng lô hàng con */
 .lot-item {

@@ -64,7 +64,6 @@ const InventoryPage = ({ user, userRole }) => {
         const intervalId = setInterval(() => {
             fetchMasterInventory();
         }, 900000);
-
         return () => clearInterval(intervalId);
     }, [userRole, fetchMasterInventory]);
 
@@ -134,7 +133,18 @@ const InventoryPage = ({ user, userRole }) => {
             }
         }
         
-        result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
+        // --- CẬP NHẬT LOGIC SẮP XẾP ---
+        result.sort((a, b) => {
+            // Ưu tiên 1: Sắp xếp theo Mã hàng (productId) từ bé đến lớn
+            const productCompare = a.productId.localeCompare(b.productId);
+            if (productCompare !== 0) {
+                return productCompare;
+            }
+            // Ưu tiên 2: Nếu cùng Mã hàng, sắp xếp theo Ngày nhập (importDate) từ cũ đến mới
+            const dateA = a.importDate?.toDate() || 0;
+            const dateB = b.importDate?.toDate() || 0;
+            return dateA - dateB; // Sắp xếp tăng dần (cũ ở trên, mới ở dưới)
+        });
         return result;
     }, [isSearching, searchResults, masterInventory, filters, searchTerm]);
 

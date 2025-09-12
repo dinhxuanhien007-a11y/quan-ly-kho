@@ -2204,7 +2204,6 @@ const InventoryPage = ({ user, userRole }) => {
         const intervalId = setInterval(() => {
             fetchMasterInventory();
         }, 900000);
-
         return () => clearInterval(intervalId);
     }, [userRole, fetchMasterInventory]);
 
@@ -2274,7 +2273,18 @@ const InventoryPage = ({ user, userRole }) => {
             }
         }
         
-        result.sort((a, b) => (b.importDate?.toDate() || 0) - (a.importDate?.toDate() || 0));
+        // --- Cáº¬P NHáº¬T LOGIC Sáº®P Xáº¾P ---
+        result.sort((a, b) => {
+            // Æ¯u tiÃªn 1: Sáº¯p xáº¿p theo MÃ£ hÃ ng (productId) tá»« bÃ© Ä‘áº¿n lá»›n
+            const productCompare = a.productId.localeCompare(b.productId);
+            if (productCompare !== 0) {
+                return productCompare;
+            }
+            // Æ¯u tiÃªn 2: Náº¿u cÃ¹ng MÃ£ hÃ ng, sáº¯p xáº¿p theo NgÃ y nháº­p (importDate) tá»« cÅ© Ä‘áº¿n má»›i
+            const dateA = a.importDate?.toDate() || 0;
+            const dateB = b.importDate?.toDate() || 0;
+            return dateA - dateB; // Sáº¯p xáº¿p tÄƒng dáº§n (cÅ© á»Ÿ trÃªn, má»›i á»Ÿ dÆ°á»›i)
+        });
         return result;
     }, [isSearching, searchResults, masterInventory, filters, searchTerm]);
 
@@ -2442,6 +2452,8 @@ const InventorySummaryPage = ({ user, userRole }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState({});
     const [isRealtimeActive, setIsRealtimeActive] = useState(false);
+    // --- Bá»” SUNG STATE Má»šI Äá»‚ QUáº¢N LÃ Bá»˜ Lá»ŒC ---
+    const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
 
     const fetchAllData = useCallback(async () => {
         if (masterInventory.length === 0) setLoading(true);
@@ -2451,7 +2463,6 @@ const InventorySummaryPage = ({ user, userRole }) => {
             productsSnapshot.forEach(doc => { productsData[doc.id] = doc.data(); });
             setProductsMap(productsData);
 
-            // --- Sá»¬A Lá»–I LOGIC TRUY Váº¤N Táº I ÄÃ‚Y ---
             let lotsQuery;
             const lotsCollection = collection(db, "inventory_lots");
 
@@ -2466,7 +2477,6 @@ const InventorySummaryPage = ({ user, userRole }) => {
             const lotsSnapshot = await getDocs(lotsQuery);
             const visibleInventory = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setMasterInventory(visibleInventory);
-
         } catch (error) {
             console.error("Lá»—i khi láº¥y dá»¯ liá»‡u: ", error);
         } finally {
@@ -2501,6 +2511,19 @@ const InventorySummaryPage = ({ user, userRole }) => {
             setRealtimeLots([]);
         }
     }, [searchTerm]);
+
+    // --- Bá»” SUNG HÃ€M Xá»¬ LÃ KHI NHáº¤N NÃšT Lá»ŒC ---
+    const handleFilterChange = (filterName, value) => {
+        setFilters(prev => {
+            const currentFilterValue = prev[filterName];
+            // Náº¿u nháº¥n láº¡i nÃºt Ä‘ang active thÃ¬ táº¯t nÃ³ Ä‘i (quay vá» 'all')
+            if (currentFilterValue === value) {
+                return { ...prev, [filterName]: 'all' };
+            }
+            // Náº¿u khÃ´ng thÃ¬ kÃ­ch hoáº¡t bá»™ lá»c má»›i
+            return { ...prev, [filterName]: value };
+        });
+    };
 
     const summarizedAndFilteredInventory = useMemo(() => {
         let summary = masterInventory.reduce((acc, lot) => {
@@ -2547,10 +2570,39 @@ const InventorySummaryPage = ({ user, userRole }) => {
             }
         }
 
-        const summaryArray = Object.values(summary);
+        // --- Cáº¬P NHáº¬T LOGIC Lá»ŒC Dá»® LIá»†U Táº I ÄÃ‚Y ---
+        let summaryArray = Object.values(summary);
+
+        // Lá»c theo Team 
+        if (filters.team !== 'all') {
+            summaryArray = summaryArray.filter(item => item.team === filters.team);
+        }
+
+        // Lá»c theo TÃ¬nh tráº¡ng HSD
+        if (filters.dateStatus !== 'all') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (filters.dateStatus === 'expired') {
+                summaryArray = summaryArray.filter(product => 
+                    product.lots.some(lot => lot.expiryDate?.toDate() < today)
+                );
+            }
+            if (filters.dateStatus === 'near_expiry') {
+                const nearExpiryLimit = new Date();
+                nearExpiryLimit.setDate(today.getDate() + 120);
+                summaryArray = summaryArray.filter(product => 
+                    product.lots.some(lot => {
+                        const expiryDate = lot.expiryDate?.toDate();
+                        return expiryDate >= today && expiryDate < nearExpiryLimit;
+                    })
+                );
+            }
+        }
+
         summaryArray.forEach(product => {
             product.rowColorClass = getSummaryRowColor(product.lots);
-            product.lots.sort((a, b) => a.expiryDate.toDate() - b.expiryDate.toDate());
+            product.lots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
         });
 
         if (searchTerm && !isRealtimeActive) {
@@ -2562,8 +2614,8 @@ const InventorySummaryPage = ({ user, userRole }) => {
         }
 
         return summaryArray.sort((a, b) => a.productId.localeCompare(b.productId));
-    }, [masterInventory, productsMap, searchTerm, isRealtimeActive, realtimeLots]);
-    
+    }, [masterInventory, productsMap, searchTerm, isRealtimeActive, realtimeLots, filters]); // ThÃªm 'filters' vÃ o dependencies
+
     const toggleRow = (productId) => {
         setExpandedRows(prev => ({ ...prev, [productId]: !prev[productId] }));
     };
@@ -2572,6 +2624,53 @@ const InventorySummaryPage = ({ user, userRole }) => {
 
     return (
         <div>
+            {/* --- GIAO DIá»†N Bá»˜ Lá»ŒC Má»šI --- */}
+            <div className="filters-container" style={{ padding: '15px', marginBottom: '20px', justifyContent: 'flex-start' }}>
+                <div className="filter-group">
+                    {/* Chá»‰ admin/owner má»›i tháº¥y nÃºt lá»c MED vÃ  BIO */}
+                    {(userRole === 'admin' || userRole === 'owner') && (
+                        <>
+                            <button
+                                className={filters.team === 'MED' ? 'active' : ''}
+                                onClick={() => handleFilterChange('team', 'MED')}
+                            >
+                                Lá»c hÃ ng MED
+                            </button>
+                            <button
+                                className={filters.team === 'BIO' ? 'active' : ''}
+                                onClick={() => handleFilterChange('team', 'BIO')}
+                            >
+                                Lá»c hÃ ng BIO
+                            </button>
+                        </>
+                    )}
+                    
+                    {/* Admin/owner vÃ  bio Ä‘á»u tháº¥y nÃºt nÃ y */}
+                    {(userRole === 'admin' || userRole === 'owner' || userRole === 'bio') && (
+                        <button
+                            className={filters.team === 'Spare Part' ? 'active' : ''}
+                            onClick={() => handleFilterChange('team', 'Spare Part')}
+                        >
+                            Lá»c hÃ ng Spare Part
+                        </button>
+                    )}
+                </div>
+                <div className="filter-group">
+                    <button
+                        className={filters.dateStatus === 'near_expiry' ? 'active' : ''}
+                        onClick={() => handleFilterChange('dateStatus', 'near_expiry')}
+                    >
+                        Lá»c hÃ ng cáº­n date (&lt;120 ngÃ y)
+                    </button>
+                    <button
+                        className={filters.dateStatus === 'expired' ? 'active' : ''}
+                        onClick={() => handleFilterChange('dateStatus', 'expired')}
+                    >
+                        Lá»c hÃ ng Ä‘Ã£ háº¿t HSD
+                    </button>
+                </div>
+            </div>
+
             <div className="search-container" style={{maxWidth: '500px', marginBottom: '20px'}}>
                 <input
                     type="text"
@@ -2582,7 +2681,7 @@ const InventorySummaryPage = ({ user, userRole }) => {
                 />
             </div>
 
-            <div className="table-container" style={{maxHeight: 'calc(100vh - 180px)'}}>
+            <div className="table-container" style={{maxHeight: 'calc(100vh - 240px)'}}>
                 <table className="products-table">
                     <thead>
                         <tr>
@@ -2637,7 +2736,7 @@ const InventorySummaryPage = ({ user, userRole }) => {
                                 </React.Fragment>
                             ))
                         ) : (
-                            <tr><td colSpan="9" style={{textAlign: 'center'}}>KhÃ´ng cÃ³ hÃ ng hÃ³a tá»“n kho.</td></tr>
+                            <tr><td colSpan="9" style={{textAlign: 'center'}}>KhÃ´ng cÃ³ hÃ ng hÃ³a tá»“n kho phÃ¹ há»£p vá»›i bá»™ lá»c.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -4395,6 +4494,11 @@ export default TestPage;
   vertical-align: middle;
 }
 
+/* THAY Äá»”I: ThÃªm quy táº¯c má»›i Ä‘á»ƒ cho phÃ©p tiÃªu Ä‘á» cá»™t 1 xuá»‘ng dÃ²ng */
+.inventory-table th:nth-child(1) {
+  white-space: normal;
+}
+
 .inventory-table th {
   background-color: #f8f9fa;
   position: sticky;
@@ -4414,28 +4518,28 @@ export default TestPage;
 
 /* CÃ¡c cá»™t Ä‘Æ°á»£c ghim (sticky) */
 .inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { position: sticky; left: 0; z-index: 1; }
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 140px; z-index: 1; }
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 290px; z-index: 1; }
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 90px; z-index: 1; } /* THAY Äá»”I: Cáº­p nháº­t vá»‹ trÃ­ left */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 240px; z-index: 1; } /* THAY Äá»”I: Cáº­p nháº­t vá»‹ trÃ­ left */
 
 .inventory-table th:nth-child(1), .inventory-table th:nth-child(2), .inventory-table th:nth-child(3) { z-index: 3; }
 
 .inventory-table td:nth-child(1), .inventory-table td:nth-child(2), .inventory-table td:nth-child(3) { background-color: #ffffff; }
 .inventory-table tbody tr:hover td:nth-child(1), .inventory-table tbody tr:hover td:nth-child(2), .inventory-table tbody tr:hover td:nth-child(3) { background-color: #e9ecef; }
-.inventory-table tbody tr.selected-row td:nth-child(1), .inventory-table tbody tr.selected-row td:nth-child(2), .inventory-table tbody tr.selected-row td:nth-child(3) { background-color: #d6eaff !important; }
+.inventory-table tbody tr.selected-row td:nth-child(1), .inventory-table tbody tr:selected-row td:nth-child(2), .inventory-table tbody tr.selected-row td:nth-child(3) { background-color: #d6eaff !important; }
 
 /* --- ÄIá»€U CHá»ˆNH Láº I Äá»˜ Rá»˜NG CÃC Cá»˜T --- */
-.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { min-width: 140px; } /* NgÃ y nháº­p */
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { min-width: 150px; } /* MÃ£ hÃ ng */
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { min-width: 350px; white-space: normal; text-align: left;} /* TÃªn hÃ ng (xuá»‘ng dÃ²ng, cÄƒn trÃ¡i) */
-.inventory-table th:nth-child(4), .inventory-table td:nth-child(4) { min-width: 130px; } /* Sá»‘ lÃ´ */
+.inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { min-width: 90px; } /* THAY Äá»”I: Giáº£m tá»« 110px -> NgÃ y nháº­p */
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { min-width: 140px; } /* MÃ£ hÃ ng */
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { min-width: 280px; white-space: normal; text-align: left;} /* TÃªn hÃ ng (xuá»‘ng dÃ²ng, cÄƒn trÃ¡i) */
+.inventory-table th:nth-child(4), .inventory-table td:nth-child(4) { min-width: 150px; } /* Sá»‘ lÃ´ */
 .inventory-table th:nth-child(5), .inventory-table td:nth-child(5) { min-width: 120px; } /* HSD */
 .inventory-table th:nth-child(6), .inventory-table td:nth-child(6) { min-width: 80px; }  /* ÄVT */
-.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { min-width: 180px; white-space: normal; } /* Quy cÃ¡ch (xuá»‘ng dÃ²ng) */
+.inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { min-width: 150px; white-space: normal; } /* Quy cÃ¡ch (xuá»‘ng dÃ²ng) */
 .inventory-table th:nth-child(8), .inventory-table td:nth-child(8) { min-width: 100px; } /* SL Nháº­p */
-.inventory-table th:nth-child(9), .inventory-table td:nth-child(9) { min-width: 120px; font-weight: bold; } /* SL CÃ²n láº¡i (TÄ‚NG Äá»˜ Rá»˜NG) */
-.inventory-table th:nth-child(10),.inventory-table td:nth-child(10){ min-width: 200px; white-space: normal; } /* Ghi chÃº (xuá»‘ng dÃ²ng) */
+.inventory-table th:nth-child(9), .inventory-table td:nth-child(9) { min-width: 100px; font-weight: bold; } /* SL CÃ²n láº¡i */
+.inventory-table th:nth-child(10),.inventory-table td:nth-child(10){ min-width: 200px; white-space: normal; } /* Ghi chÃº */
 .inventory-table th:nth-child(11),.inventory-table td:nth-child(11){ min-width: 150px; } /* Nhiá»‡t Ä‘á»™ BQ */
-.inventory-table th:nth-child(12),.inventory-table td:nth-child(12){ min-width: 180px; white-space: normal; } /* HÃ£ng SX (xuá»‘ng dÃ²ng) */
+.inventory-table th:nth-child(12),.inventory-table td:nth-child(12){ min-width: 180px; white-space: normal; } /* HÃ£ng SX */
 .inventory-table th:nth-child(13),.inventory-table td:nth-child(13){ min-width: 120px; } /* Team */
 
 /* --- MODAL (POPUP) --- */
@@ -4581,7 +4685,7 @@ export default TestPage;
 }
 
 .item-details-grid {
-  grid-template-columns: 1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
+  grid-template-columns: 1fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
 }
 
 .item-details-grid-edit {
@@ -4689,17 +4793,12 @@ export default TestPage;
   text-align: left;
 }
 
-/* src/styles/AdminLayout.css */
-
-/* src/styles/AdminLayout.css */
-
 /* --- CSS Má»šI: CHO Cáº¢NH BÃO Háº N Sá»¬ Dá»¤NG (DÃ¹ng chung, bá» gáº¡ch ngang) --- */
 
 /* Ãp dá»¥ng mÃ u cho cÃ¡c Ã´ cá»§a dÃ²ng cÃ³ class tÆ°Æ¡ng á»©ng */
 tr.near-expiry-yellow td { background-color: #fff3cd !important; color: #5a5a5a !important; }
 tr.near-expiry-orange td { background-color: #ffe8cc !important; color: #5a5a5a !important; }
 tr.near-expiry-red td { background-color: #f8d7da !important; color: #5a5a5a !important; }
-/* THAY Äá»”I 1: Chuyá»ƒn sang mÃ u ná»n Ä‘en vÃ  chá»¯ tráº¯ng */
 tr.expired-black td { background-color: #212529 !important; color: #fff !important; }
 
 /* In Ä‘áº­m chá»¯ cho cÃ¡c dÃ²ng cáº£nh bÃ¡o */
@@ -4712,7 +4811,6 @@ tr.near-expiry-red td {
 tr.expired-black td {
     font-weight: bold;
 }
-/* THAY Äá»”I 2: XÃ³a hoÃ n toÃ n Ä‘oáº¡n code cÃ³ "text-decoration: line-through" */
 
 /* Äáº£m báº£o mÃ u hover váº«n hoáº¡t Ä‘á»™ng */
 tbody tr:hover td {
@@ -4728,16 +4826,16 @@ tbody tr.selected-row td {
 
 /* --- BADGES (TEAM & TEMP) --- */
 .team-badge {
-  display: inline-flex;  /* Chuyá»ƒn sang inline-flex Ä‘á»ƒ cÄƒn giá»¯a ná»™i dung */
-  align-items: center;    /* CÄƒn giá»¯a theo chiá»u dá»c */
+  display: inline-flex; /* Chuyá»ƒn sang inline-flex Ä‘á»ƒ cÄƒn giá»¯a ná»™i dung */
+  align-items: center; /* CÄƒn giá»¯a theo chiá»u dá»c */
   justify-content: center; /* CÄƒn giá»¯a theo chiá»u ngang */
   padding: 5px 10px;
-  border-radius: 15px;    /* Bo trÃ²n hÆ¡n má»™t chÃºt */
+  border-radius: 15px; /* Bo trÃ²n hÆ¡n má»™t chÃºt */
   font-size: 12px;
   font-weight: 500;
   color: #fff;
-  line-height: 1.2;       /* TÄƒng khoáº£ng cÃ¡ch dÃ²ng cho dá»… Ä‘á»c khi xuá»‘ng dÃ²ng */
-  min-height: 38px;       /* Äáº·t chiá»u cao tá»‘i thiá»ƒu Ä‘á»ƒ chá»©a Ä‘Æ°á»£c 2 dÃ²ng */
+  line-height: 1.2; /* TÄƒng khoáº£ng cÃ¡ch dÃ²ng cho dá»… Ä‘á»c khi xuá»‘ng dÃ²ng */
+  min-height: 38px; /* Äáº·t chiá»u cao tá»‘i thiá»ƒu Ä‘á»ƒ chá»©a Ä‘Æ°á»£c 2 dÃ²ng */
   box-sizing: border-box; /* Äáº£m báº£o padding khÃ´ng lÃ m tÄƒng kÃ­ch thÆ°á»›c */
 }
 .team-badge.team-med { background-color: #007bff; }
@@ -4749,7 +4847,7 @@ tbody tr.selected-row td {
   border-radius: 4px;
   font-size: 13px;
   font-weight: 500;
-  display: inline-block; 
+  display: inline-block;
 }
 .temp-badge.temp-cool { background-color: #a7d9f2; color: #0056b3; }
 .temp-badge.temp-frozen { background-color: #c9b6e7; color: #4a148c; }
@@ -4887,8 +4985,6 @@ tbody tr.selected-row td {
   border: 1px solid #b8daff;
 }
 
-/* DÃ¡n Ä‘oáº¡n code nÃ y vÃ o cuá»‘i file src/styles/AdminLayout.css */
-
 /* CSS CHO GIAO DIá»†N Tá»’N KHO Tá»”NG Há»¢P */
 .lot-details-row td {
     padding: 0 !important;
@@ -4924,10 +5020,6 @@ tbody tr.selected-row td {
     font-size: 14px;
 }
 
-/* src/styles/AdminLayout.css */
-
-/* --- DÃ¡n Ä‘oáº¡n code nÃ y vÃ o cuá»‘i file --- */
-
 /* CÄ‚N CHá»ˆNH Báº¢NG Tá»’N KHO Tá»”NG Há»¢P (PHIÃŠN Báº¢N Má»šI) */
 
 /* 1. CÄƒn giá»¯a lÃ m máº·c Ä‘á»‹nh cho táº¥t cáº£ cÃ¡c Ã´ trong báº£ng */
@@ -4953,7 +5045,7 @@ tbody tr.selected-row td {
 
 /* TÃªn hÃ ng (thu nhá» láº¡i) */
 .products-table th:nth-child(3) {
-    width: 28%; /* << THU NHá»Ž Láº I */
+    width: 28%;
     max-width: 350px;
 }
 .products-table td:nth-child(3) {
@@ -4970,7 +5062,7 @@ tbody tr.selected-row td {
 
 /* Quy cÃ¡ch (TÄ‚NG KÃCH THÆ¯á»šC) */
 .products-table th:nth-child(6) {
-    width: 12%; /* << TÄ‚NG LÃŠN */
+    width: 12%;
 }
 .products-table td:nth-child(6) {
     white-space: normal;
@@ -4979,7 +5071,7 @@ tbody tr.selected-row td {
 
 /* Nhiá»‡t Ä‘á»™ BQ (TÄ‚NG KÃCH THÆ¯á»šC) */
 .products-table th:nth-child(7) {
-    width: 12%; /* << TÄ‚NG LÃŠN */
+    width: 12%;
 }
 .products-table td:nth-child(7) {
     white-space: normal;
@@ -4991,14 +5083,12 @@ tbody tr.selected-row td {
 
 /* Team (THU NHá»Ž Láº I vÃ  cho phÃ©p xuá»‘ng dÃ²ng) */
 .products-table th:nth-child(9) {
-    width: 8%; /* << THU NHá»Ž Láº I */
+    width: 8%;
 }
 .products-table td:nth-child(9) {
-    white-space: normal; /* << CHO PHÃ‰P XUá»NG DÃ’NG */
+    white-space: normal;
     word-wrap: break-word;
 }
-
-/* ... code CSS cÅ© ... */
 
 /* CSS Má»šI: Cho mÃ u ná»n cá»§a tá»«ng lÃ´ hÃ ng con */
 .lot-item {
