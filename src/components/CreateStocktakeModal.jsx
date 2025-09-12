@@ -1,15 +1,15 @@
 // src/components/CreateStocktakeModal.jsx
-
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 
 const CreateStocktakeModal = ({ onClose, onCreate }) => {
     const [sessionName, setSessionName] = useState('');
-    const [scope, setScope] = useState('all'); // Mặc định là toàn bộ kho
+    const [scope, setScope] = useState('all');
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!sessionName) {
-            alert('Vui lòng đặt tên cho phiên kiểm kê.');
+            toast.warn('Vui lòng đặt tên cho phiên kiểm kê.');
             return;
         }
         onCreate({ sessionName, scope });

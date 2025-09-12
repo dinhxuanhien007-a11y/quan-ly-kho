@@ -1,5 +1,4 @@
 // src/pages/LotTracePage.jsx
-
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import {
@@ -11,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import LotJourneyExplorer from '../components/LotJourneyExplorer';
 import { formatDate } from '../utils/dateUtils';
+import { toast } from 'react-toastify';
 
 const LotTracePage = () => {
   const [lotNumber, setLotNumber] = useState('');
@@ -22,7 +22,7 @@ const LotTracePage = () => {
 
   const handleTrace = async () => {
     if (!lotNumber) {
-      alert('Vui lòng nhập số lô cần truy vết.');
+      toast.warn('Vui lòng nhập số lô cần truy vết.');
       return;
     }
     setIsLoading(true);
@@ -30,7 +30,6 @@ const LotTracePage = () => {
     setExportHistory([]);
     setSearchAttempted(true);
     setSelectedNode(null);
-
     try {
       const lotQuery = query(
         collection(db, 'inventory_lots'),
@@ -74,7 +73,7 @@ const LotTracePage = () => {
       setExportHistory(history);
     } catch (error) {
       console.error('Lỗi khi truy vết lô hàng: ', error);
-      alert('Đã có lỗi xảy ra khi truy vết.');
+      toast.error('Đã có lỗi xảy ra khi truy vết.');
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +82,7 @@ const LotTracePage = () => {
   const handleNodeClick = (event, node) => {
     setSelectedNode(node.data);
   };
-
+  
   const handlePaneClick = () => {
     setSelectedNode(null);
   };
@@ -93,15 +92,17 @@ const LotTracePage = () => {
     : exportHistory;
 
   const masterInfo = importRecords.length > 0 ? importRecords[0] : null;
+  
   const totalImported = importRecords.reduce(
     (sum, record) => sum + record.quantityImported,
     0,
   );
+  
   const totalRemaining = importRecords.reduce(
     (sum, record) => sum + record.quantityRemaining,
     0,
   );
-
+  
   return (
     <div>
       <div className="page-header">

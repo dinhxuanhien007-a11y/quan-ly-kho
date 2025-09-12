@@ -1,10 +1,12 @@
 // src/pages/PartnersPage.jsx
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
+import ConfirmationModal from '../components/ConfirmationModal'; // Import
+import { toast } from 'react-toastify';
 
 const PartnersPage = () => {
     const [partners, setPartners] = useState([]);
@@ -12,27 +14,24 @@ const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null }); // State mới
 
     const fetchPartners = async () => {
         setLoading(true);
         try {
             const partnersCollection = collection(db, 'partners');
             const querySnapshot = await getDocs(partnersCollection);
-            const partnersList = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const partnersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setPartners(partnersList.sort((a, b) => a.id.localeCompare(b.id)));
         } catch (error) {
             console.error("Lỗi khi lấy danh sách đối tác: ", error);
+            toast.error("Không thể tải danh sách đối tác.");
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchPartners();
-    }, []);
+    useEffect(() => { fetchPartners(); }, []);
 
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
@@ -44,16 +43,28 @@ const PartnersPage = () => {
         fetchPartners();
     };
 
-    const handleDelete = async (partnerId, partnerName) => {
-        if (window.confirm(`Bạn có chắc chắn muốn xóa đối tác "${partnerName}" (ID: ${partnerId}) không?`)) {
-            try {
-                await deleteDoc(doc(db, 'partners', partnerId));
-                alert('Xóa đối tác thành công!');
-                fetchPartners();
-            } catch (error) {
-                console.error("Lỗi khi xóa đối tác: ", error);
-                alert('Đã xảy ra lỗi khi xóa đối tác.');
-            }
+    const promptForDelete = (partner) => {
+        setConfirmModal({
+            isOpen: true,
+            item: partner,
+            title: "Xác nhận xóa đối tác?",
+            message: `Bạn có chắc chắn muốn xóa "${partner.partnerName}" (ID: ${partner.id}) không?`
+        });
+    };
+
+    const handleDelete = async () => {
+        const { item } = confirmModal;
+        if (!item) return;
+
+        try {
+            await deleteDoc(doc(db, 'partners', item.id));
+            toast.success('Xóa đối tác thành công!');
+            fetchPartners();
+        } catch (error) {
+            console.error("Lỗi khi xóa đối tác: ", error);
+            toast.error('Đã xảy ra lỗi khi xóa đối tác.');
+        } finally {
+            setConfirmModal({ isOpen: false, item: null });
         }
     };
 
@@ -68,6 +79,14 @@ const PartnersPage = () => {
 
     return (
         <div>
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={handleDelete}
+                onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+                confirmText="Vẫn xóa"
+            />
             {isAddModalOpen && <AddPartnerModal onClose={() => setIsAddModalOpen(false)} onPartnerAdded={handlePartnerAdded} />}
             {isEditModalOpen && <EditPartnerModal onClose={() => setIsEditModalOpen(false)} onPartnerUpdated={handlePartnerUpdated} partnerToEdit={currentPartner} />}
 
@@ -100,7 +119,7 @@ const PartnersPage = () => {
                                     <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
                                         <FiEdit />
                                     </button>
-                                    <button className="btn-icon btn-delete" onClick={() => handleDelete(partner.id, partner.partnerName)}>
+                                    <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
                                         <FiTrash2 />
                                     </button>
                                 </div>

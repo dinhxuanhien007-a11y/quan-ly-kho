@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 
 const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
     const [partnerData, setPartnerData] = useState({ ...partnerToEdit });
@@ -21,11 +22,11 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
                 partnerName: partnerData.partnerName,
                 partnerType: partnerData.partnerType,
             });
-            alert('Cập nhật thông tin đối tác thành công!');
+            toast.success('Cập nhật thông tin đối tác thành công!');
             onPartnerUpdated();
         } catch (error) {
             console.error("Lỗi khi cập nhật đối tác: ", error);
-            alert('Đã xảy ra lỗi khi cập nhật.');
+            toast.error('Đã xảy ra lỗi khi cập nhật.');
         } finally {
             setIsSaving(false);
         }

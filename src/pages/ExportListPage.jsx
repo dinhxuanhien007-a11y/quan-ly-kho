@@ -1,20 +1,20 @@
 // src/pages/ExportListPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, orderBy, doc, updateDoc, getDoc } from 'firebase/firestore';
 import ViewExportSlipModal from '../components/ViewExportSlipModal';
-import EditExportSlipModal from '../components/EditExportSlipModal'; // BƯỚC 1: IMPORT MODAL MỚI
+import EditExportSlipModal from '../components/EditExportSlipModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 const ExportListPage = () => {
   const [exportSlips, setExportSlips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  
-  // BƯỚC 2: THÊM STATE ĐỂ QUẢN LÝ MODAL SỬA
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'Xác nhận' });
 
   const fetchExportSlips = async () => {
     setLoading(true);
@@ -25,6 +25,7 @@ const ExportListPage = () => {
       setExportSlips(slipsList);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách phiếu xuất: ", error);
+      toast.error("Không thể tải danh sách phiếu xuất.");
     } finally {
       setLoading(false);
     }
@@ -35,18 +36,15 @@ const ExportListPage = () => {
   }, []);
 
   const handleConfirmExport = async (slip) => {
-    if (!window.confirm(`Bạn có chắc muốn xác nhận xuất kho cho phiếu của khách hàng "${slip.customer}" không?`)) {
-      return;
-    }
     try {
       for (const item of slip.items) {
         const lotRef = doc(db, 'inventory_lots', item.lotId);
         const lotSnap = await getDoc(lotRef);
         if (lotSnap.exists()) {
           const currentQuantity = lotSnap.data().quantityRemaining;
-          const newQuantityRemaining = currentQuantity - item.quantityToExport;
+          const newQuantityRemaining = currentQuantity - (item.quantityToExport || item.quantityExported);
           if (newQuantityRemaining < 0) {
-            alert(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ để xuất.`);
+            toast.error(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ để xuất.`);
             return;
           }
           await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
@@ -54,26 +52,47 @@ const ExportListPage = () => {
       }
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'completed' });
-      alert('Xác nhận xuất kho thành công!');
+      toast.success('Xác nhận xuất kho thành công!');
       fetchExportSlips();
     } catch (error) {
       console.error("Lỗi khi xác nhận xuất kho: ", error);
-      alert('Đã xảy ra lỗi khi xác nhận.');
+      toast.error('Đã xảy ra lỗi khi xác nhận.');
+    } finally {
+        setConfirmModal({ isOpen: false });
     }
   };
 
   const handleCancelSlip = async (slip) => {
-    if (!window.confirm(`Bạn có chắc muốn HỦY phiếu xuất của khách hàng "${slip.customer}" không?`)) {
-      return;
-    }
     try {
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'cancelled' });
-      alert('Hủy phiếu xuất thành công!');
+      toast.success('Hủy phiếu xuất thành công!');
       fetchExportSlips();
     } catch (error) {
       console.error("Lỗi khi hủy phiếu: ", error);
-      alert('Đã xảy ra lỗi khi hủy phiếu.');
+      toast.error('Đã xảy ra lỗi khi hủy phiếu.');
+    } finally {
+        setConfirmModal({ isOpen: false });
+    }
+  };
+
+  const promptAction = (action, slip) => {
+    if (action === 'confirm') {
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận xuất kho?",
+            message: `Bạn có chắc muốn xuất kho cho phiếu của khách hàng "${slip.customer}" không?`,
+            onConfirm: () => handleConfirmExport(slip),
+            confirmText: "Xác nhận"
+        });
+    } else if (action === 'cancel') {
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận hủy phiếu?",
+            message: `Bạn có chắc muốn HỦY phiếu xuất của khách hàng "${slip.customer}" không? Thao tác này sẽ không trừ tồn kho.`,
+            onConfirm: () => handleCancelSlip(slip),
+            confirmText: "Đồng ý hủy"
+        });
     }
   };
 
@@ -81,8 +100,7 @@ const ExportListPage = () => {
     setSelectedSlip(slip);
     setIsViewModalOpen(true);
   };
-
-  // BƯỚC 3: THÊM CÁC HÀM ĐỂ MỞ MODAL SỬA VÀ LƯU THAY ĐỔI
+  
   const openEditModal = (slip) => {
     setSelectedSlip(slip);
     setIsEditModalOpen(true);
@@ -91,7 +109,6 @@ const ExportListPage = () => {
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
       const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
-      // Chỉ cập nhật những trường có thể thay đổi, ví dụ: items, customer, description
       await updateDoc(slipDocRef, { 
           items: updatedSlip.items,
           customer: updatedSlip.customer,
@@ -99,15 +116,15 @@ const ExportListPage = () => {
       });
       setIsEditModalOpen(false);
       fetchExportSlips();
-      alert('Cập nhật phiếu xuất thành công!');
+      toast.success('Cập nhật phiếu xuất thành công!');
     } catch (error) {
       console.error("Lỗi khi cập nhật phiếu xuất: ", error);
-      alert('Đã xảy ra lỗi khi cập nhật.');
+      toast.error('Đã xảy ra lỗi khi cập nhật.');
     }
   };
 
   const renderStatusBadge = (status) => {
-    let text = status;
+     let text = status;
     switch (status) {
         case 'pending': text = 'Đang soạn hàng'; break;
         case 'completed': text = 'Hoàn thành'; break;
@@ -123,7 +140,14 @@ const ExportListPage = () => {
 
   return (
     <div>
-      {/* Thêm Modal Sửa vào giao diện */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+        confirmText={confirmModal.confirmText}
+      />
       {isEditModalOpen && (
         <EditExportSlipModal 
             slip={selectedSlip}
@@ -131,9 +155,8 @@ const ExportListPage = () => {
             onSave={handleSaveSlipChanges}
         />
       )}
-
       {isViewModalOpen && (
-        <ViewExportSlipModal 
+         <ViewExportSlipModal 
             slip={selectedSlip}
             onClose={() => setIsViewModalOpen(false)}
         />
@@ -167,14 +190,13 @@ const ExportListPage = () => {
                     </button>
                     {slip.status === 'pending' && (
                       <>
-                        <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => handleConfirmExport(slip)}>
+                        <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => promptAction('confirm', slip)}>
                             <FiCheckCircle />
                         </button>
-                        {/* BƯỚC 4: THAY ĐỔI ONCLICK CỦA NÚT SỬA */}
                         <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
                             <FiEdit />
                         </button>
-                        <button className="btn-icon btn-delete" title="Hủy phiếu" onClick={() => handleCancelSlip(slip)}>
+                        <button className="btn-icon btn-delete" title="Hủy phiếu" onClick={() => promptAction('cancel', slip)}>
                             <FiXCircle />
                         </button>
                       </>

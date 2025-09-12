@@ -4,8 +4,10 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
 import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
 import AddNewLotModal from '../components/AddNewLotModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
 import { FiInfo } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 const NewImportPage = () => {
     const today = new Date();
@@ -21,8 +23,8 @@ const NewImportPage = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const inputRefs = useRef([]);
-    
     const [allSuppliers, setAllSuppliers] = useState([]);
 
     useEffect(() => {
@@ -47,7 +49,8 @@ const NewImportPage = () => {
                 setSupplierName(partnerSnap.data().partnerName);
             } else {
                 setSupplierName('');
-                alert(`Không tìm thấy Nhà cung cấp với mã "${supplierId}" hoặc đối tác không phải là Nhà cung cấp.`);
+                // --- THAY THẾ ALERT BẰNG TOAST ---
+                toast.error(`Không tìm thấy Nhà cung cấp với mã "${supplierId}" hoặc đối tác không phải là Nhà cung cấp.`);
             }
         } catch (error) {
             console.error("Lỗi khi tìm nhà cung cấp:", error);
@@ -179,12 +182,12 @@ const NewImportPage = () => {
 
     const handleSaveSlip = async () => {
         if (!supplierId || !supplierName) {
-            alert('Vui lòng nhập Mã Nhà cung cấp hợp lệ.');
+            toast.warn('Vui lòng nhập Mã Nhà cung cấp hợp lệ.');
             return;
         }
         const validItems = items.filter(item => item.productId && item.quantity > 0);
         if (validItems.length === 0) {
-            alert('Vui lòng thêm ít nhất một mặt hàng hợp lệ vào phiếu.');
+            toast.warn('Vui lòng thêm ít nhất một mặt hàng hợp lệ vào phiếu.');
             return;
         }
         setIsSaving(true);
@@ -199,38 +202,28 @@ const NewImportPage = () => {
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, 'import_tickets'), slipData);
-            alert(`Lưu tạm phiếu nhập thành công! ID phiếu: ${docRef.id}`);
+            toast.success(`Lưu tạm phiếu nhập thành công! ID phiếu: ${docRef.id}`);
             setSupplierId('');
             setSupplierName('');
             setDescription('');
             setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
         } catch (error) {
             console.error("Lỗi khi lưu phiếu nhập: ", error);
-            alert('Đã xảy ra lỗi khi lưu phiếu.');
+            toast.error('Đã xảy ra lỗi khi lưu phiếu.');
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDirectImport = async () => {
-        if (!supplierId || !supplierName) {
-            alert('Vui lòng nhập Mã Nhà cung cấp hợp lệ.');
-            return;
-        }
-        const validItems = items.filter(item => item.productId && item.quantity > 0);
-        if (validItems.length === 0) {
-            alert('Vui lòng thêm ít nhất một mặt hàng hợp lệ.');
-            return;
-        }
-        if (!window.confirm('Bạn có chắc muốn nhập kho trực tiếp? Thao tác này sẽ cập nhật tồn kho ngay lập tức.')) {
-            return;
-        }
+        setConfirmModal({ isOpen: false });
         setIsSaving(true);
         try {
+            const validItems = items.filter(item => item.productId && item.quantity > 0);
             for (const item of validItems) {
                 const expiryDateObject = parseDateString(item.expiryDate);
                 if (!expiryDateObject) {
-                    alert(`HSD của mặt hàng ${item.productName} (${item.lotNumber}) có định dạng sai.`);
+                    toast.error(`HSD của mặt hàng ${item.productName} (${item.lotNumber}) có định dạng sai.`);
                     setIsSaving(false);
                     return;
                 }
@@ -253,7 +246,6 @@ const NewImportPage = () => {
                 };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
-
             const slipData = {
                 importDate: formattedDate,
                 supplierId: supplierId.toUpperCase(),
@@ -264,22 +256,46 @@ const NewImportPage = () => {
                 createdAt: serverTimestamp()
             };
             await addDoc(collection(db, 'import_tickets'), slipData);
-
-            alert('Nhập kho trực tiếp thành công!');
+            toast.success('Nhập kho trực tiếp thành công!');
             setSupplierId('');
             setSupplierName('');
             setDescription('');
             setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
         } catch (error) {
             console.error("Lỗi khi nhập kho trực tiếp: ", error);
-            alert('Đã xảy ra lỗi khi nhập kho trực tiếp.');
+            toast.error('Đã xảy ra lỗi khi nhập kho trực tiếp.');
         } finally {
             setIsSaving(false);
         }
     };
+    
+    const promptForDirectImport = () => {
+        if (!supplierId || !supplierName) {
+            toast.warn('Vui lòng nhập Mã Nhà cung cấp hợp lệ.');
+            return;
+        }
+        if (items.filter(item => item.productId && item.quantity > 0).length === 0) {
+            toast.warn('Vui lòng thêm ít nhất một mặt hàng hợp lệ.');
+            return;
+        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận nhập kho trực tiếp?",
+            message: "Thao tác này sẽ cập nhật tồn kho ngay lập tức và không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?",
+            onConfirm: handleDirectImport
+        });
+    };
 
     return (
         <div>
+            <ConfirmationModal 
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal({ isOpen: false })}
+                confirmText="Xác nhận"
+            />
             {newProductModal.isOpen && (
                 <AddNewProductAndLotModal
                     productId={newProductModal.productId}
@@ -427,7 +443,7 @@ const NewImportPage = () => {
                 <button onClick={handleSaveSlip} className="btn-secondary" disabled={isSaving}>
                     {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}
                 </button>
-                <button onClick={handleDirectImport} className="btn-primary" disabled={isSaving}>
+                <button onClick={promptForDirectImport} className="btn-primary" disabled={isSaving}>
                     {isSaving ? 'Đang xử lý...' : 'Nhập Kho Trực Tiếp'}
                 </button>
             </div>

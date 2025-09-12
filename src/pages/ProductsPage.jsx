@@ -3,20 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import AddProductModal from '../components/AddProductModal';
-import EditProductModal from '../components/EditProductModal'; // Import Edit Modal
+import EditProductModal from '../components/EditProductModal';
+import ConfirmationModal from '../components/ConfirmationModal'; // <-- THÊM IMPORT
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  
-  // State mới để quản lý việc sửa sản phẩm
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
+  
+  // --- THÊM STATE MỚI ĐỂ QUẢN LÝ MODAL XÁC NHẬN ---
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
   const fetchProducts = async () => {
-    // ... code fetchProducts giữ nguyên ...
     setLoading(true);
     try {
       const productsCollection = collection(db, 'products');
@@ -28,6 +30,7 @@ const ProductsPage = () => {
       setProducts(productsList);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách sản phẩm: ", error);
+      toast.error("Không thể tải danh sách sản phẩm.");
     } finally {
       setLoading(false);
     }
@@ -47,21 +50,33 @@ const ProductsPage = () => {
     fetchProducts();
   };
 
-  const handleDelete = async (productId, productName) => {
-    // ... code handleDelete giữ nguyên ...
-    if (window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${productName}" (ID: ${productId}) không?`)) {
-      try {
-        await deleteDoc(doc(db, 'products', productId));
-        alert('Xóa sản phẩm thành công!');
-        fetchProducts();
-      } catch (error) {
-        console.error("Lỗi khi xóa sản phẩm: ", error);
-        alert('Đã xảy ra lỗi khi xóa sản phẩm.');
-      }
+  // --- HÀM MỚI ĐỂ MỞ MODAL XÁC NHẬN ---
+  const promptForDelete = (product) => {
+    setConfirmModal({
+        isOpen: true,
+        item: product,
+        title: "Xác nhận xóa sản phẩm?",
+        message: `Bạn có chắc chắn muốn xóa "${product.productName}" (ID: ${product.id}) không? Hành động này không thể hoàn tác.`
+    });
+  };
+
+  // --- CẬP NHẬT LẠI HÀM XÓA ---
+  const handleDelete = async () => {
+    const { item } = confirmModal;
+    if (!item) return;
+
+    try {
+      await deleteDoc(doc(db, 'products', item.id));
+      toast.success('Xóa sản phẩm thành công!');
+      fetchProducts();
+    } catch (error) {
+      console.error("Lỗi khi xóa sản phẩm: ", error);
+      toast.error('Đã xảy ra lỗi khi xóa sản phẩm.');
+    } finally {
+      setConfirmModal({ isOpen: false, item: null }); // Đóng modal sau khi thực hiện
     }
   };
 
-  // Hàm để mở modal Sửa
   const openEditModal = (product) => {
     setCurrentProduct(product);
     setIsEditModalOpen(true);
@@ -73,6 +88,16 @@ const ProductsPage = () => {
 
   return (
     <div>
+      {/* --- THÊM MODAL XÁC NHẬN VÀO GIAO DIỆN --- */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+        confirmText="Vẫn xóa"
+      />
+
       <div className="page-header">
         <h1>Quản Lý Hàng Hóa</h1>
         <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">Thêm sản phẩm</button>
@@ -83,7 +108,6 @@ const ProductsPage = () => {
       {isEditModalOpen && <EditProductModal onClose={() => setIsEditModalOpen(false)} onProductUpdated={handleProductUpdated} productToEdit={currentProduct} />}
 
       <table className="products-table">
-        {/* ... thead giữ nguyên ... */}
         <thead>
           <tr>
             <th>Mã hàng</th>
@@ -108,11 +132,11 @@ const ProductsPage = () => {
               <td>{product.team}</td>
               <td>
                 <div className="action-buttons">
-                  {/* GỌI HÀM openEditModal KHI NHẤN NÚT SỬA */}
                   <button className="btn-icon btn-edit" onClick={() => openEditModal(product)}>
                     <FiEdit />
                   </button>
-                  <button className="btn-icon btn-delete" onClick={() => handleDelete(product.id, product.productName)}>
+                  {/* --- THAY ĐỔI ONCLICK CỦA NÚT XÓA --- */}
+                  <button className="btn-icon btn-delete" onClick={() => promptForDelete(product)}>
                     <FiTrash2 />
                   </button>
                 </div>

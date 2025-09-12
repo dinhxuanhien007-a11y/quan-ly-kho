@@ -183,7 +183,7 @@ const InventorySummaryPage = ({ user, userRole }) => {
         case 'admin':
             return 'PT Biomed - Kho';
         case 'owner':
-            return 'PT Biomed - Owner'; // Thêm cho vai trò Owner
+            return 'PT Biomed - Inventory'; // Thêm cho vai trò Owner
         default:
             return 'PT Biomed - Tồn Kho Tổng Hợp';
     }

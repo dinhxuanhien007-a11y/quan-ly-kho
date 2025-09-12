@@ -1,12 +1,13 @@
 // src/pages/StocktakeSessionPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
+import { toast } from 'react-toastify';
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
@@ -15,6 +16,7 @@ const StocktakeSessionPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [checkedItems, setCheckedItems] = useState({});
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
     const fetchSessionData = async () => {
         setLoading(true);
@@ -24,6 +26,7 @@ const StocktakeSessionPage = () => {
             setSessionData({ id: docSnap.id, ...docSnap.data() });
         } else {
             console.log("Không tìm thấy phiên kiểm kê!");
+            toast.error("Không tìm thấy dữ liệu cho phiên kiểm kê này.");
         }
         setLoading(false);
     };
@@ -69,11 +72,13 @@ const StocktakeSessionPage = () => {
         const currentItems = sessionData.items;
         const targetItem = currentItems.find(item => item.lotId === lotId);
         let finalCount = newCount;
+
         if (targetItem && (targetItem.countedQty || 0) > 0 && newCount !== null) {
             if (window.confirm(`Đã đếm ${targetItem.countedQty}. Bạn có muốn CỘNG DỒN thêm ${newCount} (Tổng: ${targetItem.countedQty + newCount}) không?\n\n(Nhấn OK để Cộng Dồn, Cancel để Ghi Đè)`)) {
                 finalCount = (targetItem.countedQty || 0) + newCount;
             }
         }
+        
         const updatedItems = currentItems.map(item => item.lotId === lotId ? { ...item, countedQty: finalCount } : item);
         setSessionData(prev => ({ ...prev, items: updatedItems }));
         try {
@@ -82,36 +87,42 @@ const StocktakeSessionPage = () => {
             console.log(`Đã lưu số lượng cho lô ${lotId}`);
         } catch (error) {
             console.error("Lỗi khi lưu:", error);
-            alert("Lỗi: Không thể lưu. Vui lòng kiểm tra kết nối mạng.");
+            toast.error("Lỗi: Không thể lưu. Vui lòng kiểm tra kết nối mạng.");
             setSessionData(prev => ({ ...prev, items: currentItems }));
         }
     };
 
     const handleFinalizeCount = async () => {
-        const uncountedItems = sessionData.items.filter(item => item.countedQty === null && !item.isNew);
-        if (uncountedItems.length > 0) {
-            if (!window.confirm(`Cảnh báo: Vẫn còn ${uncountedItems.length} mã hàng trong danh sách gốc chưa được đếm. Bạn có chắc chắn muốn hoàn tất không?`)) { return; }
-        } else {
-            if (!window.confirm("Tất cả các mã hàng đã được đếm. Bạn có muốn hoàn tất và khóa phiên kiểm kê này không?")) { return; }
-        }
+        setConfirmModal({isOpen: false});
         try {
             const sessionRef = doc(db, 'stocktakes', sessionId);
             await updateDoc(sessionRef, { status: 'completed' });
-            alert("Đã hoàn tất phiên kiểm kê!");
+            toast.success("Đã hoàn tất phiên kiểm kê!");
             fetchSessionData();
         } catch (error) {
             console.error("Lỗi khi hoàn tất phiên kiểm kê: ", error);
-            alert("Đã có lỗi xảy ra.");
+            toast.error("Đã có lỗi xảy ra khi hoàn tất.");
         }
     };
 
-    const handleAdjustInventory = async () => {
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.lotId]);
-        if (itemsToAdjust.length === 0) {
-            alert("Vui lòng chọn ít nhất một mặt hàng để điều chỉnh.");
-            return;
+    const promptForFinalize = () => {
+        const uncountedItems = sessionData.items.filter(item => item.countedQty === null && !item.isNew);
+        let message = "Tất cả các mã hàng đã được đếm. Bạn có muốn hoàn tất và khóa phiên kiểm kê này không?";
+        if (uncountedItems.length > 0) {
+            message = `Cảnh báo: Vẫn còn ${uncountedItems.length} mã hàng chưa được đếm. Bạn có chắc chắn muốn hoàn tất không?`;
         }
-        if (!window.confirm(`Bạn có chắc muốn điều chỉnh tồn kho cho ${itemsToAdjust.length} mặt hàng đã chọn không? Thao tác này không thể hoàn tác.`)) { return; }
+        setConfirmModal({
+            isOpen: true,
+            title: "Hoàn tất phiên kiểm kê?",
+            message: message,
+            onConfirm: handleFinalizeCount,
+            confirmText: "Hoàn tất"
+        });
+    };
+
+    const handleAdjustInventory = async () => {
+        setConfirmModal({isOpen: false});
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.lotId]);
         try {
             const batch = writeBatch(db);
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
@@ -131,15 +142,31 @@ const StocktakeSessionPage = () => {
             const sessionRef = doc(db, 'stocktakes', sessionId);
             batch.update(sessionRef, { status: 'adjusted' });
             await batch.commit();
-            alert("Đã điều chỉnh tồn kho thành công!");
+            toast.success("Đã điều chỉnh tồn kho thành công!");
             fetchSessionData();
         } catch (error) {
             console.error("Lỗi khi điều chỉnh tồn kho: ", error);
-            alert("Đã xảy ra lỗi khi điều chỉnh tồn kho.");
+            toast.error("Đã xảy ra lỗi khi điều chỉnh tồn kho.");
         }
     };
 
+    const promptForAdjust = () => {
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.lotId]);
+        if (itemsToAdjust.length === 0) {
+            toast.warn("Vui lòng chọn ít nhất một mặt hàng để điều chỉnh.");
+            return;
+        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận điều chỉnh tồn kho?",
+            message: `Bạn có chắc muốn điều chỉnh tồn kho cho ${itemsToAdjust.length} mặt hàng đã chọn không? Thao tác này không thể hoàn tác.`,
+            onConfirm: handleAdjustInventory,
+            confirmText: "Đồng ý điều chỉnh"
+        });
+    };
+
     const handleCheckboxChange = (lotId) => { setCheckedItems(prev => ({ ...prev, [lotId]: !prev[lotId] })); };
+    
     const handleCheckAll = (e) => {
         const isChecked = e.target.checked;
         const newCheckedItems = {};
@@ -156,9 +183,9 @@ const StocktakeSessionPage = () => {
         try {
             const sessionRef = doc(db, 'stocktakes', sessionId);
             updateDoc(sessionRef, { items: updatedItems });
-            alert("Đã thêm mặt hàng mới vào phiên kiểm kê.");
+            toast.success("Đã thêm mặt hàng mới vào phiên kiểm kê.");
         } catch (error) {
-            alert("Có lỗi khi lưu mặt hàng mới, vui lòng thử lại.");
+            toast.error("Có lỗi khi lưu mặt hàng mới, vui lòng thử lại.");
         }
     };
     
@@ -173,7 +200,7 @@ const StocktakeSessionPage = () => {
     const isSessionCompleted = sessionData.status === 'completed';
     const isSessionAdjusted = sessionData.status === 'adjusted';
     const areAllDiscrepanciesChecked = discrepancyItems.length > 0 && discrepancyItems.every(item => checkedItems[item.lotId]);
-
+    
     const CountInput = ({ item }) => {
         const [currentValue, setCurrentValue] = useState(item.countedQty ?? '');
         const handleKeyDown = (e) => { if (e.key === 'Enter') { e.target.blur(); } };
@@ -193,6 +220,14 @@ const StocktakeSessionPage = () => {
 
     return (
         <div>
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal({ isOpen: false })}
+                confirmText={confirmModal.confirmText || "Xác nhận"}
+            />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
             <div className="page-header">
                 <h1>{sessionData.name}
@@ -201,7 +236,7 @@ const StocktakeSessionPage = () => {
                 </h1>
                 <div>
                     <button onClick={handlePrint} className="btn-secondary" style={{marginRight: '10px'}}>In Phiếu Đếm Tay</button>
-                    {isSessionInProgress && (<button onClick={handleFinalizeCount} className="btn-primary">Hoàn tất đếm</button>)}
+                    {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">Hoàn tất đếm</button>)}
                 </div>
             </div>
             <div className="form-section">
@@ -249,7 +284,7 @@ const StocktakeSessionPage = () => {
                             </table>
                             {!isSessionAdjusted && (
                                 <div className="page-actions">
-                                    <button onClick={handleAdjustInventory} className="btn-primary">Xác Nhận Điều Chỉnh Tồn Kho</button>
+                                    <button onClick={promptForAdjust} className="btn-primary">Xác Nhận Điều Chỉnh Tồn Kho</button>
                                 </div>
                             )}
                         </>

@@ -1,10 +1,10 @@
 // src/pages/StocktakeListPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
+import { toast } from 'react-toastify';
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -64,12 +64,12 @@ const StocktakeListPage = () => {
 
             const docRef = await addDoc(collection(db, "stocktakes"), newStocktakeSession);
             
+            toast.success("Tạo phiên kiểm kê mới thành công!");
             setIsCreateModalOpen(false);
             navigate(`/stocktakes/${docRef.id}`);
-
         } catch (error) {
             console.error("Lỗi khi tạo phiên kiểm kê: ", error);
-            alert("Đã có lỗi xảy ra khi tạo phiên kiểm kê.");
+            toast.error("Đã có lỗi xảy ra khi tạo phiên kiểm kê.");
         } finally {
             setIsCreating(false);
         }
@@ -93,7 +93,6 @@ const StocktakeListPage = () => {
                     isCreating={isCreating}
                 />
             )}
-
             <div className="page-header">
                 <h1>Danh sách Phiên Kiểm Kê Kho</h1>
                 <button 
@@ -103,7 +102,6 @@ const StocktakeListPage = () => {
                     Tạo Phiên Mới
                 </button>
             </div>
-
             <table className="products-table">
                 <thead>
                     <tr>

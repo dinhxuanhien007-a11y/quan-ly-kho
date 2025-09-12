@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { formatExpiryDate } from '../utils/dateUtils';
+import { toast } from 'react-toastify';
 
 const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const [productId, setProductId] = useState('');
@@ -21,7 +22,6 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
         if (!productId) return;
         const productRef = doc(db, 'products', productId.trim());
         const productSnap = await getDoc(productRef);
-
         if (productSnap.exists()) {
             const data = productSnap.data();
             setProductName(data.productName);
@@ -39,14 +39,14 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
             setManufacturer('');
             setTeam('');
             setIsNewProduct(true);
-            alert("Mã hàng này không tồn tại. Vui lòng nhập Tên hàng mới.");
+            toast.warn("Mã hàng này không tồn tại. Vui lòng nhập Tên hàng mới.");
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!productId || !countedQty || (!productName && isNewProduct)) {
-            alert("Vui lòng điền đầy đủ Mã hàng và Số lượng đếm.");
+            toast.warn("Vui lòng điền đầy đủ Mã hàng và Số lượng đếm.");
             return;
         }
         
@@ -67,7 +67,6 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
         });
     };
     
-    // HÀM MỚI: Chỉ định dạng khi người dùng rời khỏi ô input
     const handleExpiryDateBlur = (e) => {
         setExpiryDate(formatExpiryDate(e.target.value));
     };

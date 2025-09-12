@@ -1,12 +1,13 @@
 // src/pages/ImportListPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { FiEdit, FiEye } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
+import { toast } from 'react-toastify';
 
 const ImportListPage = () => {
   const [importSlips, setImportSlips] = useState([]);
@@ -14,6 +15,7 @@ const ImportListPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
   const fetchImportSlips = async () => {
     setLoading(true);
@@ -24,6 +26,7 @@ const ImportListPage = () => {
       setImportSlips(slipsList);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách phiếu nhập: ", error);
+      toast.error("Không thể tải danh sách phiếu nhập.");
     } finally {
       setLoading(false);
     }
@@ -33,15 +36,16 @@ const ImportListPage = () => {
     fetchImportSlips();
   }, []);
 
-  const handleConfirmImport = async (slip) => {
-    if (!window.confirm(`Bạn có chắc muốn xác nhận nhập kho cho phiếu của NCC "${slip.supplier}" không?`)) {
-      return;
-    }
+  const handleConfirmImport = async () => {
+    const slip = confirmModal.item;
+    if (!slip) return;
+
     try {
       for (const item of slip.items) {
         const expiryDateObject = parseDateString(item.expiryDate);
         if (!expiryDateObject) {
-            alert(`HSD của mặt hàng ${item.productName} (${item.lotNumber}) có định dạng sai. Vui lòng sửa lại.`);
+            toast.error(`HSD của mặt hàng ${item.productName} (${item.lotNumber}) có định dạng sai. Vui lòng sửa lại.`);
+            setConfirmModal({ isOpen: false, item: null });
             return;
         }
         const expiryTimestamp = Timestamp.fromDate(expiryDateObject);
@@ -59,20 +63,29 @@ const ImportListPage = () => {
           quantityImported: Number(item.quantity),
           quantityRemaining: Number(item.quantity),
           notes: item.notes,
-          // --- THAY ĐỔI QUAN TRỌNG ---
-          // Thêm tên nhà cung cấp từ phiếu nhập vào dữ liệu lô hàng
           supplier: slip.supplier,
         };
         await addDoc(collection(db, "inventory_lots"), newLotData);
       }
       const slipDocRef = doc(db, "import_tickets", slip.id);
       await updateDoc(slipDocRef, { status: "completed" });
-      alert('Xác nhận nhập kho thành công!');
+      toast.success('Xác nhận nhập kho thành công!');
       fetchImportSlips();
     } catch (error) {
       console.error("Lỗi khi xác nhận nhập kho: ", error);
-      alert('Đã xảy ra lỗi khi xác nhận nhập kho.');
+      toast.error('Đã xảy ra lỗi khi xác nhận nhập kho.');
+    } finally {
+        setConfirmModal({ isOpen: false, item: null });
     }
+  };
+
+  const promptForConfirm = (slip) => {
+    setConfirmModal({
+        isOpen: true,
+        item: slip,
+        title: "Xác nhận nhập kho?",
+        message: `Bạn có chắc muốn xác nhận và đưa hàng trong phiếu của NCC "${slip.supplier}" vào kho không? Thao tác này sẽ cập nhật tồn kho.`,
+    });
   };
 
   const openEditModal = (slip) => {
@@ -91,10 +104,10 @@ const ImportListPage = () => {
       await updateDoc(slipDocRef, { items: updatedSlip.items });
       setIsEditModalOpen(false);
       fetchImportSlips();
-      alert('Cập nhật phiếu nhập thành công!');
+      toast.success('Cập nhật phiếu nhập thành công!');
     } catch (error) {
       console.error("Lỗi khi cập nhật phiếu nhập: ", error);
-      alert('Đã xảy ra lỗi khi cập nhật.');
+      toast.error('Đã xảy ra lỗi khi cập nhật.');
     }
   };
 
@@ -104,13 +117,20 @@ const ImportListPage = () => {
 
   return (
     <div>
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={handleConfirmImport}
+        onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+        confirmText="Xác nhận"
+      />
       {isViewModalOpen && (
         <ViewImportSlipModal 
           slip={selectedSlip} 
           onClose={() => setIsViewModalOpen(false)}
         />
       )}
-
       {isEditModalOpen && (
         <EditImportSlipModal 
           slip={selectedSlip} 
@@ -152,7 +172,7 @@ const ImportListPage = () => {
                       <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
                         <FiEdit />
                       </button>
-                      <button className="btn-primary" onClick={() => handleConfirmImport(slip)}>
+                      <button className="btn-primary" onClick={() => promptForConfirm(slip)}>
                         Xác nhận
                       </button>
                     </>

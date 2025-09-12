@@ -8,6 +8,8 @@ import AdminLayout from './components/AdminLayout';
 import ViewerLayout from './components/ViewerLayout';
 import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -40,19 +42,27 @@ function App() {
   
   return (
     <BrowserRouter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+
       {user ? (
         <Routes>
-          {/* --- ROUTE CHO GIAO DIỆN QUẢN TRỊ (CHỈ OWNER) --- */}
           {userRole === 'owner' ? (
             <Route path="/*" element={<AdminLayout />} />
           ) : (
-            // Nếu không phải owner, truy cập vào trang admin sẽ bị điều hướng
             <Route path="/*" element={<Navigate to="/view" />} />
           )}
-
-          {/* --- ROUTE CHO GIAO DIỆN NGƯỜI XEM (TẤT CẢ CÁC VAI TRÒ) --- */}
           <Route path="/view/*" element={<ViewerLayout user={user} userRole={userRole} />} />
-          
         </Routes>
       ) : (
         <div className="login-page-wrapper">

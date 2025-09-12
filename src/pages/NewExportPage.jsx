@@ -3,7 +3,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown } from 'react-icons/fi';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
+import { toast } from 'react-toastify';
 
 const NewExportPage = () => {
     const today = new Date();
@@ -19,9 +21,9 @@ const NewExportPage = () => {
         expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' 
     }]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const lotSelectRefs = useRef([]);
     const quantityInputRefs = useRef([]);
-
     const [allCustomers, setAllCustomers] = useState([]);
 
     useEffect(() => {
@@ -46,7 +48,7 @@ const NewExportPage = () => {
                 setCustomerName(partnerSnap.data().partnerName);
             } else {
                 setCustomerName('');
-                alert(`Không tìm thấy Khách hàng với mã "${customerId}" hoặc đối tác không phải là Khách hàng.`);
+                toast.error(`Không tìm thấy Khách hàng với mã "${customerId}"`);
             }
         } catch (error) {
             console.error("Lỗi khi tìm khách hàng:", error);
@@ -56,39 +58,27 @@ const NewExportPage = () => {
 
     const getValidSlipData = () => {
         if (!customerId || !customerName) {
-            alert('Vui lòng nhập Mã Khách hàng hợp lệ.');
+            toast.warn('Vui lòng nhập Mã Khách hàng hợp lệ.');
             return null;
         }
         const validItems = items.filter(item => item.selectedLotId && Number(item.quantityToExport) > 0);
         if (validItems.length === 0) {
-            alert('Vui lòng thêm ít nhất một mặt hàng và nhập số lượng xuất.');
+            toast.warn('Vui lòng thêm ít nhất một mặt hàng và nhập số lượng xuất.');
             return null;
         }
         return {
-            exportDate,
-            customerId: customerId.toUpperCase(),
-            customer: customerName,
-            description,
-            items: validItems.map(item => ({
-                productId: item.productId,
-                productName: item.productName,
-                lotId: item.selectedLotId,
-                lotNumber: item.lotNumber,
-                expiryDate: item.expiryDate,
-                unit: item.unit,
-                packaging: item.packaging,
-                storageTemp: item.storageTemp,
-                quantityToExport: Number(item.quantityToExport),
-                notes: item.notes
-            })),
-            createdAt: serverTimestamp()
+            exportDate, customerId: customerId.toUpperCase(), customer: customerName,
+            description, items: validItems.map(item => ({
+                productId: item.productId, productName: item.productName, lotId: item.selectedLotId,
+                lotNumber: item.lotNumber, expiryDate: item.expiryDate, unit: item.unit,
+                packaging: item.packaging, storageTemp: item.storageTemp,
+                quantityToExport: Number(item.quantityToExport), notes: item.notes
+            })), createdAt: serverTimestamp()
         };
     };
 
     const resetForm = () => {
-        setCustomerId('');
-        setCustomerName('');
-        setDescription('');
+        setCustomerId(''); setCustomerName(''); setDescription('');
         setItems([{ 
             id: Date.now(), productId: '', productName: '', unit: '', packaging: '', storageTemp: '', 
             availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', 
@@ -102,11 +92,11 @@ const NewExportPage = () => {
         setIsProcessing(true);
         try {
             await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'pending' });
-            alert('Lưu nháp phiếu xuất thành công!');
+            toast.success('Lưu nháp phiếu xuất thành công!');
             resetForm();
         } catch (error) {
             console.error("Lỗi khi lưu nháp phiếu xuất: ", error);
-            alert('Đã xảy ra lỗi khi lưu nháp.');
+            toast.error('Đã xảy ra lỗi khi lưu nháp.');
         } finally {
             setIsProcessing(false);
         }
@@ -115,7 +105,7 @@ const NewExportPage = () => {
     const handleDirectExport = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
-        if (!window.confirm('Bạn có chắc chắn muốn xuất kho trực tiếp?')) { return; }
+        setConfirmModal({isOpen: false});
         setIsProcessing(true);
         try {
             for (const item of slipData.items) {
@@ -128,28 +118,37 @@ const NewExportPage = () => {
                 }
             }
             await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'completed' });
-            alert('Xuất kho trực tiếp thành công!');
+            toast.success('Xuất kho trực tiếp thành công!');
             resetForm();
         } catch (error) {
             console.error("Lỗi khi xuất kho trực tiếp: ", error);
-            alert('Đã xảy ra lỗi trong quá trình xuất kho.');
+            toast.error('Đã xảy ra lỗi trong quá trình xuất kho.');
         } finally {
             setIsProcessing(false);
         }
     };
-    
+
+    const promptForDirectExport = () => {
+        if (!getValidSlipData()) return;
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận xuất kho?",
+            message: "Hành động này sẽ trừ tồn kho ngay lập tức. Bạn có chắc chắn muốn tiếp tục?",
+            onConfirm: handleDirectExport
+        });
+    };
+
     const handleProductSearch = async (index, productId) => {
         if (!productId) return;
         const newItems = [...items];
         const currentItem = newItems[index];
         Object.assign(currentItem, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0 });
         setItems(newItems);
-    
         try {
           const productRef = doc(db, 'products', productId);
           const productSnap = await getDoc(productRef);
           if (!productSnap.exists()) {
-            alert(`Không tìm thấy sản phẩm với mã: ${productId}`);
+            toast.warn(`Không tìm thấy sản phẩm với mã: ${productId}`);
             return;
           }
           const productData = productSnap.data();
@@ -157,29 +156,20 @@ const NewExportPage = () => {
           currentItem.unit = productData.unit;
           currentItem.packaging = productData.packaging;
           currentItem.storageTemp = productData.storageTemp;
-    
           const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
           const lotsSnapshot = await getDocs(lotsQuery);
           if (lotsSnapshot.empty) {
-            alert(`Cảnh báo: Sản phẩm mã '${productId}' đã hết hàng tồn kho.`);
+            toast.warn(`Cảnh báo: Sản phẩm mã '${productId}' đã hết hàng tồn kho.`);
             currentItem.availableLots = [];
           } else {
             let foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            foundLots.sort((a, b) => {
-              const dateA = a.expiryDate.toDate();
-              const dateB = b.expiryDate.toDate();
-              if (dateA < dateB) return -1;
-              if (dateA > dateB) return 1;
-              return a.importDate.toDate() - b.importDate.toDate();
-            });
-            
+            foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
             currentItem.availableLots = foundLots;
             setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
           }
         } catch (error) {
           console.error("Lỗi khi tìm kiếm:", error);
-          alert("Đã có lỗi xảy ra khi tìm kiếm.");
+          toast.error("Đã có lỗi xảy ra khi tìm kiếm.");
         } finally {
           setItems([...newItems]);
         }
@@ -189,7 +179,6 @@ const NewExportPage = () => {
         const newItems = [...items];
         const currentItem = newItems[index];
         currentItem.selectedLotId = selectedLotId;
-    
         const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
         if (selectedLot) {
           currentItem.lotNumber = selectedLot.lotNumber;
@@ -209,7 +198,7 @@ const NewExportPage = () => {
           const val = Number(value);
           if (val < 0) return;
           if (val > newItems[index].quantityRemaining) {
-            alert('Cảnh báo: Số lượng xuất vượt quá số lượng tồn!');
+            toast.warn('Cảnh báo: Số lượng xuất vượt quá số lượng tồn!');
             newItems[index][field] = newItems[index].quantityRemaining;
           } else {
             newItems[index][field] = val;
@@ -226,13 +215,27 @@ const NewExportPage = () => {
     
     const handleRemoveRow = (indexToRemove) => {
         if (items.length <= 1) return;
-        if (window.confirm("Bạn có chắc chắn muốn xóa dòng này không?")) {
-          setItems(prevItems => prevItems.filter((_, index) => index !== indexToRemove));
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận xóa dòng?",
+            message: "Bạn có chắc chắn muốn xóa dòng hàng này khỏi phiếu xuất?",
+            onConfirm: () => {
+                setItems(prevItems => prevItems.filter((_, index) => index !== indexToRemove));
+                setConfirmModal({ isOpen: false });
+            }
+        });
     };
 
     return (
         <div>
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal({ isOpen: false })}
+                confirmText="Xác nhận"
+            />
             <h1>Tạo Phiếu Xuất Kho</h1>
             <div className="form-section">
                 <div className="form-row">
@@ -284,7 +287,6 @@ const NewExportPage = () => {
                 <div className="grid-header">SL Xuất</div>
                 <div className="grid-header">Ghi chú</div>
                 <div className="grid-header">Xóa</div>
-
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
                         <div className="grid-cell">
@@ -332,13 +334,12 @@ const NewExportPage = () => {
                     </React.Fragment>
                 ))}
             </div>
-
             <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">
                 <button onClick={handleSaveDraft} className="btn-secondary" disabled={isProcessing}>
                     {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
                 </button>
-                <button onClick={handleDirectExport} className="btn-primary" disabled={isProcessing}>
+                <button onClick={promptForDirectExport} className="btn-primary" disabled={isProcessing}>
                     {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}
                 </button>
             </div>

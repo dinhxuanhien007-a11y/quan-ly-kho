@@ -1,14 +1,14 @@
 // src/components/AddNewLotModal.jsx
 import React, { useState } from 'react';
 import { formatExpiryDate } from '../utils/dateUtils';
+import { toast } from 'react-toastify';
 
 const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) => {
     const [expiryDate, setExpiryDate] = useState('');
 
     const handleSave = () => {
-        // Kiểm tra HSD hợp lệ trước khi lưu
         if (!expiryDate || expiryDate.length < 10) {
-            alert('Vui lòng nhập Hạn Sử Dụng hợp lệ (dd/mm/yyyy).');
+            toast.warn('Vui lòng nhập Hạn Sử Dụng hợp lệ (dd/mm/yyyy).');
             return;
         }
         onSave(expiryDate);
@@ -18,7 +18,6 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
         setExpiryDate(formatExpiryDate(e.target.value));
     };
     
-    // Xử lý nhấn Enter để lưu
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             handleSave();
@@ -49,6 +48,7 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
                         autoFocus
                     />
                 </div>
+                
                 <div className="modal-actions">
                     <button type="button" onClick={onClose} className="btn-secondary">Hủy</button>
                     <button type="button" onClick={handleSave} className="btn-primary">Xác nhận</button>

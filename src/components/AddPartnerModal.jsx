@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 
 const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
     const [partnerId, setPartnerId] = useState('');
@@ -12,7 +13,7 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!partnerId || !partnerName) {
-            alert('Mã và Tên đối tác không được để trống.');
+            toast.warn('Mã và Tên đối tác không được để trống.');
             return;
         }
         setIsSaving(true);
@@ -21,11 +22,11 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
             const partnerRef = doc(db, 'partners', partnerId.toUpperCase());
             await setDoc(partnerRef, newPartnerData);
 
-            alert('Thêm đối tác mới thành công!');
+            toast.success('Thêm đối tác mới thành công!');
             onPartnerAdded();
         } catch (error) {
             console.error("Lỗi khi thêm đối tác: ", error);
-            alert('Đã xảy ra lỗi khi thêm đối tác.');
+            toast.error('Đã xảy ra lỗi khi thêm đối tác.');
         } finally {
             setIsSaving(false);
         }

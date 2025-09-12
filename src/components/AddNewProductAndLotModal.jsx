@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { formatExpiryDate } from '../utils/dateUtils';
+import { toast } from 'react-toastify';
 
-// Danh sách các lựa chọn có sẵn
 const tempOptions = ["Nhiệt độ phòng", "2 → 8°C", "-25 → -15°C"];
 const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
-const unitOptions = ["Cái", "Hộp", "Thùng", "Chai", "Ống", "Lọ", "Sợi", "Cây", "Can", "Tuýp", "Bộ", "Máng", "Gói", "Khay"];
+const unitOptions = ["Cái", "Hộp", "Thùng", "Chai", "ống", "Lọ", "Sợi", "Cây", "Can", "Tuýp", "Bộ", "Máng", "Gói", "Khay"];
 
 const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [productName, setProductName] = useState('');
@@ -23,7 +23,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!productName || !lotNumber || !unit) {
-            alert('Vui lòng điền các thông tin bắt buộc: Tên hàng, Số lô, ĐVT.');
+            toast.warn('Vui lòng điền các thông tin bắt buộc: Tên hàng, Số lô, ĐVT.');
             return;
         }
         setIsSaving(true);
@@ -36,9 +36,10 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
             onSave({
                 ...newProductData, productId, lotNumber, expiryDate, quantity: '', notes: '',
             });
+            toast.success("Tạo sản phẩm và lô hàng mới thành công!");
         } catch (error) {
             console.error("Lỗi khi tạo sản phẩm mới: ", error);
-            alert('Đã xảy ra lỗi khi tạo sản phẩm.');
+            toast.error('Đã xảy ra lỗi khi tạo sản phẩm.');
         } finally {
             setIsSaving(false);
         }
@@ -80,7 +81,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                         <div className="form-group">
                             <label>HSD (dd/mm/yyyy)</label>
                             <input 
-                                type="text" 
+                               type="text" 
                                 value={expiryDate} 
                                 onChange={(e) => setExpiryDate(e.target.value)} 
                                 onBlur={handleExpiryDateBlur}
@@ -133,7 +134,6 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                             </datalist>
                         </div>
                     </div>
-                    
                     <div className="modal-actions">
                         <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Hủy</button>
                         <button type="submit" className="btn-primary" disabled={isSaving}>

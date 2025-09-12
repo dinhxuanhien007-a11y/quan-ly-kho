@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 
-// Danh sách các lựa chọn có sẵn
 const tempOptions = ["Nhiệt độ phòng", "2 → 8°C", "-25 → -15°C"];
 const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
-const unitOptions = ["Cái", "Hộp", "Thùng", "Chai", "Ống", "Lọ", "Sợi", "Cây", "Can", "Tuýp", "Bộ", "Máng", "Gói", "Khay"];
+const unitOptions = ["Cái", "Hộp", "Thùng", "Chai", "ống", "Lọ", "Sợi", "Cây", "Can", "Tuýp", "Bộ", "Máng", "Gói", "Khay"];
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
   const [productId, setProductId] = useState('');
@@ -21,7 +21,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!productId) {
-      alert('Mã hàng không được để trống.');
+      toast.warn('Mã hàng không được để trống.');
       return;
     }
     setIsSaving(true);
@@ -37,12 +37,11 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       const productRef = doc(db, 'products', productId);
       await setDoc(productRef, newProductData);
 
-      alert('Thêm sản phẩm mới thành công!');
+      toast.success('Thêm sản phẩm mới thành công!');
       onProductAdded();
-
     } catch (error) {
       console.error("Lỗi khi thêm sản phẩm: ", error);
-      alert('Đã xảy ra lỗi khi thêm sản phẩm.');
+      toast.error('Đã xảy ra lỗi khi thêm sản phẩm.');
     } finally {
       setIsSaving(false);
     }
@@ -63,7 +62,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} required />
             </div>
           </div>
-
           <div className="form-row">
             <div className="form-group">
               <label>Đơn vị tính</label>
@@ -83,7 +81,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               <input type="text" value={packaging} onChange={(e) => setPackaging(e.target.value)} />
             </div>
           </div>
-          
           <div className="form-row">
             <div className="form-group">
               <label>Nhiệt độ bảo quản</label>
@@ -110,7 +107,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               </datalist>
             </div>
           </div>
-
           <div className="form-group">
             <label>Team</label>
             <select value={team} onChange={(e) => setTeam(e.target.value)}>
@@ -119,7 +115,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               <option value="Spare Part">Spare Part</option>
             </select>
           </div>
-          
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Hủy</button>
             <button type="submit" className="btn-primary" disabled={isSaving}>
