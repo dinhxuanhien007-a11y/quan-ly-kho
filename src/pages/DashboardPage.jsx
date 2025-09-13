@@ -1,10 +1,10 @@
 // src/pages/DashboardPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { FiArchive, FiAlertTriangle, FiFileText } from 'react-icons/fi';
-import '../styles/DashboardPage.css'; // File CSS riêng cho trang Dashboard
+import '../styles/DashboardPage.css';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 // Component tái sử dụng để hiển thị các thẻ thông số
 const DashboardCard = ({ icon, tieuDe, giaTri, mauSac }) => (
@@ -39,7 +39,7 @@ const DashboardPage = () => {
         const qSapHetHan = query(
           collection(db, 'inventory_lots'),
           where('expiryDate', '<=', Timestamp.fromDate(baMuoiNgayToi)),
-          where('expiryDate', '>=', Timestamp.now()) // Thêm điều kiện để không đếm hàng đã hết hạn
+          where('expiryDate', '>=', Timestamp.now())
         );
         const sapHetHanSnapshot = await getDocs(qSapHetHan);
         const sapHetHan = sapHetHanSnapshot.size;
@@ -61,7 +61,7 @@ const DashboardPage = () => {
   }, []);
 
   if (loading) {
-    return <div>Đang tải bảng điều khiển...</div>;
+    return <Spinner />; // <-- ĐÃ THAY THẾ
   }
 
   return (

@@ -1,13 +1,14 @@
 // src/components/AddNewLotModal.jsx
 import React, { useState } from 'react';
-import { formatExpiryDate } from '../utils/dateUtils';
+import { formatExpiryDate, parseDateString } from '../utils/dateUtils'; // Thêm parseDateString
 import { toast } from 'react-toastify';
 
 const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) => {
     const [expiryDate, setExpiryDate] = useState('');
 
     const handleSave = () => {
-        if (!expiryDate || expiryDate.length < 10) {
+        const parsedDate = parseDateString(expiryDate); // Phân tích chuỗi ngày tháng
+        if (!parsedDate) { // Kiểm tra xem ngày có hợp lệ không
             toast.warn('Vui lòng nhập Hạn Sử Dụng hợp lệ (dd/mm/yyyy).');
             return;
         }
@@ -17,7 +18,7 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
     const handleExpiryDateBlur = (e) => {
         setExpiryDate(formatExpiryDate(e.target.value));
     };
-    
+
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             handleSave();
@@ -48,7 +49,7 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
                         autoFocus
                     />
                 </div>
-                
+
                 <div className="modal-actions">
                     <button type="button" onClick={onClose} className="btn-secondary">Hủy</button>
                     <button type="button" onClick={handleSave} className="btn-primary">Xác nhận</button>

@@ -7,6 +7,8 @@ import EditExportSlipModal from '../components/EditExportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const ExportListPage = () => {
   const [exportSlips, setExportSlips] = useState([]);
@@ -100,12 +102,12 @@ const ExportListPage = () => {
     setSelectedSlip(slip);
     setIsViewModalOpen(true);
   };
-  
+
   const openEditModal = (slip) => {
     setSelectedSlip(slip);
     setIsEditModalOpen(true);
   };
-  
+
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
       const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
@@ -123,19 +125,8 @@ const ExportListPage = () => {
     }
   };
 
-  const renderStatusBadge = (status) => {
-     let text = status;
-    switch (status) {
-        case 'pending': text = 'Đang soạn hàng'; break;
-        case 'completed': text = 'Hoàn thành'; break;
-        case 'cancelled': text = 'Đã hủy'; break;
-        default: text = status;
-    }
-    return <span className={`status-badge status-${status}`}>{text}</span>;
-  };
-
   if (loading) {
-    return <div>Đang tải danh sách phiếu xuất...</div>;
+    return <Spinner />; // <-- ĐÃ THAY THẾ
   }
 
   return (
@@ -150,7 +141,7 @@ const ExportListPage = () => {
       />
       {isEditModalOpen && (
         <EditExportSlipModal 
-            slip={selectedSlip}
+             slip={selectedSlip}
             onClose={() => setIsEditModalOpen(false)}
             onSave={handleSaveSlipChanges}
         />
@@ -161,7 +152,7 @@ const ExportListPage = () => {
             onClose={() => setIsViewModalOpen(false)}
         />
       )}
-      
+     
       <div className="page-header">
         <h1>Danh sách Phiếu Xuất Kho</h1>
       </div>
@@ -182,7 +173,7 @@ const ExportListPage = () => {
                 <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
                 <td>{slip.customer}</td>
                 <td>{slip.description}</td>
-                <td>{renderStatusBadge(slip.status)}</td>
+                <td><StatusBadge status={slip.status} /></td>
                 <td>
                   <div className="action-buttons">
                     <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
@@ -191,7 +182,7 @@ const ExportListPage = () => {
                     {slip.status === 'pending' && (
                       <>
                         <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => promptAction('confirm', slip)}>
-                            <FiCheckCircle />
+                         <FiCheckCircle />
                         </button>
                         <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
                             <FiEdit />

@@ -1,11 +1,13 @@
 // src/pages/InventoryPage.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where } from 'firebase/firestore'; // Bỏ onSnapshot
+import { collection, query, getDocs, where } from 'firebase/firestore';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { formatDate } from '../utils/dateUtils';
+import { useAuth } from '../context/UserContext';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const getRowColorByExpiry = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
@@ -15,7 +17,6 @@ const getRowColorByExpiry = (expiryDate) => {
     expDate.setHours(0, 0, 0, 0);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
     if (diffDays < 0) return 'expired-black';
     if (diffDays <= 60) return 'near-expiry-red';
     if (diffDays <= 90) return 'near-expiry-orange';
@@ -23,23 +24,22 @@ const getRowColorByExpiry = (expiryDate) => {
     return '';
 };
 
-const InventoryPage = ({ user, userRole }) => {
+const InventoryPage = () => {
+    const { userRole } = useAuth();
+
     const [masterInventory, setMasterInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // --- XÓA BỎ: State cho tìm kiếm real-time ---
-    // const [searchResults, setSearchResults] = useState([]);
-    // const [isSearching, setIsSearching] = useState(false);
-
     const fetchMasterInventory = useCallback(async () => {
+        // Chỉ hiện loading spinner cho lần tải đầu tiên
         if (masterInventory.length === 0) setLoading(true);
         try {
             let q;
             const lotsCollection = collection(db, "inventory_lots");
-            
+        
             if (userRole === 'med') {
                 q = query(lotsCollection, where("team", "==", "MED"));
             } else if (userRole === 'bio') {
@@ -62,19 +62,16 @@ const InventoryPage = ({ user, userRole }) => {
         if (userRole) {
             fetchMasterInventory();
         }
+        // Tự động tải lại dữ liệu sau mỗi 15 phút
         const intervalId = setInterval(() => {
             fetchMasterInventory();
         }, 900000);
         return () => clearInterval(intervalId);
     }, [userRole, fetchMasterInventory]);
 
-    // --- XÓA BỎ: useEffect cho tìm kiếm real-time ---
-
     const displayedInventory = useMemo(() => {
         let filteredResult = [...masterInventory];
 
-        // --- THAY ĐỔI: Sắp xếp lại và thống nhất logic lọc/tìm kiếm ---
-        // 1. Lọc theo các nút bấm (team, date status)
         if (filters.team !== 'all') {
             filteredResult = filteredResult.filter(item => item.team === filters.team);
         }
@@ -94,7 +91,6 @@ const InventoryPage = ({ user, userRole }) => {
             }
         }
         
-        // 2. Sau đó, lọc tiếp theo từ khóa tìm kiếm trên kết quả đã có
         if (searchTerm) {
             const lowercasedFilter = searchTerm.toLowerCase();
             filteredResult = filteredResult.filter(item =>
@@ -104,7 +100,6 @@ const InventoryPage = ({ user, userRole }) => {
             );
         }
 
-        // 3. Cuối cùng, sắp xếp kết quả
         filteredResult.sort((a, b) => {
             const productCompare = a.productId.localeCompare(b.productId);
             if (productCompare !== 0) {
@@ -114,9 +109,8 @@ const InventoryPage = ({ user, userRole }) => {
             const dateB = b.importDate?.toDate() || 0;
             return dateA - dateB;
         });
-
         return filteredResult;
-    }, [masterInventory, filters, searchTerm]); // Cập nhật dependencies
+    }, [masterInventory, filters, searchTerm]); 
 
 
     const handleFilterChange = (filterName, value) => {
@@ -140,7 +134,7 @@ const InventoryPage = ({ user, userRole }) => {
     return (
         <div>
             <div className="page-header">
-                <h1>PT Biomed - Kho</h1>
+                <h1>{getTitleByRole(userRole)}</h1>
             </div>
             
             <div className="controls-container">
@@ -161,8 +155,8 @@ const InventoryPage = ({ user, userRole }) => {
             </div>
 
             <div className="table-container">
-                 {loading && displayedInventory.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải dữ liệu...</div>
+                 {loading ? ( // <-- ĐÃ SỬA
+                    <Spinner />
                 ) : (
                     <table className="inventory-table">
                         <thead>
@@ -208,7 +202,6 @@ const InventoryPage = ({ user, userRole }) => {
                             ) : (
                                 <tr>
                                     <td colSpan="13" style={{ textAlign: 'center' }}>
-                                        {/* Cập nhật lại thông báo khi không có kết quả */}
                                         Không có dữ liệu tồn kho phù hợp với bộ lọc hoặc từ khóa tìm kiếm.
                                     </td>
                                 </tr>

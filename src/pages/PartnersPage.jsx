@@ -5,8 +5,9 @@ import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // Import
+import ConfirmationModal from '../components/ConfirmationModal';
 import { toast } from 'react-toastify';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const PartnersPage = () => {
     const [partners, setPartners] = useState([]);
@@ -14,7 +15,7 @@ const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null }); // State mới
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
     const fetchPartners = async () => {
         setLoading(true);
@@ -74,7 +75,7 @@ const PartnersPage = () => {
     };
 
     if (loading) {
-        return <div>Đang tải dữ liệu đối tác...</div>;
+        return <Spinner />; // <-- ĐÃ THAY THẾ
     }
 
     return (

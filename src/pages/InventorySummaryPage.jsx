@@ -6,6 +6,8 @@ import { formatDate } from '../utils/dateUtils';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { FiChevronDown, FiChevronRight } from 'react-icons/fi';
+import { useAuth } from '../context/UserContext';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const getSummaryRowColor = (lots) => {
     if (!lots || lots.length === 0) return '';
@@ -30,6 +32,7 @@ const getSummaryRowColor = (lots) => {
     if (nearestExpiryDays <= 120) return 'near-expiry-yellow';
     return '';
 };
+
 const getLotItemColorClass = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
@@ -45,7 +48,9 @@ const getLotItemColorClass = (expiryDate) => {
     return '';
 };
 
-const InventorySummaryPage = ({ user, userRole }) => {
+const InventorySummaryPage = () => {
+    const { userRole } = useAuth();
+    
     const [productsMap, setProductsMap] = useState({});
     const [masterInventory, setMasterInventory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -172,28 +177,28 @@ const InventorySummaryPage = ({ user, userRole }) => {
         setExpandedRows(prev => ({ ...prev, [productId]: !prev[productId] }));
     };
     
-    if (loading) return <div>Đang tải dữ liệu tồn kho...</div>;
+    if (loading) return <Spinner />; // <-- ĐÃ THAY THẾ
 
     const getSummaryTitleByRole = (role) => {
-    switch (role) {
-        case 'med':
-            return 'PT Biomed - Team MED';
-        case 'bio':
-            return 'PT Biomed - Team BIO';
-        case 'admin':
-            return 'PT Biomed - Kho';
-        case 'owner':
-            return 'PT Biomed - Inventory'; // Thêm cho vai trò Owner
-        default:
-            return 'PT Biomed - Tồn Kho Tổng Hợp';
-    }
-};
+        switch (role) {
+            case 'med':
+                return 'PT Biomed - Team MED';
+            case 'bio':
+                return 'PT Biomed - Team BIO';
+            case 'admin':
+                return 'PT Biomed - Kho';
+            case 'owner':
+                return 'PT Biomed - Inventory';
+            default:
+                return 'PT Biomed - Tồn Kho Tổng Hợp';
+        }
+    };
 
     return (
         <div>
             <div className="page-header">
-    <h1>{getSummaryTitleByRole(userRole)}</h1>
-</div>
+                <h1>{getSummaryTitleByRole(userRole)}</h1>
+            </div>
             <div className="filters-container" style={{ padding: '15px', marginBottom: '20px', justifyContent: 'flex-start' }}>
                 <div className="filter-group">
                     {(userRole === 'admin' || userRole === 'owner') && (

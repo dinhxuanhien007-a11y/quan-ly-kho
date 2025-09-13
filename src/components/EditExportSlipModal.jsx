@@ -1,17 +1,17 @@
 // src/components/EditExportSlipModal.jsx
 
 import React, { useState } from 'react';
-import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
+import { FiXCircle } from 'react-icons/fi'; // Bỏ FiPlusCircle
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
-    
     // --- SỬA LỖI QUAN TRỌNG TẠI ĐÂY ---
     if (field === 'quantityToExport') {
-      const numericValue = Number(value); // Luôn chuyển giá trị về dạng Số
+      const numericValue = Number(value);
+      // Luôn chuyển giá trị về dạng Số
       if (numericValue < 0) return; // Chặn số âm
       updatedItems[index][field] = numericValue;
     } else {
@@ -20,26 +20,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
     
     setSlipData({ ...slipData, items: updatedItems });
   };
-
-  const addNewRow = () => {
-  const newItems = [
-      ...slipData.items,
-      {
-        // Tạo một ID tạm thời cho key của React
-        id: Date.now(),
-        productId: '', 
-        productName: '(Vui lòng tìm sản phẩm ở trang Tạo Phiếu)', 
-        lotNumber: '',
-        unit: '', 
-        packaging: '', 
-        quantityToExport: '', 
-        notes: ''
-      }
-    ];
-    setSlipData({ ...slipData, items: newItems });
-  };  
   
-
   const removeRow = (indexToRemove) => {
     const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
     setSlipData({ ...slipData, items: newItems });

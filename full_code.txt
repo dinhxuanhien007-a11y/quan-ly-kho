@@ -74,10 +74,7 @@ import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-
-const tempOptions = ["Nhiá»‡t Ä‘á»™ phÃ²ng", "2 â†’ 8Â°C", "-25 â†’ -15Â°C"];
-const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
-const unitOptions = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»‘ng", "Lá»", "Sá»£i", "CÃ¢y", "Can", "TuÃ½p", "Bá»™", "MÃ¡ng", "GÃ³i", "Khay"];
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants'; // <-- THÃŠM DÃ’NG NÃ€Y
 
 const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [productName, setProductName] = useState('');
@@ -151,7 +148,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                         <div className="form-group">
                             <label>HSD (dd/mm/yyyy)</label>
                             <input 
-                               type="text" 
+                                type="text" 
                                 value={expiryDate} 
                                 onChange={(e) => setExpiryDate(e.target.value)} 
                                 onBlur={handleExpiryDateBlur}
@@ -170,7 +167,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                 placeholder="Chá»n hoáº·c nháº­p ÄVT..."
                             />
                             <datalist id="unit-options">
-                                {unitOptions.map(opt => <option key={opt} value={opt} />)}
+                                {UNIT_OPTIONS.map(opt => <option key={opt} value={opt} />)}
                             </datalist>
                         </div>
                         <div className="form-group">
@@ -188,7 +185,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                 placeholder="Chá»n hoáº·c nháº­p nhiá»‡t Ä‘á»™..."
                             />
                             <datalist id="temp-options">
-                                {tempOptions.map(opt => <option key={opt} value={opt} />)}
+                                {TEMP_OPTIONS.map(opt => <option key={opt} value={opt} />)}
                             </datalist>
                         </div>
                         <div className="form-group">
@@ -200,7 +197,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                 placeholder="Chá»n hoáº·c nháº­p hÃ£ng SX..."
                             />
                             <datalist id="manufacturer-options">
-                                {manufacturerOptions.map(opt => <option key={opt} value={opt} />)}
+                                {MANUFACTURER_OPTIONS.map(opt => <option key={opt} value={opt} />)}
                             </datalist>
                         </div>
                     </div>
@@ -301,10 +298,7 @@ import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-
-const tempOptions = ["Nhiá»‡t Ä‘á»™ phÃ²ng", "2 â†’ 8Â°C", "-25 â†’ -15Â°C"];
-const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
-const unitOptions = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»‘ng", "Lá»", "Sá»£i", "CÃ¢y", "Can", "TuÃ½p", "Bá»™", "MÃ¡ng", "GÃ³i", "Khay"];
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants'; // <-- THÃŠM DÃ’NG NÃ€Y
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
   const [productId, setProductId] = useState('');
@@ -371,7 +365,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
                 placeholder="Chá»n hoáº·c nháº­p ÄVT..."
               />
               <datalist id="unit-options-add">
-                {unitOptions.map(opt => <option key={opt} value={opt} />)}
+                {UNIT_OPTIONS.map(opt => <option key={opt} value={opt} />)}
               </datalist>
             </div>
             <div className="form-group">
@@ -389,7 +383,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
                 placeholder="Chá»n hoáº·c nháº­p nhiá»‡t Ä‘á»™..."
               />
               <datalist id="temp-options-add">
-                  {tempOptions.map(opt => <option key={opt} value={opt} />)}
+                  {TEMP_OPTIONS.map(opt => <option key={opt} value={opt} />)}
               </datalist>
             </div>
             <div className="form-group">
@@ -401,7 +395,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
                 placeholder="Chá»n hoáº·c nháº­p hÃ£ng SX..."
               />
               <datalist id="manufacturer-options-add">
-                  {manufacturerOptions.map(opt => <option key={opt} value={opt} />)}
+                  {MANUFACTURER_OPTIONS.map(opt => <option key={opt} value={opt} />)}
               </datalist>
             </div>
           </div>
@@ -701,17 +695,17 @@ export default CreateStocktakeModal;
 // src/components/EditExportSlipModal.jsx
 
 import React, { useState } from 'react';
-import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
+import { FiXCircle } from 'react-icons/fi'; // Bá» FiPlusCircle
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
-    
     // --- Sá»¬A Lá»–I QUAN TRá»ŒNG Táº I ÄÃ‚Y ---
     if (field === 'quantityToExport') {
-      const numericValue = Number(value); // LuÃ´n chuyá»ƒn giÃ¡ trá»‹ vá» dáº¡ng Sá»‘
+      const numericValue = Number(value);
+      // LuÃ´n chuyá»ƒn giÃ¡ trá»‹ vá» dáº¡ng Sá»‘
       if (numericValue < 0) return; // Cháº·n sá»‘ Ã¢m
       updatedItems[index][field] = numericValue;
     } else {
@@ -720,26 +714,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
     
     setSlipData({ ...slipData, items: updatedItems });
   };
-
-  const addNewRow = () => {
-  const newItems = [
-      ...slipData.items,
-      {
-        // Táº¡o má»™t ID táº¡m thá»i cho key cá»§a React
-        id: Date.now(),
-        productId: '', 
-        productName: '(Vui lÃ²ng tÃ¬m sáº£n pháº©m á»Ÿ trang Táº¡o Phiáº¿u)', 
-        lotNumber: '',
-        unit: '', 
-        packaging: '', 
-        quantityToExport: '', 
-        notes: ''
-      }
-    ];
-    setSlipData({ ...slipData, items: newItems });
-  };  
   
-
   const removeRow = (indexToRemove) => {
     const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
     setSlipData({ ...slipData, items: newItems });
@@ -1533,6 +1508,108 @@ export default Sidebar;
 
 
 
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.css ---
+
+
+/* src/components/Spinner.css */
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3; /* Light grey */
+    border-top: 5px solid #007bff; /* Primary color */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* DÃ¹ng cho spinner bÃªn trong báº£ng */
+.spinner-table-row td {
+    text-align: center;
+    padding: 40px;
+    border: none;
+}
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.jsx ---
+
+
+// src/components/Spinner.jsx
+import React from 'react';
+import './Spinner.css';
+
+const Spinner = ({ forTable = false }) => {
+    if (forTable) {
+        return (
+            <tr className="spinner-table-row">
+                <td colSpan="100%"> {/* colSpan lá»›n Ä‘á»ƒ hoáº¡t Ä‘á»™ng vá»›i má»i báº£ng */}
+                    <div className="spinner"></div>
+                </td>
+            </tr>
+        );
+    }
+
+    return (
+        <div className="spinner-container">
+            <div className="spinner"></div>
+        </div>
+    );
+};
+
+export default Spinner;
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatusBadge.jsx ---
+
+
+// src/components/StatusBadge.jsx
+import React from 'react';
+
+const StatusBadge = ({ status }) => {
+    let text = status;
+    let className = `status-badge status-${status}`;
+
+    switch (status) {
+        case 'pending':
+            text = 'Äang chá»';
+            break;
+        case 'completed':
+            text = 'HoÃ n thÃ nh';
+            break;
+        case 'cancelled':
+            text = 'ÄÃ£ há»§y';
+            break;
+        case 'in_progress':
+            text = 'Äang thá»±c hiá»‡n';
+            className = 'status-badge status-pending'; // TÃ¡i sá»­ dá»¥ng style mÃ u vÃ ng
+            break;
+        case 'adjusted':
+            text = 'ÄÃ£ Ä‘iá»u chá»‰nh';
+            className = 'status-badge status-adjusted'; // Style mÃ u tÃ­m má»›i
+            break;
+        default:
+            text = status;
+    }
+
+    return <span className={className}>{text}</span>;
+};
+
+export default StatusBadge;
+
+
+
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TeamBadge.jsx ---
 
 
@@ -1594,12 +1671,15 @@ export default TempBadge;
 
 // src/components/ViewerLayout.jsx
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // <-- THÃŠM IMPORT
+import { Link } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
+import { useAuth } from '../context/UserContext'; // <-- THÃŠM IMPORT
 
-const ViewerLayout = ({ user, userRole }) => {
-  const canViewDetail = userRole === 'admin' || userRole === 'owner'; // <-- OWNER CÅ¨NG CÃ“ THá»‚ XEM CHI TIáº¾T
+const ViewerLayout = () => { // <-- XÃ“A PROPS
+  const { userRole } = useAuth(); // <-- Láº¤Y Dá»® LIá»†U Tá»ª CONTEXT
+
+  const canViewDetail = userRole === 'admin' || userRole === 'owner';
   const [viewMode, setViewMode] = useState('summary');
   
   useEffect(() => {
@@ -1610,7 +1690,6 @@ const ViewerLayout = ({ user, userRole }) => {
 
   return (
     <div style={{ padding: '20px' }}>
-      {/* THÃŠM NÃšT QUAY Láº I CHO OWNER */}
       {userRole === 'owner' && (
         <div style={{ marginBottom: '20px' }}>
             <Link to="/" className="btn-secondary" style={{ textDecoration: 'none' }}>
@@ -1640,11 +1719,10 @@ const ViewerLayout = ({ user, userRole }) => {
         null 
       )}
 
-      {(viewMode === 'detail' && canViewDetail) ?
-      (
-        <InventoryPage user={user} userRole={userRole} />
+      {(viewMode === 'detail' && canViewDetail) ? (
+        <InventoryPage /> // <-- XÃ“A PROPS
       ) : (
-        <InventorySummaryPage user={user} userRole={userRole} />
+        <InventorySummaryPage /> // <-- XÃ“A PROPS
       )}
     </div>
   );
@@ -1659,28 +1737,17 @@ export default ViewerLayout;
 
 // src/components/ViewExportSlipModal.jsx
 import React from 'react';
-import { formatDate } from '../utils/dateUtils'; // BÆ¯á»šC 1: Import hÃ m tiá»‡n Ã­ch
+import { formatDate } from '../utils/dateUtils';
+import StatusBadge from './StatusBadge'; // <-- ÄÃƒ THÃŠM
 
 const ViewExportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
-
     const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
-
+    
     const handlePrint = () => {
         window.print();
     };
     
-    const renderStatusBadge = (status) => {
-        let text = status;
-        switch (status) {
-            case 'pending': text = 'Äang soáº¡n hÃ ng'; break;
-            case 'completed': text = 'HoÃ n thÃ nh'; break;
-            case 'cancelled': text = 'ÄÃ£ há»§y'; break;
-            default: text = status;
-        }
-        return <span className={`status-badge status-${status}`}>{text}</span>;
-    };
-
     return (
         <div className="modal-backdrop">
             <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
@@ -1690,13 +1757,13 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                     <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
                     <div><label>KhÃ¡ch hÃ ng</label><p><strong>{slip.customer}</strong></p></div>
                     <div><label>NgÃ y táº¡o</label>
-                        {/* BÆ¯á»šC 2: Sá»­ dá»¥ng hÃ m formatDate */}
                         <p><strong>{formatDate(slip.createdAt)}</strong></p>
                     </div>
-                    <div><label>Tráº¡ng thÃ¡i</label><p>{renderStatusBadge(slip.status)}</p></div>
+                    <div><label>Tráº¡ng thÃ¡i</label><p><StatusBadge status={slip.status} /></p></div>
                     <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
                 </div>
                 
+ 
                 <div className="modal-body">
                     <h3 style={{marginTop: '10px'}}>Chi tiáº¿t hÃ ng hÃ³a</h3>
                     <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
@@ -1746,19 +1813,18 @@ export default ViewExportSlipModal;
 
 
 
-
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
 
 
 // src/components/ViewImportSlipModal.jsx
 import React from 'react';
-import { formatDate } from '../utils/dateUtils'; // BÆ¯á»šC 1: Import hÃ m tiá»‡n Ã­ch
+import { formatDate } from '../utils/dateUtils';
+import StatusBadge from './StatusBadge'; // <-- ÄÃƒ THÃŠM
 
 const ViewImportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
-
     const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
-
+    
     const handlePrint = () => {
         window.print();
     };
@@ -1772,10 +1838,9 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                     <div><label>ID Phiáº¿u</label><p><strong>{slip.id}</strong></p></div>
                     <div><label>NhÃ  cung cáº¥p</label><p><strong>{slip.supplier}</strong></p></div>
                     <div><label>NgÃ y táº¡o</label>
-                        {/* BÆ¯á»šC 2: Sá»­ dá»¥ng hÃ m formatDate */}
-                        <p><strong>{formatDate(slip.createdAt)}</strong></p>
+                      <p><strong>{formatDate(slip.createdAt)}</strong></p>
                     </div>
-                    <div><label>Tráº¡ng thÃ¡i</label><p><span className={`status-badge status-${slip.status}`}>{slip.status === 'pending' ? 'Äang chá»' : 'HoÃ n thÃ nh'}</span></p></div>
+                    <div><label>Tráº¡ng thÃ¡i</label><p><StatusBadge status={slip.status} /></p></div>
                     <div className="info-description"><label>Diá»…n giáº£i</label><p><em>{slip.description || '(KhÃ´ng cÃ³)'}</em></p></div>
                 </div>
 
@@ -1826,17 +1891,78 @@ export default ViewImportSlipModal;
 
 
 
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\context\UserContext.jsx ---
+
+
+// src/context/UserContext.jsx
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+import Spinner from '../components/Spinner'; // <-- THÃŠM IMPORT
+
+const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+    const [userRole, setUserRole] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    setUserRole(userDocSnap.data().role);
+                } else {
+                    setUserRole(null);
+                }
+                setUser(currentUser);
+            } else {
+                setUser(null);
+                setUserRole(null);
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const value = {
+        user,
+        userRole,
+        loading,
+    };
+
+    // Khi Ä‘ang xÃ¡c thá»±c, hiá»ƒn thá»‹ spinner toÃ n trang
+    if (loading) {
+        return <Spinner />;
+    }
+
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = () => {
+    return useContext(AuthContext);
+};
+
+
 
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DashboardPage.jsx ---
 
 
 // src/pages/DashboardPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { FiArchive, FiAlertTriangle, FiFileText } from 'react-icons/fi';
-import '../styles/DashboardPage.css'; // File CSS riÃªng cho trang Dashboard
+import '../styles/DashboardPage.css';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 // Component tÃ¡i sá»­ dá»¥ng Ä‘á»ƒ hiá»ƒn thá»‹ cÃ¡c tháº» thÃ´ng sá»‘
 const DashboardCard = ({ icon, tieuDe, giaTri, mauSac }) => (
@@ -1871,7 +1997,7 @@ const DashboardPage = () => {
         const qSapHetHan = query(
           collection(db, 'inventory_lots'),
           where('expiryDate', '<=', Timestamp.fromDate(baMuoiNgayToi)),
-          where('expiryDate', '>=', Timestamp.now()) // ThÃªm Ä‘iá»u kiá»‡n Ä‘á»ƒ khÃ´ng Ä‘áº¿m hÃ ng Ä‘Ã£ háº¿t háº¡n
+          where('expiryDate', '>=', Timestamp.now())
         );
         const sapHetHanSnapshot = await getDocs(qSapHetHan);
         const sapHetHan = sapHetHanSnapshot.size;
@@ -1893,7 +2019,7 @@ const DashboardPage = () => {
   }, []);
 
   if (loading) {
-    return <div>Äang táº£i báº£ng Ä‘iá»u khiá»ƒn...</div>;
+    return <Spinner />; // <-- ÄÃƒ THAY THáº¾
   }
 
   return (
@@ -1939,6 +2065,8 @@ import EditExportSlipModal from '../components/EditExportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const ExportListPage = () => {
   const [exportSlips, setExportSlips] = useState([]);
@@ -2032,12 +2160,12 @@ const ExportListPage = () => {
     setSelectedSlip(slip);
     setIsViewModalOpen(true);
   };
-  
+
   const openEditModal = (slip) => {
     setSelectedSlip(slip);
     setIsEditModalOpen(true);
   };
-  
+
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
       const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
@@ -2055,19 +2183,8 @@ const ExportListPage = () => {
     }
   };
 
-  const renderStatusBadge = (status) => {
-     let text = status;
-    switch (status) {
-        case 'pending': text = 'Äang soáº¡n hÃ ng'; break;
-        case 'completed': text = 'HoÃ n thÃ nh'; break;
-        case 'cancelled': text = 'ÄÃ£ há»§y'; break;
-        default: text = status;
-    }
-    return <span className={`status-badge status-${status}`}>{text}</span>;
-  };
-
   if (loading) {
-    return <div>Äang táº£i danh sÃ¡ch phiáº¿u xuáº¥t...</div>;
+    return <Spinner />; // <-- ÄÃƒ THAY THáº¾
   }
 
   return (
@@ -2082,7 +2199,7 @@ const ExportListPage = () => {
       />
       {isEditModalOpen && (
         <EditExportSlipModal 
-            slip={selectedSlip}
+             slip={selectedSlip}
             onClose={() => setIsEditModalOpen(false)}
             onSave={handleSaveSlipChanges}
         />
@@ -2093,7 +2210,7 @@ const ExportListPage = () => {
             onClose={() => setIsViewModalOpen(false)}
         />
       )}
-      
+     
       <div className="page-header">
         <h1>Danh sÃ¡ch Phiáº¿u Xuáº¥t Kho</h1>
       </div>
@@ -2114,7 +2231,7 @@ const ExportListPage = () => {
                 <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
                 <td>{slip.customer}</td>
                 <td>{slip.description}</td>
-                <td>{renderStatusBadge(slip.status)}</td>
+                <td><StatusBadge status={slip.status} /></td>
                 <td>
                   <div className="action-buttons">
                     <button className="btn-icon btn-view" title="Xem chi tiáº¿t" onClick={() => openViewModal(slip)}>
@@ -2123,7 +2240,7 @@ const ExportListPage = () => {
                     {slip.status === 'pending' && (
                       <>
                         <button className="btn-icon btn-confirm" title="XÃ¡c nháº­n xuáº¥t kho" onClick={() => promptAction('confirm', slip)}>
-                            <FiCheckCircle />
+                         <FiCheckCircle />
                         </button>
                         <button className="btn-icon btn-edit" title="Sá»­a phiáº¿u" onClick={() => openEditModal(slip)}>
                             <FiEdit />
@@ -2165,6 +2282,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { FiEdit, FiEye } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const ImportListPage = () => {
   const [importSlips, setImportSlips] = useState([]);
@@ -2196,7 +2315,6 @@ const ImportListPage = () => {
   const handleConfirmImport = async () => {
     const slip = confirmModal.item;
     if (!slip) return;
-
     try {
       for (const item of slip.items) {
         const expiryDateObject = parseDateString(item.expiryDate);
@@ -2269,7 +2387,7 @@ const ImportListPage = () => {
   };
 
   if (loading) {
-    return <div>Äang táº£i danh sÃ¡ch phiáº¿u nháº­p...</div>;
+    return <Spinner />; // <-- ÄÃƒ THAY THáº¾
   }
 
   return (
@@ -2315,14 +2433,12 @@ const ImportListPage = () => {
               <td>{slip.supplier}</td>
               <td>{slip.description}</td>
               <td>
-                <span className={`status-badge status-${slip.status}`}>
-                  {slip.status === 'pending' ? 'Äang chá»' : 'HoÃ n thÃ nh'}
-                </span>
+                <StatusBadge status={slip.status} />
               </td>
               <td>
                 <div className="action-buttons">
                   <button className="btn-icon btn-view" title="Xem chi tiáº¿t" onClick={() => openViewModal(slip)}>
-                    <FiEye />
+                     <FiEye />
                   </button>
                   {slip.status === 'pending' && (
                     <>
@@ -2354,11 +2470,13 @@ export default ImportListPage;
 // src/pages/InventoryPage.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where } from 'firebase/firestore'; // Bá» onSnapshot
+import { collection, query, getDocs, where } from 'firebase/firestore';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { formatDate } from '../utils/dateUtils';
+import { useAuth } from '../context/UserContext';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const getRowColorByExpiry = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
@@ -2368,7 +2486,6 @@ const getRowColorByExpiry = (expiryDate) => {
     expDate.setHours(0, 0, 0, 0);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
     if (diffDays < 0) return 'expired-black';
     if (diffDays <= 60) return 'near-expiry-red';
     if (diffDays <= 90) return 'near-expiry-orange';
@@ -2376,23 +2493,22 @@ const getRowColorByExpiry = (expiryDate) => {
     return '';
 };
 
-const InventoryPage = ({ user, userRole }) => {
+const InventoryPage = () => {
+    const { userRole } = useAuth();
+
     const [masterInventory, setMasterInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [selectedRowId, setSelectedRowId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // --- XÃ“A Bá»Ž: State cho tÃ¬m kiáº¿m real-time ---
-    // const [searchResults, setSearchResults] = useState([]);
-    // const [isSearching, setIsSearching] = useState(false);
-
     const fetchMasterInventory = useCallback(async () => {
+        // Chá»‰ hiá»‡n loading spinner cho láº§n táº£i Ä‘áº§u tiÃªn
         if (masterInventory.length === 0) setLoading(true);
         try {
             let q;
             const lotsCollection = collection(db, "inventory_lots");
-            
+        
             if (userRole === 'med') {
                 q = query(lotsCollection, where("team", "==", "MED"));
             } else if (userRole === 'bio') {
@@ -2415,19 +2531,16 @@ const InventoryPage = ({ user, userRole }) => {
         if (userRole) {
             fetchMasterInventory();
         }
+        // Tá»± Ä‘á»™ng táº£i láº¡i dá»¯ liá»‡u sau má»—i 15 phÃºt
         const intervalId = setInterval(() => {
             fetchMasterInventory();
         }, 900000);
         return () => clearInterval(intervalId);
     }, [userRole, fetchMasterInventory]);
 
-    // --- XÃ“A Bá»Ž: useEffect cho tÃ¬m kiáº¿m real-time ---
-
     const displayedInventory = useMemo(() => {
         let filteredResult = [...masterInventory];
 
-        // --- THAY Äá»”I: Sáº¯p xáº¿p láº¡i vÃ  thá»‘ng nháº¥t logic lá»c/tÃ¬m kiáº¿m ---
-        // 1. Lá»c theo cÃ¡c nÃºt báº¥m (team, date status)
         if (filters.team !== 'all') {
             filteredResult = filteredResult.filter(item => item.team === filters.team);
         }
@@ -2447,7 +2560,6 @@ const InventoryPage = ({ user, userRole }) => {
             }
         }
         
-        // 2. Sau Ä‘Ã³, lá»c tiáº¿p theo tá»« khÃ³a tÃ¬m kiáº¿m trÃªn káº¿t quáº£ Ä‘Ã£ cÃ³
         if (searchTerm) {
             const lowercasedFilter = searchTerm.toLowerCase();
             filteredResult = filteredResult.filter(item =>
@@ -2457,7 +2569,6 @@ const InventoryPage = ({ user, userRole }) => {
             );
         }
 
-        // 3. Cuá»‘i cÃ¹ng, sáº¯p xáº¿p káº¿t quáº£
         filteredResult.sort((a, b) => {
             const productCompare = a.productId.localeCompare(b.productId);
             if (productCompare !== 0) {
@@ -2467,9 +2578,8 @@ const InventoryPage = ({ user, userRole }) => {
             const dateB = b.importDate?.toDate() || 0;
             return dateA - dateB;
         });
-
         return filteredResult;
-    }, [masterInventory, filters, searchTerm]); // Cáº­p nháº­t dependencies
+    }, [masterInventory, filters, searchTerm]); 
 
 
     const handleFilterChange = (filterName, value) => {
@@ -2493,7 +2603,7 @@ const InventoryPage = ({ user, userRole }) => {
     return (
         <div>
             <div className="page-header">
-                <h1>PT Biomed - Kho</h1>
+                <h1>{getTitleByRole(userRole)}</h1>
             </div>
             
             <div className="controls-container">
@@ -2514,8 +2624,8 @@ const InventoryPage = ({ user, userRole }) => {
             </div>
 
             <div className="table-container">
-                 {loading && displayedInventory.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '20px' }}>Äang táº£i dá»¯ liá»‡u...</div>
+                 {loading ? ( // <-- ÄÃƒ Sá»¬A
+                    <Spinner />
                 ) : (
                     <table className="inventory-table">
                         <thead>
@@ -2561,7 +2671,6 @@ const InventoryPage = ({ user, userRole }) => {
                             ) : (
                                 <tr>
                                     <td colSpan="13" style={{ textAlign: 'center' }}>
-                                        {/* Cáº­p nháº­t láº¡i thÃ´ng bÃ¡o khi khÃ´ng cÃ³ káº¿t quáº£ */}
                                         KhÃ´ng cÃ³ dá»¯ liá»‡u tá»“n kho phÃ¹ há»£p vá»›i bá»™ lá»c hoáº·c tá»« khÃ³a tÃ¬m kiáº¿m.
                                     </td>
                                 </tr>
@@ -2588,6 +2697,8 @@ import { formatDate } from '../utils/dateUtils';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { FiChevronDown, FiChevronRight } from 'react-icons/fi';
+import { useAuth } from '../context/UserContext';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const getSummaryRowColor = (lots) => {
     if (!lots || lots.length === 0) return '';
@@ -2612,6 +2723,7 @@ const getSummaryRowColor = (lots) => {
     if (nearestExpiryDays <= 120) return 'near-expiry-yellow';
     return '';
 };
+
 const getLotItemColorClass = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
@@ -2627,7 +2739,9 @@ const getLotItemColorClass = (expiryDate) => {
     return '';
 };
 
-const InventorySummaryPage = ({ user, userRole }) => {
+const InventorySummaryPage = () => {
+    const { userRole } = useAuth();
+    
     const [productsMap, setProductsMap] = useState({});
     const [masterInventory, setMasterInventory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -2754,28 +2868,28 @@ const InventorySummaryPage = ({ user, userRole }) => {
         setExpandedRows(prev => ({ ...prev, [productId]: !prev[productId] }));
     };
     
-    if (loading) return <div>Äang táº£i dá»¯ liá»‡u tá»“n kho...</div>;
+    if (loading) return <Spinner />; // <-- ÄÃƒ THAY THáº¾
 
     const getSummaryTitleByRole = (role) => {
-    switch (role) {
-        case 'med':
-            return 'PT Biomed - Team MED';
-        case 'bio':
-            return 'PT Biomed - Team BIO';
-        case 'admin':
-            return 'PT Biomed - Kho';
-        case 'owner':
-            return 'PT Biomed - Inventory'; // ThÃªm cho vai trÃ² Owner
-        default:
-            return 'PT Biomed - Tá»“n Kho Tá»•ng Há»£p';
-    }
-};
+        switch (role) {
+            case 'med':
+                return 'PT Biomed - Team MED';
+            case 'bio':
+                return 'PT Biomed - Team BIO';
+            case 'admin':
+                return 'PT Biomed - Kho';
+            case 'owner':
+                return 'PT Biomed - Inventory';
+            default:
+                return 'PT Biomed - Tá»“n Kho Tá»•ng Há»£p';
+        }
+    };
 
     return (
         <div>
             <div className="page-header">
-    <h1>{getSummaryTitleByRole(userRole)}</h1>
-</div>
+                <h1>{getSummaryTitleByRole(userRole)}</h1>
+            </div>
             <div className="filters-container" style={{ padding: '15px', marginBottom: '20px', justifyContent: 'flex-start' }}>
                 <div className="filter-group">
                     {(userRole === 'admin' || userRole === 'owner') && (
@@ -2914,6 +3028,7 @@ import {
 import LotJourneyExplorer from '../components/LotJourneyExplorer';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const LotTracePage = () => {
   const [lotNumber, setLotNumber] = useState('');
@@ -2985,27 +3100,25 @@ const LotTracePage = () => {
   const handleNodeClick = (event, node) => {
     setSelectedNode(node.data);
   };
-  
+
   const handlePaneClick = () => {
     setSelectedNode(null);
   };
-  
+
   const filteredExportHistory = selectedNode && selectedNode.type === 'customer'
     ? exportHistory.filter(item => item.customer === selectedNode.name)
     : exportHistory;
 
   const masterInfo = importRecords.length > 0 ? importRecords[0] : null;
-  
   const totalImported = importRecords.reduce(
     (sum, record) => sum + record.quantityImported,
     0,
   );
-  
   const totalRemaining = importRecords.reduce(
     (sum, record) => sum + record.quantityRemaining,
     0,
   );
-  
+
   return (
     <div>
       <div className="page-header">
@@ -3036,7 +3149,7 @@ const LotTracePage = () => {
         </div>
       </div>
 
-      {isLoading && <p>Äang táº£i dá»¯ liá»‡u...</p>}
+      {isLoading && <Spinner />}
 
       {!isLoading && searchAttempted && importRecords.length === 0 && (
         <div className="form-section">
@@ -3545,6 +3658,7 @@ const NewImportPage = () => {
                 setSupplierName(partnerSnap.data().partnerName);
             } else {
                 setSupplierName('');
+                // --- THAY THáº¾ ALERT Báº°NG TOAST ---
                 toast.error(`KhÃ´ng tÃ¬m tháº¥y NhÃ  cung cáº¥p vá»›i mÃ£ "${supplierId}" hoáº·c Ä‘á»‘i tÃ¡c khÃ´ng pháº£i lÃ  NhÃ  cung cáº¥p.`);
             }
         } catch (error) {
@@ -3741,7 +3855,6 @@ const NewImportPage = () => {
                 };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
-
             const slipData = {
                 importDate: formattedDate,
                 supplierId: supplierId.toUpperCase(),
@@ -3752,7 +3865,6 @@ const NewImportPage = () => {
                 createdAt: serverTimestamp()
             };
             await addDoc(collection(db, 'import_tickets'), slipData);
-
             toast.success('Nháº­p kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
             setSupplierId('');
             setSupplierName('');
@@ -3765,14 +3877,13 @@ const NewImportPage = () => {
             setIsSaving(false);
         }
     };
-
+    
     const promptForDirectImport = () => {
         if (!supplierId || !supplierName) {
             toast.warn('Vui lÃ²ng nháº­p MÃ£ NhÃ  cung cáº¥p há»£p lá»‡.');
             return;
         }
-        const validItems = items.filter(item => item.productId && item.quantity > 0);
-        if (validItems.length === 0) {
+        if (items.filter(item => item.productId && item.quantity > 0).length === 0) {
             toast.warn('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.');
             return;
         }
@@ -3963,8 +4074,9 @@ import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // Import
+import ConfirmationModal from '../components/ConfirmationModal';
 import { toast } from 'react-toastify';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const PartnersPage = () => {
     const [partners, setPartners] = useState([]);
@@ -3972,7 +4084,7 @@ const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null }); // State má»›i
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
     const fetchPartners = async () => {
         setLoading(true);
@@ -4032,7 +4144,7 @@ const PartnersPage = () => {
     };
 
     if (loading) {
-        return <div>Äang táº£i dá»¯ liá»‡u Ä‘á»‘i tÃ¡c...</div>;
+        return <Spinner />; // <-- ÄÃƒ THAY THáº¾
     }
 
     return (
@@ -4103,9 +4215,10 @@ import { db } from '../firebaseConfig';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // <-- THÃŠM IMPORT
+import ConfirmationModal from '../components/ConfirmationModal';
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -4113,8 +4226,6 @@ const ProductsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
-  
-  // --- THÃŠM STATE Má»šI Äá»‚ QUáº¢N LÃ MODAL XÃC NHáº¬N ---
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
   const fetchProducts = async () => {
@@ -4149,7 +4260,6 @@ const ProductsPage = () => {
     fetchProducts();
   };
 
-  // --- HÃ€M Má»šI Äá»‚ Má»ž MODAL XÃC NHáº¬N ---
   const promptForDelete = (product) => {
     setConfirmModal({
         isOpen: true,
@@ -4159,7 +4269,6 @@ const ProductsPage = () => {
     });
   };
 
-  // --- Cáº¬P NHáº¬T Láº I HÃ€M XÃ“A ---
   const handleDelete = async () => {
     const { item } = confirmModal;
     if (!item) return;
@@ -4172,7 +4281,7 @@ const ProductsPage = () => {
       console.error("Lá»—i khi xÃ³a sáº£n pháº©m: ", error);
       toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ³a sáº£n pháº©m.');
     } finally {
-      setConfirmModal({ isOpen: false, item: null }); // ÄÃ³ng modal sau khi thá»±c hiá»‡n
+      setConfirmModal({ isOpen: false, item: null });
     }
   };
 
@@ -4182,12 +4291,11 @@ const ProductsPage = () => {
   };
 
   if (loading) {
-    return <div>Äang táº£i dá»¯ liá»‡u sáº£n pháº©m...</div>;
+    return <Spinner />; // <-- ÄÃƒ THAY THáº¾
   }
 
   return (
     <div>
-      {/* --- THÃŠM MODAL XÃC NHáº¬N VÃ€O GIAO DIá»†N --- */}
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
@@ -4234,7 +4342,6 @@ const ProductsPage = () => {
                   <button className="btn-icon btn-edit" onClick={() => openEditModal(product)}>
                     <FiEdit />
                   </button>
-                  {/* --- THAY Äá»”I ONCLICK Cá»¦A NÃšT XÃ“A --- */}
                   <button className="btn-icon btn-delete" onClick={() => promptForDelete(product)}>
                     <FiTrash2 />
                   </button>
@@ -4262,6 +4369,8 @@ import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -4332,15 +4441,6 @@ const StocktakeListPage = () => {
         }
     };
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'in_progress': return <span className="status-badge status-pending">Äang thá»±c hiá»‡n</span>;
-            case 'completed': return <span className="status-badge status-completed">ÄÃ£ hoÃ n thÃ nh Ä‘áº¿m</span>;
-            case 'adjusted': return <span className="status-badge" style={{ backgroundColor: '#6f42c1' }}>ÄÃ£ Ä‘iá»u chá»‰nh</span>;
-            default: return <span className="status-badge">{status}</span>;
-        }
-    };
-
     return (
         <div>
             {isCreateModalOpen && (
@@ -4359,6 +4459,7 @@ const StocktakeListPage = () => {
                     Táº¡o PhiÃªn Má»›i
                 </button>
             </div>
+      
             <table className="products-table">
                 <thead>
                     <tr>
@@ -4371,14 +4472,14 @@ const StocktakeListPage = () => {
                 </thead>
                 <tbody>
                     {loading ? (
-                        <tr><td colSpan="5" style={{textAlign: 'center'}}>Äang táº£i...</td></tr>
+                        <Spinner forTable={true} /> // <-- ÄÃƒ THAY THáº¾
                     ) : stocktakeSessions.length > 0 ? (
                         stocktakeSessions.map(session => (
                             <tr key={session.id}>
                                 <td>{session.name}</td>
                                 <td>{session.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
                                 <td>{session.scope === 'all' ? 'ToÃ n bá»™ kho' : session.scope}</td>
-                                <td>{getStatusBadge(session.status)}</td>
+                                <td><StatusBadge status={session.status} /></td>
                                 <td>
                                     <button 
                                         className="btn-secondary" 
@@ -4416,6 +4517,8 @@ import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
@@ -4427,7 +4530,7 @@ const StocktakeSessionPage = () => {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
     const fetchSessionData = async () => {
-        setLoading(true);
+        if (!loading) setLoading(true);
         const docRef = doc(db, 'stocktakes', sessionId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
@@ -4438,7 +4541,7 @@ const StocktakeSessionPage = () => {
         }
         setLoading(false);
     };
-
+    
     useEffect(() => { fetchSessionData(); }, [sessionId]);
 
     const summaryStats = useMemo(() => {
@@ -4475,20 +4578,11 @@ const StocktakeSessionPage = () => {
         return sessionData.items.filter(item => item.countedQty !== null && item.systemQty !== item.countedQty);
     }, [sessionData]);
 
-    const handleCountChange = async (lotId, newCountValue) => {
-        const newCount = newCountValue === '' ? null : Number(newCountValue);
-        const currentItems = sessionData.items;
-        const targetItem = currentItems.find(item => item.lotId === lotId);
-        let finalCount = newCount;
+    const performCountUpdate = async (lotId, finalCount) => {
+        const originalItems = sessionData.items;
+        const updatedItems = originalItems.map(item => item.lotId === lotId ? { ...item, countedQty: finalCount } : item);
+        setSessionData(prev => ({ ...prev, items: updatedItems })); 
 
-        if (targetItem && (targetItem.countedQty || 0) > 0 && newCount !== null) {
-            if (window.confirm(`ÄÃ£ Ä‘áº¿m ${targetItem.countedQty}. Báº¡n cÃ³ muá»‘n Cá»˜NG Dá»’N thÃªm ${newCount} (Tá»•ng: ${targetItem.countedQty + newCount}) khÃ´ng?\n\n(Nháº¥n OK Ä‘á»ƒ Cá»™ng Dá»“n, Cancel Ä‘á»ƒ Ghi ÄÃ¨)`)) {
-                finalCount = (targetItem.countedQty || 0) + newCount;
-            }
-        }
-        
-        const updatedItems = currentItems.map(item => item.lotId === lotId ? { ...item, countedQty: finalCount } : item);
-        setSessionData(prev => ({ ...prev, items: updatedItems }));
         try {
             const sessionRef = doc(db, 'stocktakes', sessionId);
             await updateDoc(sessionRef, { items: updatedItems });
@@ -4496,7 +4590,29 @@ const StocktakeSessionPage = () => {
         } catch (error) {
             console.error("Lá»—i khi lÆ°u:", error);
             toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u. Vui lÃ²ng kiá»ƒm tra káº¿t ná»‘i máº¡ng.");
-            setSessionData(prev => ({ ...prev, items: currentItems }));
+            setSessionData(prev => ({ ...prev, items: originalItems })); 
+        } finally {
+            setConfirmModal({isOpen: false});
+        }
+    };
+    
+    const handleCountChange = (lotId, newCountValue) => {
+        const newCount = newCountValue === '' ? null : Number(newCountValue);
+        const targetItem = sessionData.items.find(item => item.lotId === lotId);
+
+        if (targetItem && (targetItem.countedQty || 0) > 0 && newCount !== null) {
+            const cumulativeTotal = (targetItem.countedQty || 0) + newCount;
+            setConfirmModal({
+                isOpen: true,
+                title: "Cá»™ng Dá»“n hay Ghi ÄÃ¨?",
+                message: `ÄÃ£ Ä‘áº¿m ${targetItem.countedQty}. Báº¡n muá»‘n cá»™ng dá»“n thÃªm ${newCount} (tá»•ng: ${cumulativeTotal}) hay ghi Ä‘Ã¨ báº±ng giÃ¡ trá»‹ má»›i lÃ  ${newCount}?`,
+                onConfirm: () => performCountUpdate(lotId, cumulativeTotal),
+                onCancel: () => performCountUpdate(lotId, newCount),
+                confirmText: "Cá»™ng Dá»“n",
+                cancelText: "Ghi ÄÃ¨"
+            });
+        } else {
+            performCountUpdate(lotId, newCount);
         }
     };
 
@@ -4534,6 +4650,7 @@ const StocktakeSessionPage = () => {
         try {
             const batch = writeBatch(db);
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
+            
             itemsToAdjust.forEach(item => {
                 if (!item.isNew) {
                     const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
@@ -4547,8 +4664,10 @@ const StocktakeSessionPage = () => {
                     reason: `Äiá»u chá»‰nh sau kiá»ƒm kÃª phiÃªn: ${sessionData.name}`
                 });
             });
+
             const sessionRef = doc(db, 'stocktakes', sessionId);
             batch.update(sessionRef, { status: 'adjusted' });
+            
             await batch.commit();
             toast.success("ÄÃ£ Ä‘iá»u chá»‰nh tá»“n kho thÃ nh cÃ´ng!");
             fetchSessionData();
@@ -4574,7 +4693,7 @@ const StocktakeSessionPage = () => {
     };
 
     const handleCheckboxChange = (lotId) => { setCheckedItems(prev => ({ ...prev, [lotId]: !prev[lotId] })); };
-    
+
     const handleCheckAll = (e) => {
         const isChecked = e.target.checked;
         const newCheckedItems = {};
@@ -4597,21 +4716,21 @@ const StocktakeSessionPage = () => {
         }
     };
     
-    const handlePrint = () => {
-        window.print();
-    };
+    const handlePrint = () => { window.print(); };
 
-    if (loading) return <div>Äang táº£i dá»¯ liá»‡u phiÃªn kiá»ƒm kÃª...</div>;
-    if (!sessionData) return <div>KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.</div>;
+    if (loading) return <Spinner />; // <-- ÄÃƒ THAY THáº¾
 
     const isSessionInProgress = sessionData.status === 'in_progress';
-    const isSessionCompleted = sessionData.status === 'completed';
-    const isSessionAdjusted = sessionData.status === 'adjusted';
     const areAllDiscrepanciesChecked = discrepancyItems.length > 0 && discrepancyItems.every(item => checkedItems[item.lotId]);
-    
+
     const CountInput = ({ item }) => {
         const [currentValue, setCurrentValue] = useState(item.countedQty ?? '');
         const handleKeyDown = (e) => { if (e.key === 'Enter') { e.target.blur(); } };
+        
+        useEffect(() => {
+            setCurrentValue(item.countedQty ?? '');
+        }, [item.countedQty]);
+
         return (
             <input type="number" placeholder="Nháº­p sá»‘ Ä‘áº¿m" value={currentValue}
                 onChange={e => setCurrentValue(e.target.value)}
@@ -4633,14 +4752,17 @@ const StocktakeSessionPage = () => {
                 title={confirmModal.title}
                 message={confirmModal.message}
                 onConfirm={confirmModal.onConfirm}
-                onCancel={() => setConfirmModal({ isOpen: false })}
+                onCancel={confirmModal.onCancel || (() => setConfirmModal({ isOpen: false }))}
                 confirmText={confirmModal.confirmText || "XÃ¡c nháº­n"}
+                cancelText={confirmModal.cancelText || "Há»§y"}
             />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
             <div className="page-header">
-                <h1>{sessionData.name}
-                    {isSessionCompleted && <span className="status-badge status-completed" style={{fontSize: '16px', marginLeft: '15px'}}>ÄÃ£ HoÃ n ThÃ nh Äáº¿m</span>}
-                    {isSessionAdjusted && <span className="status-badge" style={{fontSize: '16px', marginLeft: '15px', backgroundColor: '#6f42c1'}}>ÄÃ£ Äiá»u Chá»‰nh</span>}
+                <h1>
+                    {sessionData.name}
+                    <span style={{fontSize: '16px', marginLeft: '15px'}}>
+                        <StatusBadge status={sessionData.status} />
+                    </span>
                 </h1>
                 <div>
                     <button onClick={handlePrint} className="btn-secondary" style={{marginRight: '10px'}}>In Phiáº¿u Äáº¿m Tay</button>
@@ -4662,7 +4784,7 @@ const StocktakeSessionPage = () => {
                     <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ ThÃªm HÃ ng NgoÃ i DS</button>
                 )}
             </div>
-            {(isSessionCompleted || isSessionAdjusted) && (
+            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
                 <div className="form-section">
                     <h3 style={{color: '#dc3545'}}>Xá»­ LÃ½ ChÃªnh Lá»‡ch</h3>
                     <p>Chá»‰ nhá»¯ng máº·t hÃ ng cÃ³ sá»‘ lÆ°á»£ng thá»±c táº¿ khÃ¡c vá»›i há»‡ thá»‘ng Ä‘Æ°á»£c liá»‡t kÃª dÆ°á»›i Ä‘Ã¢y. Chá»n nhá»¯ng má»¥c báº¡n muá»‘n Ä‘iá»u chá»‰nh vÃ  xÃ¡c nháº­n.</p>
@@ -4671,7 +4793,7 @@ const StocktakeSessionPage = () => {
                             <table className="products-table">
                                 <thead>
                                     <tr>
-                                        <th><input type="checkbox" onChange={handleCheckAll} checked={areAllDiscrepanciesChecked} disabled={isSessionAdjusted} /></th>
+                                        <th><input type="checkbox" onChange={handleCheckAll} checked={areAllDiscrepanciesChecked} disabled={sessionData.status === 'adjusted'} /></th>
                                         <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
                                         <th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>ChÃªnh lá»‡ch</th>
                                     </tr>
@@ -4681,7 +4803,7 @@ const StocktakeSessionPage = () => {
                                         const variance = item.countedQty - item.systemQty;
                                         return (
                                             <tr key={item.lotId} style={{backgroundColor: item.isNew ? '#fff9e6' : 'transparent'}}>
-                                                <td><input type="checkbox" checked={!!checkedItems[item.lotId]} onChange={() => handleCheckboxChange(item.lotId)} disabled={isSessionAdjusted} /></td>
+                                                <td><input type="checkbox" checked={!!checkedItems[item.lotId]} onChange={() => handleCheckboxChange(item.lotId)} disabled={sessionData.status === 'adjusted'} /></td>
                                                 <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
                                                 <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
                                                 <td style={{color: variance > 0 ? 'green' : 'red', fontWeight: 'bold'}}>{variance > 0 ? `+${variance}` : variance}</td>
@@ -4690,7 +4812,7 @@ const StocktakeSessionPage = () => {
                                     })}
                                 </tbody>
                             </table>
-                            {!isSessionAdjusted && (
+                            {sessionData.status !== 'adjusted' && (
                                 <div className="page-actions">
                                     <button onClick={promptForAdjust} className="btn-primary">XÃ¡c Nháº­n Äiá»u Chá»‰nh Tá»“n Kho</button>
                                 </div>
@@ -5232,6 +5354,11 @@ export default TestPage;
 
 .status-cancelled {
   background-color: #6c757d;
+}
+
+/* --- THÃŠM CLASS Má»šI NÃ€Y --- */
+.status-adjusted {
+  background-color: #6f42c1;
 }
 
 .filters-container {
@@ -6123,10 +6250,7 @@ button:hover {
 
 
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from './firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import React from 'react';
 import LoginPage from './components/LoginPage';
 import AdminLayout from './components/AdminLayout';
 import ViewerLayout from './components/ViewerLayout';
@@ -6134,51 +6258,18 @@ import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { AuthProvider, useAuth } from './context/UserContext';
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+const AppRoutes = () => {
+  const { user, userRole, loading } = useAuth();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          setUserRole(userDocSnap.data().role);
-        } else {
-          setUserRole(null); 
-        }
-      } else {
-        setUser(null);
-        setUserRole(null);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
+  // Logic loading Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½ trong UserContext, nhÆ°ng váº«n kiá»ƒm tra á»Ÿ Ä‘Ã¢y Ä‘á»ƒ cháº¯c cháº¯n
   if (loading) {
-    return <div>Äang táº£i...</div>;
+    return null; // Hoáº·c má»™t spinner nhá» náº¿u muá»‘n, nhÆ°ng khÃ´ng cáº§n thiáº¿t
   }
-  
-  return (
-    <BrowserRouter>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
 
+  return (
+    <>
       {user ? (
         <Routes>
           {userRole === 'owner' ? (
@@ -6186,18 +6277,53 @@ function App() {
           ) : (
             <Route path="/*" element={<Navigate to="/view" />} />
           )}
-          <Route path="/view/*" element={<ViewerLayout user={user} userRole={userRole} />} />
+          <Route path="/view/*" element={<ViewerLayout />} />
         </Routes>
       ) : (
         <div className="login-page-wrapper">
           <LoginPage />
         </div>
       )}
+    </>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   );
 }
 
 export default App;
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\constants.js ---
+
+
+// src/constants.js
+
+export const TEMP_OPTIONS = ["Nhiá»‡t Ä‘á»™ phÃ²ng", "2 â†’ 8Â°C", "-25 â†’ -15Â°C"];
+
+export const MANUFACTURER_OPTIONS = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
+
+export const UNIT_OPTIONS = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»ng", "Lá»", "Sá»£i", "CÃ¢y", "Can", "TuÃ½p", "Bá»™", "MÃ¡ng", "GÃ³i", "Khay"];
 
 
 
@@ -6264,7 +6390,6 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
-
 
 
 

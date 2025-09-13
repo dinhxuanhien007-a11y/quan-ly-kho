@@ -11,6 +11,7 @@ import {
 import LotJourneyExplorer from '../components/LotJourneyExplorer';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const LotTracePage = () => {
   const [lotNumber, setLotNumber] = useState('');
@@ -82,27 +83,25 @@ const LotTracePage = () => {
   const handleNodeClick = (event, node) => {
     setSelectedNode(node.data);
   };
-  
+
   const handlePaneClick = () => {
     setSelectedNode(null);
   };
-  
+
   const filteredExportHistory = selectedNode && selectedNode.type === 'customer'
     ? exportHistory.filter(item => item.customer === selectedNode.name)
     : exportHistory;
 
   const masterInfo = importRecords.length > 0 ? importRecords[0] : null;
-  
   const totalImported = importRecords.reduce(
     (sum, record) => sum + record.quantityImported,
     0,
   );
-  
   const totalRemaining = importRecords.reduce(
     (sum, record) => sum + record.quantityRemaining,
     0,
   );
-  
+
   return (
     <div>
       <div className="page-header">
@@ -133,7 +132,7 @@ const LotTracePage = () => {
         </div>
       </div>
 
-      {isLoading && <p>Đang tải dữ liệu...</p>}
+      {isLoading && <Spinner />}
 
       {!isLoading && searchAttempted && importRecords.length === 0 && (
         <div className="form-section">

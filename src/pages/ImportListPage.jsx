@@ -8,6 +8,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { FiEdit, FiEye } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const ImportListPage = () => {
   const [importSlips, setImportSlips] = useState([]);
@@ -39,7 +41,6 @@ const ImportListPage = () => {
   const handleConfirmImport = async () => {
     const slip = confirmModal.item;
     if (!slip) return;
-
     try {
       for (const item of slip.items) {
         const expiryDateObject = parseDateString(item.expiryDate);
@@ -112,7 +113,7 @@ const ImportListPage = () => {
   };
 
   if (loading) {
-    return <div>Đang tải danh sách phiếu nhập...</div>;
+    return <Spinner />; // <-- ĐÃ THAY THẾ
   }
 
   return (
@@ -158,14 +159,12 @@ const ImportListPage = () => {
               <td>{slip.supplier}</td>
               <td>{slip.description}</td>
               <td>
-                <span className={`status-badge status-${slip.status}`}>
-                  {slip.status === 'pending' ? 'Đang chờ' : 'Hoàn thành'}
-                </span>
+                <StatusBadge status={slip.status} />
               </td>
               <td>
                 <div className="action-buttons">
                   <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
-                    <FiEye />
+                     <FiEye />
                   </button>
                   {slip.status === 'pending' && (
                     <>

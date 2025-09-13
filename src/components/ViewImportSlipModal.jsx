@@ -1,12 +1,12 @@
 // src/components/ViewImportSlipModal.jsx
 import React from 'react';
-import { formatDate } from '../utils/dateUtils'; // BƯỚC 1: Import hàm tiện ích
+import { formatDate } from '../utils/dateUtils';
+import StatusBadge from './StatusBadge'; // <-- ĐÃ THÊM
 
 const ViewImportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
-
     const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
-
+    
     const handlePrint = () => {
         window.print();
     };
@@ -20,10 +20,9 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                     <div><label>ID Phiếu</label><p><strong>{slip.id}</strong></p></div>
                     <div><label>Nhà cung cấp</label><p><strong>{slip.supplier}</strong></p></div>
                     <div><label>Ngày tạo</label>
-                        {/* BƯỚC 2: Sử dụng hàm formatDate */}
-                        <p><strong>{formatDate(slip.createdAt)}</strong></p>
+                      <p><strong>{formatDate(slip.createdAt)}</strong></p>
                     </div>
-                    <div><label>Trạng thái</label><p><span className={`status-badge status-${slip.status}`}>{slip.status === 'pending' ? 'Đang chờ' : 'Hoàn thành'}</span></p></div>
+                    <div><label>Trạng thái</label><p><StatusBadge status={slip.status} /></p></div>
                     <div className="info-description"><label>Diễn giải</label><p><em>{slip.description || '(Không có)'}</em></p></div>
                 </div>
 

@@ -1,11 +1,14 @@
 // src/components/ViewerLayout.jsx
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // <-- THÊM IMPORT
+import { Link } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
+import { useAuth } from '../context/UserContext'; // <-- THÊM IMPORT
 
-const ViewerLayout = ({ user, userRole }) => {
-  const canViewDetail = userRole === 'admin' || userRole === 'owner'; // <-- OWNER CŨNG CÓ THỂ XEM CHI TIẾT
+const ViewerLayout = () => { // <-- XÓA PROPS
+  const { userRole } = useAuth(); // <-- LẤY DỮ LIỆU TỪ CONTEXT
+
+  const canViewDetail = userRole === 'admin' || userRole === 'owner';
   const [viewMode, setViewMode] = useState('summary');
   
   useEffect(() => {
@@ -16,7 +19,6 @@ const ViewerLayout = ({ user, userRole }) => {
 
   return (
     <div style={{ padding: '20px' }}>
-      {/* THÊM NÚT QUAY LẠI CHO OWNER */}
       {userRole === 'owner' && (
         <div style={{ marginBottom: '20px' }}>
             <Link to="/" className="btn-secondary" style={{ textDecoration: 'none' }}>
@@ -46,11 +48,10 @@ const ViewerLayout = ({ user, userRole }) => {
         null 
       )}
 
-      {(viewMode === 'detail' && canViewDetail) ?
-      (
-        <InventoryPage user={user} userRole={userRole} />
+      {(viewMode === 'detail' && canViewDetail) ? (
+        <InventoryPage /> // <-- XÓA PROPS
       ) : (
-        <InventorySummaryPage user={user} userRole={userRole} />
+        <InventorySummaryPage /> // <-- XÓA PROPS
       )}
     </div>
   );

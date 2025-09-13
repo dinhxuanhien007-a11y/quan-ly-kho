@@ -5,6 +5,8 @@ import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -75,15 +77,6 @@ const StocktakeListPage = () => {
         }
     };
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'in_progress': return <span className="status-badge status-pending">Đang thực hiện</span>;
-            case 'completed': return <span className="status-badge status-completed">Đã hoàn thành đếm</span>;
-            case 'adjusted': return <span className="status-badge" style={{ backgroundColor: '#6f42c1' }}>Đã điều chỉnh</span>;
-            default: return <span className="status-badge">{status}</span>;
-        }
-    };
-
     return (
         <div>
             {isCreateModalOpen && (
@@ -102,6 +95,7 @@ const StocktakeListPage = () => {
                     Tạo Phiên Mới
                 </button>
             </div>
+      
             <table className="products-table">
                 <thead>
                     <tr>
@@ -114,14 +108,14 @@ const StocktakeListPage = () => {
                 </thead>
                 <tbody>
                     {loading ? (
-                        <tr><td colSpan="5" style={{textAlign: 'center'}}>Đang tải...</td></tr>
+                        <Spinner forTable={true} /> // <-- ĐÃ THAY THẾ
                     ) : stocktakeSessions.length > 0 ? (
                         stocktakeSessions.map(session => (
                             <tr key={session.id}>
                                 <td>{session.name}</td>
                                 <td>{session.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
                                 <td>{session.scope === 'all' ? 'Toàn bộ kho' : session.scope}</td>
-                                <td>{getStatusBadge(session.status)}</td>
+                                <td><StatusBadge status={session.status} /></td>
                                 <td>
                                     <button 
                                         className="btn-secondary" 

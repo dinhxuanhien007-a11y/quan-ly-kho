@@ -8,6 +8,8 @@ import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import StatusBadge from '../components/StatusBadge';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
@@ -19,7 +21,7 @@ const StocktakeSessionPage = () => {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
     const fetchSessionData = async () => {
-        setLoading(true);
+        if (!loading) setLoading(true);
         const docRef = doc(db, 'stocktakes', sessionId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
@@ -30,7 +32,7 @@ const StocktakeSessionPage = () => {
         }
         setLoading(false);
     };
-
+    
     useEffect(() => { fetchSessionData(); }, [sessionId]);
 
     const summaryStats = useMemo(() => {
@@ -67,20 +69,11 @@ const StocktakeSessionPage = () => {
         return sessionData.items.filter(item => item.countedQty !== null && item.systemQty !== item.countedQty);
     }, [sessionData]);
 
-    const handleCountChange = async (lotId, newCountValue) => {
-        const newCount = newCountValue === '' ? null : Number(newCountValue);
-        const currentItems = sessionData.items;
-        const targetItem = currentItems.find(item => item.lotId === lotId);
-        let finalCount = newCount;
+    const performCountUpdate = async (lotId, finalCount) => {
+        const originalItems = sessionData.items;
+        const updatedItems = originalItems.map(item => item.lotId === lotId ? { ...item, countedQty: finalCount } : item);
+        setSessionData(prev => ({ ...prev, items: updatedItems })); 
 
-        if (targetItem && (targetItem.countedQty || 0) > 0 && newCount !== null) {
-            if (window.confirm(`Đã đếm ${targetItem.countedQty}. Bạn có muốn CỘNG DỒN thêm ${newCount} (Tổng: ${targetItem.countedQty + newCount}) không?\n\n(Nhấn OK để Cộng Dồn, Cancel để Ghi Đè)`)) {
-                finalCount = (targetItem.countedQty || 0) + newCount;
-            }
-        }
-        
-        const updatedItems = currentItems.map(item => item.lotId === lotId ? { ...item, countedQty: finalCount } : item);
-        setSessionData(prev => ({ ...prev, items: updatedItems }));
         try {
             const sessionRef = doc(db, 'stocktakes', sessionId);
             await updateDoc(sessionRef, { items: updatedItems });
@@ -88,7 +81,29 @@ const StocktakeSessionPage = () => {
         } catch (error) {
             console.error("Lỗi khi lưu:", error);
             toast.error("Lỗi: Không thể lưu. Vui lòng kiểm tra kết nối mạng.");
-            setSessionData(prev => ({ ...prev, items: currentItems }));
+            setSessionData(prev => ({ ...prev, items: originalItems })); 
+        } finally {
+            setConfirmModal({isOpen: false});
+        }
+    };
+    
+    const handleCountChange = (lotId, newCountValue) => {
+        const newCount = newCountValue === '' ? null : Number(newCountValue);
+        const targetItem = sessionData.items.find(item => item.lotId === lotId);
+
+        if (targetItem && (targetItem.countedQty || 0) > 0 && newCount !== null) {
+            const cumulativeTotal = (targetItem.countedQty || 0) + newCount;
+            setConfirmModal({
+                isOpen: true,
+                title: "Cộng Dồn hay Ghi Đè?",
+                message: `Đã đếm ${targetItem.countedQty}. Bạn muốn cộng dồn thêm ${newCount} (tổng: ${cumulativeTotal}) hay ghi đè bằng giá trị mới là ${newCount}?`,
+                onConfirm: () => performCountUpdate(lotId, cumulativeTotal),
+                onCancel: () => performCountUpdate(lotId, newCount),
+                confirmText: "Cộng Dồn",
+                cancelText: "Ghi Đè"
+            });
+        } else {
+            performCountUpdate(lotId, newCount);
         }
     };
 
@@ -126,6 +141,7 @@ const StocktakeSessionPage = () => {
         try {
             const batch = writeBatch(db);
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
+            
             itemsToAdjust.forEach(item => {
                 if (!item.isNew) {
                     const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
@@ -139,8 +155,10 @@ const StocktakeSessionPage = () => {
                     reason: `Điều chỉnh sau kiểm kê phiên: ${sessionData.name}`
                 });
             });
+
             const sessionRef = doc(db, 'stocktakes', sessionId);
             batch.update(sessionRef, { status: 'adjusted' });
+            
             await batch.commit();
             toast.success("Đã điều chỉnh tồn kho thành công!");
             fetchSessionData();
@@ -166,7 +184,7 @@ const StocktakeSessionPage = () => {
     };
 
     const handleCheckboxChange = (lotId) => { setCheckedItems(prev => ({ ...prev, [lotId]: !prev[lotId] })); };
-    
+
     const handleCheckAll = (e) => {
         const isChecked = e.target.checked;
         const newCheckedItems = {};
@@ -189,21 +207,21 @@ const StocktakeSessionPage = () => {
         }
     };
     
-    const handlePrint = () => {
-        window.print();
-    };
+    const handlePrint = () => { window.print(); };
 
-    if (loading) return <div>Đang tải dữ liệu phiên kiểm kê...</div>;
-    if (!sessionData) return <div>Không tìm thấy dữ liệu cho phiên kiểm kê này.</div>;
+    if (loading) return <Spinner />; // <-- ĐÃ THAY THẾ
 
     const isSessionInProgress = sessionData.status === 'in_progress';
-    const isSessionCompleted = sessionData.status === 'completed';
-    const isSessionAdjusted = sessionData.status === 'adjusted';
     const areAllDiscrepanciesChecked = discrepancyItems.length > 0 && discrepancyItems.every(item => checkedItems[item.lotId]);
-    
+
     const CountInput = ({ item }) => {
         const [currentValue, setCurrentValue] = useState(item.countedQty ?? '');
         const handleKeyDown = (e) => { if (e.key === 'Enter') { e.target.blur(); } };
+        
+        useEffect(() => {
+            setCurrentValue(item.countedQty ?? '');
+        }, [item.countedQty]);
+
         return (
             <input type="number" placeholder="Nhập số đếm" value={currentValue}
                 onChange={e => setCurrentValue(e.target.value)}
@@ -225,14 +243,17 @@ const StocktakeSessionPage = () => {
                 title={confirmModal.title}
                 message={confirmModal.message}
                 onConfirm={confirmModal.onConfirm}
-                onCancel={() => setConfirmModal({ isOpen: false })}
+                onCancel={confirmModal.onCancel || (() => setConfirmModal({ isOpen: false }))}
                 confirmText={confirmModal.confirmText || "Xác nhận"}
+                cancelText={confirmModal.cancelText || "Hủy"}
             />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
             <div className="page-header">
-                <h1>{sessionData.name}
-                    {isSessionCompleted && <span className="status-badge status-completed" style={{fontSize: '16px', marginLeft: '15px'}}>Đã Hoàn Thành Đếm</span>}
-                    {isSessionAdjusted && <span className="status-badge" style={{fontSize: '16px', marginLeft: '15px', backgroundColor: '#6f42c1'}}>Đã Điều Chỉnh</span>}
+                <h1>
+                    {sessionData.name}
+                    <span style={{fontSize: '16px', marginLeft: '15px'}}>
+                        <StatusBadge status={sessionData.status} />
+                    </span>
                 </h1>
                 <div>
                     <button onClick={handlePrint} className="btn-secondary" style={{marginRight: '10px'}}>In Phiếu Đếm Tay</button>
@@ -254,7 +275,7 @@ const StocktakeSessionPage = () => {
                     <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ Thêm Hàng Ngoài DS</button>
                 )}
             </div>
-            {(isSessionCompleted || isSessionAdjusted) && (
+            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
                 <div className="form-section">
                     <h3 style={{color: '#dc3545'}}>Xử Lý Chênh Lệch</h3>
                     <p>Chỉ những mặt hàng có số lượng thực tế khác với hệ thống được liệt kê dưới đây. Chọn những mục bạn muốn điều chỉnh và xác nhận.</p>
@@ -263,7 +284,7 @@ const StocktakeSessionPage = () => {
                             <table className="products-table">
                                 <thead>
                                     <tr>
-                                        <th><input type="checkbox" onChange={handleCheckAll} checked={areAllDiscrepanciesChecked} disabled={isSessionAdjusted} /></th>
+                                        <th><input type="checkbox" onChange={handleCheckAll} checked={areAllDiscrepanciesChecked} disabled={sessionData.status === 'adjusted'} /></th>
                                         <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
                                         <th>Tồn hệ thống</th><th>Tồn thực tế</th><th>Chênh lệch</th>
                                     </tr>
@@ -273,7 +294,7 @@ const StocktakeSessionPage = () => {
                                         const variance = item.countedQty - item.systemQty;
                                         return (
                                             <tr key={item.lotId} style={{backgroundColor: item.isNew ? '#fff9e6' : 'transparent'}}>
-                                                <td><input type="checkbox" checked={!!checkedItems[item.lotId]} onChange={() => handleCheckboxChange(item.lotId)} disabled={isSessionAdjusted} /></td>
+                                                <td><input type="checkbox" checked={!!checkedItems[item.lotId]} onChange={() => handleCheckboxChange(item.lotId)} disabled={sessionData.status === 'adjusted'} /></td>
                                                 <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
                                                 <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
                                                 <td style={{color: variance > 0 ? 'green' : 'red', fontWeight: 'bold'}}>{variance > 0 ? `+${variance}` : variance}</td>
@@ -282,7 +303,7 @@ const StocktakeSessionPage = () => {
                                     })}
                                 </tbody>
                             </table>
-                            {!isSessionAdjusted && (
+                            {sessionData.status !== 'adjusted' && (
                                 <div className="page-actions">
                                     <button onClick={promptForAdjust} className="btn-primary">Xác Nhận Điều Chỉnh Tồn Kho</button>
                                 </div>

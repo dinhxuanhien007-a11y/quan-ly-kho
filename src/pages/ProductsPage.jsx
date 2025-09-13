@@ -4,9 +4,10 @@ import { db } from '../firebaseConfig';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // <-- THÊM IMPORT
+import ConfirmationModal from '../components/ConfirmationModal';
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -14,8 +15,6 @@ const ProductsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
-  
-  // --- THÊM STATE MỚI ĐỂ QUẢN LÝ MODAL XÁC NHẬN ---
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
   const fetchProducts = async () => {
@@ -50,7 +49,6 @@ const ProductsPage = () => {
     fetchProducts();
   };
 
-  // --- HÀM MỚI ĐỂ MỞ MODAL XÁC NHẬN ---
   const promptForDelete = (product) => {
     setConfirmModal({
         isOpen: true,
@@ -60,7 +58,6 @@ const ProductsPage = () => {
     });
   };
 
-  // --- CẬP NHẬT LẠI HÀM XÓA ---
   const handleDelete = async () => {
     const { item } = confirmModal;
     if (!item) return;
@@ -73,7 +70,7 @@ const ProductsPage = () => {
       console.error("Lỗi khi xóa sản phẩm: ", error);
       toast.error('Đã xảy ra lỗi khi xóa sản phẩm.');
     } finally {
-      setConfirmModal({ isOpen: false, item: null }); // Đóng modal sau khi thực hiện
+      setConfirmModal({ isOpen: false, item: null });
     }
   };
 
@@ -83,12 +80,11 @@ const ProductsPage = () => {
   };
 
   if (loading) {
-    return <div>Đang tải dữ liệu sản phẩm...</div>;
+    return <Spinner />; // <-- ĐÃ THAY THẾ
   }
 
   return (
     <div>
-      {/* --- THÊM MODAL XÁC NHẬN VÀO GIAO DIỆN --- */}
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
@@ -135,7 +131,6 @@ const ProductsPage = () => {
                   <button className="btn-icon btn-edit" onClick={() => openEditModal(product)}>
                     <FiEdit />
                   </button>
-                  {/* --- THAY ĐỔI ONCLICK CỦA NÚT XÓA --- */}
                   <button className="btn-icon btn-delete" onClick={() => promptForDelete(product)}>
                     <FiTrash2 />
                   </button>

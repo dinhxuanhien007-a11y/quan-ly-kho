@@ -3,10 +3,7 @@ import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-
-const tempOptions = ["Nhiệt độ phòng", "2 → 8°C", "-25 → -15°C"];
-const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
-const unitOptions = ["Cái", "Hộp", "Thùng", "Chai", "ống", "Lọ", "Sợi", "Cây", "Can", "Tuýp", "Bộ", "Máng", "Gói", "Khay"];
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants'; // <-- THÊM DÒNG NÀY
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
   const [productId, setProductId] = useState('');
@@ -73,7 +70,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
                 placeholder="Chọn hoặc nhập ĐVT..."
               />
               <datalist id="unit-options-add">
-                {unitOptions.map(opt => <option key={opt} value={opt} />)}
+                {UNIT_OPTIONS.map(opt => <option key={opt} value={opt} />)}
               </datalist>
             </div>
             <div className="form-group">
@@ -91,7 +88,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
                 placeholder="Chọn hoặc nhập nhiệt độ..."
               />
               <datalist id="temp-options-add">
-                  {tempOptions.map(opt => <option key={opt} value={opt} />)}
+                  {TEMP_OPTIONS.map(opt => <option key={opt} value={opt} />)}
               </datalist>
             </div>
             <div className="form-group">
@@ -103,7 +100,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
                 placeholder="Chọn hoặc nhập hãng SX..."
               />
               <datalist id="manufacturer-options-add">
-                  {manufacturerOptions.map(opt => <option key={opt} value={opt} />)}
+                  {MANUFACTURER_OPTIONS.map(opt => <option key={opt} value={opt} />)}
               </datalist>
             </div>
           </div>

@@ -4,10 +4,7 @@ import { db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-
-const tempOptions = ["Nhiệt độ phòng", "2 → 8°C", "-25 → -15°C"];
-const manufacturerOptions = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
-const unitOptions = ["Cái", "Hộp", "Thùng", "Chai", "ống", "Lọ", "Sợi", "Cây", "Can", "Tuýp", "Bộ", "Máng", "Gói", "Khay"];
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants'; // <-- THÊM DÒNG NÀY
 
 const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [productName, setProductName] = useState('');
@@ -81,7 +78,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                         <div className="form-group">
                             <label>HSD (dd/mm/yyyy)</label>
                             <input 
-                               type="text" 
+                                type="text" 
                                 value={expiryDate} 
                                 onChange={(e) => setExpiryDate(e.target.value)} 
                                 onBlur={handleExpiryDateBlur}
@@ -100,7 +97,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                 placeholder="Chọn hoặc nhập ĐVT..."
                             />
                             <datalist id="unit-options">
-                                {unitOptions.map(opt => <option key={opt} value={opt} />)}
+                                {UNIT_OPTIONS.map(opt => <option key={opt} value={opt} />)}
                             </datalist>
                         </div>
                         <div className="form-group">
@@ -118,7 +115,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                 placeholder="Chọn hoặc nhập nhiệt độ..."
                             />
                             <datalist id="temp-options">
-                                {tempOptions.map(opt => <option key={opt} value={opt} />)}
+                                {TEMP_OPTIONS.map(opt => <option key={opt} value={opt} />)}
                             </datalist>
                         </div>
                         <div className="form-group">
@@ -130,7 +127,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                 placeholder="Chọn hoặc nhập hãng SX..."
                             />
                             <datalist id="manufacturer-options">
-                                {manufacturerOptions.map(opt => <option key={opt} value={opt} />)}
+                                {MANUFACTURER_OPTIONS.map(opt => <option key={opt} value={opt} />)}
                             </datalist>
                         </div>
                     </div>

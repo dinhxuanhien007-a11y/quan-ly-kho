@@ -379,6 +379,11 @@
   background-color: #6c757d;
 }
 
+/* --- THÊM CLASS MỚI NÀY --- */
+.status-adjusted {
+  background-color: #6f42c1;
+}
+
 .filters-container {
   background-color: #fff;
   padding: 15px;
