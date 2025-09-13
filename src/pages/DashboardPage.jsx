@@ -4,9 +4,8 @@ import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore
 import { db } from '../firebaseConfig';
 import { FiArchive, FiAlertTriangle, FiFileText } from 'react-icons/fi';
 import '../styles/DashboardPage.css';
-import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
+import Spinner from '../components/Spinner';
 
-// Component tái sử dụng để hiển thị các thẻ thông số
 const DashboardCard = ({ icon, tieuDe, giaTri, mauSac }) => (
   <div className="dashboard-card" style={{ borderLeftColor: mauSac }}>
     <div className="card-icon" style={{ backgroundColor: mauSac }}>{icon}</div>
@@ -29,11 +28,9 @@ const DashboardPage = () => {
     const layDuLieuDashboard = async () => {
       setLoading(true);
       try {
-        // 1. Lấy tổng số mã sản phẩm
         const sanPhamSnapshot = await getDocs(collection(db, 'products'));
         const tongSanPham = sanPhamSnapshot.size;
-
-        // 2. Lấy số lô hàng sắp hết hạn (trong vòng 30 ngày tới)
+        
         const baMuoiNgayToi = new Date();
         baMuoiNgayToi.setDate(baMuoiNgayToi.getDate() + 30);
         const qSapHetHan = query(
@@ -44,7 +41,6 @@ const DashboardPage = () => {
         const sapHetHanSnapshot = await getDocs(qSapHetHan);
         const sapHetHan = sapHetHanSnapshot.size;
 
-        // 3. Lấy số phiếu nhập đang ở trạng thái "chờ"
         const qPhieuCho = query(collection(db, 'import_tickets'), where('status', '==', 'pending'));
         const phieuChoSnapshot = await getDocs(qPhieuCho);
         const phieuChoDuyet = phieuChoSnapshot.size;
@@ -56,36 +52,20 @@ const DashboardPage = () => {
         setLoading(false);
       }
     };
-
     layDuLieuDashboard();
   }, []);
 
   if (loading) {
-    return <Spinner />; // <-- ĐÃ THAY THẾ
+    return <Spinner />;
   }
 
   return (
     <div className="dashboard-container">
       <h1>Bảng điều khiển</h1>
       <div className="cards-grid">
-        <DashboardCard
-          icon={<FiArchive />}
-          tieuDe="Tổng số mã hàng"
-          giaTri={thongKe.tongSanPham}
-          mauSac="#007bff"
-        />
-        <DashboardCard
-          icon={<FiAlertTriangle />}
-          tieuDe="Sắp hết hạn (30 ngày)"
-          giaTri={thongKe.sapHetHan}
-          mauSac="#ffc107"
-        />
-        <DashboardCard
-          icon={<FiFileText />}
-          tieuDe="Phiếu chờ duyệt"
-          giaTri={thongKe.phieuChoDuyet}
-          mauSac="#6c757d"
-        />
+        <DashboardCard icon={<FiArchive />} tieuDe="Tổng số mã hàng" giaTri={thongKe.tongSanPham} mauSac="#007bff" />
+        <DashboardCard icon={<FiAlertTriangle />} tieuDe="Sắp hết hạn (30 ngày)" giaTri={thongKe.sapHetHan} mauSac="#ffc107" />
+        <DashboardCard icon={<FiFileText />} tieuDe="Phiếu chờ duyệt" giaTri={thongKe.phieuChoDuyet} mauSac="#6c757d" />
       </div>
     </div>
   );

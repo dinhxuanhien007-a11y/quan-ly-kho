@@ -1,47 +1,86 @@
 // src/pages/PartnersPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
+import { collection, getDocs, doc, deleteDoc, query, orderBy, limit, startAfter, documentId } from 'firebase/firestore';
+import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { toast } from 'react-toastify';
-import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
+import Spinner from '../components/Spinner';
+
+const PAGE_SIZE = 15; // <-- SỐ ĐỐI TÁC TRÊN MỖI TRANG
 
 const PartnersPage = () => {
     const [partners, setPartners] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [currentPartner, setCurrentPartner] = useState(null);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
+    
+    // --- STATE MỚI CHO PHÂN TRANG ---
+    const [lastVisible, setLastVisible] = useState(null);
+    const [page, setPage] = useState(1);
+    const [isLastPage, setIsLastPage] = useState(false);
 
-    const fetchPartners = async () => {
+    // --- LOGIC MỚI ĐỂ TẢI DỮ LIỆU THEO TRANG ---
+    const fetchPartners = useCallback(async (direction = 'next') => {
         setLoading(true);
         try {
-            const partnersCollection = collection(db, 'partners');
-            const querySnapshot = await getDocs(partnersCollection);
+            let partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), limit(PAGE_SIZE));
+
+            if (direction === 'next' && lastVisible) {
+                partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), startAfter(lastVisible), limit(PAGE_SIZE));
+            } else if (direction === 'first') {
+                partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), limit(PAGE_SIZE));
+                setPage(1);
+            }
+            
+            const querySnapshot = await getDocs(partnersQuery);
             const partnersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setPartners(partnersList.sort((a, b) => a.id.localeCompare(b.id)));
+            
+            setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+            setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
+            setPartners(partnersList);
         } catch (error) {
             console.error("Lỗi khi lấy danh sách đối tác: ", error);
             toast.error("Không thể tải danh sách đối tác.");
         } finally {
             setLoading(false);
         }
+    }, [lastVisible]);
+
+    useEffect(() => {
+        fetchPartners('first');
+    }, []);
+
+    // --- CÁC HÀM XỬ LÝ SỰ KIỆN PHÂN TRANG ---
+    const handleNextPage = () => {
+        if (!isLastPage) {
+            setPage(prev => prev + 1);
+            fetchPartners('next');
+        }
     };
 
-    useEffect(() => { fetchPartners(); }, []);
+    const handlePrevPage = () => {
+        // Cách làm đơn giản nhất là quay về trang đầu
+        setLastVisible(null);
+        setPage(1);
+        fetchPartners('first');
+    };
+    
+    // --- CÁC HÀM CŨ (CÓ CẬP NHẬT ĐỂ TẢI LẠI TRANG ĐẦU) ---
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [currentPartner, setCurrentPartner] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
-        fetchPartners();
+        setLastVisible(null);
+        fetchPartners('first');
     };
 
     const handlePartnerUpdated = () => {
         setIsEditModalOpen(false);
-        fetchPartners();
+        fetchPartners('first');
     };
 
     const promptForDelete = (partner) => {
@@ -56,11 +95,11 @@ const PartnersPage = () => {
     const handleDelete = async () => {
         const { item } = confirmModal;
         if (!item) return;
-
         try {
             await deleteDoc(doc(db, 'partners', item.id));
             toast.success('Xóa đối tác thành công!');
-            fetchPartners();
+            setLastVisible(null);
+            fetchPartners('first');
         } catch (error) {
             console.error("Lỗi khi xóa đối tác: ", error);
             toast.error('Đã xảy ra lỗi khi xóa đối tác.');
@@ -73,10 +112,6 @@ const PartnersPage = () => {
         setCurrentPartner(partner);
         setIsEditModalOpen(true);
     };
-
-    if (loading) {
-        return <Spinner />; // <-- ĐÃ THAY THẾ
-    }
 
     return (
         <div>
@@ -98,37 +133,51 @@ const PartnersPage = () => {
                     Thêm Đối Tác
                 </button>
             </div>
-            <p>Tổng cộng có {partners.length} đối tác (Nhà cung cấp & Khách hàng).</p>
+            
+            {loading ? <Spinner /> : (
+                <>
+                    <table className="products-table">
+                        <thead>
+                            <tr>
+                                <th>Mã Đối Tác</th>
+                                <th>Tên Đối Tác</th>
+                                <th>Phân Loại</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {partners.map(partner => (
+                                <tr key={partner.id}>
+                                    <td><strong>{partner.id}</strong></td>
+                                    <td>{partner.partnerName}</td>
+                                    <td>{partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</td>
+                                    <td>
+                                        <div className="action-buttons">
+                                            <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
+                                                <FiEdit />
+                                            </button>
+                                            <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
+                                                <FiTrash2 />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
 
-            <table className="products-table">
-                <thead>
-                    <tr>
-                        <th>Mã Đối Tác</th>
-                        <th>Tên Đối Tác</th>
-                        <th>Phân Loại</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {partners.map(partner => (
-                        <tr key={partner.id}>
-                            <td><strong>{partner.id}</strong></td>
-                            <td>{partner.partnerName}</td>
-                            <td>{partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</td>
-                            <td>
-                                <div className="action-buttons">
-                                    <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
-                                        <FiEdit />
-                                    </button>
-                                    <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
-                                        <FiTrash2 />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                    {/* --- KHỐI PHÂN TRANG MỚI --- */}
+                    <div className="pagination-controls">
+                        <button onClick={handlePrevPage} disabled={page <= 1}>
+                            <FiChevronLeft /> Trang Trước
+                        </button>
+                        <span>Trang {page}</span>
+                        <button onClick={handleNextPage} disabled={isLastPage}>
+                            Trang Tiếp <FiChevronRight />
+                        </button>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

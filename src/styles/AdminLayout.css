@@ -831,4 +831,66 @@ tbody tr.selected-row td {
     .inventory-table td .temp-badge {
        font-size: 13px;
     }
+
+    /* Thêm vào cuối file src/styles/AdminLayout.css */
+
+/* --- CSS CHO CÁC NÚT PHÂN TRANG --- */
+.pagination-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.pagination-controls button {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  color: var(--primary-color);
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #f8f9fa;
+}
+
+.pagination-controls button:disabled {
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.pagination-controls span {
+  font-weight: 500;
+  color: #495057;
+}
+
+/* --- TÙY CHỈNH KÍCH THƯỚC & CĂN LỀ BẢNG QUẢN LÝ HÀNG HÓA --- */
+/* ĐOẠN CODE NÀY PHẢI NẰM BÊN NGOÀI BẤT KỲ KHỐI @media NÀO */
+
+/* Thiết lập cho cột 'Tên hàng' (cột thứ 2) RỘNG RA và căn lề TRÁI */
+.products-page-container .products-table th:nth-child(2),
+.products-page-container .products-table td:nth-child(2) {
+    width: 40%;
+    text-align: left;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Thiết lập cho cột 'Đơn vị tính' (cột thứ 3) HẸP LẠI và căn GIỮA */
+.products-page-container .products-table th:nth-child(3),
+.products-page-container .products-table td:nth-child(3) {
+    width: 120px;
+    text-align: center;
+}
+
+/* --- BẮT BUỘC BẢNG PHẢI TUÂN THEO KÍCH THƯỚC ĐÃ ĐỊNH --- */
+.products-page-container .products-table {
+    table-layout: fixed;
 }

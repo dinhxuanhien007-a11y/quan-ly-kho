@@ -1,20 +1,23 @@
 // src/pages/InventoryPage.jsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import { collection, query, getDocs, where, orderBy, limit, startAfter } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../context/UserContext';
-import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
+import Spinner from '../components/Spinner';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+
+const PAGE_SIZE = 20;
 
 const getRowColorByExpiry = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const expDate = expiryDate.toDate();
-    expDate.setHours(0, 0, 0, 0);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return 'expired-black';
@@ -27,114 +30,97 @@ const getRowColorByExpiry = (expiryDate) => {
 const InventoryPage = () => {
     const { userRole } = useAuth();
 
-    const [masterInventory, setMasterInventory] = useState([]);
+    const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
-    const [selectedRowId, setSelectedRowId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [lastVisible, setLastVisible] = useState(null);
+    const [page, setPage] = useState(1);
+    const [isLastPage, setIsLastPage] = useState(false);
+    
+    // Hàm xây dựng câu truy vấn dựa trên các state hiện tại
+    const buildQuery = () => {
+        let q = query(
+            collection(db, "inventory_lots"),
+            orderBy("productId", "asc"),
+            orderBy("expiryDate", "asc")
+        );
 
-    const fetchMasterInventory = useCallback(async () => {
-        // Chỉ hiện loading spinner cho lần tải đầu tiên
-        if (masterInventory.length === 0) setLoading(true);
+        if (userRole === 'med') {
+            q = query(q, where("team", "==", "MED"));
+        } else if (userRole === 'bio') {
+            q = query(q, where("team", "in", ["BIO", "Spare Part"]));
+        }
+
+        if (filters.team !== 'all') {
+            q = query(q, where("team", "==", filters.team));
+        }
+
+        if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
+        }
+        return q;
+    };
+
+    const fetchFirstPage = async () => {
+        setLoading(true);
         try {
-            let q;
-            const lotsCollection = collection(db, "inventory_lots");
-        
-            if (userRole === 'med') {
-                q = query(lotsCollection, where("team", "==", "MED"));
-            } else if (userRole === 'bio') {
-                q = query(lotsCollection, where("team", "in", ["BIO", "Spare Part"]));
-            } else {
-                q = query(lotsCollection);
-            }
+            const q = buildQuery();
+            const firstPageQuery = query(q, limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(firstPageQuery);
+            
+            const inventoryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setInventory(inventoryList);
 
-            const querySnapshot = await getDocs(q);
-            const inventoryList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setMasterInventory(inventoryList);
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setPage(1);
         } catch (error) {
-            console.error("Lỗi khi lấy dữ liệu tồn kho: ", error);
+            console.error("Lỗi khi tải dữ liệu tồn kho: ", error);
+            toast.error("Không thể tải dữ liệu. Vui lòng kiểm tra Console (F12) để tạo Index nếu được yêu cầu.");
         } finally {
             setLoading(false);
         }
-    }, [userRole, masterInventory.length]);
+    };
 
+    const fetchNextPage = async () => {
+        if (!lastVisible) return;
+        setLoading(true);
+        try {
+            const q = buildQuery();
+            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(nextPageQuery);
+
+            const inventoryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setInventory(inventoryList);
+
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setPage(p => p + 1);
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu tồn kho: ", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // useEffect này chỉ chạy khi filter hoặc search term thay đổi
     useEffect(() => {
-        if (userRole) {
-            fetchMasterInventory();
-        }
-        // Tự động tải lại dữ liệu sau mỗi 15 phút
-        const intervalId = setInterval(() => {
-            fetchMasterInventory();
-        }, 900000);
-        return () => clearInterval(intervalId);
-    }, [userRole, fetchMasterInventory]);
-
-    const displayedInventory = useMemo(() => {
-        let filteredResult = [...masterInventory];
-
-        if (filters.team !== 'all') {
-            filteredResult = filteredResult.filter(item => item.team === filters.team);
-        }
-        if (filters.dateStatus !== 'all') {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (filters.dateStatus === 'expired') {
-                filteredResult = filteredResult.filter(item => item.expiryDate?.toDate() < today);
-            }
-            if (filters.dateStatus === 'near_expiry') {
-                const nearExpiryLimit = new Date();
-                nearExpiryLimit.setDate(today.getDate() + 120);
-                filteredResult = filteredResult.filter(item => {
-                    const expiryDate = item.expiryDate?.toDate();
-                    return expiryDate >= today && expiryDate < nearExpiryLimit;
-                });
-            }
-        }
-        
-        if (searchTerm) {
-            const lowercasedFilter = searchTerm.toLowerCase();
-            filteredResult = filteredResult.filter(item =>
-                item.productId?.toLowerCase().includes(lowercasedFilter) ||
-                item.productName?.toLowerCase().includes(lowercasedFilter) ||
-                item.lotNumber?.toLowerCase().includes(lowercasedFilter)
-            );
-        }
-
-        filteredResult.sort((a, b) => {
-            const productCompare = a.productId.localeCompare(b.productId);
-            if (productCompare !== 0) {
-                return productCompare;
-            }
-            const dateA = a.importDate?.toDate() || 0;
-            const dateB = b.importDate?.toDate() || 0;
-            return dateA - dateB;
-        });
-        return filteredResult;
-    }, [masterInventory, filters, searchTerm]); 
-
-
+        const debounce = setTimeout(() => {
+            fetchFirstPage();
+        }, 500);
+        return () => clearTimeout(debounce);
+    }, [userRole, filters, searchTerm]);
+    
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
-    };
-
-    const handleRowClick = (lotId) => {
-        setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
-    };
-    
-    const getTitleByRole = (role) => {
-        switch (role) {
-            case 'med': return 'Sổ Cái Tồn Kho (Team Med)';
-            case 'bio': return 'Sổ Cái Tồn Kho (Team Bio)';
-            case 'admin': return 'Sổ Cái Tồn Kho (Admin)';
-            case 'owner': return 'Sổ Cái Tồn Kho (Owner)';
-            default: return 'Sổ Cái Tồn Kho';
-        }
     };
     
     return (
         <div>
             <div className="page-header">
-                <h1>{getTitleByRole(userRole)}</h1>
+                <h1>Tồn Kho Chi Tiết</h1>
             </div>
             
             <div className="controls-container">
@@ -146,7 +132,7 @@ const InventoryPage = () => {
                 <div className="search-container">
                     <input
                         type="text"
-                        placeholder="Tìm Mã hàng, Tên hàng, Số lô..."
+                        placeholder="Tìm theo Mã hàng..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
@@ -154,36 +140,29 @@ const InventoryPage = () => {
                 </div>
             </div>
 
-            <div className="table-container">
-                 {loading ? ( // <-- ĐÃ SỬA
-                    <Spinner />
-                ) : (
-                    <table className="inventory-table">
-                        <thead>
-                            <tr>
-                                <th>Ngày nhập hàng</th>
-                                <th>Mã hàng</th>
-                                <th>Tên hàng</th>
-                                <th>Số lô</th>
-                                <th>HSD</th>
-                                <th>ĐVT</th>
-                                <th>Quy cách</th>
-                                <th>SL Nhập</th>
-                                <th>SL Còn lại</th>
-                                <th>Ghi chú</th>
-                                <th>Nhiệt độ BQ</th>
-                                <th>Hãng SX</th>
-                                <th>Team</th>
-                            </tr>
-                        </thead>
-                        <tbody className="inventory-table-body">
-                            {displayedInventory.length > 0 ? (
-                                displayedInventory.map(lot => (
-                                    <tr
-                                        key={lot.id}
-                                        onClick={() => handleRowClick(lot.id)}
-                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
-                                    >
+            {loading ? <Spinner /> : (
+                <>
+                    <div className="table-container">
+                        <table className="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Ngày nhập</th>
+                                    <th>Mã hàng</th>
+                                    <th>Tên hàng</th>
+                                    <th>Số lô</th>
+                                    <th>HSD</th>
+                                    <th>ĐVT</th>
+                                    <th>Quy cách</th>
+                                    <th>SL Nhập</th>
+                                    <th>SL Còn lại</th>
+                                    <th>Ghi chú</th>
+                                    <th>Nhiệt độ BQ</th>
+                                    <th>Team</th>
+                                </tr>
+                            </thead>
+                            <tbody className="inventory-table-body">
+                                {inventory.map(lot => (
+                                    <tr key={lot.id} className={getRowColorByExpiry(lot.expiryDate)}>
                                         <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
                                         <td data-label="Mã hàng">{lot.productId}</td>
                                         <td data-label="Tên hàng">{lot.productName}</td>
@@ -195,22 +174,28 @@ const InventoryPage = () => {
                                         <td data-label="SL Còn lại">{lot.quantityRemaining}</td>
                                         <td data-label="Ghi chú">{lot.notes}</td>
                                         <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
-                                        <td data-label="Hãng SX">{lot.manufacturer}</td>
                                         <td data-label="Team"><TeamBadge team={lot.team} /></td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="13" style={{ textAlign: 'center' }}>
-                                        Không có dữ liệu tồn kho phù hợp với bộ lọc hoặc từ khóa tìm kiếm.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {!searchTerm && (
+                        <div className="pagination-controls">
+                            <button onClick={fetchFirstPage} disabled={page <= 1}>
+                                <FiChevronLeft /> Trang Trước
+                            </button>
+                            <span>Trang {page}</span>
+                            <button onClick={fetchNextPage} disabled={isLastPage}>
+                                Trang Tiếp <FiChevronRight />
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 };
+
 export default InventoryPage;

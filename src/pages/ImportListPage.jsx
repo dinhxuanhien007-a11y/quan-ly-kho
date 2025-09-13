@@ -1,15 +1,17 @@
 // src/pages/ImportListPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp, limit, startAfter } from 'firebase/firestore';
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { FiEdit, FiEye } from 'react-icons/fi';
+import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
-import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
+import Spinner from '../components/Spinner';
+
+const PAGE_SIZE = 15; // SỐ PHIẾU TRÊN MỖI TRANG
 
 const ImportListPage = () => {
   const [importSlips, setImportSlips] = useState([]);
@@ -19,12 +21,28 @@ const ImportListPage = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
-  const fetchImportSlips = async () => {
+  // --- STATE MỚI CHO PHÂN TRANG ---
+  const [lastVisible, setLastVisible] = useState(null);
+  const [page, setPage] = useState(1);
+  const [isLastPage, setIsLastPage] = useState(false);
+
+  const fetchImportSlips = useCallback(async (direction = 'next') => {
     setLoading(true);
     try {
-      const q = query(collection(db, "import_tickets"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
+      let slipsQuery = query(collection(db, "import_tickets"), orderBy("createdAt", "desc"));
+
+      if (direction === 'next' && lastVisible) {
+        slipsQuery = query(slipsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
+      } else { // 'first' or default
+        slipsQuery = query(slipsQuery, limit(PAGE_SIZE));
+        setPage(1);
+      }
+      
+      const querySnapshot = await getDocs(slipsQuery);
       const slipsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+      setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
       setImportSlips(slipsList);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách phiếu nhập: ", error);
@@ -32,12 +50,25 @@ const ImportListPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lastVisible]);
 
   useEffect(() => {
-    fetchImportSlips();
+    fetchImportSlips('first');
   }, []);
 
+  const handleNextPage = () => {
+    if (!isLastPage) {
+        setPage(prev => prev + 1);
+        fetchImportSlips('next');
+    }
+  };
+
+  const handlePrevPage = () => {
+    // Để đơn giản, khi nhấn Previous, ta tải lại từ đầu
+    setLastVisible(null);
+    fetchImportSlips('first');
+  };
+  
   const handleConfirmImport = async () => {
     const slip = confirmModal.item;
     if (!slip) return;
@@ -71,12 +102,25 @@ const ImportListPage = () => {
       const slipDocRef = doc(db, "import_tickets", slip.id);
       await updateDoc(slipDocRef, { status: "completed" });
       toast.success('Xác nhận nhập kho thành công!');
-      fetchImportSlips();
+      fetchImportSlips('first');
     } catch (error) {
       console.error("Lỗi khi xác nhận nhập kho: ", error);
       toast.error('Đã xảy ra lỗi khi xác nhận nhập kho.');
     } finally {
         setConfirmModal({ isOpen: false, item: null });
+    }
+  };
+  
+  const handleSaveSlipChanges = async (updatedSlip) => {
+    try {
+      const slipDocRef = doc(db, "import_tickets", updatedSlip.id);
+      await updateDoc(slipDocRef, { items: updatedSlip.items });
+      setIsEditModalOpen(false);
+      fetchImportSlips('first');
+      toast.success('Cập nhật phiếu nhập thành công!');
+    } catch (error) {
+      console.error("Lỗi khi cập nhật phiếu nhập: ", error);
+      toast.error('Đã xảy ra lỗi khi cập nhật.');
     }
   };
 
@@ -89,32 +133,8 @@ const ImportListPage = () => {
     });
   };
 
-  const openEditModal = (slip) => {
-    setSelectedSlip(slip);
-    setIsEditModalOpen(true);
-  };
-
-  const openViewModal = (slip) => {
-    setSelectedSlip(slip);
-    setIsViewModalOpen(true);
-  };
-
-  const handleSaveSlipChanges = async (updatedSlip) => {
-    try {
-      const slipDocRef = doc(db, "import_tickets", updatedSlip.id);
-      await updateDoc(slipDocRef, { items: updatedSlip.items });
-      setIsEditModalOpen(false);
-      fetchImportSlips();
-      toast.success('Cập nhật phiếu nhập thành công!');
-    } catch (error) {
-      console.error("Lỗi khi cập nhật phiếu nhập: ", error);
-      toast.error('Đã xảy ra lỗi khi cập nhật.');
-    }
-  };
-
-  if (loading) {
-    return <Spinner />; // <-- ĐÃ THAY THẾ
-  }
+  const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
+  const openViewModal = (slip) => { setSelectedSlip(slip); setIsViewModalOpen(true); };
 
   return (
     <div>
@@ -126,62 +146,65 @@ const ImportListPage = () => {
         onCancel={() => setConfirmModal({ isOpen: false, item: null })}
         confirmText="Xác nhận"
       />
-      {isViewModalOpen && (
-        <ViewImportSlipModal 
-          slip={selectedSlip} 
-          onClose={() => setIsViewModalOpen(false)}
-        />
-      )}
-      {isEditModalOpen && (
-        <EditImportSlipModal 
-          slip={selectedSlip} 
-          onClose={() => setIsEditModalOpen(false)}
-          onSave={handleSaveSlipChanges}
-        />
-      )}
+      {isViewModalOpen && ( <ViewImportSlipModal slip={selectedSlip} onClose={() => setIsViewModalOpen(false)} /> )}
+      {isEditModalOpen && ( <EditImportSlipModal slip={selectedSlip} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveSlipChanges} /> )}
+      
       <div className="page-header">
         <h1>Danh sách Phiếu Nhập Kho</h1>
       </div>
-      <table className="products-table">
-        <thead>
-          <tr>
-            <th>Ngày tạo</th>
-            <th>Nhà cung cấp</th>
-            <th>Diễn giải</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {importSlips.map(slip => (
-            <tr key={slip.id}>
-              <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
-              <td>{slip.supplier}</td>
-              <td>{slip.description}</td>
-              <td>
-                <StatusBadge status={slip.status} />
-              </td>
-              <td>
-                <div className="action-buttons">
-                  <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
-                     <FiEye />
-                  </button>
-                  {slip.status === 'pending' && (
-                    <>
-                      <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
-                        <FiEdit />
-                      </button>
-                      <button className="btn-primary" onClick={() => promptForConfirm(slip)}>
-                        Xác nhận
-                      </button>
-                    </>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      {loading ? <Spinner /> : (
+        <>
+            <table className="products-table">
+                <thead>
+                <tr>
+                    <th>Ngày tạo</th>
+                    <th>Nhà cung cấp</th>
+                    <th>Diễn giải</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                {importSlips.map(slip => (
+                    <tr key={slip.id}>
+                    <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
+                    <td>{slip.supplier}</td>
+                    <td>{slip.description}</td>
+                    <td><StatusBadge status={slip.status} /></td>
+                    <td>
+                        <div className="action-buttons">
+                        <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
+                            <FiEye />
+                        </button>
+                        {slip.status === 'pending' && (
+                            <>
+                            <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
+                                <FiEdit />
+                            </button>
+                            <button className="btn-primary" onClick={() => promptForConfirm(slip)}>
+                                Xác nhận
+                            </button>
+                            </>
+                        )}
+                        </div>
+                    </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+
+            <div className="pagination-controls">
+                <button onClick={handlePrevPage} disabled={page <= 1}>
+                    <FiChevronLeft /> Trang Trước
+                </button>
+                <span>Trang {page}</span>
+                <button onClick={handleNextPage} disabled={isLastPage}>
+                    Trang Tiếp <FiChevronRight />
+                </button>
+            </div>
+        </>
+      )}
     </div>
   );
 };
