@@ -658,74 +658,46 @@ tbody tr.selected-row td {
     font-size: 14px;
 }
 
-/* CĂN CHỈNH BẢNG TỒN KHO TỔNG HỢP (PHIÊN BẢN MỚI) */
-
-/* 1. Căn giữa làm mặc định cho tất cả các ô trong bảng */
-.products-table th,
-.products-table td {
-    text-align: center;
-    vertical-align: middle; /* Căn giữa theo chiều dọc */
+/* ========================================================================= */
+/* === TÙY CHỈNH RIÊNG CHO TRANG QUẢN LÝ HÀNG HÓA (ProductsPage) === */
+/* ========================================================================= */
+.products-page-container .products-table {
+    table-layout: fixed;
 }
-
-/* 2. Ghi đè, chỉ căn trái cho cột Tên hàng */
-.products-table th:nth-child(3),
-.products-table td:nth-child(3) {
+/* Cột 2 (Tên hàng) -> RỘNG RA */
+.products-page-container .products-table th:nth-child(2),
+.products-page-container .products-table td:nth-child(2) {
+    width: 40%;
     text-align: left;
-}
-
-/* 3. Phân bổ lại độ rộng các cột */
-
-/* Cột mũi tên (siêu nhỏ) */
-.products-table th:nth-child(1), .products-table td:nth-child(1) { width: 4%; }
-
-/* Mã hàng (nhỏ) */
-.products-table th:nth-child(2) { width: 10%; }
-
-/* Tên hàng (thu nhỏ lại) */
-.products-table th:nth-child(3) {
-    width: 28%;
-    max-width: 350px;
-}
-.products-table td:nth-child(3) {
-    max-width: 350px;
     white-space: normal;
-    word-wrap: break-word;
+    word-break: break-word;
+}
+/* Cột 3 (ĐVT) -> HẸP LẠI */
+.products-page-container .products-table th:nth-child(3),
+.products-page-container .products-table td:nth-child(3) {
+    width: 120px;
+    text-align: center;
 }
 
-/* Tổng tồn (nhỏ) */
-.products-table th:nth-child(4) { width: 8%; }
-
-/* ĐVT (nhỏ) */
-.products-table th:nth-child(5) { width: 8%; }
-
-/* Quy cách (TĂNG KÍCH THƯỚC) */
-.products-table th:nth-child(6) {
-    width: 12%;
+/* ========================================================================= */
+/* === TÙY CHỈNH RIÊNG CHO TRANG CHI TIẾT KIỂM KÊ (StocktakeSessionPage) === */
+/* ========================================================================= */
+.stocktake-session-page-container .products-table {
+    table-layout: fixed;
 }
-.products-table td:nth-child(6) {
+/* Cột 2 (Tên hàng) -> RỘNG RA */
+.stocktake-session-page-container .products-table th:nth-child(2),
+.stocktake-session-page-container .products-table td:nth-child(2) {
+    width: 40%;
+    text-align: left;
     white-space: normal;
-    word-wrap: break-word;
+    word-break: break-word;
 }
-
-/* Nhiệt độ BQ (TĂNG KÍCH THƯỚC) */
-.products-table th:nth-child(7) {
-    width: 12%;
-}
-.products-table td:nth-child(7) {
-    white-space: normal;
-    word-wrap: break-word;
-}
-
-/* Hãng SX (vừa phải) */
-.products-table th:nth-child(8) { width: 10%; }
-
-/* Team (THU NHỎ LẠI và cho phép xuống dòng) */
-.products-table th:nth-child(9) {
-    width: 8%;
-}
-.products-table td:nth-child(9) {
-    white-space: normal;
-    word-wrap: break-word;
+/* Cột 3 (Số lô) -> HẸP LẠI */
+.stocktake-session-page-container .products-table th:nth-child(3),
+.stocktake-session-page-container .products-table td:nth-child(3) {
+    width: 150px;
+    text-align: center;
 }
 
 /* CSS MỚI: Cho màu nền của từng lô hàng con */

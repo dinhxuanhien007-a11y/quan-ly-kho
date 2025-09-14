@@ -4645,7 +4645,7 @@ const StocktakeListPage = () => {
     };
     
     return (
-        <div>
+        <div className="stocktake-list-page-container">
             {isCreateModalOpen && (
                 <CreateStocktakeModal
                     onClose={() => setIsCreateModalOpen(false)}
@@ -4996,7 +4996,7 @@ const StocktakeSessionPage = () => {
     };
 
     return (
-        <div>
+        <div className="stocktake-session-page-container">
             <ConfirmationModal isOpen={confirmModal.isOpen} {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
 
@@ -5818,74 +5818,46 @@ tbody tr.selected-row td {
     font-size: 14px;
 }
 
-/* CÄ‚N CHá»ˆNH Báº¢NG Tá»’N KHO Tá»”NG Há»¢P (PHIÃŠN Báº¢N Má»šI) */
-
-/* 1. CÄƒn giá»¯a lÃ m máº·c Ä‘á»‹nh cho táº¥t cáº£ cÃ¡c Ã´ trong báº£ng */
-.products-table th,
-.products-table td {
-    text-align: center;
-    vertical-align: middle; /* CÄƒn giá»¯a theo chiá»u dá»c */
+/* ========================================================================= */
+/* === TÃ™Y CHá»ˆNH RIÃŠNG CHO TRANG QUáº¢N LÃ HÃ€NG HÃ“A (ProductsPage) === */
+/* ========================================================================= */
+.products-page-container .products-table {
+    table-layout: fixed;
 }
-
-/* 2. Ghi Ä‘Ã¨, chá»‰ cÄƒn trÃ¡i cho cá»™t TÃªn hÃ ng */
-.products-table th:nth-child(3),
-.products-table td:nth-child(3) {
+/* Cá»™t 2 (TÃªn hÃ ng) -> Rá»˜NG RA */
+.products-page-container .products-table th:nth-child(2),
+.products-page-container .products-table td:nth-child(2) {
+    width: 40%;
     text-align: left;
-}
-
-/* 3. PhÃ¢n bá»• láº¡i Ä‘á»™ rá»™ng cÃ¡c cá»™t */
-
-/* Cá»™t mÅ©i tÃªn (siÃªu nhá») */
-.products-table th:nth-child(1), .products-table td:nth-child(1) { width: 4%; }
-
-/* MÃ£ hÃ ng (nhá») */
-.products-table th:nth-child(2) { width: 10%; }
-
-/* TÃªn hÃ ng (thu nhá» láº¡i) */
-.products-table th:nth-child(3) {
-    width: 28%;
-    max-width: 350px;
-}
-.products-table td:nth-child(3) {
-    max-width: 350px;
     white-space: normal;
-    word-wrap: break-word;
+    word-break: break-word;
+}
+/* Cá»™t 3 (ÄVT) -> Háº¸P Láº I */
+.products-page-container .products-table th:nth-child(3),
+.products-page-container .products-table td:nth-child(3) {
+    width: 120px;
+    text-align: center;
 }
 
-/* Tá»•ng tá»“n (nhá») */
-.products-table th:nth-child(4) { width: 8%; }
-
-/* ÄVT (nhá») */
-.products-table th:nth-child(5) { width: 8%; }
-
-/* Quy cÃ¡ch (TÄ‚NG KÃCH THÆ¯á»šC) */
-.products-table th:nth-child(6) {
-    width: 12%;
+/* ========================================================================= */
+/* === TÃ™Y CHá»ˆNH RIÃŠNG CHO TRANG CHI TIáº¾T KIá»‚M KÃŠ (StocktakeSessionPage) === */
+/* ========================================================================= */
+.stocktake-session-page-container .products-table {
+    table-layout: fixed;
 }
-.products-table td:nth-child(6) {
+/* Cá»™t 2 (TÃªn hÃ ng) -> Rá»˜NG RA */
+.stocktake-session-page-container .products-table th:nth-child(2),
+.stocktake-session-page-container .products-table td:nth-child(2) {
+    width: 40%;
+    text-align: left;
     white-space: normal;
-    word-wrap: break-word;
+    word-break: break-word;
 }
-
-/* Nhiá»‡t Ä‘á»™ BQ (TÄ‚NG KÃCH THÆ¯á»šC) */
-.products-table th:nth-child(7) {
-    width: 12%;
-}
-.products-table td:nth-child(7) {
-    white-space: normal;
-    word-wrap: break-word;
-}
-
-/* HÃ£ng SX (vá»«a pháº£i) */
-.products-table th:nth-child(8) { width: 10%; }
-
-/* Team (THU NHá»Ž Láº I vÃ  cho phÃ©p xuá»‘ng dÃ²ng) */
-.products-table th:nth-child(9) {
-    width: 8%;
-}
-.products-table td:nth-child(9) {
-    white-space: normal;
-    word-wrap: break-word;
+/* Cá»™t 3 (Sá»‘ lÃ´) -> Háº¸P Láº I */
+.stocktake-session-page-container .products-table th:nth-child(3),
+.stocktake-session-page-container .products-table td:nth-child(3) {
+    width: 150px;
+    text-align: center;
 }
 
 /* CSS Má»šI: Cho mÃ u ná»n cá»§a tá»«ng lÃ´ hÃ ng con */

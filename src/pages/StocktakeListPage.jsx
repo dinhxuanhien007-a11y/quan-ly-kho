@@ -132,7 +132,7 @@ const StocktakeListPage = () => {
     };
     
     return (
-        <div>
+        <div className="stocktake-list-page-container">
             {isCreateModalOpen && (
                 <CreateStocktakeModal
                     onClose={() => setIsCreateModalOpen(false)}

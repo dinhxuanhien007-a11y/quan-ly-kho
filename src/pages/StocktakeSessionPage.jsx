@@ -272,7 +272,7 @@ const StocktakeSessionPage = () => {
     };
 
     return (
-        <div>
+        <div className="stocktake-session-page-container">
             <ConfirmationModal isOpen={confirmModal.isOpen} {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
 
