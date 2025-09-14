@@ -567,6 +567,7 @@ import ExportListPage from '../pages/ExportListPage';
 import StocktakeListPage from '../pages/StocktakeListPage';
 import StocktakeSessionPage from '../pages/StocktakeSessionPage'; // Import trang má»›i
 import LotTracePage from '../pages/LotTracePage';
+import DataImportPage from '../pages/DataImportPage';
 import TestPage from '../pages/TestPage';
 
 const AdminLayout = () => {
@@ -586,6 +587,7 @@ const AdminLayout = () => {
           <Route path="/stocktakes" element={<StocktakeListPage />} />
           <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} /> {/* Route má»›i cho trang chi tiáº¿t */}
           <Route path="/lot-trace" element={<LotTracePage />} />
+          <Route path="/import-data" element={<DataImportPage />} />
           <Route path="/test" element={<TestPage />} />
         </Routes>
       </main>
@@ -639,7 +641,8 @@ export default ConfirmationModal;
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 
-const CreateStocktakeModal = ({ onClose, onCreate }) => {
+// *** PHIÃŠN Báº¢N Sá»¬A Lá»–I ***
+const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
     const [sessionName, setSessionName] = useState('');
     const [scope, setScope] = useState('all');
 
@@ -677,8 +680,10 @@ const CreateStocktakeModal = ({ onClose, onCreate }) => {
                         </select>
                     </div>
                     <div className="modal-actions">
-                        <button type="button" onClick={onClose} className="btn-secondary">Há»§y</button>
-                        <button type="submit" className="btn-primary">Báº¯t Ä‘áº§u</button>
+                        <button type="button" onClick={onClose} className="btn-secondary" disabled={isCreating}>Há»§y</button>
+                        <button type="submit" className="btn-primary" disabled={isCreating}>
+                            {isCreating ? 'Äang táº¡o...' : 'Báº¯t Ä‘áº§u'}
+                        </button>
                     </div>
                 </form>
             </div>
@@ -696,26 +701,38 @@ export default CreateStocktakeModal;
 // src/components/EditExportSlipModal.jsx
 
 import React, { useState } from 'react';
-import { FiXCircle } from 'react-icons/fi'; // Bá» FiPlusCircle
+import { FiXCircle } from 'react-icons/fi';
+import { toast } from 'react-toastify'; // Import toast
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
 
+  // *** PHIÃŠN Báº¢N Sá»¬A Lá»–I ***
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
-    // --- Sá»¬A Lá»–I QUAN TRá»ŒNG Táº I ÄÃ‚Y ---
     if (field === 'quantityToExport') {
       const numericValue = Number(value);
-      // LuÃ´n chuyá»ƒn giÃ¡ trá»‹ vá» dáº¡ng Sá»‘
+      // LÆ°á»£ng xuáº¥t ban Ä‘áº§u trÃªn phiáº¿u khi chÆ°a sá»­a
+      const originalExportedQty = slip.items[index].quantityToExport || slip.items[index].quantityExported;
+      // LÆ°á»£ng tá»“n kho kháº£ dá»¥ng = lÆ°á»£ng cÃ²n láº¡i trong kho + lÆ°á»£ng Ä‘Ã£ khai bÃ¡o xuáº¥t ban Ä‘áº§u
+      const availableStock = updatedItems[index].quantityRemaining + originalExportedQty;
+      
       if (numericValue < 0) return; // Cháº·n sá»‘ Ã¢m
-      updatedItems[index][field] = numericValue;
+      
+      // Kiá»ƒm tra vá»›i lÆ°á»£ng tá»“n kho kháº£ dá»¥ng
+      if (numericValue > availableStock) {
+        toast.warn(`Sá»‘ lÆ°á»£ng xuáº¥t (${numericValue}) khÃ´ng thá»ƒ vÆ°á»£t quÃ¡ tá»“n kho hiá»‡n cÃ³ (${availableStock}).`);
+        updatedItems[index][field] = availableStock;
+      } else {
+        updatedItems[index][field] = numericValue;
+      }
     } else {
       updatedItems[index][field] = value;
     }
     
     setSlipData({ ...slipData, items: updatedItems });
   };
-  
+
   const removeRow = (indexToRemove) => {
     const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
     setSlipData({ ...slipData, items: newItems });
@@ -786,21 +803,29 @@ export default EditExportSlipModal;
 
 
 // src/components/EditImportSlipModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; // <-- THÃŠM Má»šI: import useRef, useEffect
 import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
 import { formatExpiryDate } from '../utils/dateUtils';
 
 const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
+  // <-- THÃŠM Má»šI: Ref Ä‘á»ƒ tham chiáº¿u Ä‘áº¿n input cuá»‘i cÃ¹ng
+  const lastInputRef = useRef(null);
 
-  // HÃ€M Má»šI: Chá»‰ Ä‘á»‹nh dáº¡ng HSD khi ngÆ°á»i dÃ¹ng rá»i khá»i Ã´ input
+  // <-- THÃŠM Má»šI: useEffect Ä‘á»ƒ focus vÃ o input cá»§a dÃ²ng má»›i Ä‘Æ°á»£c thÃªm
+  useEffect(() => {
+    if (lastInputRef.current) {
+        lastInputRef.current.focus();
+    }
+  }, [slipData.items.length]); // Cháº¡y má»—i khi sá»‘ lÆ°á»£ng dÃ²ng thay Ä‘á»•i
+
+
   const handleExpiryDateBlur = (index, value) => {
     const updatedItems = [...slipData.items];
     updatedItems[index].expiryDate = formatExpiryDate(value);
     setSlipData({ ...slipData, items: updatedItems });
   };
 
-  // HÃ€M CÅ¨: Giá» chá»‰ cáº­p nháº­t giÃ¡ trá»‹ thÃ´, khÃ´ng Ä‘á»‹nh dáº¡ng HSD
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
     updatedItems[index][field] = value;
@@ -827,13 +852,13 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const handleSaveChanges = () => {
     onSave(slipData);
   };
-
   return (
     <div className="modal-backdrop">
       <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
         <h2>Chá»‰nh sá»­a Phiáº¿u Nháº­p Kho (ID: {slipData.id})</h2>
         <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+          {/* ... grid headers ... */}
           <div className="grid-header">MÃ£ hÃ ng</div>
           <div className="grid-header">TÃªn hÃ ng</div>
           <div className="grid-header">Sá»‘ lÃ´</div>
@@ -846,7 +871,15 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 
           {slipData.items.map((item, index) => (
             <React.Fragment key={index}>
-              <div className="grid-cell"><input type="text" value={item.productId} onChange={e => handleItemChange(index, 'productId', e.target.value)} /></div>
+              <div className="grid-cell">
+                <input 
+                    type="text" 
+                    value={item.productId} 
+                    onChange={e => handleItemChange(index, 'productId', e.target.value)} 
+                    // <-- THAY Äá»”I: GÃ¡n ref cho Ã´ input cá»§a dÃ²ng cuá»‘i cÃ¹ng
+                    ref={index === slipData.items.length - 1 ? lastInputRef : null}
+                />
+              </div>
               <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
               <div className="grid-cell"><input type="text" value={item.lotNumber} onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} /></div>
               <div className="grid-cell">
@@ -886,7 +919,6 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 };
 
 export default EditImportSlipModal;
-
 
 
 
@@ -1363,6 +1395,7 @@ import {
     FiTool, 
     FiUsers,
     FiBookOpen,
+    FiUpload,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
@@ -1423,6 +1456,11 @@ const Navbar = () => {
         <li>
           <NavLink to="/lot-trace" title="Truy Váº¿t LÃ´ HÃ ng">
             <FiShare2 className="nav-icon" />
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/import-data" title="Import Dá»¯ Liá»‡u">
+            <FiUpload className="nav-icon" />
           </NavLink>
         </li>
         <li>
@@ -1607,7 +1645,10 @@ const StatusBadge = ({ status }) => {
     return <span className={className}>{text}</span>;
 };
 
-export default StatusBadge;
+// <-- NÃ‚NG Cáº¤P: Bá»c component trong React.memo Ä‘á»ƒ tá»‘i Æ°u hiá»‡u nÄƒng,
+// trÃ¡nh viá»‡c re-render khÃ´ng cáº§n thiáº¿t khi props khÃ´ng thay Ä‘á»•i.
+export default React.memo(StatusBadge);
+
 
 
 
@@ -1636,7 +1677,9 @@ const TeamBadge = ({ team }) => {
   return <span className={className}>{team}</span>;
 };
 
-export default TeamBadge;
+// <-- NÃ‚NG Cáº¤P: Bá»c component trong React.memo Ä‘á»ƒ tá»‘i Æ°u hiá»‡u nÄƒng.
+export default React.memo(TeamBadge);
+
 
 
 
@@ -1663,7 +1706,9 @@ const TempBadge = ({ temperature }) => {
   return <span className={className}>{temperature}</span>;
 };
 
-export default TempBadge;
+// <-- NÃ‚NG Cáº¤P: Bá»c component trong React.memo Ä‘á»ƒ tá»‘i Æ°u hiá»‡u nÄƒng.
+export default React.memo(TempBadge);
+
 
 
 
@@ -1954,6 +1999,113 @@ export const useAuth = () => {
 
 
 
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useFirestorePagination.js ---
+
+
+// src/hooks/useFirestorePagination.js
+import { useState, useEffect, useCallback } from 'react';
+import { getDocs, query, startAfter, limit } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+
+/**
+ * // <-- THÃŠM Má»šI: Custom Hook Ä‘á»ƒ quáº£n lÃ½ viá»‡c phÃ¢n trang vá»›i Firestore.
+ * @param {object} baseQuery - Query cÆ¡ báº£n cá»§a Firestore (Ä‘Ã£ bao gá»“m orderBy).
+ * @param {number} pageSize - Sá»‘ lÆ°á»£ng má»¥c trÃªn má»—i trang.
+ * @returns {object} - State vÃ  cÃ¡c hÃ m Ä‘á»ƒ Ä‘iá»u khiá»ƒn phÃ¢n trang.
+ */
+export const useFirestorePagination = (baseQuery, pageSize) => {
+    const [documents, setDocuments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isLastPage, setIsLastPage] = useState(false);
+    const [lastVisible, setLastVisible] = useState(null);
+    const [page, setPage] = useState(1);
+    
+    // LÆ°u con trá» cá»§a trang trÆ°á»›c Ä‘Ã³ Ä‘á»ƒ quay láº¡i
+    const [prevPageCursors, setPrevPageCursors] = useState([]);
+
+    const fetchPage = useCallback(async (direction, cursor = null) => {
+        setLoading(true);
+        try {
+            let pageQuery;
+            if (direction === 'next' && cursor) {
+                pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
+            } else { // 'first' or 'prev' (logic xá»­ lÃ½ prev náº±m á»Ÿ ngoÃ i)
+                pageQuery = query(baseQuery, limit(pageSize));
+            }
+
+            const docSnapshots = await getDocs(pageQuery);
+            const list = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            if (list.length > 0) {
+                setDocuments(list);
+                const newLastVisible = docSnapshots.docs[docSnapshots.docs.length - 1];
+                setLastVisible(newLastVisible);
+                if (direction === 'next') {
+                    // LÆ°u con trá» hiá»‡n táº¡i trÆ°á»›c khi qua trang má»›i
+                    setPrevPageCursors(prev => [...prev, lastVisible]); 
+                }
+            } else {
+                setDocuments([]);
+            }
+            
+            setIsLastPage(docSnapshots.docs.length < pageSize);
+
+        } catch (error) {
+            console.error("Lá»—i khi phÃ¢n trang Firestore: ", error);
+            toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u trang. Vui lÃ²ng kiá»ƒm tra Console (F12).");
+        } finally {
+            setLoading(false);
+        }
+    }, [baseQuery, pageSize, lastVisible]); // ThÃªm lastVisible vÃ o dependency
+
+    // Tá»± Ä‘á»™ng fetch láº¡i trang Ä‘áº§u khi query thay Ä‘á»•i (vÃ­ dá»¥: khi tÃ¬m kiáº¿m)
+    useEffect(() => {
+        setPage(1);
+        setLastVisible(null);
+        setPrevPageCursors([]);
+        fetchPage('first');
+    }, [baseQuery]); // Chá»‰ cháº¡y láº¡i khi baseQuery thay Ä‘á»•i
+
+    const nextPage = () => {
+        if (!isLastPage) {
+            setPage(p => p + 1);
+            fetchPage('next', lastVisible);
+        }
+    };
+
+    const prevPage = () => {
+         if (page > 1) {
+            // Logic prevPage hiá»‡n táº¡i Ä‘Æ¡n giáº£n lÃ  fetch láº¡i trang Ä‘áº§u.
+            // Äá»ƒ quay láº¡i trang trÆ°á»›c chÃ­nh xÃ¡c, cáº§n má»™t logic phá»©c táº¡p hÆ¡n vá»›i `endBefore` vÃ  `limitToLast`
+            // mÃ  custom hook nÃ y chÆ°a há»— trá»£ Ä‘á»ƒ giá»¯ cho nÃ³ Ä‘Æ¡n giáº£n.
+            // Ta sáº½ reset vá» trang 1.
+            setPage(1);
+            setLastVisible(null);
+            setPrevPageCursors([]);
+            fetchPage('first');
+        }
+    };
+    
+    const reset = () => {
+        setPage(1);
+        setLastVisible(null);
+        setPrevPageCursors([]);
+        fetchPage('first');
+    };
+
+    return {
+        documents,
+        loading,
+        isLastPage,
+        page,
+        nextPage,
+        prevPage,
+        reset // <-- ThÃªm hÃ m reset Ä‘á»ƒ táº£i láº¡i dá»¯ liá»‡u khi cáº§n
+    };
+};
+
+
+
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DashboardPage.jsx ---
 
 
@@ -2034,77 +2186,322 @@ export default DashboardPage;
 
 
 
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DataImportPage.jsx ---
+
+
+// src/pages/DataImportPage.jsx
+
+import React, { useState } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, writeBatch, doc, Timestamp, getDoc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+import Papa from 'papaparse';
+import { FiUpload, FiDownload, FiInfo } from 'react-icons/fi';
+import { parseDateString } from '../utils/dateUtils';
+import '../styles/DataImportPage.css';
+
+const DataImportPage = () => {
+    const [importType, setImportType] = useState('inventory'); // <-- THAY Äá»”I: Máº·c Ä‘á»‹nh lÃ  import tá»•ng há»£p
+    const [pastedData, setPastedData] = useState('');
+    const [isImporting, setIsImporting] = useState(false);
+    const [importLog, setImportLog] = useState([]);
+
+    const logMessage = (message, type = 'info') => {
+        setImportLog(prev => [...prev, { message, type, time: new Date().toLocaleTimeString() }]);
+    };
+
+    const handleFileImport = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        logMessage(`Báº¯t Ä‘áº§u Ä‘á»c file: ${file.name}`);
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                processData(results.data);
+            },
+            error: (err) => {
+                toast.error("KhÃ´ng thá»ƒ Ä‘á»c file CSV.");
+                logMessage(`Lá»—i Ä‘á»c file: ${err.message}`, 'error');
+            }
+        });
+        e.target.value = null;
+    };
+    
+    const handlePasteImport = () => {
+        if (!pastedData.trim()) {
+            toast.warn("Vui lÃ²ng dÃ¡n dá»¯ liá»‡u vÃ o Ã´ trá»‘ng.");
+            return;
+        }
+        logMessage(`Báº¯t Ä‘áº§u Ä‘á»c dá»¯ liá»‡u Ä‘Ã£ dÃ¡n.`);
+        Papa.parse(pastedData, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                processData(results.data);
+            },
+             error: (err) => {
+                toast.error("Äá»‹nh dáº¡ng dá»¯ liá»‡u Ä‘Ã£ dÃ¡n khÃ´ng há»£p lá»‡.");
+                logMessage(`Lá»—i Ä‘á»c dá»¯ liá»‡u: ${err.message}`, 'error');
+            }
+        });
+    };
+
+    const processData = async (data) => {
+        if (!data || data.length === 0) {
+            toast.warn("KhÃ´ng cÃ³ dá»¯ liá»‡u há»£p lá»‡ Ä‘á»ƒ import.");
+            logMessage("KhÃ´ng tÃ¬m tháº¥y dÃ²ng dá»¯ liá»‡u nÃ o.", 'warn');
+            return;
+        }
+
+        setIsImporting(true);
+        setImportLog([]);
+        logMessage(`PhÃ¡t hiá»‡n ${data.length} dÃ²ng. Báº¯t Ä‘áº§u xá»­ lÃ½ cho loáº¡i: ${importType}...`);
+
+        try {
+            const MAX_BATCH_SIZE = 499; // Giá»›i háº¡n an toÃ n cá»§a Firestore lÃ  500 thao tÃ¡c/batch
+            let batch = writeBatch(db);
+            let operationCount = 0;
+            let totalSuccess = 0;
+            
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+
+                // --- LOGIC Gá»˜P Sáº¢N PHáº¨M & Tá»’N KHO ---
+                if (importType === 'inventory') {
+                    // 1. Kiá»ƒm tra cÃ¡c trÆ°á»ng báº¯t buá»™c
+                    if (!row.productId || !row.productName || !row.lotNumber || !row.quantityRemaining) {
+                        logMessage(`Bá» qua dÃ²ng ${i + 2}: Thiáº¿u thÃ´ng tin báº¯t buá»™c (MÃ£, TÃªn, LÃ´, SL Tá»“n).`, 'warn');
+                        continue;
+                    }
+                    
+                    const expiryDate = parseDateString(row.expiryDate);
+                    if (!expiryDate && row.expiryDate) { // Chá»‰ bÃ¡o lá»—i náº¿u cÃ³ nháº­p HSD nhÆ°ng sai Ä‘á»‹nh dáº¡ng
+                        logMessage(`Bá» qua dÃ²ng ${i + 2}: Sai Ä‘á»‹nh dáº¡ng HSD (cáº§n lÃ  dd/mm/yyyy).`, 'warn');
+                        continue;
+                    }
+
+                    const productId = row.productId.trim().toUpperCase();
+
+                    // 2. Tá»± Ä‘á»™ng táº¡o sáº£n pháº©m má»›i náº¿u chÆ°a tá»“n táº¡i
+                    const productRef = doc(db, 'products', productId);
+                    const productSnap = await getDoc(productRef);
+                    
+                    if (!productSnap.exists()) {
+                        const newProductData = {
+                            productName: row.productName,
+                            unit: row.unit || '',
+                            packaging: row.packaging || '',
+                            storageTemp: row.storageTemp || '',
+                            manufacturer: row.manufacturer || '',
+                            team: row.team || 'MED',
+                        };
+                        batch.set(productRef, newProductData);
+                        operationCount++;
+                        logMessage(`ÄÃ£ táº¡o sáº£n pháº©m má»›i: ${productId}`);
+                    }
+                    
+                    // 3. LuÃ´n táº¡o má»™t lÃ´ hÃ ng má»›i cho tá»“n Ä‘áº§u ká»³
+                    const inventoryRef = doc(collection(db, 'inventory_lots'));
+                    const inventoryData = {
+                        productId: productId,
+                        productName: row.productName,
+                        lotNumber: row.lotNumber.trim(),
+                        expiryDate: expiryDate ? Timestamp.fromDate(expiryDate) : null,
+                        importDate: Timestamp.now(),
+                        quantityImported: Number(row.quantityRemaining),
+                        quantityRemaining: Number(row.quantityRemaining),
+                        unit: row.unit || '',
+                        packaging: row.packaging || '',
+                        storageTemp: row.storageTemp || '',
+                        team: row.team || 'MED',
+                        manufacturer: row.manufacturer || '',
+                        supplier: 'Tá»“n Ä‘áº§u ká»³',
+                    };
+                    batch.set(inventoryRef, inventoryData);
+                    operationCount++;
+                    totalSuccess++;
+                
+                // --- LOGIC IMPORT Äá»I TÃC (Giá»¯ nguyÃªn) ---
+                } else if (importType === 'partners') {
+                    if (!row.partnerId) {
+                        logMessage(`Bá» qua dÃ²ng ${i + 2}: Thiáº¿u partnerId.`, 'warn');
+                        continue;
+                    }
+                    const docId = row.partnerId.trim().toUpperCase();
+                    const docData = {
+                        partnerName: row.partnerName || '',
+                        partnerType: row.partnerType === 'customer' ? 'customer' : 'supplier',
+                    };
+                    const docRef = doc(collection(db, 'partners'), docId);
+                    batch.set(docRef, docData);
+                    operationCount++;
+                    totalSuccess++;
+                }
+
+                // Thá»±c thi batch khi Ä‘áº§y
+                if (operationCount >= MAX_BATCH_SIZE) {
+                    await batch.commit();
+                    logMessage(`ÄÃ£ ghi thÃ nh cÃ´ng ${operationCount} thao tÃ¡c...`);
+                    batch = writeBatch(db);
+                    operationCount = 0;
+                }
+            }
+
+            // Thá»±c thi batch cuá»‘i cÃ¹ng
+            if (operationCount > 0) {
+                await batch.commit();
+                logMessage(`ÄÃ£ ghi thÃ nh cÃ´ng ${operationCount} thao tÃ¡c cuá»‘i cÃ¹ng.`);
+            }
+
+            toast.success(`HoÃ n táº¥t! Import thÃ nh cÃ´ng ${totalSuccess}/${data.length} má»¥c.`);
+            logMessage(`HoÃ n táº¥t! Import thÃ nh cÃ´ng ${totalSuccess}/${data.length} má»¥c.`, 'success');
+
+        } catch (error) {
+            console.error("Lá»—i khi import dá»¯ liá»‡u: ", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i trong quÃ¡ trÃ¬nh import.");
+            logMessage(`Lá»—i nghiÃªm trá»ng: ${error.message}`, 'error');
+        } finally {
+            setIsImporting(false);
+            setPastedData('');
+        }
+    };
+    
+    const downloadTemplate = () => {
+        let headers, filename, sampleData;
+        
+        if (importType === 'partners') {
+            headers = "partnerId*,partnerName*,partnerType";
+            filename = "mau_import_doi_tac.csv";
+            sampleData = "NCC-01,CÃ”NG TY DÆ¯á»¢C PHáº¨M ABC,supplier\nKH-01,Bá»†NH VIá»†N XYZ,customer";
+        } else { // Máº«u chung cho Sáº£n pháº©m + Tá»“n kho
+            headers = "productId*,productName*,lotNumber*,quantityRemaining*,expiryDate,unit,packaging,storageTemp,team,manufacturer";
+            filename = "mau_import_san_pham_ton_kho.csv";
+            sampleData = "SP001,BÃ”NG Cá»’N ALKOCIDE,L202501,100,31/12/2025,Há»™p,100 miáº¿ng/há»™p,Nhiá»‡t Ä‘á»™ phÃ²ng,MED,DentaLife\nSP002,GÄ‚NG TAY Y Táº¾,GT001,50,,Há»™p,50 Ä‘Ã´i/há»™p,,MED,";
+        }
+        
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers + "\n" + sampleData;
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    return (
+        <div className="data-import-page">
+            <div className="page-header">
+                <h1>Import Dá»¯ Liá»‡u HÃ ng Loáº¡t</h1>
+            </div>
+
+            <div className="import-container">
+                <div className="import-controls">
+                    <h3>1. Chá»n loáº¡i dá»¯ liá»‡u</h3>
+                    <div className="import-type-selector">
+                        {/* <-- THAY Äá»”I: Gá»™p Sáº£n pháº©m vÃ  Tá»“n kho lÃ m má»™t --> */}
+                        <button onClick={() => setImportType('inventory')} className={importType === 'inventory' ? 'active' : ''}>Sáº£n pháº©m & Tá»“n kho</button>
+                        <button onClick={() => setImportType('partners')} className={importType === 'partners' ? 'active' : ''}>Äá»‘i tÃ¡c</button>
+                    </div>
+
+                    <h3>2. Chuáº©n bá»‹ dá»¯ liá»‡u</h3>
+                    <p>Dá»¯ liá»‡u cáº§n á»Ÿ Ä‘á»‹nh dáº¡ng CSV (UTF-8). Báº¡n cÃ³ thá»ƒ dÃ¹ng file máº«u dÆ°á»›i Ä‘Ã¢y Ä‘á»ƒ Ä‘áº£m báº£o Ä‘Ãºng cáº¥u trÃºc cá»™t.</p>
+                    <button onClick={downloadTemplate} className="btn-secondary" style={{ width: '100%' }}>
+                        <FiDownload /> Táº£i File Máº«u
+                    </button>
+                    
+                    <div className="import-instructions">
+                         <FiInfo /> 
+                         <div>
+                            <strong>LÆ°u Ã½ quan trá»ng:</strong>
+                            <ul>
+                                <li>Cá»™t tiÃªu Ä‘á» (cÃ³ dáº¥u `*`) lÃ  báº¯t buá»™c pháº£i cÃ³ dá»¯ liá»‡u.</li>
+                                {/* <-- THAY Äá»”I: Giáº£i thÃ­ch logic má»›i --> */}
+                                <li>Náº¿u `productId` chÆ°a cÃ³, má»™t sáº£n pháº©m má»›i sáº½ Ä‘Æ°á»£c tá»± Ä‘á»™ng táº¡o.</li>
+                                <li>Má»—i dÃ²ng trong file sáº½ táº¡o ra má»™t lÃ´ hÃ ng tá»“n kho má»›i.</li>
+                                <li>Náº¿u `partnerId` Ä‘Ã£ tá»“n táº¡i, dá»¯ liá»‡u cÅ© sáº½ bá»‹ **ghi Ä‘Ã¨**.</li>
+                            </ul>
+                         </div>
+                    </div>
+                </div>
+
+                <div className="import-actions">
+                    <h3>3. Táº£i lÃªn vÃ  thá»±c hiá»‡n</h3>
+                     {/* ... Giao diá»‡n táº£i lÃªn vÃ  nháº­t kÃ½ giá»¯ nguyÃªn ... */}
+                     <div className="import-method">
+                        <h4>CÃ¡ch 1: Táº£i lÃªn file .csv</h4>
+                        <input type="file" accept=".csv" onChange={handleFileImport} disabled={isImporting} />
+                    </div>
+                     <div className="import-method">
+                        <h4>CÃ¡ch 2: DÃ¡n dá»¯ liá»‡u tá»« Excel/Google Sheets</h4>
+                        <textarea 
+                            rows="8" 
+                            placeholder="DÃ¡n dá»¯ liá»‡u cá»§a báº¡n vÃ o Ä‘Ã¢y (bao gá»“m cáº£ dÃ²ng tiÃªu Ä‘á»)"
+                            value={pastedData}
+                            onChange={(e) => setPastedData(e.target.value)}
+                            disabled={isImporting}
+                        ></textarea>
+                        <button onClick={handlePasteImport} className="btn-primary" disabled={isImporting} style={{marginTop: '10px'}}>
+                            <FiUpload /> {isImporting ? 'Äang import...' : 'Import tá»« dá»¯ liá»‡u Ä‘Ã£ dÃ¡n'}
+                        </button>
+                    </div>
+                    <div className="import-log-container">
+                        <h4>Nháº­t kÃ½ Import</h4>
+                        <div className="import-log">
+                            {importLog.length === 0 && <p>ChÆ°a cÃ³ hoáº¡t Ä‘á»™ng nÃ o.</p>}
+                            {importLog.map((log, index) => (
+                                <p key={index} className={`log-item log-${log.type}`}>
+                                    <span>[{log.time}]</span> {log.message}
+                                </p>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default DataImportPage;
+
+
+
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ExportListPage.jsx ---
 
 
 // src/pages/ExportListPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, doc, updateDoc, getDoc, limit, startAfter } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
+import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import ViewExportSlipModal from '../components/ViewExportSlipModal';
 import EditExportSlipModal from '../components/EditExportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15; // Sá» PHIáº¾U TRÃŠN Má»–I TRANG
-
 const ExportListPage = () => {
-  const [exportSlips, setExportSlips] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'XÃ¡c nháº­n' });
 
-  // --- STATE Má»šI CHO PHÃ‚N TRANG ---
-  const [lastVisible, setLastVisible] = useState(null);
-  const [page, setPage] = useState(1);
-  const [isLastPage, setIsLastPage] = useState(false);
-
-  const fetchExportSlips = useCallback(async (direction = 'next') => {
-    setLoading(true);
-    try {
-      let slipsQuery = query(collection(db, "export_tickets"), orderBy("createdAt", "desc"));
-
-      if (direction === 'next' && lastVisible) {
-        slipsQuery = query(slipsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-      } else { // 'first' or default
-        slipsQuery = query(slipsQuery, limit(PAGE_SIZE));
-        setPage(1);
-      }
-      
-      const querySnapshot = await getDocs(slipsQuery);
-      const slipsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-      setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
-      setExportSlips(slipsList);
-    } catch (error) {
-      console.error("Lá»—i khi láº¥y danh sÃ¡ch phiáº¿u xuáº¥t: ", error);
-      toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch phiáº¿u xuáº¥t.");
-    } finally {
-      setLoading(false);
-    }
-  }, [lastVisible]);
-
-  useEffect(() => {
-    fetchExportSlips('first');
-  }, []);
-
-  const handleNextPage = () => {
-    if (!isLastPage) {
-        setPage(prev => prev + 1);
-        fetchExportSlips('next');
-    }
-  };
-
-  const handlePrevPage = () => {
-    setLastVisible(null);
-    fetchExportSlips('first');
-  };
+  // <-- THAY Äá»”I: Sá»­ dá»¥ng hook phÃ¢n trang
+  const baseQuery = useMemo(() => query(collection(db, 'export_tickets'), orderBy("createdAt", "desc")), []);
+  const {
+    documents: exportSlips,
+    loading,
+    isLastPage,
+    page,
+    nextPage,
+    prevPage,
+    reset
+  } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
   const handleConfirmExport = async (slip) => {
     try {
@@ -2124,7 +2521,7 @@ const ExportListPage = () => {
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'completed' });
       toast.success('XÃ¡c nháº­n xuáº¥t kho thÃ nh cÃ´ng!');
-      fetchExportSlips('first');
+      reset();
     } catch (error) {
       console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
       toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n.');
@@ -2138,7 +2535,7 @@ const ExportListPage = () => {
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'cancelled' });
       toast.success('Há»§y phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
-      fetchExportSlips('first');
+      reset();
     } catch (error) {
       console.error("Lá»—i khi há»§y phiáº¿u: ", error);
       toast.error('ÄÃ£ xáº£y ra lá»—i khi há»§y phiáº¿u.');
@@ -2156,7 +2553,7 @@ const ExportListPage = () => {
           description: updatedSlip.description
       });
       setIsEditModalOpen(false);
-      fetchExportSlips('first');
+      reset();
       toast.success('Cáº­p nháº­t phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
     } catch (error) {
       console.error("Lá»—i khi cáº­p nháº­t phiáº¿u xuáº¥t: ", error);
@@ -2185,7 +2582,30 @@ const ExportListPage = () => {
   };
 
   const openViewModal = (slip) => { setSelectedSlip(slip); setIsViewModalOpen(true); };
-  const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
+  
+  const openEditModal = async (slip) => {
+    const slipWithDetails = JSON.parse(JSON.stringify(slip));
+    try {
+      toast.info("Äang láº¥y dá»¯ liá»‡u tá»“n kho má»›i nháº¥t...");
+      for (const item of slipWithDetails.items) {
+        if (item.lotId) {
+          const lotRef = doc(db, 'inventory_lots', item.lotId);
+          const lotSnap = await getDoc(lotRef);
+          if (lotSnap.exists()) {
+            item.quantityRemaining = lotSnap.data().quantityRemaining;
+          } else {
+            item.quantityRemaining = 0;
+            toast.warn(`LÃ´ ${item.lotNumber} khÃ´ng cÃ²n tá»“n táº¡i trong kho.`);
+          }
+        }
+      }
+      setSelectedSlip(slipWithDetails);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      console.error("Lá»—i khi láº¥y chi tiáº¿t lÃ´ Ä‘á»ƒ chá»‰nh sá»­a:", error);
+      toast.error("KhÃ´ng thá»ƒ láº¥y dá»¯ liá»‡u tá»“n kho má»›i nháº¥t.");
+    }
+  };
   
   return (
     <div>
@@ -2232,7 +2652,7 @@ const ExportListPage = () => {
                             {slip.status === 'pending' && (
                             <>
                                 <button className="btn-icon btn-confirm" title="XÃ¡c nháº­n xuáº¥t kho" onClick={() => promptAction('confirm', slip)}>
-                                <FiCheckCircle />
+                                    <FiCheckCircle />
                                 </button>
                                 <button className="btn-icon btn-edit" title="Sá»­a phiáº¿u" onClick={() => openEditModal(slip)}>
                                     <FiEdit />
@@ -2255,11 +2675,11 @@ const ExportListPage = () => {
             </table>
 
             <div className="pagination-controls">
-                <button onClick={handlePrevPage} disabled={page <= 1}>
+                <button onClick={prevPage} disabled={page <= 1 || loading}>
                     <FiChevronLeft /> Trang TrÆ°á»›c
                 </button>
                 <span>Trang {page}</span>
-                <button onClick={handleNextPage} disabled={isLastPage}>
+                <button onClick={nextPage} disabled={isLastPage || loading}>
                     Trang Tiáº¿p <FiChevronRight />
                 </button>
             </div>
@@ -2277,76 +2697,38 @@ export default ExportListPage;
 
 
 // src/pages/ImportListPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy } from 'firebase/firestore';
+import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp, limit, startAfter } from 'firebase/firestore';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
-import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15; // Sá» PHIáº¾U TRÃŠN Má»–I TRANG
-
 const ImportListPage = () => {
-  const [importSlips, setImportSlips] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-
-  // --- STATE Má»šI CHO PHÃ‚N TRANG ---
-  const [lastVisible, setLastVisible] = useState(null);
-  const [page, setPage] = useState(1);
-  const [isLastPage, setIsLastPage] = useState(false);
-
-  const fetchImportSlips = useCallback(async (direction = 'next') => {
-    setLoading(true);
-    try {
-      let slipsQuery = query(collection(db, "import_tickets"), orderBy("createdAt", "desc"));
-
-      if (direction === 'next' && lastVisible) {
-        slipsQuery = query(slipsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-      } else { // 'first' or default
-        slipsQuery = query(slipsQuery, limit(PAGE_SIZE));
-        setPage(1);
-      }
-      
-      const querySnapshot = await getDocs(slipsQuery);
-      const slipsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-      setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
-      setImportSlips(slipsList);
-    } catch (error) {
-      console.error("Lá»—i khi láº¥y danh sÃ¡ch phiáº¿u nháº­p: ", error);
-      toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch phiáº¿u nháº­p.");
-    } finally {
-      setLoading(false);
-    }
-  }, [lastVisible]);
-
-  useEffect(() => {
-    fetchImportSlips('first');
-  }, []);
-
-  const handleNextPage = () => {
-    if (!isLastPage) {
-        setPage(prev => prev + 1);
-        fetchImportSlips('next');
-    }
-  };
-
-  const handlePrevPage = () => {
-    // Äá»ƒ Ä‘Æ¡n giáº£n, khi nháº¥n Previous, ta táº£i láº¡i tá»« Ä‘áº§u
-    setLastVisible(null);
-    fetchImportSlips('first');
-  };
   
+  // <-- THAY Äá»”I: Sá»­ dá»¥ng hook phÃ¢n trang
+  const baseQuery = useMemo(() => query(collection(db, 'import_tickets'), orderBy("createdAt", "desc")), []);
+  const { 
+    documents: importSlips, 
+    loading, 
+    isLastPage, 
+    page, 
+    nextPage, 
+    prevPage,
+    reset
+  } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
   const handleConfirmImport = async () => {
     const slip = confirmModal.item;
     if (!slip) return;
@@ -2380,7 +2762,7 @@ const ImportListPage = () => {
       const slipDocRef = doc(db, "import_tickets", slip.id);
       await updateDoc(slipDocRef, { status: "completed" });
       toast.success('XÃ¡c nháº­n nháº­p kho thÃ nh cÃ´ng!');
-      fetchImportSlips('first');
+      reset();
     } catch (error) {
       console.error("Lá»—i khi xÃ¡c nháº­n nháº­p kho: ", error);
       toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n nháº­p kho.');
@@ -2388,13 +2770,13 @@ const ImportListPage = () => {
         setConfirmModal({ isOpen: false, item: null });
     }
   };
-  
+
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
       const slipDocRef = doc(db, "import_tickets", updatedSlip.id);
       await updateDoc(slipDocRef, { items: updatedSlip.items });
       setIsEditModalOpen(false);
-      fetchImportSlips('first');
+      reset();
       toast.success('Cáº­p nháº­t phiáº¿u nháº­p thÃ nh cÃ´ng!');
     } catch (error) {
       console.error("Lá»—i khi cáº­p nháº­t phiáº¿u nháº­p: ", error);
@@ -2413,7 +2795,7 @@ const ImportListPage = () => {
 
   const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
   const openViewModal = (slip) => { setSelectedSlip(slip); setIsViewModalOpen(true); };
-
+  
   return (
     <div>
       <ConfirmationModal
@@ -2473,11 +2855,11 @@ const ImportListPage = () => {
             </table>
 
             <div className="pagination-controls">
-                <button onClick={handlePrevPage} disabled={page <= 1}>
+                <button onClick={prevPage} disabled={page <= 1 || loading}>
                     <FiChevronLeft /> Trang TrÆ°á»›c
                 </button>
                 <span>Trang {page}</span>
-                <button onClick={handleNextPage} disabled={isLastPage}>
+                <button onClick={nextPage} disabled={isLastPage || loading}>
                     Trang Tiáº¿p <FiChevronRight />
                 </button>
             </div>
@@ -2505,7 +2887,7 @@ import TempBadge from '../components/TempBadge';
 import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi'; // <-- NÃ‚NG Cáº¤P: ThÃªm icon FiPrinter
 
 const PAGE_SIZE = 20;
 
@@ -2533,8 +2915,6 @@ const InventoryPage = () => {
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
-    
-    // THÃŠM Láº I STATE Äá»‚ THEO DÃ•I DÃ’NG ÄÆ¯á»¢C CHá»ŒN
     const [selectedRowId, setSelectedRowId] = useState(null);
 
     const buildQuery = () => {
@@ -2625,15 +3005,30 @@ const InventoryPage = () => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
     };
 
-    // THÃŠM Láº I HÃ€M Xá»¬ LÃ KHI NHáº¤N VÃ€O DÃ’NG
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
+
+    // <-- NÃ‚NG Cáº¤P: HÃ m xá»­ lÃ½ viá»‡c in -->
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `BaoCao_TonKho_ChiTiet_${new Date().toLocaleDateString('vi-VN')}`;
+        window.print();
+        document.title = originalTitle; // KhÃ´i phá»¥c tiÃªu Ä‘á» cÅ© sau khi in
+    };
     
     return (
-        <div>
+        // <-- NÃ‚NG Cáº¤P: Bá»c toÃ n bá»™ ná»™i dung trong div Ä‘á»ƒ cÃ³ thá»ƒ in -->
+        <div className="printable-inventory-area">
             <div className="page-header">
                 <h1>Tá»“n Kho Chi Tiáº¿t</h1>
+                {/* <-- NÃ‚NG Cáº¤P: ThÃªm nÃºt In vÃ  kiá»ƒm tra quyá»n --> */}
+                {(userRole === 'owner' || userRole === 'admin') && (
+                    <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
+                        <FiPrinter style={{marginRight: '5px'}} />
+                        In BÃ¡o CÃ¡o
+                    </button>
+                )}
             </div>
             
             <div className="controls-container">
@@ -2675,7 +3070,6 @@ const InventoryPage = () => {
                             </thead>
                             <tbody className="inventory-table-body">
                                 {inventory.map(lot => (
-                                    // Cáº¬P NHáº¬T Láº I DÃ’NG NÃ€Y
                                     <tr 
                                         key={lot.id} 
                                         onClick={() => handleRowClick(lot.id)}
@@ -2720,6 +3114,7 @@ export default InventoryPage;
 
 
 
+
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
@@ -2730,9 +3125,12 @@ import { collection, query, getDocs, where, orderBy, documentId, limit, startAft
 import { formatDate } from '../utils/dateUtils';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { FiChevronDown, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiChevronLeft, FiPrinter } from 'react-icons/fi';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { toast } from 'react-toastify';
 
 const PAGE_SIZE = 15;
 
@@ -2768,23 +3166,62 @@ const getLotItemColorClass = (expiryDate) => {
 
 const InventorySummaryPage = () => {
     const { userRole } = useAuth();
-    
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState({});
     const [lotDetails, setLotDetails] = useState({});
+    const [loadingLots, setLoadingLots] = useState({});
     
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     const [activeFilter, setActiveFilter] = useState({ type: 'none', value: '' });
 
-    const performSearch = async (term) => {
-        if (!term) {
-            fetchData('first');
-            return;
+    const fetchData = useCallback(async (direction = 'next', cursor = null) => {
+        setLoading(true);
+        try {
+            // <-- NÃ‚NG Cáº¤P: Thay Ä‘á»•i logic sáº¯p xáº¿p máº·c Ä‘á»‹nh -->
+            // Sáº¯p xáº¿p theo MÃ£ hÃ ng (productId) tÄƒng dáº§n lÃ m Æ°u tiÃªn chÃ­nh.
+            let q = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
+
+            if (activeFilter.type === 'team') {
+                q = query(q, where("team", "==", activeFilter.value));
+            } else if (activeFilter.type === 'near_expiry') {
+                const today = Timestamp.now();
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + 120);
+                const futureTimestamp = Timestamp.fromDate(futureDate);
+                // Khi lá»c, ta sáº½ sáº¯p xáº¿p theo HSD Ä‘á»ƒ Ä‘Æ°a cÃ¡c mÃ£ cáº­n date lÃªn Ä‘áº§u
+                q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp), orderBy("nearestExpiryDate", "asc"));
+            } else if (activeFilter.type === 'expired') {
+                const today = Timestamp.now();
+                // TÆ°Æ¡ng tá»±, sáº¯p xáº¿p theo HSD
+                q = query(q, where("nearestExpiryDate", "<", today), orderBy("nearestExpiryDate", "asc"));
+            }
+
+            if (direction === 'next' && cursor) {
+                q = query(q, startAfter(cursor), limit(PAGE_SIZE));
+            } else {
+                q = query(q, limit(PAGE_SIZE));
+                if (direction === 'first') setPage(1);
+            }
+
+            const docSnapshots = await getDocs(q);
+            const summaryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1] || null);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setSummaries(summaryList);
+        } catch (error) {
+            console.error("Lá»—i khi táº£i dá»¯ liá»‡u tá»•ng há»£p: ", error);
+        } finally {
+            setLoading(false);
         }
+    }, [activeFilter]);
+
+    const performSearch = useCallback(async (term) => {
+        if (!term) return;
         setLoading(true);
         try {
             const upperTerm = term.toUpperCase();
@@ -2793,20 +3230,17 @@ const InventorySummaryPage = () => {
                 where(documentId(), ">=", upperTerm),
                 where(documentId(), "<=", upperTerm + '\uf8ff')
             );
-
             const lotSearchQuery = query(
                 collection(db, "inventory_lots"),
                 where("lotNumber", "==", term)
             );
-
             const [productSnap, lotSnap] = await Promise.all([
                 getDocs(productSearchQuery),
                 getDocs(lotSearchQuery)
             ]);
-
             const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
             lotSnap.docs.forEach(doc => foundProductIds.add(doc.data().productId));
-
+            
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
@@ -2824,50 +3258,12 @@ const InventorySummaryPage = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const fetchData = useCallback(async (direction = 'next') => {
-        setLoading(true);
-        try {
-            let q = query(collection(db, "product_summaries"), orderBy("nearestExpiryDate", "asc"));
-
-            if (activeFilter.type === 'team') {
-                q = query(q, where("team", "==", activeFilter.value));
-            } else if (activeFilter.type === 'near_expiry') {
-                const today = Timestamp.now();
-                const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + 120);
-                const futureTimestamp = Timestamp.fromDate(futureDate);
-                q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp));
-            } else if (activeFilter.type === 'expired') {
-                const today = Timestamp.now();
-                q = query(q, where("nearestExpiryDate", "<", today));
-            }
-
-            if (direction === 'next' && lastVisible) {
-                q = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            } else {
-                q = query(q, limit(PAGE_SIZE));
-                setPage(1);
-            }
-
-            const docSnapshots = await getDocs(q);
-            const summaryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setSummaries(summaryList);
-
-        } catch (error) {
-            console.error("Lá»—i khi táº£i dá»¯ liá»‡u tá»•ng há»£p: ", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible, activeFilter]);
+    }, []);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
             setLastVisible(null);
+            setPage(1);
             if (searchTerm) {
                 performSearch(searchTerm);
             } else {
@@ -2875,12 +3271,13 @@ const InventorySummaryPage = () => {
             }
         }, 500);
         return () => clearTimeout(debounce);
-    }, [searchTerm, activeFilter]);
+    }, [searchTerm, activeFilter, fetchData, performSearch]);
+
 
     const toggleRow = async (productId) => {
-        const isCurrentlyExpanded = expandedRows[productId];
-        setExpandedRows(prev => ({ ...prev, [productId]: !isCurrentlyExpanded }));
-        if (!isCurrentlyExpanded && !lotDetails[productId]) {
+        const isCurrentlyExpanded = !!expandedRows[productId];
+        if (!lotDetails[productId]) {
+            setLoadingLots(prev => ({ ...prev, [productId]: true }));
             try {
                 const lotsQuery = query(
                     collection(db, "inventory_lots"),
@@ -2893,20 +3290,26 @@ const InventorySummaryPage = () => {
                 setLotDetails(prev => ({ ...prev, [productId]: lots }));
             } catch (error) {
                 console.error("Lá»—i khi táº£i chi tiáº¿t lÃ´:", error);
+                setLotDetails(prev => ({ ...prev, [productId]: [] }));
+            } finally {
+                setLoadingLots(prev => ({ ...prev, [productId]: false }));
             }
         }
+        setExpandedRows(prev => ({ ...prev, [productId]: !isCurrentlyExpanded }));
     };
 
     const handleNextPage = () => {
         if (!isLastPage) {
             setPage(p => p + 1);
-            fetchData('next');
+            fetchData('next', lastVisible);
         }
     };
+
     const handlePrevPage = () => {
         setLastVisible(null);
         fetchData('first');
     };
+
     const handleFilterChange = (type, value = '') => {
         if (activeFilter.type === type && activeFilter.value === value) {
             setActiveFilter({ type: 'none', value: '' });
@@ -2915,14 +3318,46 @@ const InventorySummaryPage = () => {
         }
     };
     
+    const handlePrint = async () => {
+        const originalTitle = document.title;
+        document.title = `BaoCao_TonKho_TongHop_${new Date().toLocaleDateString('vi-VN')}`;
+
+        const allProductIds = summaries.map(s => s.id);
+        const fetchPromises = allProductIds.map(id => {
+            if (!lotDetails[id]) return toggleRow(id);
+            return Promise.resolve();
+        });
+        
+        toast.info("Äang chuáº©n bá»‹ dá»¯ liá»‡u Ä‘á»ƒ in, vui lÃ²ng chá»...");
+        await Promise.all(fetchPromises);
+        
+        const allExpanded = allProductIds.reduce((acc, id) => {
+            acc[id] = true;
+            return acc;
+        }, {});
+        setExpandedRows(allExpanded);
+        
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+            setExpandedRows({});
+        }, 500);
+    };
+    
     return (
-        <div>
+        <div className="printable-inventory-area">
             <div className="page-header">
                 <h1>Tá»“n Kho Tá»•ng Há»£p</h1>
+                {(userRole === 'owner' || userRole === 'admin') && (
+                    <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
+                        <FiPrinter style={{marginRight: '5px'}} />
+                        In BÃ¡o CÃ¡o
+                    </button>
+                )}
             </div>
             
-            <div className="filters-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
-                <div className="filter-group">
+            <div className="controls-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
+                 <div className="filter-group">
                     <button className={activeFilter.value === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lá»c hÃ ng MED</button>
                     <button className={activeFilter.value === 'BIO' ? 'active' : ''} onClick={() => handleFilterChange('team', 'BIO')}>Lá»c hÃ ng BIO</button>
                     <button className={activeFilter.value === 'Spare Part' ? 'active' : ''} onClick={() => handleFilterChange('team', 'Spare Part')}>Lá»c hÃ ng Spare Part</button>
@@ -2967,20 +3402,27 @@ const InventorySummaryPage = () => {
                                             className={getRowColorByExpiry(product.nearestExpiryDate)}
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
-                                            <td><strong>{product.id}</strong></td>
-                                            <td style={{textAlign: 'left'}}>{product.productName}</td>
-                                            <td>{formatDate(product.nearestExpiryDate)}</td>
-                                            <td><strong>{product.totalRemaining}</strong></td>
-                                            <td>{product.unit}</td>
-                                            <td><TempBadge temperature={product.storageTemp} /></td>
-                                            <td><TeamBadge team={product.team} /></td>
+                                            <td data-label="MÃ£ hÃ ng"><strong>{product.id}</strong></td>
+                                            <td data-label="TÃªn hÃ ng" style={{textAlign: 'left'}}>{product.productName}</td>
+                                            <td data-label="HSD Gáº§n Nháº¥t">{formatDate(product.nearestExpiryDate)}</td>
+                                            <td data-label="Tá»•ng Tá»“n"><strong>{product.totalRemaining}</strong></td>
+                                            <td data-label="ÄVT">{product.unit}</td>
+                                            <td data-label="Nhiá»‡t Ä‘á»™ BQ"><TempBadge temperature={product.storageTemp} /></td>
+                                            <td data-label="Team"><TeamBadge team={product.team} /></td>
                                         </tr>
                                         {expandedRows[product.id] && (
                                             <tr className="lot-details-row">
                                                 <td colSpan="8">
                                                     <div className="lot-details-container">
-                                                        {lotDetails[product.id] ? (
-                                                            lotDetails[product.id].length > 0 ? (
+                                                        {loadingLots[product.id] ? (
+                                                            <SkeletonTheme baseColor="#e9ecef" highlightColor="#f8f9fa">
+                                                                <h4><Skeleton width={200} /></h4>
+                                                                <ul>
+                                                                    <li><Skeleton height={35} count={3} style={{ marginBottom: '8px' }}/></li>
+                                                                </ul>
+                                                            </SkeletonTheme>
+                                                        ) : (
+                                                            (lotDetails[product.id] && lotDetails[product.id].length > 0) ? (
                                                                 <>
                                                                     <h4>Chi tiáº¿t cÃ¡c lÃ´ hÃ ng (FEFO):</h4>
                                                                     <ul>
@@ -2994,7 +3436,7 @@ const InventorySummaryPage = () => {
                                                                     </ul>
                                                                 </>
                                                             ) : <p>KhÃ´ng cÃ³ lÃ´ nÃ o cÃ²n tá»“n kho cho sáº£n pháº©m nÃ y.</p>
-                                                        ) : <p>Äang táº£i chi tiáº¿t lÃ´...</p>}
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -3006,11 +3448,11 @@ const InventorySummaryPage = () => {
                     </div>
                     {!searchTerm && (
                         <div className="pagination-controls">
-                            <button onClick={() => { setLastVisible(null); fetchData('first'); }} disabled={page <= 1}>
+                            <button onClick={handlePrevPage} disabled={page <= 1}>
                                 <FiChevronLeft /> Trang TrÆ°á»›c
                             </button>
                             <span>Trang {page}</span>
-                            <button onClick={() => fetchData('next')} disabled={isLastPage}>
+                            <button onClick={handleNextPage} disabled={isLastPage}>
                                 Trang Tiáº¿p <FiChevronRight />
                             </button>
                         </div>
@@ -4081,88 +4523,45 @@ export default NewImportPage;
 
 
 // src/pages/PartnersPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, query, orderBy, limit, startAfter, documentId } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react';
+import { collection, query, orderBy, documentId } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { db } from '../firebaseConfig';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { deletePartnerById } from '../services/partnerService';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { toast } from 'react-toastify';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15; // <-- Sá» Äá»I TÃC TRÃŠN Má»–I TRANG
-
 const PartnersPage = () => {
-    const [partners, setPartners] = useState([]);
-    const [loading, setLoading] = useState(true);
-    
-    // --- STATE Má»šI CHO PHÃ‚N TRANG ---
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
-    const [isLastPage, setIsLastPage] = useState(false);
-
-    // --- LOGIC Má»šI Äá»‚ Táº¢I Dá»® LIá»†U THEO TRANG ---
-    const fetchPartners = useCallback(async (direction = 'next') => {
-        setLoading(true);
-        try {
-            let partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), limit(PAGE_SIZE));
-
-            if (direction === 'next' && lastVisible) {
-                partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), startAfter(lastVisible), limit(PAGE_SIZE));
-            } else if (direction === 'first') {
-                partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), limit(PAGE_SIZE));
-                setPage(1);
-            }
-            
-            const querySnapshot = await getDocs(partnersQuery);
-            const partnersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-            setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
-            setPartners(partnersList);
-        } catch (error) {
-            console.error("Lá»—i khi láº¥y danh sÃ¡ch Ä‘á»‘i tÃ¡c: ", error);
-            toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch Ä‘á»‘i tÃ¡c.");
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible]);
-
-    useEffect(() => {
-        fetchPartners('first');
-    }, []);
-
-    // --- CÃC HÃ€M Xá»¬ LÃ Sá»° KIá»†N PHÃ‚N TRANG ---
-    const handleNextPage = () => {
-        if (!isLastPage) {
-            setPage(prev => prev + 1);
-            fetchPartners('next');
-        }
-    };
-
-    const handlePrevPage = () => {
-        // CÃ¡ch lÃ m Ä‘Æ¡n giáº£n nháº¥t lÃ  quay vá» trang Ä‘áº§u
-        setLastVisible(null);
-        setPage(1);
-        fetchPartners('first');
-    };
-    
-    // --- CÃC HÃ€M CÅ¨ (CÃ“ Cáº¬P NHáº¬T Äá»‚ Táº¢I Láº I TRANG Äáº¦U) ---
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
+    // <-- THAY Äá»”I: Sá»­ dá»¥ng hook phÃ¢n trang
+    const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy(documentId())), []);
+    const { 
+        documents: partners, 
+        loading, 
+        isLastPage, 
+        page, 
+        nextPage, 
+        prevPage,
+        reset
+    } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
-        setLastVisible(null);
-        fetchPartners('first');
+        reset();
     };
 
     const handlePartnerUpdated = () => {
         setIsEditModalOpen(false);
-        fetchPartners('first');
+        reset();
     };
 
     const promptForDelete = (partner) => {
@@ -4178,10 +4577,9 @@ const PartnersPage = () => {
         const { item } = confirmModal;
         if (!item) return;
         try {
-            await deleteDoc(doc(db, 'partners', item.id));
+            await deletePartnerById(item.id);
             toast.success('XÃ³a Ä‘á»‘i tÃ¡c thÃ nh cÃ´ng!');
-            setLastVisible(null);
-            fetchPartners('first');
+            reset();
         } catch (error) {
             console.error("Lá»—i khi xÃ³a Ä‘á»‘i tÃ¡c: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ³a Ä‘á»‘i tÃ¡c.');
@@ -4248,13 +4646,12 @@ const PartnersPage = () => {
                         </tbody>
                     </table>
 
-                    {/* --- KHá»I PHÃ‚N TRANG Má»šI --- */}
                     <div className="pagination-controls">
-                        <button onClick={handlePrevPage} disabled={page <= 1}>
+                        <button onClick={prevPage} disabled={page <= 1 || loading}>
                             <FiChevronLeft /> Trang TrÆ°á»›c
                         </button>
                         <span>Trang {page}</span>
-                        <button onClick={handleNextPage} disabled={isLastPage}>
+                        <button onClick={nextPage} disabled={isLastPage || loading}>
                             Trang Tiáº¿p <FiChevronRight />
                         </button>
                     </div>
@@ -4272,110 +4669,57 @@ export default PartnersPage;
 
 
 // src/pages/ProductsPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, query, orderBy, where, limit, startAfter, documentId } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react'; // <-- THAY Äá»”I: Bá» cÃ¡c import khÃ´ng cáº§n thiáº¿t, thÃªm useMemo
+import { collection, query, orderBy, where, documentId } from 'firebase/firestore'; // <-- THAY Äá»”I: Import cÃ¡c hÃ m cá»§a firestore
+import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { db } from '../firebaseConfig'; // <-- THAY Äá»”I: Import db
+import { PAGE_SIZE } from '../constants'; // <-- THAY Äá»”I: Import PAGE_SIZE
+import { useFirestorePagination } from '../hooks/useFirestorePagination'; // <-- THAY Äá»”I: Import custom hook
+import { deleteProductById } from '../services/productService';
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { toast } from 'react-toastify';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15;
-
 const ProductsPage = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastVisible, setLastVisible] = useState(null);
-  const [firstVisible, setFirstVisible] = useState(null);
-  const [page, setPage] = useState(1);
-  const [isLastPage, setIsLastPage] = useState(false);
-
-  const fetchProducts = useCallback(async (direction = 'next') => {
-    setLoading(true);
-    try {
-      let productsQuery = query(collection(db, 'products'), orderBy(documentId()));
-
-      if (searchTerm) {
-        productsQuery = query(productsQuery, 
-          where(documentId(), '>=', searchTerm.toUpperCase()),
-          where(documentId(), '<=', searchTerm.toUpperCase() + '\uf8ff')
-        );
-      }
-      
-      if (direction === 'next' && lastVisible) {
-        productsQuery = query(productsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-      } else if (direction === 'prev' && firstVisible) {
-        productsQuery = query(productsQuery, limit(PAGE_SIZE));
-        setPage(1);
-      } else {
-        productsQuery = query(productsQuery, limit(PAGE_SIZE));
-      }
-
-      const documentSnapshots = await getDocs(productsQuery);
-      const productsList = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
-      setFirstVisible(documentSnapshots.docs[0]);
-      setIsLastPage(documentSnapshots.docs.length < PAGE_SIZE);
-      setProducts(productsList);
-
-    } catch (error) {
-      console.error("Lá»—i khi láº¥y danh sÃ¡ch sáº£n pháº©m: ", error);
-      toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch sáº£n pháº©m. CÃ³ thá»ƒ báº¡n cáº§n táº¡o chá»‰ má»¥c (index) trÃªn Firestore. Vui lÃ²ng kiá»ƒm tra console log trÃªn trÃ¬nh duyá»‡t.");
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, lastVisible, firstVisible]);
-
-  useEffect(() => {
-    setLastVisible(null);
-    setFirstVisible(null);
-    setPage(1);
-    
-    const delayDebounceFn = setTimeout(() => {
-      fetchProducts();
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
-
-  const handleNextPage = () => {
-    if (!isLastPage) {
-      setPage(prev => prev + 1);
-      fetchProducts('next');
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setLastVisible(null);
-      setFirstVisible(null);
-      setPage(1);
-      fetchProducts('first');
-    }
-  };
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-  
-  const handleProductAdded = () => { 
+
+  // <-- THAY Äá»”I: Logic phÃ¢n trang Ä‘Æ°á»£c chuyá»ƒn vÃ o custom hook
+  const baseQuery = useMemo(() => {
+    let q = query(collection(db, 'products'), orderBy(documentId()));
+    if (searchTerm) {
+        const upperSearchTerm = searchTerm.toUpperCase();
+        q = query(q, where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
+    }
+    return q;
+  }, [searchTerm]);
+
+  const {
+    documents: products,
+    loading,
+    isLastPage,
+    page,
+    nextPage,
+    prevPage,
+    reset, // Sá»­ dá»¥ng hÃ m reset tá»« hook
+  } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+  const handleProductAdded = () => {
     setIsAddModalOpen(false);
-    setLastVisible(null);
-    setFirstVisible(null);
-    setPage(1);
-    fetchProducts('first');
-  };
-  
-  const handleProductUpdated = () => { 
-    setIsEditModalOpen(false);
-    fetchProducts('first');
+    if (searchTerm) setSearchTerm(''); // Náº¿u Ä‘ang tÃ¬m kiáº¿m, xÃ³a bá»™ lá»c Ä‘á»ƒ tháº¥y sáº£n pháº©m má»›i
+    else reset(); // Táº£i láº¡i trang Ä‘áº§u
   };
 
+  const handleProductUpdated = () => {
+    setIsEditModalOpen(false);
+    reset(); // Táº£i láº¡i trang hiá»‡n táº¡i Ä‘á»ƒ cáº­p nháº­t
+  };
+  
   const promptForDelete = (product) => {
     setConfirmModal({
         isOpen: true,
@@ -4389,17 +4733,15 @@ const ProductsPage = () => {
     const { item } = confirmModal;
     if (!item) return;
     try {
-      await deleteDoc(doc(db, 'products', item.id));
-      toast.success('XÃ³a sáº£n pháº©m thÃ nh cÃ´ng!');
-      setLastVisible(null);
-      setFirstVisible(null);
-      setPage(1);
-      fetchProducts('first');
+        await deleteProductById(item.id);
+        toast.success('XÃ³a sáº£n pháº©m thÃ nh cÃ´ng!');
+        if (searchTerm) setSearchTerm('');
+        else reset();
     } catch (error) {
-      console.error("Lá»—i khi xÃ³a sáº£n pháº©m: ", error);
-      toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ³a sáº£n pháº©m.');
+        console.error("Lá»—i khi xÃ³a sáº£n pháº©m: ", error);
+        toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ³a sáº£n pháº©m.');
     } finally {
-      setConfirmModal({ isOpen: false, item: null });
+        setConfirmModal({ isOpen: false, item: null });
     }
   };
 
@@ -4407,7 +4749,7 @@ const ProductsPage = () => {
     setCurrentProduct(product);
     setIsEditModalOpen(true);
   };
-
+  
   return (
     <div className="products-page-container">
       <ConfirmationModal
@@ -4482,7 +4824,7 @@ const ProductsPage = () => {
               ) : (
                   <tr>
                       <td colSpan="8" style={{textAlign: 'center'}}>
-                          KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m nÃ o.
+                        KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m nÃ o.
                       </td>
                   </tr>
               )}
@@ -4490,11 +4832,11 @@ const ProductsPage = () => {
           </table>
 
           <div className="pagination-controls">
-              <button onClick={handlePrevPage} disabled={page <= 1}>
-                  <FiChevronLeft /> Trang TrÆ°á»›c
+              <button onClick={prevPage} disabled={page <= 1 || loading}>
+                 <FiChevronLeft /> Trang TrÆ°á»›c
               </button>
               <span>Trang {page}</span>
-              <button onClick={handleNextPage} disabled={isLastPage}>
+              <button onClick={nextPage} disabled={isLastPage || loading}>
                   Trang Tiáº¿p <FiChevronRight />
               </button>
           </div>
@@ -4512,122 +4854,65 @@ export default ProductsPage;
 
 
 // src/pages/StocktakeListPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
+import ConfirmationModal from '../components/ConfirmationModal'; // <-- NÃ‚NG Cáº¤P: Import component xÃ¡c nháº­n
+import { deleteStocktakeSession } from '../services/stocktakeService'; // <-- NÃ‚NG Cáº¤P: Import hÃ m xÃ³a má»›i
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-
-const PAGE_SIZE = 15;
+import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi'; // <-- NÃ‚NG Cáº¤P: Import icon thÃ¹ng rÃ¡c
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
-    const [stocktakeSessions, setStocktakeSessions] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null }); // <-- NÃ‚NG Cáº¤P: ThÃªm state cho modal xÃ¡c nháº­n
     const navigate = useNavigate();
-
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
-    const [isLastPage, setIsLastPage] = useState(false);
-
-    const fetchSessions = useCallback(async (direction = 'next') => {
-        setLoading(true);
-        try {
-            let sessionsQuery = query(collection(db, "stocktakes"), orderBy("createdAt", "desc"));
-
-            if (direction === 'next' && lastVisible) {
-                sessionsQuery = query(sessionsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-            } else {
-                sessionsQuery = query(sessionsQuery, limit(PAGE_SIZE));
-                setPage(1);
-            }
-
-            const querySnapshot = await getDocs(sessionsQuery);
-            const sessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-            setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
-            setStocktakeSessions(sessions);
-        } catch (error) {
-            console.error("Lá»—i khi táº£i phiÃªn kiá»ƒm kÃª:", error);
-            toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch phiÃªn kiá»ƒm kÃª.");
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible]);
-
-    useEffect(() => {
-        fetchSessions('first');
-    }, []);
-
-    const handleNextPage = () => {
-        if (!isLastPage) {
-            setPage(prev => prev + 1);
-            fetchSessions('next');
-        }
-    };
     
-    const handlePrevPage = () => {
-        setLastVisible(null);
-        fetchSessions('first');
-    };
+    const baseQuery = useMemo(() => query(collection(db, "stocktakes"), orderBy("createdAt", "desc")), []);
+    const {
+        documents: stocktakeSessions,
+        loading,
+        isLastPage,
+        page,
+        nextPage,
+        prevPage,
+        reset // <-- NÃ‚NG Cáº¤P: Sá»­ dá»¥ng hÃ m reset tá»« hook
+    } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    // --- LOGIC Táº O PHIÃŠN KIá»‚M KÃŠ ÄÃƒ ÄÆ¯á»¢C VIáº¾T Láº I HOÃ€N TOÃ€N ---
     const handleCreateStocktake = async (sessionData) => {
         setIsCreating(true);
         toast.info("Äang láº¥y dá»¯ liá»‡u tá»“n kho, vui lÃ²ng chá»...");
         try {
-            // 1. Láº¥y táº¥t cáº£ cÃ¡c lÃ´ hÃ ng tá»“n kho theo pháº¡m vi
             let inventoryQuery;
             if (sessionData.scope === 'all') {
                 inventoryQuery = query(collection(db, "inventory_lots"), where("quantityRemaining", ">", 0));
             } else {
                 inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope), where("quantityRemaining", ">", 0));
             }
-
             const querySnapshot = await getDocs(inventoryQuery);
-            const inventorySnapshotItems = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    lotId: doc.id,
-                    productId: data.productId,
-                    productName: data.productName,
-                    lotNumber: data.lotNumber,
-                    expiryDate: data.expiryDate,
-                    unit: data.unit,
-                    packaging: data.packaging,
-                    storageTemp: data.storageTemp,
-                    team: data.team,
-                    systemQty: data.quantityRemaining,
-                    countedQty: null, // GiÃ¡ trá»‹ Ä‘áº¿m ban Ä‘áº§u lÃ  null
-                    isNew: false, // ÄÃ¢y lÃ  cÃ¡c má»¥c cÃ³ sáºµn
-                };
-            });
-            
-            // 2. Táº¡o tÃ i liá»‡u chÃ­nh cho phiÃªn kiá»ƒm kÃª (khÃ´ng chá»©a máº£ng items)
+            const inventorySnapshotItems = querySnapshot.docs.map(doc => ({
+                lotId: doc.id, ...doc.data(), systemQty: doc.data().quantityRemaining, countedQty: null, isNew: false, 
+            }));
+
             const newStocktakeSessionRef = doc(collection(db, 'stocktakes'));
             await setDoc(newStocktakeSessionRef, {
-                name: sessionData.sessionName,
-                scope: sessionData.scope,
-                status: 'in_progress',
-                createdAt: serverTimestamp(),
+                name: sessionData.sessionName, scope: sessionData.scope, status: 'in_progress', createdAt: serverTimestamp(),
             });
 
-            // 3. Ghi hÃ ng loáº¡t cÃ¡c má»¥c vÃ o subcollection 'items'
             toast.info(`ÄÃ£ láº¥y ${inventorySnapshotItems.length} má»¥c. Báº¯t Ä‘áº§u ghi dá»¯ liá»‡u...`);
             const itemsCollectionRef = collection(db, 'stocktakes', newStocktakeSessionRef.id, 'items');
             const MAX_BATCH_SIZE = 500;
-
             for (let i = 0; i < inventorySnapshotItems.length; i += MAX_BATCH_SIZE) {
                 const batch = writeBatch(db);
                 const chunk = inventorySnapshotItems.slice(i, i + MAX_BATCH_SIZE);
                 chunk.forEach(item => {
-                    const newItemRef = doc(itemsCollectionRef, item.lotId); // DÃ¹ng lotId lÃ m ID cho item Ä‘á»ƒ dá»… truy váº¥n
+                    const newItemRef = doc(itemsCollectionRef, item.lotId);
                     batch.set(newItemRef, item);
                 });
                 await batch.commit();
@@ -4643,24 +4928,55 @@ const StocktakeListPage = () => {
             setIsCreating(false);
         }
     };
-    
+
+    // <-- NÃ‚NG Cáº¤P: HÃ m Ä‘á»ƒ má»Ÿ há»™p thoáº¡i xÃ¡c nháº­n xÃ³a -->
+    const promptForDelete = (session) => {
+        setConfirmModal({
+            isOpen: true,
+            item: session,
+            title: "XÃ¡c nháº­n xÃ³a phiÃªn kiá»ƒm kÃª?",
+            message: `Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a phiÃªn "${session.name}" khÃ´ng? ToÃ n bá»™ dá»¯ liá»‡u Ä‘áº¿m cá»§a phiÃªn nÃ y sáº½ bá»‹ máº¥t vÄ©nh viá»…n vÃ  khÃ´ng thá»ƒ khÃ´i phá»¥c.`,
+            onConfirm: handleDeleteSession,
+            confirmText: "Váº«n xÃ³a"
+        });
+    };
+
+    // <-- NÃ‚NG Cáº¤P: HÃ m thá»±c hiá»‡n viá»‡c xÃ³a sau khi xÃ¡c nháº­n -->
+    const handleDeleteSession = async () => {
+        const sessionToDelete = confirmModal.item;
+        if (!sessionToDelete) return;
+
+        try {
+            toast.info(`Äang xÃ³a phiÃªn "${sessionToDelete.name}"...`);
+            await deleteStocktakeSession(sessionToDelete.id);
+            toast.success(`ÄÃ£ xÃ³a thÃ nh cÃ´ng phiÃªn kiá»ƒm kÃª.`);
+            reset(); // Táº£i láº¡i danh sÃ¡ch
+        } catch (error) {
+            console.error("Lá»—i khi xÃ³a phiÃªn kiá»ƒm kÃª: ", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi xÃ³a phiÃªn kiá»ƒm kÃª.");
+        } finally {
+            setConfirmModal({ isOpen: false, item: null });
+        }
+    };
+
     return (
         <div className="stocktake-list-page-container">
+            {/* <-- NÃ‚NG Cáº¤P: ThÃªm component Modal vÃ o giao diá»‡n --> */}
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={handleDeleteSession}
+                onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+                confirmText={confirmModal.confirmText}
+            />
+
             {isCreateModalOpen && (
-                <CreateStocktakeModal
-                    onClose={() => setIsCreateModalOpen(false)}
-                    onCreate={handleCreateStocktake}
-                    isCreating={isCreating}
-                />
+                <CreateStocktakeModal onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateStocktake} isCreating={isCreating} />
             )}
             <div className="page-header">
                 <h1>Danh sÃ¡ch PhiÃªn Kiá»ƒm KÃª Kho</h1>
-                <button 
-                    onClick={() => setIsCreateModalOpen(true)} 
-                    className="btn-primary"
-                >
-                    Táº¡o PhiÃªn Má»›i
-                </button>
+                <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">Táº¡o PhiÃªn Má»›i</button>
             </div>
       
             {loading ? <Spinner /> : (
@@ -4684,13 +5000,27 @@ const StocktakeListPage = () => {
                                         <td>{session.scope === 'all' ? 'ToÃ n bá»™ kho' : session.scope}</td>
                                         <td><StatusBadge status={session.status} /></td>
                                         <td>
-                                            <button 
-                                                className="btn-secondary" 
-                                                style={{padding: '5px 10px'}}
-                                                onClick={() => navigate(`/stocktakes/${session.id}`)}
-                                            >
-                                                Xem/Thá»±c hiá»‡n
-                                            </button>
+                                            {/* <-- NÃ‚NG Cáº¤P: Bá»c cÃ¡c nÃºt trong div Ä‘á»ƒ dá»… sáº¯p xáº¿p --> */}
+                                            <div className="action-buttons">
+                                                <button 
+                                                    className="btn-secondary" 
+                                                    style={{padding: '5px 10px', width: 'auto'}}
+                                                    onClick={() => navigate(`/stocktakes/${session.id}`)}
+                                                >
+                                                    Xem/Thá»±c hiá»‡n
+                                                </button>
+                                                
+                                                {/* <-- NÃ‚NG Cáº¤P: Hiá»ƒn thá»‹ nÃºt xÃ³a cÃ³ Ä‘iá»u kiá»‡n --> */}
+                                                {session.status === 'in_progress' && (
+                                                    <button
+                                                        className="btn-icon btn-delete"
+                                                        title="XÃ³a phiÃªn kiá»ƒm kÃª"
+                                                        onClick={() => promptForDelete(session)}
+                                                    >
+                                                        <FiTrash2 />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -4701,11 +5031,11 @@ const StocktakeListPage = () => {
                     </table>
 
                     <div className="pagination-controls">
-                        <button onClick={handlePrevPage} disabled={page <= 1}>
+                        <button onClick={prevPage} disabled={page <= 1 || loading}>
                             <FiChevronLeft /> Trang TrÆ°á»›c
                         </button>
                         <span>Trang {page}</span>
-                        <button onClick={handleNextPage} disabled={isLastPage}>
+                        <button onClick={nextPage} disabled={isLastPage || loading}>
                             Trang Tiáº¿p <FiChevronRight />
                         </button>
                     </div>
@@ -4816,7 +5146,7 @@ const StocktakeSessionPage = () => {
             setLoadingItems(false);
         }
     };
-    
+
     const fetchStatsAndDiscrepancies = useCallback(async () => {
         if (!sessionId || !sessionData) return;
         const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
@@ -4824,8 +5154,8 @@ const StocktakeSessionPage = () => {
         const countedQuery = query(itemsRef, where('countedQty', '!=', null));
         
         const [totalSnap, countedDocsSnap] = await Promise.all([
-            getCountFromServer(totalQuery),
-            getDocs(countedQuery)
+             getCountFromServer(totalQuery),
+             getDocs(countedQuery)
         ]);
         
         const discrepancies = [];
@@ -4854,7 +5184,7 @@ const StocktakeSessionPage = () => {
     }, [searchTerm, fetchFirstPage]);
 
     useEffect(() => {
-        if (sessionData?.status === 'completed' || sessionData?.status === 'adjusted') {
+        if (sessionData?.status) {
             fetchStatsAndDiscrepancies();
         }
     }, [sessionData, fetchStatsAndDiscrepancies]);
@@ -4866,6 +5196,7 @@ const StocktakeSessionPage = () => {
             setItems(currentItems => 
                 currentItems.map(item => item.id === itemId ? { ...item, countedQty: finalCount } : item)
             );
+            fetchStatsAndDiscrepancies();
         } catch (error) {
             toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
         } finally {
@@ -4904,12 +5235,19 @@ const StocktakeSessionPage = () => {
     };
 
     const promptForFinalize = () => {
+        const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
+        let message = "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.";
+        
+        if (uncountedItems > 0) {
+            message = `Cáº¢NH BÃO: Váº«n cÃ²n ${uncountedItems} mÃ£ hÃ ng chÆ°a Ä‘Æ°á»£c Ä‘áº¿m. Náº¿u báº¡n hoÃ n táº¥t, sá»‘ lÆ°á»£ng cá»§a chÃºng sáº½ Ä‘Æ°á»£c coi lÃ  0. ` + message;
+        }
+
         setConfirmModal({
             isOpen: true,
             title: "HoÃ n táº¥t phiÃªn kiá»ƒm kÃª?",
-            message: "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.",
+            message: message,
             onConfirm: handleFinalizeCount,
-            confirmText: "HoÃ n táº¥t"
+            confirmText: "Váº«n hoÃ n táº¥t"
         });
     };
 
@@ -4937,15 +5275,16 @@ const StocktakeSessionPage = () => {
             const batch = writeBatch(db);
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
             for (const item of itemsToAdjust) {
+                const finalCountedQty = item.countedQty ?? 0;
                 if (!item.isNew) {
                     const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
-                    batch.update(inventoryLotRef, { quantityRemaining: item.countedQty });
+                    batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
                 }
                 const newAdjustmentRef = doc(adjustmentsCollectionRef);
                 batch.set(newAdjustmentRef, {
                     createdAt: serverTimestamp(), stocktakeId: sessionId, productId: item.productId,
                     productName: item.productName, lotNumber: item.lotNumber, quantityBefore: item.systemQty,
-                    quantityAfter: item.countedQty, variance: item.countedQty - item.systemQty,
+                    quantityAfter: finalCountedQty, variance: finalCountedQty - item.systemQty,
                     reason: `Äiá»u chá»‰nh sau kiá»ƒm kÃª phiÃªn: ${sessionData.name}`
                 });
             }
@@ -5066,7 +5405,7 @@ const StocktakeSessionPage = () => {
                     <h3 style={{color: '#dc3545'}}>Xá»­ LÃ½ ChÃªnh Lá»‡ch</h3>
                     {discrepancyItems.length > 0 ? (
                         <>
-                            <table className="products-table">
+                            <table className="products-table discrepancy-table">
                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" onChange={(e) => setCheckedItems(e.target.checked ? Object.fromEntries(discrepancyItems.map(i => [i.id, true])) : {})} disabled={sessionData.status === 'adjusted'} /></th>
@@ -5079,8 +5418,8 @@ const StocktakeSessionPage = () => {
                                         <tr key={item.id}>
                                             <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => handleCheckboxChange(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
                                             <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                            <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
-                                            <td style={{color: item.countedQty > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{item.countedQty - item.systemQty}</td>
+                                            <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
+                                            <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -5152,6 +5491,248 @@ const TestPage = () => {
 };
 
 export default TestPage;
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\exportService.js ---
+
+
+// src/services/exportService.js
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, limitToLast } from 'firebase/firestore';
+
+const PAGE_SIZE = 15;
+const exportTicketsCollection = collection(db, 'export_tickets');
+
+/**
+ * Láº¥y má»™t trang dá»¯ liá»‡u phiáº¿u xuáº¥t tá»« Firestore.
+ * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
+ * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore.
+ * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>}
+ */
+export const fetchExportSlipsPage = async (direction = 'first', cursor = null) => {
+    let q;
+    const baseQuery = query(exportTicketsCollection, orderBy("createdAt", "desc"));
+
+    if (direction === 'next' && cursor) {
+        q = query(baseQuery, startAfter(cursor), limit(PAGE_SIZE));
+    } else if (direction === 'prev' && cursor) {
+        q = query(baseQuery, endBefore(cursor), limitToLast(PAGE_SIZE));
+    } else { // first
+        q = query(baseQuery, limit(PAGE_SIZE));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return {
+        list,
+        firstVisible: querySnapshot.docs[0] || null,
+        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
+    };
+};
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\importService.js ---
+
+
+// src/services/importService.js
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, limitToLast } from 'firebase/firestore';
+
+const PAGE_SIZE = 15;
+const importTicketsCollection = collection(db, 'import_tickets');
+
+/**
+ * Láº¥y má»™t trang dá»¯ liá»‡u phiáº¿u nháº­p tá»« Firestore.
+ * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
+ * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore.
+ * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>}
+ */
+export const fetchImportSlipsPage = async (direction = 'first', cursor = null) => {
+    let q;
+    const baseQuery = query(importTicketsCollection, orderBy("createdAt", "desc"));
+
+    if (direction === 'next' && cursor) {
+        q = query(baseQuery, startAfter(cursor), limit(PAGE_SIZE));
+    } else if (direction === 'prev' && cursor) {
+        q = query(baseQuery, endBefore(cursor), limitToLast(PAGE_SIZE));
+    } else { // first
+        q = query(baseQuery, limit(PAGE_SIZE));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return {
+        list,
+        firstVisible: querySnapshot.docs[0] || null,
+        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
+    };
+};
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\partnerService.js ---
+
+
+// src/services/partnerService.js
+import { db } from '../firebaseConfig';
+import { collection, getDocs, doc, deleteDoc, query, orderBy, limit, startAfter, endBefore, limitToLast, documentId } from 'firebase/firestore';
+
+const PAGE_SIZE = 15;
+const partnersCollection = collection(db, 'partners');
+
+/**
+ * Láº¥y má»™t trang dá»¯ liá»‡u Ä‘á»‘i tÃ¡c tá»« Firestore.
+ * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
+ * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore Ä‘á»ƒ báº¯t Ä‘áº§u hoáº·c káº¿t thÃºc.
+ * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>} - Danh sÃ¡ch Ä‘á»‘i tÃ¡c vÃ  cÃ¡c con trá».
+ */
+export const fetchPartnersPage = async (direction = 'first', cursor = null) => {
+    let q;
+    const baseQuery = query(partnersCollection, orderBy(documentId()));
+
+    if (direction === 'next' && cursor) {
+        q = query(baseQuery, startAfter(cursor), limit(PAGE_SIZE));
+    } else if (direction === 'prev' && cursor) {
+        q = query(baseQuery, endBefore(cursor), limitToLast(PAGE_SIZE));
+    } else { // first
+        q = query(baseQuery, limit(PAGE_SIZE));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    return {
+        list,
+        firstVisible: querySnapshot.docs[0] || null,
+        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
+    };
+};
+
+/**
+ * XÃ³a má»™t Ä‘á»‘i tÃ¡c khá»i Firestore.
+ * @param {string} partnerId - ID cá»§a Ä‘á»‘i tÃ¡c cáº§n xÃ³a.
+ * @returns {Promise<void>}
+ */
+export const deletePartnerById = async (partnerId) => {
+    const partnerDocRef = doc(db, 'partners', partnerId);
+    await deleteDoc(partnerDocRef);
+};
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\productService.js ---
+
+
+// src/services/productService.js
+import { db } from '../firebaseConfig';
+import { collection, getDocs, doc, deleteDoc, query, orderBy, where, limit, startAfter, endBefore, limitToLast, documentId } from 'firebase/firestore';
+
+const PAGE_SIZE = 15;
+const productsCollection = collection(db, 'products');
+
+/**
+ * Láº¥y má»™t trang dá»¯ liá»‡u sáº£n pháº©m tá»« Firestore, cÃ³ há»— trá»£ tÃ¬m kiáº¿m.
+ * @param {string} searchTerm - Tá»« khÃ³a tÃ¬m kiáº¿m theo ID sáº£n pháº©m.
+ * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
+ * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore.
+ * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>}
+ */
+export const fetchProductsPage = async (searchTerm, direction = 'first', cursor = null) => {
+    let q = query(productsCollection, orderBy(documentId()));
+
+    // Ãp dá»¥ng bá»™ lá»c tÃ¬m kiáº¿m
+    if (searchTerm) {
+        const upperSearchTerm = searchTerm.toUpperCase();
+        q = query(q, where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
+    }
+
+    // Ãp dá»¥ng logic phÃ¢n trang
+    if (direction === 'next' && cursor) {
+        q = query(q, startAfter(cursor), limit(PAGE_SIZE));
+    } else if (direction === 'prev' && cursor) {
+        q = query(q, endBefore(cursor), limitToLast(PAGE_SIZE));
+    } else { // first
+        q = query(q, limit(PAGE_SIZE));
+    }
+
+    const querySnapshot = await getDocs(q);
+    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return {
+        list,
+        firstVisible: querySnapshot.docs[0] || null,
+        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
+    };
+};
+
+/**
+ * XÃ³a má»™t sáº£n pháº©m khá»i Firestore.
+ * @param {string} productId - ID cá»§a sáº£n pháº©m cáº§n xÃ³a.
+ * @returns {Promise<void>}
+ */
+export const deleteProductById = async (productId) => {
+    const productDocRef = doc(db, 'products', productId);
+    await deleteDoc(productDocRef);
+};
+
+
+
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\stocktakeService.js ---
+
+
+// src/services/stocktakeService.js
+import { db } from '../firebaseConfig';
+import { doc, deleteDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+
+/**
+ * XÃ³a má»™t phiÃªn kiá»ƒm kÃª vÃ  táº¥t cáº£ cÃ¡c má»¥c váº­t tÆ° con bÃªn trong nÃ³.
+ * Firestore khÃ´ng tá»± Ä‘á»™ng xÃ³a subcollection, nÃªn chÃºng ta pháº£i lÃ m viá»‡c nÃ y báº±ng tay.
+ * @param {string} sessionId - ID cá»§a phiÃªn kiá»ƒm kÃª cáº§n xÃ³a.
+ */
+export const deleteStocktakeSession = async (sessionId) => {
+    const sessionRef = doc(db, 'stocktakes', sessionId);
+    const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+
+    // BÆ°á»›c 1: Láº¥y táº¥t cáº£ cÃ¡c má»¥c váº­t tÆ° trong subcollection 'items'
+    const itemsSnapshot = await getDocs(itemsRef);
+    
+    if (itemsSnapshot.empty) {
+        // Náº¿u khÃ´ng cÃ³ má»¥c con nÃ o, chá»‰ cáº§n xÃ³a document cha
+        await deleteDoc(sessionRef);
+        return;
+    }
+
+    // BÆ°á»›c 2: XÃ³a táº¥t cáº£ cÃ¡c má»¥c váº­t tÆ° con theo tá»«ng lÃ´ (batch) Ä‘á»ƒ Ä‘áº£m báº£o hiá»‡u nÄƒng
+    // Firestore giá»›i háº¡n 500 thao tÃ¡c/batch
+    const MAX_BATCH_SIZE = 500;
+    let batch = writeBatch(db);
+    let count = 0;
+
+    for (const itemDoc of itemsSnapshot.docs) {
+        batch.delete(itemDoc.ref);
+        count++;
+        if (count === MAX_BATCH_SIZE) {
+            // Khi Ä‘á»§ 500, thá»±c thi batch vÃ  táº¡o batch má»›i
+            await batch.commit();
+            batch = writeBatch(db);
+            count = 0;
+            toast.info("Äang xÃ³a dá»¯ liá»‡u kiá»ƒm kÃª...");
+        }
+    }
+
+    // Thá»±c thi batch cuá»‘i cÃ¹ng náº¿u cÃ²n thao tÃ¡c
+    if (count > 0) {
+        await batch.commit();
+    }
+
+    // BÆ°á»›c 3: Sau khi Ä‘Ã£ xÃ³a háº¿t cÃ¡c má»¥c con, xÃ³a document cha (phiÃªn kiá»ƒm kÃª)
+    await deleteDoc(sessionRef);
+};
 
 
 
@@ -6086,129 +6667,225 @@ tbody tr.selected-row td {
 
 
 
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\DataImportPage.css ---
+
+
+/* src/styles/DataImportPage.css */
+
+.data-import-page {
+    padding: 20px;
+}
+
+.import-container {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.import-controls, .import-actions {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.import-controls h3, .import-actions h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.import-type-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.import-type-selector button {
+    flex-grow: 1;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.import-type-selector button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.import-instructions {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #e7f3ff;
+    border-left: 4px solid #007bff;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.import-instructions svg {
+    font-size: 20px;
+    color: #007bff;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+.import-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    color: #333;
+}
+.import-instructions li {
+    margin-bottom: 5px;
+}
+
+.import-method {
+    margin-bottom: 25px;
+}
+.import-method h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.import-method input[type="file"] {
+    width: 100%;
+}
+.import-method textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.import-log-container {
+    margin-top: 20px;
+}
+.import-log {
+    background-color: #2d333b;
+    color: #cdd9e5;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 15px;
+    border-radius: 6px;
+    height: 200px;
+    overflow-y: auto;
+}
+.import-log p {
+    margin: 0 0 5px 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.log-item.log-info { color: #cdd9e5; }
+.log-item.log-success { color: #56d364; }
+.log-item.log-warn { color: #e3b341; }
+.log-item.log-error { color: #f85149; font-weight: bold; }
+
+@media (max-width: 992px) {
+    .import-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\print.css ---
 
 
-/* src/styles/print.css (PhiÃªn báº£n HoÃ n Chá»‰nh) */
+/* src/styles/print.css (PhiÃªn báº£n Sá»­a Lá»—i Giao Diá»‡n In) */
 
 @media print {
+  /* --- CÃ€I Äáº¶T TRANG IN CHUNG --- */
   @page {
-    size: landscape;
-    margin: 5mm; /* YÃŠU Cáº¦U: Giáº£m lá» trang in xuá»‘ng 5mm */
+    size: landscape; /* In khá»• ngang */
+    margin: 5mm;     /* Lá» 5mm cho táº¥t cáº£ cÃ¡c cáº¡nh */
   }
 
   body {
     -webkit-print-color-adjust: exact !important;
     color-adjust: exact !important;
+    font-size: 9pt; 
   }
 
+  /* --- QUY Táº®C CHUNG CHO CÃC KHU Vá»°C IN --- */
   body * { visibility: hidden; }
-  .printable-area, .printable-area * { visibility: visible; }
+  .printable-area, .printable-area *, 
+  .printable-inventory-area, .printable-inventory-area * {
+    visibility: visible;
+  }
 
+  .printable-area, .printable-inventory-area {
+    position: absolute; left: 0; top: 0; width: 100%;
+  }
+
+  /* --- QUY Táº®C IN PHIáº¾U (NHáº¬P/XUáº¤T) --- */
   .printable-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100% !important;
-    max-width: none !important;
-    border: none !important;
-    box-shadow: none !important;
+    max-width: none !important; border: none !important; box-shadow: none !important;
   }
-  
   .printable-area .modal-actions { display: none; }
+  .printable-area h2 { font-size: 20pt; text-align: center; margin-bottom: 25px; }
+  .printable-area .compact-info-grid { border: none; padding: 0; font-size: 11pt; margin-bottom: 25px; }
+  .printable-area .products-table { table-layout: fixed; width: 100%; font-size: 10pt; border-collapse: collapse; margin-top: 20px; }
+  .printable-area .products-table th, .printable-area .products-table td { border: 1px solid #333; padding: 8px; word-wrap: break-word; vertical-align: middle; text-align: center; }
+  .printable-area .products-table th { background-color: #f2f2f2 !important; font-weight: bold; }
+  .printable-area .products-table td:nth-child(2) { text-align: left; }
+
+  /* --- QUY Táº®C IN BÃO CÃO Tá»’N KHO --- */
+  .printable-inventory-area .page-header,
+  .printable-inventory-area .controls-container,
+  .printable-inventory-area .pagination-controls,
+  .printable-inventory-area .view-toggle,
+  .printable-inventory-area th:first-child, /* áº¨n cá»™t mÅ©i tÃªn expand */
+  .printable-inventory-area td:first-child {
+    display: none;
+  }
+
+  /* *** NÃ‚NG Cáº¤P QUAN TRá»ŒNG: VÃ” HIá»†U HÃ“A GIAO DIá»†N THáºº KHI IN *** */
+  .printable-inventory-area table, .printable-inventory-area tbody, .printable-inventory-area thead, 
+  .printable-inventory-area tr, .printable-inventory-area th, .printable-inventory-area td {
+      display: revert !important; /* Tráº£ vá» giÃ¡ trá»‹ máº·c Ä‘á»‹nh cá»§a CSS cho báº£ng */
+      position: static !important;
+      width: auto !important; /* Äá»ƒ trÃ¬nh duyá»‡t tá»± tÃ­nh toÃ¡n Ä‘á»™ rá»™ng */
+      min-width: 0 !important; /* Bá» min-width Ä‘á»ƒ trÃ¡nh co cá»™t */
+  }
+  .printable-inventory-area td::before { content: "" !important; display: none !important; }
+
+  /* Äá»‹nh dáº¡ng láº¡i báº£ng Ä‘á»ƒ in */
+  .printable-inventory-area table {
+    width: 100% !important; border-collapse: collapse; box-shadow: none; table-layout: auto;
+  }
+  .printable-inventory-area th, .printable-inventory-area td {
+    border: 1px solid #666; padding: 5px; text-align: left; white-space: normal;
+  }
+  .printable-inventory-area th { background-color: #f2f2f2 !important; font-weight: bold; }
   
-  .printable-area h2 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 25px;
+  /* CÄƒn giá»¯a cho cÃ¡c cá»™t sá»‘ lÆ°á»£ng vÃ  ÄVT */
+  .printable-inventory-area th:nth-child(6), .printable-inventory-area td:nth-child(6), /* ÄVT */
+  .printable-inventory-area th:nth-child(8), .printable-inventory-area td:nth-child(8), /* SL Nháº­p */
+  .printable-inventory-area th:nth-child(9), .printable-inventory-area td:nth-child(9)  /* SL CÃ²n láº¡i */
+  {
+      text-align: center !important;
   }
-  .printable-area .compact-info-grid {
-    border: none;
-    padding: 0;
-    font-size: 14px;
-    margin-bottom: 25px;
+  .printable-inventory-area .inventory-table td:nth-child(9) { font-weight: bold; } /* In Ä‘áº­m SL cÃ²n láº¡i */
+
+  /* *** NÃ‚NG Cáº¤P QUAN TRá»ŒNG: LUÃ”N HIá»‚N THá»Š CHI TIáº¾T LÃ” KHI IN *** */
+  .printable-inventory-area .lot-details-row {
+    display: table-row !important;
   }
-  .printable-area .compact-info-grid label { font-size: 13px; }
-  .printable-area .compact-info-grid p { font-size: 15px; }
-
-  /* --- Äá»ŠNH Dáº NG Báº¢NG --- */
-  .printable-area .products-table {
-    margin-top: 20px;
-    table-layout: fixed; 
-    width: 100%;
-    font-size: 14px;
-    border-collapse: collapse;
+  .printable-inventory-area .lot-details-row td {
+    background-color: #f8f9fa !important;
+    padding-left: 20px !important;
   }
-
-  .printable-area .products-table th,
-  .printable-area .products-table td {
-    border: 1px solid #333;
-    padding: 10px;
-    word-wrap: break-word; 
-    vertical-align: middle;
-    text-align: center; /* YÃŠU Cáº¦U: CÄƒn giá»¯a lÃ m máº·c Ä‘á»‹nh */
+  .printable-inventory-area .lot-details-container ul {
+      display: block !important; /* Hiá»ƒn thá»‹ cÃ¡c lÃ´ dÆ°á»›i dáº¡ng danh sÃ¡ch */
   }
-  
-  .printable-area .products-table th {
-    background-color: #f2f2f2 !important;
-    font-weight: bold;
+  .printable-inventory-area .lot-details-container li {
+      display: block !important; /* Má»—i lÃ´ trÃªn má»™t dÃ²ng */
+      margin-bottom: 3px;
   }
-
-  /* YÃŠU Cáº¦U: Chá»‰ cÄƒn lá» trÃ¡i cho ná»™i dung cá»™t "TÃªn hÃ ng" */
-  .printable-area .products-table td:nth-child(2) { 
-    text-align: left; 
-  }
-
-  /* TÃ´ Ä‘áº­m cÃ¡c Ã´ dá»¯ liá»‡u quan trá»ng */
-  .printable-area .products-table td:nth-child(1),
-  .printable-area .products-table td:nth-child(3),
-  .printable-area .products-table td:nth-child(7) { 
-    font-weight: bold;
-  }
-  
-  /* --- PHÃ‚N Bá»” Láº I CHIá»€U Rá»˜NG Cá»˜T --- */
-  .printable-area .products-table th:nth-child(1) { width: 10%; } /* MÃ£ hÃ ng */
-  .printable-area .products-table th:nth-child(2) { width: 26%; } /* TÃªn hÃ ng */
-  .printable-area .products-table th:nth-child(3) { width: 12%; } /* Sá»‘ lÃ´ */
-  .printable-area .products-table th:nth-child(4) { width: 10%; } /* HSD */
-  .printable-area .products-table th:nth-child(5) { width: 8%; }  /* ÄVT */
-  .printable-area .products-table th:nth-child(6) { width: 15%; } /* Quy cÃ¡ch */
-  .printable-area .products-table th:nth-child(7) { width: 9%; }  /* SL xuáº¥t (Rá»™ng hÆ¡n) */
-  .printable-area .products-table th:nth-child(8) { width: 10%; } /* Nhiá»‡t Ä‘á»™ BQ */
-
-  /* YÃŠU Cáº¦U: Háº¡n cháº¿ tá»‘i Ä‘a viá»‡c xuá»‘ng dÃ²ng á»Ÿ cÃ¡c cá»™t dá»¯ liá»‡u ngáº¯n */
-  .printable-area .products-table td:nth-child(1),
-  .printable-area .products-table td:nth-child(3),
-  .printable-area .products-table td:nth-child(4),
-  .printable-area .products-table td:nth-child(5),
-  .printable-area .products-table td:nth-child(7) {
-      white-space: nowrap;
-  }
-
-  /* --- CSS CHO IN PHIáº¾U KIá»‚M KÃŠ --- */
-@media print {
-    .printable-stocktake-area {
-        visibility: visible !important;
-        display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    .printable-stocktake-area * {
-        visibility: visible;
-    }
-    
-    @page {
-        size: landscape;
-        margin: 5mm;
-    }
-}
 }
 
 
@@ -6318,6 +6995,35 @@ tbody tr.selected-row td {
         border-top: 1px solid var(--border-color);
     }
 }
+
+
+/* <-- NÃ‚NG Cáº¤P Sá»¬A Lá»–I: TÄƒng Ä‘á»™ Æ°u tiÃªn cá»§a CSS --> */
+.products-table.discrepancy-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.products-table.discrepancy-table th:nth-child(1),
+.products-table.discrepancy-table td:nth-child(1) {
+    width: 5%;
+}
+
+.products-table.discrepancy-table th:nth-child(2),
+.products-table.discrepancy-table td:nth-child(2) {
+    width: 15%;
+}
+
+.products-table.discrepancy-table th:nth-child(3),
+.products-table.discrepancy-table td:nth-child(3) {
+    width: 35%; /* Cho cá»™t tÃªn hÃ ng rá»™ng nháº¥t */
+    white-space: normal;
+    word-break: break-word;
+}
+
+.products-table.discrepancy-table th:nth-child(4) { width: 15%; }
+.products-table.discrepancy-table th:nth-child(5) { width: 10%; }
+.products-table.discrepancy-table th:nth-child(6) { width: 10%; }
+.products-table.discrepancy-table th:nth-child(7) { width: 10%; }
 
 
 
@@ -6480,9 +7186,8 @@ import { AuthProvider, useAuth } from './context/UserContext';
 const AppRoutes = () => {
   const { user, userRole, loading } = useAuth();
 
-  // Logic loading Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½ trong UserContext, nhÆ°ng váº«n kiá»ƒm tra á»Ÿ Ä‘Ã¢y Ä‘á»ƒ cháº¯c cháº¯n
   if (loading) {
-    return null; // Hoáº·c má»™t spinner nhá» náº¿u muá»‘n, nhÆ°ng khÃ´ng cáº§n thiáº¿t
+    return null; 
   }
 
   return (
@@ -6509,6 +7214,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* <-- NÃ‚NG Cáº¤P: ThÃªm thuá»™c tÃ­nh closeButton={false} vÃ o Ä‘Ã¢y --> */}
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -6520,6 +7226,7 @@ function App() {
           draggable
           pauseOnHover
           theme="light"
+          closeButton={false} 
         />
         <AppRoutes />
       </AuthProvider>
@@ -6534,7 +7241,10 @@ export default App;
 --- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\constants.js ---
 
 
-// src/constants.js
+/// src/constants.js
+
+// <-- THÃŠM Má»šI: Háº±ng sá»‘ dÃ¹ng chung cho viá»‡c phÃ¢n trang
+export const PAGE_SIZE = 15;
 
 export const TEMP_OPTIONS = ["Nhiá»‡t Ä‘á»™ phÃ²ng", "2 â†’ 8Â°C", "-25 â†’ -15Â°C"];
 

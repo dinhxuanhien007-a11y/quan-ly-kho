@@ -9,7 +9,7 @@ import TempBadge from '../components/TempBadge';
 import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi'; // <-- NÂNG CẤP: Thêm icon FiPrinter
 
 const PAGE_SIZE = 20;
 
@@ -37,8 +37,6 @@ const InventoryPage = () => {
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
-    
-    // THÊM LẠI STATE ĐỂ THEO DÕI DÒNG ĐƯỢC CHỌN
     const [selectedRowId, setSelectedRowId] = useState(null);
 
     const buildQuery = () => {
@@ -129,15 +127,30 @@ const InventoryPage = () => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
     };
 
-    // THÊM LẠI HÀM XỬ LÝ KHI NHẤN VÀO DÒNG
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
+
+    // <-- NÂNG CẤP: Hàm xử lý việc in -->
+    const handlePrint = () => {
+        const originalTitle = document.title;
+        document.title = `BaoCao_TonKho_ChiTiet_${new Date().toLocaleDateString('vi-VN')}`;
+        window.print();
+        document.title = originalTitle; // Khôi phục tiêu đề cũ sau khi in
+    };
     
     return (
-        <div>
+        // <-- NÂNG CẤP: Bọc toàn bộ nội dung trong div để có thể in -->
+        <div className="printable-inventory-area">
             <div className="page-header">
                 <h1>Tồn Kho Chi Tiết</h1>
+                {/* <-- NÂNG CẤP: Thêm nút In và kiểm tra quyền --> */}
+                {(userRole === 'owner' || userRole === 'admin') && (
+                    <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
+                        <FiPrinter style={{marginRight: '5px'}} />
+                        In Báo Cáo
+                    </button>
+                )}
             </div>
             
             <div className="controls-container">
@@ -179,7 +192,6 @@ const InventoryPage = () => {
                             </thead>
                             <tbody className="inventory-table-body">
                                 {inventory.map(lot => (
-                                    // CẬP NHẬT LẠI DÒNG NÀY
                                     <tr 
                                         key={lot.id} 
                                         onClick={() => handleRowClick(lot.id)}

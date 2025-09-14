@@ -1,4 +1,7 @@
-// src/constants.js
+/// src/constants.js
+
+// <-- THÊM MỚI: Hằng số dùng chung cho việc phân trang
+export const PAGE_SIZE = 15;
 
 export const TEMP_OPTIONS = ["Nhiệt độ phòng", "2 → 8°C", "-25 → -15°C"];
 

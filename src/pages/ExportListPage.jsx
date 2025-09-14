@@ -1,71 +1,34 @@
 // src/pages/ExportListPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, doc, updateDoc, getDoc, limit, startAfter } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
+import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import ViewExportSlipModal from '../components/ViewExportSlipModal';
 import EditExportSlipModal from '../components/EditExportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15; // SỐ PHIẾU TRÊN MỖI TRANG
-
 const ExportListPage = () => {
-  const [exportSlips, setExportSlips] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'Xác nhận' });
 
-  // --- STATE MỚI CHO PHÂN TRANG ---
-  const [lastVisible, setLastVisible] = useState(null);
-  const [page, setPage] = useState(1);
-  const [isLastPage, setIsLastPage] = useState(false);
-
-  const fetchExportSlips = useCallback(async (direction = 'next') => {
-    setLoading(true);
-    try {
-      let slipsQuery = query(collection(db, "export_tickets"), orderBy("createdAt", "desc"));
-
-      if (direction === 'next' && lastVisible) {
-        slipsQuery = query(slipsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-      } else { // 'first' or default
-        slipsQuery = query(slipsQuery, limit(PAGE_SIZE));
-        setPage(1);
-      }
-      
-      const querySnapshot = await getDocs(slipsQuery);
-      const slipsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-      setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
-      setExportSlips(slipsList);
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách phiếu xuất: ", error);
-      toast.error("Không thể tải danh sách phiếu xuất.");
-    } finally {
-      setLoading(false);
-    }
-  }, [lastVisible]);
-
-  useEffect(() => {
-    fetchExportSlips('first');
-  }, []);
-
-  const handleNextPage = () => {
-    if (!isLastPage) {
-        setPage(prev => prev + 1);
-        fetchExportSlips('next');
-    }
-  };
-
-  const handlePrevPage = () => {
-    setLastVisible(null);
-    fetchExportSlips('first');
-  };
+  // <-- THAY ĐỔI: Sử dụng hook phân trang
+  const baseQuery = useMemo(() => query(collection(db, 'export_tickets'), orderBy("createdAt", "desc")), []);
+  const {
+    documents: exportSlips,
+    loading,
+    isLastPage,
+    page,
+    nextPage,
+    prevPage,
+    reset
+  } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
   const handleConfirmExport = async (slip) => {
     try {
@@ -85,7 +48,7 @@ const ExportListPage = () => {
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'completed' });
       toast.success('Xác nhận xuất kho thành công!');
-      fetchExportSlips('first');
+      reset();
     } catch (error) {
       console.error("Lỗi khi xác nhận xuất kho: ", error);
       toast.error('Đã xảy ra lỗi khi xác nhận.');
@@ -99,7 +62,7 @@ const ExportListPage = () => {
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'cancelled' });
       toast.success('Hủy phiếu xuất thành công!');
-      fetchExportSlips('first');
+      reset();
     } catch (error) {
       console.error("Lỗi khi hủy phiếu: ", error);
       toast.error('Đã xảy ra lỗi khi hủy phiếu.');
@@ -117,7 +80,7 @@ const ExportListPage = () => {
           description: updatedSlip.description
       });
       setIsEditModalOpen(false);
-      fetchExportSlips('first');
+      reset();
       toast.success('Cập nhật phiếu xuất thành công!');
     } catch (error) {
       console.error("Lỗi khi cập nhật phiếu xuất: ", error);
@@ -146,7 +109,30 @@ const ExportListPage = () => {
   };
 
   const openViewModal = (slip) => { setSelectedSlip(slip); setIsViewModalOpen(true); };
-  const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
+  
+  const openEditModal = async (slip) => {
+    const slipWithDetails = JSON.parse(JSON.stringify(slip));
+    try {
+      toast.info("Đang lấy dữ liệu tồn kho mới nhất...");
+      for (const item of slipWithDetails.items) {
+        if (item.lotId) {
+          const lotRef = doc(db, 'inventory_lots', item.lotId);
+          const lotSnap = await getDoc(lotRef);
+          if (lotSnap.exists()) {
+            item.quantityRemaining = lotSnap.data().quantityRemaining;
+          } else {
+            item.quantityRemaining = 0;
+            toast.warn(`Lô ${item.lotNumber} không còn tồn tại trong kho.`);
+          }
+        }
+      }
+      setSelectedSlip(slipWithDetails);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      console.error("Lỗi khi lấy chi tiết lô để chỉnh sửa:", error);
+      toast.error("Không thể lấy dữ liệu tồn kho mới nhất.");
+    }
+  };
   
   return (
     <div>
@@ -193,7 +179,7 @@ const ExportListPage = () => {
                             {slip.status === 'pending' && (
                             <>
                                 <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => promptAction('confirm', slip)}>
-                                <FiCheckCircle />
+                                    <FiCheckCircle />
                                 </button>
                                 <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
                                     <FiEdit />
@@ -216,11 +202,11 @@ const ExportListPage = () => {
             </table>
 
             <div className="pagination-controls">
-                <button onClick={handlePrevPage} disabled={page <= 1}>
+                <button onClick={prevPage} disabled={page <= 1 || loading}>
                     <FiChevronLeft /> Trang Trước
                 </button>
                 <span>Trang {page}</span>
-                <button onClick={handleNextPage} disabled={isLastPage}>
+                <button onClick={nextPage} disabled={isLastPage || loading}>
                     Trang Tiếp <FiChevronRight />
                 </button>
             </div>

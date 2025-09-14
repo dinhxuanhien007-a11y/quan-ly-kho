@@ -30,4 +30,6 @@ const StatusBadge = ({ status }) => {
     return <span className={className}>{text}</span>;
 };
 
-export default StatusBadge;
+// <-- NÂNG CẤP: Bọc component trong React.memo để tối ưu hiệu năng,
+// tránh việc re-render không cần thiết khi props không thay đổi.
+export default React.memo(StatusBadge);

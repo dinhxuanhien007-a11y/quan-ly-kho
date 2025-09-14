@@ -20,4 +20,5 @@ const TeamBadge = ({ team }) => {
   return <span className={className}>{team}</span>;
 };
 
-export default TeamBadge;
+// <-- NÂNG CẤP: Bọc component trong React.memo để tối ưu hiệu năng.
+export default React.memo(TeamBadge);

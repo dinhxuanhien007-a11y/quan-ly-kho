@@ -12,9 +12,8 @@ import { AuthProvider, useAuth } from './context/UserContext';
 const AppRoutes = () => {
   const { user, userRole, loading } = useAuth();
 
-  // Logic loading đã được xử lý trong UserContext, nhưng vẫn kiểm tra ở đây để chắc chắn
   if (loading) {
-    return null; // Hoặc một spinner nhỏ nếu muốn, nhưng không cần thiết
+    return null; 
   }
 
   return (
@@ -41,6 +40,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* <-- NÂNG CẤP: Thêm thuộc tính closeButton={false} vào đây --> */}
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -52,6 +52,7 @@ function App() {
           draggable
           pauseOnHover
           theme="light"
+          closeButton={false} 
         />
         <AppRoutes />
       </AuthProvider>

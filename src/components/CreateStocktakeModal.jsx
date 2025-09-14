@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 
-const CreateStocktakeModal = ({ onClose, onCreate }) => {
+// *** PHIÊN BẢN SỬA LỖI ***
+const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
     const [sessionName, setSessionName] = useState('');
     const [scope, setScope] = useState('all');
 
@@ -40,8 +41,10 @@ const CreateStocktakeModal = ({ onClose, onCreate }) => {
                         </select>
                     </div>
                     <div className="modal-actions">
-                        <button type="button" onClick={onClose} className="btn-secondary">Hủy</button>
-                        <button type="submit" className="btn-primary">Bắt đầu</button>
+                        <button type="button" onClick={onClose} className="btn-secondary" disabled={isCreating}>Hủy</button>
+                        <button type="submit" className="btn-primary" disabled={isCreating}>
+                            {isCreating ? 'Đang tạo...' : 'Bắt đầu'}
+                        </button>
                     </div>
                 </form>
             </div>

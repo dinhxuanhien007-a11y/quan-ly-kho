@@ -1,0 +1,119 @@
+/* src/styles/DataImportPage.css */
+
+.data-import-page {
+    padding: 20px;
+}
+
+.import-container {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.import-controls, .import-actions {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.import-controls h3, .import-actions h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.import-type-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.import-type-selector button {
+    flex-grow: 1;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.import-type-selector button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.import-instructions {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #e7f3ff;
+    border-left: 4px solid #007bff;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.import-instructions svg {
+    font-size: 20px;
+    color: #007bff;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+.import-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    color: #333;
+}
+.import-instructions li {
+    margin-bottom: 5px;
+}
+
+.import-method {
+    margin-bottom: 25px;
+}
+.import-method h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.import-method input[type="file"] {
+    width: 100%;
+}
+.import-method textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.import-log-container {
+    margin-top: 20px;
+}
+.import-log {
+    background-color: #2d333b;
+    color: #cdd9e5;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 15px;
+    border-radius: 6px;
+    height: 200px;
+    overflow-y: auto;
+}
+.import-log p {
+    margin: 0 0 5px 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.log-item.log-info { color: #cdd9e5; }
+.log-item.log-success { color: #56d364; }
+.log-item.log-warn { color: #e3b341; }
+.log-item.log-error { color: #f85149; font-weight: bold; }
+
+@media (max-width: 992px) {
+    .import-container {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,19 +1,27 @@
 // src/components/EditImportSlipModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; // <-- THÊM MỚI: import useRef, useEffect
 import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
 import { formatExpiryDate } from '../utils/dateUtils';
 
 const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
+  // <-- THÊM MỚI: Ref để tham chiếu đến input cuối cùng
+  const lastInputRef = useRef(null);
 
-  // HÀM MỚI: Chỉ định dạng HSD khi người dùng rời khỏi ô input
+  // <-- THÊM MỚI: useEffect để focus vào input của dòng mới được thêm
+  useEffect(() => {
+    if (lastInputRef.current) {
+        lastInputRef.current.focus();
+    }
+  }, [slipData.items.length]); // Chạy mỗi khi số lượng dòng thay đổi
+
+
   const handleExpiryDateBlur = (index, value) => {
     const updatedItems = [...slipData.items];
     updatedItems[index].expiryDate = formatExpiryDate(value);
     setSlipData({ ...slipData, items: updatedItems });
   };
 
-  // HÀM CŨ: Giờ chỉ cập nhật giá trị thô, không định dạng HSD
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
     updatedItems[index][field] = value;
@@ -40,13 +48,13 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const handleSaveChanges = () => {
     onSave(slipData);
   };
-
   return (
     <div className="modal-backdrop">
       <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
         <h2>Chỉnh sửa Phiếu Nhập Kho (ID: {slipData.id})</h2>
         <h3>Chi tiết hàng hóa</h3>
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+          {/* ... grid headers ... */}
           <div className="grid-header">Mã hàng</div>
           <div className="grid-header">Tên hàng</div>
           <div className="grid-header">Số lô</div>
@@ -59,7 +67,15 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 
           {slipData.items.map((item, index) => (
             <React.Fragment key={index}>
-              <div className="grid-cell"><input type="text" value={item.productId} onChange={e => handleItemChange(index, 'productId', e.target.value)} /></div>
+              <div className="grid-cell">
+                <input 
+                    type="text" 
+                    value={item.productId} 
+                    onChange={e => handleItemChange(index, 'productId', e.target.value)} 
+                    // <-- THAY ĐỔI: Gán ref cho ô input của dòng cuối cùng
+                    ref={index === slipData.items.length - 1 ? lastInputRef : null}
+                />
+              </div>
               <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
               <div className="grid-cell"><input type="text" value={item.lotNumber} onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} /></div>
               <div className="grid-cell">

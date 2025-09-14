@@ -18,4 +18,5 @@ const TempBadge = ({ temperature }) => {
   return <span className={className}>{temperature}</span>;
 };
 
-export default TempBadge;
+// <-- NÂNG CẤP: Bọc component trong React.memo để tối ưu hiệu năng.
+export default React.memo(TempBadge);

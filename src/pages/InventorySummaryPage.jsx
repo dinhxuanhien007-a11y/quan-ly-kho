@@ -5,9 +5,12 @@ import { collection, query, getDocs, where, orderBy, documentId, limit, startAft
 import { formatDate } from '../utils/dateUtils';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { FiChevronDown, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiChevronLeft, FiPrinter } from 'react-icons/fi';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { toast } from 'react-toastify';
 
 const PAGE_SIZE = 15;
 
@@ -43,23 +46,62 @@ const getLotItemColorClass = (expiryDate) => {
 
 const InventorySummaryPage = () => {
     const { userRole } = useAuth();
-    
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState({});
     const [lotDetails, setLotDetails] = useState({});
+    const [loadingLots, setLoadingLots] = useState({});
     
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     const [activeFilter, setActiveFilter] = useState({ type: 'none', value: '' });
 
-    const performSearch = async (term) => {
-        if (!term) {
-            fetchData('first');
-            return;
+    const fetchData = useCallback(async (direction = 'next', cursor = null) => {
+        setLoading(true);
+        try {
+            // <-- NÂNG CẤP: Thay đổi logic sắp xếp mặc định -->
+            // Sắp xếp theo Mã hàng (productId) tăng dần làm ưu tiên chính.
+            let q = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
+
+            if (activeFilter.type === 'team') {
+                q = query(q, where("team", "==", activeFilter.value));
+            } else if (activeFilter.type === 'near_expiry') {
+                const today = Timestamp.now();
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + 120);
+                const futureTimestamp = Timestamp.fromDate(futureDate);
+                // Khi lọc, ta sẽ sắp xếp theo HSD để đưa các mã cận date lên đầu
+                q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp), orderBy("nearestExpiryDate", "asc"));
+            } else if (activeFilter.type === 'expired') {
+                const today = Timestamp.now();
+                // Tương tự, sắp xếp theo HSD
+                q = query(q, where("nearestExpiryDate", "<", today), orderBy("nearestExpiryDate", "asc"));
+            }
+
+            if (direction === 'next' && cursor) {
+                q = query(q, startAfter(cursor), limit(PAGE_SIZE));
+            } else {
+                q = query(q, limit(PAGE_SIZE));
+                if (direction === 'first') setPage(1);
+            }
+
+            const docSnapshots = await getDocs(q);
+            const summaryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1] || null);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setSummaries(summaryList);
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu tổng hợp: ", error);
+        } finally {
+            setLoading(false);
         }
+    }, [activeFilter]);
+
+    const performSearch = useCallback(async (term) => {
+        if (!term) return;
         setLoading(true);
         try {
             const upperTerm = term.toUpperCase();
@@ -68,20 +110,17 @@ const InventorySummaryPage = () => {
                 where(documentId(), ">=", upperTerm),
                 where(documentId(), "<=", upperTerm + '\uf8ff')
             );
-
             const lotSearchQuery = query(
                 collection(db, "inventory_lots"),
                 where("lotNumber", "==", term)
             );
-
             const [productSnap, lotSnap] = await Promise.all([
                 getDocs(productSearchQuery),
                 getDocs(lotSearchQuery)
             ]);
-
             const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
             lotSnap.docs.forEach(doc => foundProductIds.add(doc.data().productId));
-
+            
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
@@ -99,50 +138,12 @@ const InventorySummaryPage = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const fetchData = useCallback(async (direction = 'next') => {
-        setLoading(true);
-        try {
-            let q = query(collection(db, "product_summaries"), orderBy("nearestExpiryDate", "asc"));
-
-            if (activeFilter.type === 'team') {
-                q = query(q, where("team", "==", activeFilter.value));
-            } else if (activeFilter.type === 'near_expiry') {
-                const today = Timestamp.now();
-                const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + 120);
-                const futureTimestamp = Timestamp.fromDate(futureDate);
-                q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp));
-            } else if (activeFilter.type === 'expired') {
-                const today = Timestamp.now();
-                q = query(q, where("nearestExpiryDate", "<", today));
-            }
-
-            if (direction === 'next' && lastVisible) {
-                q = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            } else {
-                q = query(q, limit(PAGE_SIZE));
-                setPage(1);
-            }
-
-            const docSnapshots = await getDocs(q);
-            const summaryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setSummaries(summaryList);
-
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu tổng hợp: ", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible, activeFilter]);
+    }, []);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
             setLastVisible(null);
+            setPage(1);
             if (searchTerm) {
                 performSearch(searchTerm);
             } else {
@@ -150,12 +151,13 @@ const InventorySummaryPage = () => {
             }
         }, 500);
         return () => clearTimeout(debounce);
-    }, [searchTerm, activeFilter]);
+    }, [searchTerm, activeFilter, fetchData, performSearch]);
+
 
     const toggleRow = async (productId) => {
-        const isCurrentlyExpanded = expandedRows[productId];
-        setExpandedRows(prev => ({ ...prev, [productId]: !isCurrentlyExpanded }));
-        if (!isCurrentlyExpanded && !lotDetails[productId]) {
+        const isCurrentlyExpanded = !!expandedRows[productId];
+        if (!lotDetails[productId]) {
+            setLoadingLots(prev => ({ ...prev, [productId]: true }));
             try {
                 const lotsQuery = query(
                     collection(db, "inventory_lots"),
@@ -168,20 +170,26 @@ const InventorySummaryPage = () => {
                 setLotDetails(prev => ({ ...prev, [productId]: lots }));
             } catch (error) {
                 console.error("Lỗi khi tải chi tiết lô:", error);
+                setLotDetails(prev => ({ ...prev, [productId]: [] }));
+            } finally {
+                setLoadingLots(prev => ({ ...prev, [productId]: false }));
             }
         }
+        setExpandedRows(prev => ({ ...prev, [productId]: !isCurrentlyExpanded }));
     };
 
     const handleNextPage = () => {
         if (!isLastPage) {
             setPage(p => p + 1);
-            fetchData('next');
+            fetchData('next', lastVisible);
         }
     };
+
     const handlePrevPage = () => {
         setLastVisible(null);
         fetchData('first');
     };
+
     const handleFilterChange = (type, value = '') => {
         if (activeFilter.type === type && activeFilter.value === value) {
             setActiveFilter({ type: 'none', value: '' });
@@ -190,14 +198,46 @@ const InventorySummaryPage = () => {
         }
     };
     
+    const handlePrint = async () => {
+        const originalTitle = document.title;
+        document.title = `BaoCao_TonKho_TongHop_${new Date().toLocaleDateString('vi-VN')}`;
+
+        const allProductIds = summaries.map(s => s.id);
+        const fetchPromises = allProductIds.map(id => {
+            if (!lotDetails[id]) return toggleRow(id);
+            return Promise.resolve();
+        });
+        
+        toast.info("Đang chuẩn bị dữ liệu để in, vui lòng chờ...");
+        await Promise.all(fetchPromises);
+        
+        const allExpanded = allProductIds.reduce((acc, id) => {
+            acc[id] = true;
+            return acc;
+        }, {});
+        setExpandedRows(allExpanded);
+        
+        setTimeout(() => {
+            window.print();
+            document.title = originalTitle;
+            setExpandedRows({});
+        }, 500);
+    };
+    
     return (
-        <div>
+        <div className="printable-inventory-area">
             <div className="page-header">
                 <h1>Tồn Kho Tổng Hợp</h1>
+                {(userRole === 'owner' || userRole === 'admin') && (
+                    <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
+                        <FiPrinter style={{marginRight: '5px'}} />
+                        In Báo Cáo
+                    </button>
+                )}
             </div>
             
-            <div className="filters-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
-                <div className="filter-group">
+            <div className="controls-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
+                 <div className="filter-group">
                     <button className={activeFilter.value === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lọc hàng MED</button>
                     <button className={activeFilter.value === 'BIO' ? 'active' : ''} onClick={() => handleFilterChange('team', 'BIO')}>Lọc hàng BIO</button>
                     <button className={activeFilter.value === 'Spare Part' ? 'active' : ''} onClick={() => handleFilterChange('team', 'Spare Part')}>Lọc hàng Spare Part</button>
@@ -242,20 +282,27 @@ const InventorySummaryPage = () => {
                                             className={getRowColorByExpiry(product.nearestExpiryDate)}
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
-                                            <td><strong>{product.id}</strong></td>
-                                            <td style={{textAlign: 'left'}}>{product.productName}</td>
-                                            <td>{formatDate(product.nearestExpiryDate)}</td>
-                                            <td><strong>{product.totalRemaining}</strong></td>
-                                            <td>{product.unit}</td>
-                                            <td><TempBadge temperature={product.storageTemp} /></td>
-                                            <td><TeamBadge team={product.team} /></td>
+                                            <td data-label="Mã hàng"><strong>{product.id}</strong></td>
+                                            <td data-label="Tên hàng" style={{textAlign: 'left'}}>{product.productName}</td>
+                                            <td data-label="HSD Gần Nhất">{formatDate(product.nearestExpiryDate)}</td>
+                                            <td data-label="Tổng Tồn"><strong>{product.totalRemaining}</strong></td>
+                                            <td data-label="ĐVT">{product.unit}</td>
+                                            <td data-label="Nhiệt độ BQ"><TempBadge temperature={product.storageTemp} /></td>
+                                            <td data-label="Team"><TeamBadge team={product.team} /></td>
                                         </tr>
                                         {expandedRows[product.id] && (
                                             <tr className="lot-details-row">
                                                 <td colSpan="8">
                                                     <div className="lot-details-container">
-                                                        {lotDetails[product.id] ? (
-                                                            lotDetails[product.id].length > 0 ? (
+                                                        {loadingLots[product.id] ? (
+                                                            <SkeletonTheme baseColor="#e9ecef" highlightColor="#f8f9fa">
+                                                                <h4><Skeleton width={200} /></h4>
+                                                                <ul>
+                                                                    <li><Skeleton height={35} count={3} style={{ marginBottom: '8px' }}/></li>
+                                                                </ul>
+                                                            </SkeletonTheme>
+                                                        ) : (
+                                                            (lotDetails[product.id] && lotDetails[product.id].length > 0) ? (
                                                                 <>
                                                                     <h4>Chi tiết các lô hàng (FEFO):</h4>
                                                                     <ul>
@@ -269,7 +316,7 @@ const InventorySummaryPage = () => {
                                                                     </ul>
                                                                 </>
                                                             ) : <p>Không có lô nào còn tồn kho cho sản phẩm này.</p>
-                                                        ) : <p>Đang tải chi tiết lô...</p>}
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -281,11 +328,11 @@ const InventorySummaryPage = () => {
                     </div>
                     {!searchTerm && (
                         <div className="pagination-controls">
-                            <button onClick={() => { setLastVisible(null); fetchData('first'); }} disabled={page <= 1}>
+                            <button onClick={handlePrevPage} disabled={page <= 1}>
                                 <FiChevronLeft /> Trang Trước
                             </button>
                             <span>Trang {page}</span>
-                            <button onClick={() => fetchData('next')} disabled={isLastPage}>
+                            <button onClick={handleNextPage} disabled={isLastPage}>
                                 Trang Tiếp <FiChevronRight />
                             </button>
                         </div>

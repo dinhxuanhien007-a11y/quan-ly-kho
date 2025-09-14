@@ -1,86 +1,43 @@
 // src/pages/PartnersPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, query, orderBy, limit, startAfter, documentId } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react';
+import { collection, query, orderBy, documentId } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { db } from '../firebaseConfig';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { deletePartnerById } from '../services/partnerService';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { toast } from 'react-toastify';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15; // <-- SỐ ĐỐI TÁC TRÊN MỖI TRANG
-
 const PartnersPage = () => {
-    const [partners, setPartners] = useState([]);
-    const [loading, setLoading] = useState(true);
-    
-    // --- STATE MỚI CHO PHÂN TRANG ---
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
-    const [isLastPage, setIsLastPage] = useState(false);
-
-    // --- LOGIC MỚI ĐỂ TẢI DỮ LIỆU THEO TRANG ---
-    const fetchPartners = useCallback(async (direction = 'next') => {
-        setLoading(true);
-        try {
-            let partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), limit(PAGE_SIZE));
-
-            if (direction === 'next' && lastVisible) {
-                partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), startAfter(lastVisible), limit(PAGE_SIZE));
-            } else if (direction === 'first') {
-                partnersQuery = query(collection(db, 'partners'), orderBy(documentId()), limit(PAGE_SIZE));
-                setPage(1);
-            }
-            
-            const querySnapshot = await getDocs(partnersQuery);
-            const partnersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-            setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
-            setPartners(partnersList);
-        } catch (error) {
-            console.error("Lỗi khi lấy danh sách đối tác: ", error);
-            toast.error("Không thể tải danh sách đối tác.");
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible]);
-
-    useEffect(() => {
-        fetchPartners('first');
-    }, []);
-
-    // --- CÁC HÀM XỬ LÝ SỰ KIỆN PHÂN TRANG ---
-    const handleNextPage = () => {
-        if (!isLastPage) {
-            setPage(prev => prev + 1);
-            fetchPartners('next');
-        }
-    };
-
-    const handlePrevPage = () => {
-        // Cách làm đơn giản nhất là quay về trang đầu
-        setLastVisible(null);
-        setPage(1);
-        fetchPartners('first');
-    };
-    
-    // --- CÁC HÀM CŨ (CÓ CẬP NHẬT ĐỂ TẢI LẠI TRANG ĐẦU) ---
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
+    // <-- THAY ĐỔI: Sử dụng hook phân trang
+    const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy(documentId())), []);
+    const { 
+        documents: partners, 
+        loading, 
+        isLastPage, 
+        page, 
+        nextPage, 
+        prevPage,
+        reset
+    } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
-        setLastVisible(null);
-        fetchPartners('first');
+        reset();
     };
 
     const handlePartnerUpdated = () => {
         setIsEditModalOpen(false);
-        fetchPartners('first');
+        reset();
     };
 
     const promptForDelete = (partner) => {
@@ -96,10 +53,9 @@ const PartnersPage = () => {
         const { item } = confirmModal;
         if (!item) return;
         try {
-            await deleteDoc(doc(db, 'partners', item.id));
+            await deletePartnerById(item.id);
             toast.success('Xóa đối tác thành công!');
-            setLastVisible(null);
-            fetchPartners('first');
+            reset();
         } catch (error) {
             console.error("Lỗi khi xóa đối tác: ", error);
             toast.error('Đã xảy ra lỗi khi xóa đối tác.');
@@ -166,13 +122,12 @@ const PartnersPage = () => {
                         </tbody>
                     </table>
 
-                    {/* --- KHỐI PHÂN TRANG MỚI --- */}
                     <div className="pagination-controls">
-                        <button onClick={handlePrevPage} disabled={page <= 1}>
+                        <button onClick={prevPage} disabled={page <= 1 || loading}>
                             <FiChevronLeft /> Trang Trước
                         </button>
                         <span>Trang {page}</span>
-                        <button onClick={handleNextPage} disabled={isLastPage}>
+                        <button onClick={nextPage} disabled={isLastPage || loading}>
                             Trang Tiếp <FiChevronRight />
                         </button>
                     </div>

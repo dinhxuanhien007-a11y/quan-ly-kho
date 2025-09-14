@@ -1,121 +1,92 @@
-/* src/styles/print.css (Phiên bản Hoàn Chỉnh) */
+/* src/styles/print.css (Phiên bản Sửa Lỗi Giao Diện In) */
 
 @media print {
+  /* --- CÀI ĐẶT TRANG IN CHUNG --- */
   @page {
-    size: landscape;
-    margin: 5mm; /* YÊU CẦU: Giảm lề trang in xuống 5mm */
+    size: landscape; /* In khổ ngang */
+    margin: 5mm;     /* Lề 5mm cho tất cả các cạnh */
   }
 
   body {
     -webkit-print-color-adjust: exact !important;
     color-adjust: exact !important;
+    font-size: 9pt; 
   }
 
+  /* --- QUY TẮC CHUNG CHO CÁC KHU VỰC IN --- */
   body * { visibility: hidden; }
-  .printable-area, .printable-area * { visibility: visible; }
+  .printable-area, .printable-area *, 
+  .printable-inventory-area, .printable-inventory-area * {
+    visibility: visible;
+  }
 
+  .printable-area, .printable-inventory-area {
+    position: absolute; left: 0; top: 0; width: 100%;
+  }
+
+  /* --- QUY TẮC IN PHIẾU (NHẬP/XUẤT) --- */
   .printable-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100% !important;
-    max-width: none !important;
-    border: none !important;
-    box-shadow: none !important;
+    max-width: none !important; border: none !important; box-shadow: none !important;
   }
-  
   .printable-area .modal-actions { display: none; }
+  .printable-area h2 { font-size: 20pt; text-align: center; margin-bottom: 25px; }
+  .printable-area .compact-info-grid { border: none; padding: 0; font-size: 11pt; margin-bottom: 25px; }
+  .printable-area .products-table { table-layout: fixed; width: 100%; font-size: 10pt; border-collapse: collapse; margin-top: 20px; }
+  .printable-area .products-table th, .printable-area .products-table td { border: 1px solid #333; padding: 8px; word-wrap: break-word; vertical-align: middle; text-align: center; }
+  .printable-area .products-table th { background-color: #f2f2f2 !important; font-weight: bold; }
+  .printable-area .products-table td:nth-child(2) { text-align: left; }
+
+  /* --- QUY TẮC IN BÁO CÁO TỒN KHO --- */
+  .printable-inventory-area .page-header,
+  .printable-inventory-area .controls-container,
+  .printable-inventory-area .pagination-controls,
+  .printable-inventory-area .view-toggle,
+  .printable-inventory-area th:first-child, /* Ẩn cột mũi tên expand */
+  .printable-inventory-area td:first-child {
+    display: none;
+  }
+
+  /* *** NÂNG CẤP QUAN TRỌNG: VÔ HIỆU HÓA GIAO DIỆN THẺ KHI IN *** */
+  .printable-inventory-area table, .printable-inventory-area tbody, .printable-inventory-area thead, 
+  .printable-inventory-area tr, .printable-inventory-area th, .printable-inventory-area td {
+      display: revert !important; /* Trả về giá trị mặc định của CSS cho bảng */
+      position: static !important;
+      width: auto !important; /* Để trình duyệt tự tính toán độ rộng */
+      min-width: 0 !important; /* Bỏ min-width để tránh co cột */
+  }
+  .printable-inventory-area td::before { content: "" !important; display: none !important; }
+
+  /* Định dạng lại bảng để in */
+  .printable-inventory-area table {
+    width: 100% !important; border-collapse: collapse; box-shadow: none; table-layout: auto;
+  }
+  .printable-inventory-area th, .printable-inventory-area td {
+    border: 1px solid #666; padding: 5px; text-align: left; white-space: normal;
+  }
+  .printable-inventory-area th { background-color: #f2f2f2 !important; font-weight: bold; }
   
-  .printable-area h2 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 25px;
+  /* Căn giữa cho các cột số lượng và ĐVT */
+  .printable-inventory-area th:nth-child(6), .printable-inventory-area td:nth-child(6), /* ĐVT */
+  .printable-inventory-area th:nth-child(8), .printable-inventory-area td:nth-child(8), /* SL Nhập */
+  .printable-inventory-area th:nth-child(9), .printable-inventory-area td:nth-child(9)  /* SL Còn lại */
+  {
+      text-align: center !important;
   }
-  .printable-area .compact-info-grid {
-    border: none;
-    padding: 0;
-    font-size: 14px;
-    margin-bottom: 25px;
+  .printable-inventory-area .inventory-table td:nth-child(9) { font-weight: bold; } /* In đậm SL còn lại */
+
+  /* *** NÂNG CẤP QUAN TRỌNG: LUÔN HIỂN THỊ CHI TIẾT LÔ KHI IN *** */
+  .printable-inventory-area .lot-details-row {
+    display: table-row !important;
   }
-  .printable-area .compact-info-grid label { font-size: 13px; }
-  .printable-area .compact-info-grid p { font-size: 15px; }
-
-  /* --- ĐỊNH DẠNG BẢNG --- */
-  .printable-area .products-table {
-    margin-top: 20px;
-    table-layout: fixed; 
-    width: 100%;
-    font-size: 14px;
-    border-collapse: collapse;
+  .printable-inventory-area .lot-details-row td {
+    background-color: #f8f9fa !important;
+    padding-left: 20px !important;
   }
-
-  .printable-area .products-table th,
-  .printable-area .products-table td {
-    border: 1px solid #333;
-    padding: 10px;
-    word-wrap: break-word; 
-    vertical-align: middle;
-    text-align: center; /* YÊU CẦU: Căn giữa làm mặc định */
+  .printable-inventory-area .lot-details-container ul {
+      display: block !important; /* Hiển thị các lô dưới dạng danh sách */
   }
-  
-  .printable-area .products-table th {
-    background-color: #f2f2f2 !important;
-    font-weight: bold;
+  .printable-inventory-area .lot-details-container li {
+      display: block !important; /* Mỗi lô trên một dòng */
+      margin-bottom: 3px;
   }
-
-  /* YÊU CẦU: Chỉ căn lề trái cho nội dung cột "Tên hàng" */
-  .printable-area .products-table td:nth-child(2) { 
-    text-align: left; 
-  }
-
-  /* Tô đậm các ô dữ liệu quan trọng */
-  .printable-area .products-table td:nth-child(1),
-  .printable-area .products-table td:nth-child(3),
-  .printable-area .products-table td:nth-child(7) { 
-    font-weight: bold;
-  }
-  
-  /* --- PHÂN BỔ LẠI CHIỀU RỘNG CỘT --- */
-  .printable-area .products-table th:nth-child(1) { width: 10%; } /* Mã hàng */
-  .printable-area .products-table th:nth-child(2) { width: 26%; } /* Tên hàng */
-  .printable-area .products-table th:nth-child(3) { width: 12%; } /* Số lô */
-  .printable-area .products-table th:nth-child(4) { width: 10%; } /* HSD */
-  .printable-area .products-table th:nth-child(5) { width: 8%; }  /* ĐVT */
-  .printable-area .products-table th:nth-child(6) { width: 15%; } /* Quy cách */
-  .printable-area .products-table th:nth-child(7) { width: 9%; }  /* SL xuất (Rộng hơn) */
-  .printable-area .products-table th:nth-child(8) { width: 10%; } /* Nhiệt độ BQ */
-
-  /* YÊU CẦU: Hạn chế tối đa việc xuống dòng ở các cột dữ liệu ngắn */
-  .printable-area .products-table td:nth-child(1),
-  .printable-area .products-table td:nth-child(3),
-  .printable-area .products-table td:nth-child(4),
-  .printable-area .products-table td:nth-child(5),
-  .printable-area .products-table td:nth-child(7) {
-      white-space: nowrap;
-  }
-
-  /* --- CSS CHO IN PHIẾU KIỂM KÊ --- */
-@media print {
-    .printable-stocktake-area {
-        visibility: visible !important;
-        display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    .printable-stocktake-area * {
-        visibility: visible;
-    }
-    
-    @page {
-        size: landscape;
-        margin: 5mm;
-    }
-}
 }

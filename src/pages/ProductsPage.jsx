@@ -1,108 +1,55 @@
 // src/pages/ProductsPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, query, orderBy, where, limit, startAfter, documentId } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react'; // <-- THAY ĐỔI: Bỏ các import không cần thiết, thêm useMemo
+import { collection, query, orderBy, where, documentId } from 'firebase/firestore'; // <-- THAY ĐỔI: Import các hàm của firestore
+import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { db } from '../firebaseConfig'; // <-- THAY ĐỔI: Import db
+import { PAGE_SIZE } from '../constants'; // <-- THAY ĐỔI: Import PAGE_SIZE
+import { useFirestorePagination } from '../hooks/useFirestorePagination'; // <-- THAY ĐỔI: Import custom hook
+import { deleteProductById } from '../services/productService';
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { toast } from 'react-toastify';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15;
-
 const ProductsPage = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastVisible, setLastVisible] = useState(null);
-  const [firstVisible, setFirstVisible] = useState(null);
-  const [page, setPage] = useState(1);
-  const [isLastPage, setIsLastPage] = useState(false);
-
-  const fetchProducts = useCallback(async (direction = 'next') => {
-    setLoading(true);
-    try {
-      let productsQuery = query(collection(db, 'products'), orderBy(documentId()));
-
-      if (searchTerm) {
-        productsQuery = query(productsQuery, 
-          where(documentId(), '>=', searchTerm.toUpperCase()),
-          where(documentId(), '<=', searchTerm.toUpperCase() + '\uf8ff')
-        );
-      }
-      
-      if (direction === 'next' && lastVisible) {
-        productsQuery = query(productsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-      } else if (direction === 'prev' && firstVisible) {
-        productsQuery = query(productsQuery, limit(PAGE_SIZE));
-        setPage(1);
-      } else {
-        productsQuery = query(productsQuery, limit(PAGE_SIZE));
-      }
-
-      const documentSnapshots = await getDocs(productsQuery);
-      const productsList = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
-      setFirstVisible(documentSnapshots.docs[0]);
-      setIsLastPage(documentSnapshots.docs.length < PAGE_SIZE);
-      setProducts(productsList);
-
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách sản phẩm: ", error);
-      toast.error("Không thể tải danh sách sản phẩm. Có thể bạn cần tạo chỉ mục (index) trên Firestore. Vui lòng kiểm tra console log trên trình duyệt.");
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, lastVisible, firstVisible]);
-
-  useEffect(() => {
-    setLastVisible(null);
-    setFirstVisible(null);
-    setPage(1);
-    
-    const delayDebounceFn = setTimeout(() => {
-      fetchProducts();
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
-
-  const handleNextPage = () => {
-    if (!isLastPage) {
-      setPage(prev => prev + 1);
-      fetchProducts('next');
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (page > 1) {
-      setLastVisible(null);
-      setFirstVisible(null);
-      setPage(1);
-      fetchProducts('first');
-    }
-  };
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-  
-  const handleProductAdded = () => { 
+
+  // <-- THAY ĐỔI: Logic phân trang được chuyển vào custom hook
+  const baseQuery = useMemo(() => {
+    let q = query(collection(db, 'products'), orderBy(documentId()));
+    if (searchTerm) {
+        const upperSearchTerm = searchTerm.toUpperCase();
+        q = query(q, where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
+    }
+    return q;
+  }, [searchTerm]);
+
+  const {
+    documents: products,
+    loading,
+    isLastPage,
+    page,
+    nextPage,
+    prevPage,
+    reset, // Sử dụng hàm reset từ hook
+  } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+  const handleProductAdded = () => {
     setIsAddModalOpen(false);
-    setLastVisible(null);
-    setFirstVisible(null);
-    setPage(1);
-    fetchProducts('first');
-  };
-  
-  const handleProductUpdated = () => { 
-    setIsEditModalOpen(false);
-    fetchProducts('first');
+    if (searchTerm) setSearchTerm(''); // Nếu đang tìm kiếm, xóa bộ lọc để thấy sản phẩm mới
+    else reset(); // Tải lại trang đầu
   };
 
+  const handleProductUpdated = () => {
+    setIsEditModalOpen(false);
+    reset(); // Tải lại trang hiện tại để cập nhật
+  };
+  
   const promptForDelete = (product) => {
     setConfirmModal({
         isOpen: true,
@@ -116,17 +63,15 @@ const ProductsPage = () => {
     const { item } = confirmModal;
     if (!item) return;
     try {
-      await deleteDoc(doc(db, 'products', item.id));
-      toast.success('Xóa sản phẩm thành công!');
-      setLastVisible(null);
-      setFirstVisible(null);
-      setPage(1);
-      fetchProducts('first');
+        await deleteProductById(item.id);
+        toast.success('Xóa sản phẩm thành công!');
+        if (searchTerm) setSearchTerm('');
+        else reset();
     } catch (error) {
-      console.error("Lỗi khi xóa sản phẩm: ", error);
-      toast.error('Đã xảy ra lỗi khi xóa sản phẩm.');
+        console.error("Lỗi khi xóa sản phẩm: ", error);
+        toast.error('Đã xảy ra lỗi khi xóa sản phẩm.');
     } finally {
-      setConfirmModal({ isOpen: false, item: null });
+        setConfirmModal({ isOpen: false, item: null });
     }
   };
 
@@ -134,7 +79,7 @@ const ProductsPage = () => {
     setCurrentProduct(product);
     setIsEditModalOpen(true);
   };
-
+  
   return (
     <div className="products-page-container">
       <ConfirmationModal
@@ -209,7 +154,7 @@ const ProductsPage = () => {
               ) : (
                   <tr>
                       <td colSpan="8" style={{textAlign: 'center'}}>
-                          Không tìm thấy sản phẩm nào.
+                        Không tìm thấy sản phẩm nào.
                       </td>
                   </tr>
               )}
@@ -217,11 +162,11 @@ const ProductsPage = () => {
           </table>
 
           <div className="pagination-controls">
-              <button onClick={handlePrevPage} disabled={page <= 1}>
-                  <FiChevronLeft /> Trang Trước
+              <button onClick={prevPage} disabled={page <= 1 || loading}>
+                 <FiChevronLeft /> Trang Trước
               </button>
               <span>Trang {page}</span>
-              <button onClick={handleNextPage} disabled={isLastPage}>
+              <button onClick={nextPage} disabled={isLastPage || loading}>
                   Trang Tiếp <FiChevronRight />
               </button>
           </div>

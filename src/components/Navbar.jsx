@@ -15,6 +15,7 @@ import {
     FiTool, 
     FiUsers,
     FiBookOpen,
+    FiUpload,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
@@ -75,6 +76,11 @@ const Navbar = () => {
         <li>
           <NavLink to="/lot-trace" title="Truy Vết Lô Hàng">
             <FiShare2 className="nav-icon" />
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/import-data" title="Import Dữ Liệu">
+            <FiUpload className="nav-icon" />
           </NavLink>
         </li>
         <li>

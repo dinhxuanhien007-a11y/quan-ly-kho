@@ -100,3 +100,32 @@
         border-top: 1px solid var(--border-color);
     }
 }
+
+
+/* <-- NÂNG CẤP SỬA LỖI: Tăng độ ưu tiên của CSS --> */
+.products-table.discrepancy-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.products-table.discrepancy-table th:nth-child(1),
+.products-table.discrepancy-table td:nth-child(1) {
+    width: 5%;
+}
+
+.products-table.discrepancy-table th:nth-child(2),
+.products-table.discrepancy-table td:nth-child(2) {
+    width: 15%;
+}
+
+.products-table.discrepancy-table th:nth-child(3),
+.products-table.discrepancy-table td:nth-child(3) {
+    width: 35%; /* Cho cột tên hàng rộng nhất */
+    white-space: normal;
+    word-break: break-word;
+}
+
+.products-table.discrepancy-table th:nth-child(4) { width: 15%; }
+.products-table.discrepancy-table th:nth-child(5) { width: 10%; }
+.products-table.discrepancy-table th:nth-child(6) { width: 10%; }
+.products-table.discrepancy-table th:nth-child(7) { width: 10%; }

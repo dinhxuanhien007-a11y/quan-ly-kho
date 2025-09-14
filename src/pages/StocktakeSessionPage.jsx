@@ -92,7 +92,7 @@ const StocktakeSessionPage = () => {
             setLoadingItems(false);
         }
     };
-    
+
     const fetchStatsAndDiscrepancies = useCallback(async () => {
         if (!sessionId || !sessionData) return;
         const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
@@ -100,8 +100,8 @@ const StocktakeSessionPage = () => {
         const countedQuery = query(itemsRef, where('countedQty', '!=', null));
         
         const [totalSnap, countedDocsSnap] = await Promise.all([
-            getCountFromServer(totalQuery),
-            getDocs(countedQuery)
+             getCountFromServer(totalQuery),
+             getDocs(countedQuery)
         ]);
         
         const discrepancies = [];
@@ -130,7 +130,7 @@ const StocktakeSessionPage = () => {
     }, [searchTerm, fetchFirstPage]);
 
     useEffect(() => {
-        if (sessionData?.status === 'completed' || sessionData?.status === 'adjusted') {
+        if (sessionData?.status) {
             fetchStatsAndDiscrepancies();
         }
     }, [sessionData, fetchStatsAndDiscrepancies]);
@@ -142,6 +142,7 @@ const StocktakeSessionPage = () => {
             setItems(currentItems => 
                 currentItems.map(item => item.id === itemId ? { ...item, countedQty: finalCount } : item)
             );
+            fetchStatsAndDiscrepancies();
         } catch (error) {
             toast.error("Lỗi: Không thể lưu số lượng.");
         } finally {
@@ -180,12 +181,19 @@ const StocktakeSessionPage = () => {
     };
 
     const promptForFinalize = () => {
+        const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
+        let message = "Bạn có chắc chắn muốn hoàn tất và khóa phiên kiểm kê này? Sau khi hoàn tất, bạn có thể xử lý chênh lệch.";
+        
+        if (uncountedItems > 0) {
+            message = `CẢNH BÁO: Vẫn còn ${uncountedItems} mã hàng chưa được đếm. Nếu bạn hoàn tất, số lượng của chúng sẽ được coi là 0. ` + message;
+        }
+
         setConfirmModal({
             isOpen: true,
             title: "Hoàn tất phiên kiểm kê?",
-            message: "Bạn có chắc chắn muốn hoàn tất và khóa phiên kiểm kê này? Sau khi hoàn tất, bạn có thể xử lý chênh lệch.",
+            message: message,
             onConfirm: handleFinalizeCount,
-            confirmText: "Hoàn tất"
+            confirmText: "Vẫn hoàn tất"
         });
     };
 
@@ -213,15 +221,16 @@ const StocktakeSessionPage = () => {
             const batch = writeBatch(db);
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
             for (const item of itemsToAdjust) {
+                const finalCountedQty = item.countedQty ?? 0;
                 if (!item.isNew) {
                     const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
-                    batch.update(inventoryLotRef, { quantityRemaining: item.countedQty });
+                    batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
                 }
                 const newAdjustmentRef = doc(adjustmentsCollectionRef);
                 batch.set(newAdjustmentRef, {
                     createdAt: serverTimestamp(), stocktakeId: sessionId, productId: item.productId,
                     productName: item.productName, lotNumber: item.lotNumber, quantityBefore: item.systemQty,
-                    quantityAfter: item.countedQty, variance: item.countedQty - item.systemQty,
+                    quantityAfter: finalCountedQty, variance: finalCountedQty - item.systemQty,
                     reason: `Điều chỉnh sau kiểm kê phiên: ${sessionData.name}`
                 });
             }
@@ -342,7 +351,7 @@ const StocktakeSessionPage = () => {
                     <h3 style={{color: '#dc3545'}}>Xử Lý Chênh Lệch</h3>
                     {discrepancyItems.length > 0 ? (
                         <>
-                            <table className="products-table">
+                            <table className="products-table discrepancy-table">
                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" onChange={(e) => setCheckedItems(e.target.checked ? Object.fromEntries(discrepancyItems.map(i => [i.id, true])) : {})} disabled={sessionData.status === 'adjusted'} /></th>
@@ -355,8 +364,8 @@ const StocktakeSessionPage = () => {
                                         <tr key={item.id}>
                                             <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => handleCheckboxChange(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
                                             <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                            <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
-                                            <td style={{color: item.countedQty > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{item.countedQty - item.systemQty}</td>
+                                            <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
+                                            <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>
                                         </tr>
                                     ))}
                                 </tbody>

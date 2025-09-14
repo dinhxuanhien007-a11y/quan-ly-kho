@@ -1,26 +1,38 @@
 // src/components/EditExportSlipModal.jsx
 
 import React, { useState } from 'react';
-import { FiXCircle } from 'react-icons/fi'; // Bỏ FiPlusCircle
+import { FiXCircle } from 'react-icons/fi';
+import { toast } from 'react-toastify'; // Import toast
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
 
+  // *** PHIÊN BẢN SỬA LỖI ***
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
-    // --- SỬA LỖI QUAN TRỌNG TẠI ĐÂY ---
     if (field === 'quantityToExport') {
       const numericValue = Number(value);
-      // Luôn chuyển giá trị về dạng Số
+      // Lượng xuất ban đầu trên phiếu khi chưa sửa
+      const originalExportedQty = slip.items[index].quantityToExport || slip.items[index].quantityExported;
+      // Lượng tồn kho khả dụng = lượng còn lại trong kho + lượng đã khai báo xuất ban đầu
+      const availableStock = updatedItems[index].quantityRemaining + originalExportedQty;
+      
       if (numericValue < 0) return; // Chặn số âm
-      updatedItems[index][field] = numericValue;
+      
+      // Kiểm tra với lượng tồn kho khả dụng
+      if (numericValue > availableStock) {
+        toast.warn(`Số lượng xuất (${numericValue}) không thể vượt quá tồn kho hiện có (${availableStock}).`);
+        updatedItems[index][field] = availableStock;
+      } else {
+        updatedItems[index][field] = numericValue;
+      }
     } else {
       updatedItems[index][field] = value;
     }
     
     setSlipData({ ...slipData, items: updatedItems });
   };
-  
+
   const removeRow = (indexToRemove) => {
     const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
     setSlipData({ ...slipData, items: newItems });

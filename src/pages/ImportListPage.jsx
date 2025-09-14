@@ -1,74 +1,36 @@
 // src/pages/ImportListPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy } from 'firebase/firestore';
+import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, doc, updateDoc, addDoc, Timestamp, limit, startAfter } from 'firebase/firestore';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
-import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
-const PAGE_SIZE = 15; // SỐ PHIẾU TRÊN MỖI TRANG
-
 const ImportListPage = () => {
-  const [importSlips, setImportSlips] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-
-  // --- STATE MỚI CHO PHÂN TRANG ---
-  const [lastVisible, setLastVisible] = useState(null);
-  const [page, setPage] = useState(1);
-  const [isLastPage, setIsLastPage] = useState(false);
-
-  const fetchImportSlips = useCallback(async (direction = 'next') => {
-    setLoading(true);
-    try {
-      let slipsQuery = query(collection(db, "import_tickets"), orderBy("createdAt", "desc"));
-
-      if (direction === 'next' && lastVisible) {
-        slipsQuery = query(slipsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-      } else { // 'first' or default
-        slipsQuery = query(slipsQuery, limit(PAGE_SIZE));
-        setPage(1);
-      }
-      
-      const querySnapshot = await getDocs(slipsQuery);
-      const slipsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-      setIsLastPage(querySnapshot.docs.length < PAGE_SIZE);
-      setImportSlips(slipsList);
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách phiếu nhập: ", error);
-      toast.error("Không thể tải danh sách phiếu nhập.");
-    } finally {
-      setLoading(false);
-    }
-  }, [lastVisible]);
-
-  useEffect(() => {
-    fetchImportSlips('first');
-  }, []);
-
-  const handleNextPage = () => {
-    if (!isLastPage) {
-        setPage(prev => prev + 1);
-        fetchImportSlips('next');
-    }
-  };
-
-  const handlePrevPage = () => {
-    // Để đơn giản, khi nhấn Previous, ta tải lại từ đầu
-    setLastVisible(null);
-    fetchImportSlips('first');
-  };
   
+  // <-- THAY ĐỔI: Sử dụng hook phân trang
+  const baseQuery = useMemo(() => query(collection(db, 'import_tickets'), orderBy("createdAt", "desc")), []);
+  const { 
+    documents: importSlips, 
+    loading, 
+    isLastPage, 
+    page, 
+    nextPage, 
+    prevPage,
+    reset
+  } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
   const handleConfirmImport = async () => {
     const slip = confirmModal.item;
     if (!slip) return;
@@ -102,7 +64,7 @@ const ImportListPage = () => {
       const slipDocRef = doc(db, "import_tickets", slip.id);
       await updateDoc(slipDocRef, { status: "completed" });
       toast.success('Xác nhận nhập kho thành công!');
-      fetchImportSlips('first');
+      reset();
     } catch (error) {
       console.error("Lỗi khi xác nhận nhập kho: ", error);
       toast.error('Đã xảy ra lỗi khi xác nhận nhập kho.');
@@ -110,13 +72,13 @@ const ImportListPage = () => {
         setConfirmModal({ isOpen: false, item: null });
     }
   };
-  
+
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
       const slipDocRef = doc(db, "import_tickets", updatedSlip.id);
       await updateDoc(slipDocRef, { items: updatedSlip.items });
       setIsEditModalOpen(false);
-      fetchImportSlips('first');
+      reset();
       toast.success('Cập nhật phiếu nhập thành công!');
     } catch (error) {
       console.error("Lỗi khi cập nhật phiếu nhập: ", error);
@@ -135,7 +97,7 @@ const ImportListPage = () => {
 
   const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
   const openViewModal = (slip) => { setSelectedSlip(slip); setIsViewModalOpen(true); };
-
+  
   return (
     <div>
       <ConfirmationModal
@@ -195,11 +157,11 @@ const ImportListPage = () => {
             </table>
 
             <div className="pagination-controls">
-                <button onClick={handlePrevPage} disabled={page <= 1}>
+                <button onClick={prevPage} disabled={page <= 1 || loading}>
                     <FiChevronLeft /> Trang Trước
                 </button>
                 <span>Trang {page}</span>
-                <button onClick={handleNextPage} disabled={isLastPage}>
+                <button onClick={nextPage} disabled={isLastPage || loading}>
                     Trang Tiếp <FiChevronRight />
                 </button>
             </div>
