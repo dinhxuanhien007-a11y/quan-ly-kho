@@ -1,7 +1,7 @@
 // src/pages/InventoryPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where, orderBy, limit, startAfter } from 'firebase/firestore';
+import { collection, query, getDocs, where, orderBy, limit, startAfter, Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
@@ -38,12 +38,14 @@ const InventoryPage = () => {
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     
-    // Hàm xây dựng câu truy vấn dựa trên các state hiện tại
+    // THÊM LẠI STATE ĐỂ THEO DÕI DÒNG ĐƯỢC CHỌN
+    const [selectedRowId, setSelectedRowId] = useState(null);
+
     const buildQuery = () => {
         let q = query(
             collection(db, "inventory_lots"),
             orderBy("productId", "asc"),
-            orderBy("expiryDate", "asc")
+            orderBy("importDate", "asc")
         );
 
         if (userRole === 'med') {
@@ -56,6 +58,17 @@ const InventoryPage = () => {
             q = query(q, where("team", "==", filters.team));
         }
 
+        if (filters.dateStatus === 'expired') {
+            const today = Timestamp.now();
+            q = query(q, where("expiryDate", "<", today));
+        } else if (filters.dateStatus === 'near_expiry') {
+            const today = Timestamp.now();
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 120);
+            const futureTimestamp = Timestamp.fromDate(futureDate);
+            q = query(q, where("expiryDate", ">=", today), where("expiryDate", "<=", futureTimestamp));
+        }
+        
         if (searchTerm) {
             const upperSearchTerm = searchTerm.toUpperCase();
             q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
@@ -63,7 +76,7 @@ const InventoryPage = () => {
         return q;
     };
 
-    const fetchFirstPage = async () => {
+    const fetchFirstPage = useCallback(async () => {
         setLoading(true);
         try {
             const q = buildQuery();
@@ -82,9 +95,9 @@ const InventoryPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [userRole, filters, searchTerm]);
 
-    const fetchNextPage = async () => {
+    const fetchNextPage = useCallback(async () => {
         if (!lastVisible) return;
         setLoading(true);
         try {
@@ -103,18 +116,22 @@ const InventoryPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [lastVisible, userRole, filters, searchTerm]);
 
-    // useEffect này chỉ chạy khi filter hoặc search term thay đổi
     useEffect(() => {
         const debounce = setTimeout(() => {
             fetchFirstPage();
         }, 500);
         return () => clearTimeout(debounce);
-    }, [userRole, filters, searchTerm]);
+    }, [fetchFirstPage]);
     
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
+    };
+
+    // THÊM LẠI HÀM XỬ LÝ KHI NHẤN VÀO DÒNG
+    const handleRowClick = (lotId) => {
+        setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
     
     return (
@@ -162,7 +179,12 @@ const InventoryPage = () => {
                             </thead>
                             <tbody className="inventory-table-body">
                                 {inventory.map(lot => (
-                                    <tr key={lot.id} className={getRowColorByExpiry(lot.expiryDate)}>
+                                    // CẬP NHẬT LẠI DÒNG NÀY
+                                    <tr 
+                                        key={lot.id} 
+                                        onClick={() => handleRowClick(lot.id)}
+                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+                                    >
                                         <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
                                         <td data-label="Mã hàng">{lot.productId}</td>
                                         <td data-label="Tên hàng">{lot.productName}</td>
@@ -183,7 +205,7 @@ const InventoryPage = () => {
                     
                     {!searchTerm && (
                         <div className="pagination-controls">
-                            <button onClick={fetchFirstPage} disabled={page <= 1}>
+                            <button onClick={() => { setLastVisible(null); fetchFirstPage(); }} disabled={page <= 1}>
                                 <FiChevronLeft /> Trang Trước
                             </button>
                             <span>Trang {page}</span>

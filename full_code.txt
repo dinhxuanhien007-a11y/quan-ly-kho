@@ -2497,7 +2497,7 @@ export default ImportListPage;
 // src/pages/InventoryPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where, orderBy, limit, startAfter } from 'firebase/firestore';
+import { collection, query, getDocs, where, orderBy, limit, startAfter, Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
@@ -2534,12 +2534,14 @@ const InventoryPage = () => {
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     
-    // HÃ m xÃ¢y dá»±ng cÃ¢u truy váº¥n dá»±a trÃªn cÃ¡c state hiá»‡n táº¡i
+    // THÃŠM Láº I STATE Äá»‚ THEO DÃ•I DÃ’NG ÄÆ¯á»¢C CHá»ŒN
+    const [selectedRowId, setSelectedRowId] = useState(null);
+
     const buildQuery = () => {
         let q = query(
             collection(db, "inventory_lots"),
             orderBy("productId", "asc"),
-            orderBy("expiryDate", "asc")
+            orderBy("importDate", "asc")
         );
 
         if (userRole === 'med') {
@@ -2552,6 +2554,17 @@ const InventoryPage = () => {
             q = query(q, where("team", "==", filters.team));
         }
 
+        if (filters.dateStatus === 'expired') {
+            const today = Timestamp.now();
+            q = query(q, where("expiryDate", "<", today));
+        } else if (filters.dateStatus === 'near_expiry') {
+            const today = Timestamp.now();
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 120);
+            const futureTimestamp = Timestamp.fromDate(futureDate);
+            q = query(q, where("expiryDate", ">=", today), where("expiryDate", "<=", futureTimestamp));
+        }
+        
         if (searchTerm) {
             const upperSearchTerm = searchTerm.toUpperCase();
             q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
@@ -2559,7 +2572,7 @@ const InventoryPage = () => {
         return q;
     };
 
-    const fetchFirstPage = async () => {
+    const fetchFirstPage = useCallback(async () => {
         setLoading(true);
         try {
             const q = buildQuery();
@@ -2578,9 +2591,9 @@ const InventoryPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [userRole, filters, searchTerm]);
 
-    const fetchNextPage = async () => {
+    const fetchNextPage = useCallback(async () => {
         if (!lastVisible) return;
         setLoading(true);
         try {
@@ -2599,18 +2612,22 @@ const InventoryPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [lastVisible, userRole, filters, searchTerm]);
 
-    // useEffect nÃ y chá»‰ cháº¡y khi filter hoáº·c search term thay Ä‘á»•i
     useEffect(() => {
         const debounce = setTimeout(() => {
             fetchFirstPage();
         }, 500);
         return () => clearTimeout(debounce);
-    }, [userRole, filters, searchTerm]);
+    }, [fetchFirstPage]);
     
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
+    };
+
+    // THÃŠM Láº I HÃ€M Xá»¬ LÃ KHI NHáº¤N VÃ€O DÃ’NG
+    const handleRowClick = (lotId) => {
+        setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
     
     return (
@@ -2658,7 +2675,12 @@ const InventoryPage = () => {
                             </thead>
                             <tbody className="inventory-table-body">
                                 {inventory.map(lot => (
-                                    <tr key={lot.id} className={getRowColorByExpiry(lot.expiryDate)}>
+                                    // Cáº¬P NHáº¬T Láº I DÃ’NG NÃ€Y
+                                    <tr 
+                                        key={lot.id} 
+                                        onClick={() => handleRowClick(lot.id)}
+                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+                                    >
                                         <td data-label="NgÃ y nháº­p">{formatDate(lot.importDate)}</td>
                                         <td data-label="MÃ£ hÃ ng">{lot.productId}</td>
                                         <td data-label="TÃªn hÃ ng">{lot.productName}</td>
@@ -2679,7 +2701,7 @@ const InventoryPage = () => {
                     
                     {!searchTerm && (
                         <div className="pagination-controls">
-                            <button onClick={fetchFirstPage} disabled={page <= 1}>
+                            <button onClick={() => { setLastVisible(null); fetchFirstPage(); }} disabled={page <= 1}>
                                 <FiChevronLeft /> Trang TrÆ°á»›c
                             </button>
                             <span>Trang {page}</span>
@@ -4493,14 +4515,14 @@ export default ProductsPage;
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter, doc, setDoc, writeBatch } from 'firebase/firestore';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-const PAGE_SIZE = 15; // Sá» PHIÃŠN TRÃŠN Má»–I TRANG
+const PAGE_SIZE = 15;
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -4509,7 +4531,6 @@ const StocktakeListPage = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // --- STATE Má»šI CHO PHÃ‚N TRANG ---
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
@@ -4521,7 +4542,7 @@ const StocktakeListPage = () => {
 
             if (direction === 'next' && lastVisible) {
                 sessionsQuery = query(sessionsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-            } else { // 'first' or default
+            } else {
                 sessionsQuery = query(sessionsQuery, limit(PAGE_SIZE));
                 setPage(1);
             }
@@ -4556,14 +4577,17 @@ const StocktakeListPage = () => {
         fetchSessions('first');
     };
 
+    // --- LOGIC Táº O PHIÃŠN KIá»‚M KÃŠ ÄÃƒ ÄÆ¯á»¢C VIáº¾T Láº I HOÃ€N TOÃ€N ---
     const handleCreateStocktake = async (sessionData) => {
         setIsCreating(true);
+        toast.info("Äang láº¥y dá»¯ liá»‡u tá»“n kho, vui lÃ²ng chá»...");
         try {
+            // 1. Láº¥y táº¥t cáº£ cÃ¡c lÃ´ hÃ ng tá»“n kho theo pháº¡m vi
             let inventoryQuery;
             if (sessionData.scope === 'all') {
-                inventoryQuery = query(collection(db, "inventory_lots"));
+                inventoryQuery = query(collection(db, "inventory_lots"), where("quantityRemaining", ">", 0));
             } else {
-                inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope));
+                inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope), where("quantityRemaining", ">", 0));
             }
 
             const querySnapshot = await getDocs(inventoryQuery);
@@ -4580,23 +4604,38 @@ const StocktakeListPage = () => {
                     storageTemp: data.storageTemp,
                     team: data.team,
                     systemQty: data.quantityRemaining,
-                    countedQty: null,
+                    countedQty: null, // GiÃ¡ trá»‹ Ä‘áº¿m ban Ä‘áº§u lÃ  null
+                    isNew: false, // ÄÃ¢y lÃ  cÃ¡c má»¥c cÃ³ sáºµn
                 };
             });
             
-            const newStocktakeSession = {
+            // 2. Táº¡o tÃ i liá»‡u chÃ­nh cho phiÃªn kiá»ƒm kÃª (khÃ´ng chá»©a máº£ng items)
+            const newStocktakeSessionRef = doc(collection(db, 'stocktakes'));
+            await setDoc(newStocktakeSessionRef, {
                 name: sessionData.sessionName,
                 scope: sessionData.scope,
                 status: 'in_progress',
                 createdAt: serverTimestamp(),
-                items: inventorySnapshotItems,
-            };
+            });
 
-            const docRef = await addDoc(collection(db, "stocktakes"), newStocktakeSession);
+            // 3. Ghi hÃ ng loáº¡t cÃ¡c má»¥c vÃ o subcollection 'items'
+            toast.info(`ÄÃ£ láº¥y ${inventorySnapshotItems.length} má»¥c. Báº¯t Ä‘áº§u ghi dá»¯ liá»‡u...`);
+            const itemsCollectionRef = collection(db, 'stocktakes', newStocktakeSessionRef.id, 'items');
+            const MAX_BATCH_SIZE = 500;
+
+            for (let i = 0; i < inventorySnapshotItems.length; i += MAX_BATCH_SIZE) {
+                const batch = writeBatch(db);
+                const chunk = inventorySnapshotItems.slice(i, i + MAX_BATCH_SIZE);
+                chunk.forEach(item => {
+                    const newItemRef = doc(itemsCollectionRef, item.lotId); // DÃ¹ng lotId lÃ m ID cho item Ä‘á»ƒ dá»… truy váº¥n
+                    batch.set(newItemRef, item);
+                });
+                await batch.commit();
+            }
             
             toast.success("Táº¡o phiÃªn kiá»ƒm kÃª má»›i thÃ nh cÃ´ng!");
             setIsCreateModalOpen(false);
-            navigate(`/stocktakes/${docRef.id}`); // Chuyá»ƒn Ä‘áº¿n trang má»›i, khÃ´ng cáº§n táº£i láº¡i danh sÃ¡ch
+            navigate(`/stocktakes/${newStocktakeSessionRef.id}`);
         } catch (error) {
             console.error("Lá»—i khi táº¡o phiÃªn kiá»ƒm kÃª: ", error);
             toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi táº¡o phiÃªn kiá»ƒm kÃª.");
@@ -4684,111 +4723,171 @@ export default StocktakeListPage;
 
 
 // src/pages/StocktakeSessionPage.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
-import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
+import Spinner from '../components/Spinner';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+
+const PAGE_SIZE = 50;
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
-    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+    const [loadingSession, setLoadingSession] = useState(true);
+    const [loadingItems, setLoadingItems] = useState(true);
     const [sessionData, setSessionData] = useState(null);
+    const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [discrepancyItems, setDiscrepancyItems] = useState([]);
     const [checkedItems, setCheckedItems] = useState({});
+    const [summaryStats, setSummaryStats] = useState({ totalItems: 0, countedItems: 0, discrepancies: 0 });
+    const [lastVisible, setLastVisible] = useState(null);
+    const [page, setPage] = useState(1);
+    const [isLastPage, setIsLastPage] = useState(false);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-    const fetchSessionData = async () => {
-        if (!loading) setLoading(true);
+    const fetchSessionData = useCallback(async () => {
+        setLoadingSession(true);
         const docRef = doc(db, 'stocktakes', sessionId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             setSessionData({ id: docSnap.id, ...docSnap.data() });
         } else {
-            console.log("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
-            toast.error("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.");
+            toast.error("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
+            navigate('/stocktakes');
         }
-        setLoading(false);
+        setLoadingSession(false);
+    }, [sessionId, navigate]);
+
+    const buildItemsQuery = useCallback(() => {
+        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+        let q = query(itemsCollectionRef, orderBy('productId'));
+        if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+        }
+        return q;
+    }, [sessionId, searchTerm]);
+
+    const fetchFirstPage = useCallback(async () => {
+        if (!sessionId) return;
+        setLoadingItems(true);
+        try {
+            const q = buildItemsQuery();
+            const firstPageQuery = query(q, limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(firstPageQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setItems(itemsList);
+            setPage(1);
+        } catch (error) {
+            console.error("Lá»—i khi táº£i váº­t tÆ° kiá»ƒm kÃª: ", error);
+            toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch váº­t tÆ°. Vui lÃ²ng kiá»ƒm tra Console (F12) Ä‘á»ƒ táº¡o Index náº¿u Ä‘Æ°á»£c yÃªu cáº§u.");
+        } finally {
+            setLoadingItems(false);
+        }
+    }, [sessionId, buildItemsQuery]);
+
+    const fetchNextPage = async () => {
+        if (!sessionId || !lastVisible) return;
+        setLoadingItems(true);
+        try {
+            const q = buildItemsQuery();
+            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(nextPageQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setItems(itemsList);
+            setPage(p => p + 1);
+        } catch (error) {
+            console.error("Lá»—i khi táº£i váº­t tÆ° kiá»ƒm kÃª: ", error);
+        } finally {
+            setLoadingItems(false);
+        }
     };
     
-    useEffect(() => { fetchSessionData(); }, [sessionId]);
-
-    const summaryStats = useMemo(() => {
-        if (!sessionData) return { totalItems: 0, countedItems: 0, discrepancies: 0 };
-        const totalItems = sessionData.items.filter(item => !item.isNew).length;
-        const countedItems = sessionData.items.filter(item => item.countedQty !== null).length;
-        const discrepancies = sessionData.items.filter(item => item.countedQty !== null && item.systemQty !== item.countedQty).length;
-        return { totalItems, countedItems, discrepancies };
-    }, [sessionData]);
-
-    const filteredItems = useMemo(() => {
-        if (!sessionData) return [];
-        const sortedItems = [...sessionData.items].sort((a, b) => {
-            if (a.productId < b.productId) return -1;
-            if (a.productId > b.productId) return 1;
-            const dateA = a.expiryDate?.toDate ? a.expiryDate.toDate() : new Date(0);
-            const dateB = b.expiryDate?.toDate ? b.expiryDate.toDate() : new Date(0);
-            if (dateA < dateB) return -1;
-            if (dateA > dateB) return 1;
-            return 0;
+    const fetchStatsAndDiscrepancies = useCallback(async () => {
+        if (!sessionId || !sessionData) return;
+        const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+        const totalQuery = query(itemsRef, where('isNew', '==', false));
+        const countedQuery = query(itemsRef, where('countedQty', '!=', null));
+        
+        const [totalSnap, countedDocsSnap] = await Promise.all([
+            getCountFromServer(totalQuery),
+            getDocs(countedQuery)
+        ]);
+        
+        const discrepancies = [];
+        countedDocsSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.systemQty !== data.countedQty) {
+                discrepancies.push({ id: doc.id, ...data });
+            }
         });
 
-        if (!searchTerm) return sortedItems;
-        const lowercasedFilter = searchTerm.toLowerCase();
-        return sortedItems.filter(item => (
-            item.productId?.toLowerCase().includes(lowercasedFilter) ||
-            item.productName?.toLowerCase().includes(lowercasedFilter) ||
-            item.lotNumber?.toLowerCase().includes(lowercasedFilter)
-        ));
-    }, [sessionData, searchTerm]);
+        setSummaryStats({
+            totalItems: totalSnap.data().count,
+            countedItems: countedDocsSnap.size,
+            discrepancies: discrepancies.length
+        });
+        setDiscrepancyItems(discrepancies.sort((a, b) => a.productId.localeCompare(b.productId)));
+    }, [sessionId, sessionData]);
 
-    const discrepancyItems = useMemo(() => {
-        if (!sessionData) return [];
-        return sessionData.items.filter(item => item.countedQty !== null && item.systemQty !== item.countedQty);
-    }, [sessionData]);
+    useEffect(() => { fetchSessionData(); }, [fetchSessionData]);
+    
+    useEffect(() => {
+        const debounce = setTimeout(() => {
+            fetchFirstPage();
+        }, 500);
+        return () => clearTimeout(debounce);
+    }, [searchTerm, fetchFirstPage]);
 
-    const performCountUpdate = async (lotId, finalCount) => {
-        const originalItems = sessionData.items;
-        const updatedItems = originalItems.map(item => item.lotId === lotId ? { ...item, countedQty: finalCount } : item);
-        setSessionData(prev => ({ ...prev, items: updatedItems })); 
+    useEffect(() => {
+        if (sessionData?.status === 'completed' || sessionData?.status === 'adjusted') {
+            fetchStatsAndDiscrepancies();
+        }
+    }, [sessionData, fetchStatsAndDiscrepancies]);
 
+    const performCountUpdate = async (itemId, finalCount) => {
+        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
         try {
-            const sessionRef = doc(db, 'stocktakes', sessionId);
-            await updateDoc(sessionRef, { items: updatedItems });
-            console.log(`ÄÃ£ lÆ°u sá»‘ lÆ°á»£ng cho lÃ´ ${lotId}`);
+            await updateDoc(itemRef, { countedQty: finalCount });
+            setItems(currentItems => 
+                currentItems.map(item => item.id === itemId ? { ...item, countedQty: finalCount } : item)
+            );
         } catch (error) {
-            console.error("Lá»—i khi lÆ°u:", error);
-            toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u. Vui lÃ²ng kiá»ƒm tra káº¿t ná»‘i máº¡ng.");
-            setSessionData(prev => ({ ...prev, items: originalItems })); 
+            toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
         } finally {
             setConfirmModal({isOpen: false});
         }
     };
     
-    const handleCountChange = (lotId, newCountValue) => {
+    const handleCountChange = (itemId, countedQty, newCountValue) => {
         const newCount = newCountValue === '' ? null : Number(newCountValue);
-        const targetItem = sessionData.items.find(item => item.lotId === lotId);
-
-        if (targetItem && (targetItem.countedQty || 0) > 0 && newCount !== null) {
-            const cumulativeTotal = (targetItem.countedQty || 0) + newCount;
+        if ((countedQty || 0) > 0 && newCount !== null) {
+            const cumulativeTotal = (countedQty || 0) + newCount;
             setConfirmModal({
                 isOpen: true,
                 title: "Cá»™ng Dá»“n hay Ghi ÄÃ¨?",
-                message: `ÄÃ£ Ä‘áº¿m ${targetItem.countedQty}. Báº¡n muá»‘n cá»™ng dá»“n thÃªm ${newCount} (tá»•ng: ${cumulativeTotal}) hay ghi Ä‘Ã¨ báº±ng giÃ¡ trá»‹ má»›i lÃ  ${newCount}?`,
-                onConfirm: () => performCountUpdate(lotId, cumulativeTotal),
-                onCancel: () => performCountUpdate(lotId, newCount),
+                message: `ÄÃ£ Ä‘áº¿m ${countedQty}. Báº¡n muá»‘n cá»™ng dá»“n thÃªm ${newCount} (tá»•ng: ${cumulativeTotal}) hay ghi Ä‘Ã¨ báº±ng giÃ¡ trá»‹ má»›i lÃ  ${newCount}?`,
+                onConfirm: () => performCountUpdate(itemId, cumulativeTotal),
+                onCancel: () => performCountUpdate(itemId, newCount),
                 confirmText: "Cá»™ng Dá»“n",
                 cancelText: "Ghi ÄÃ¨"
             });
         } else {
-            performCountUpdate(lotId, newCount);
+            performCountUpdate(itemId, newCount);
         }
     };
 
@@ -4800,34 +4899,44 @@ const StocktakeSessionPage = () => {
             toast.success("ÄÃ£ hoÃ n táº¥t phiÃªn kiá»ƒm kÃª!");
             fetchSessionData();
         } catch (error) {
-            console.error("Lá»—i khi hoÃ n táº¥t phiÃªn kiá»ƒm kÃª: ", error);
             toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi hoÃ n táº¥t.");
         }
     };
 
     const promptForFinalize = () => {
-        const uncountedItems = sessionData.items.filter(item => item.countedQty === null && !item.isNew);
-        let message = "Táº¥t cáº£ cÃ¡c mÃ£ hÃ ng Ä‘Ã£ Ä‘Æ°á»£c Ä‘áº¿m. Báº¡n cÃ³ muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y khÃ´ng?";
-        if (uncountedItems.length > 0) {
-            message = `Cáº£nh bÃ¡o: Váº«n cÃ²n ${uncountedItems.length} mÃ£ hÃ ng chÆ°a Ä‘Æ°á»£c Ä‘áº¿m. Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t khÃ´ng?`;
-        }
         setConfirmModal({
             isOpen: true,
             title: "HoÃ n táº¥t phiÃªn kiá»ƒm kÃª?",
-            message: message,
+            message: "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.",
             onConfirm: handleFinalizeCount,
             confirmText: "HoÃ n táº¥t"
         });
     };
 
+    const handleAddUnlistedItem = async (newItem) => {
+        const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+        try {
+            const docRef = doc(itemsRef, newItem.lotId);
+            await setDoc(docRef, newItem);
+            toast.success("ÄÃ£ thÃªm máº·t hÃ ng má»›i vÃ o phiÃªn kiá»ƒm kÃª.");
+            fetchFirstPage();
+            setIsAddItemModalOpen(false);
+        } catch (error) {
+            toast.error("CÃ³ lá»—i khi lÆ°u máº·t hÃ ng má»›i, vui lÃ²ng thá»­ láº¡i.");
+        }
+    };
+
     const handleAdjustInventory = async () => {
         setConfirmModal({isOpen: false});
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.lotId]);
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
+        if (itemsToAdjust.length === 0) {
+            toast.warn("Vui lÃ²ng chá»n má»¥c Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
+            return;
+        }
         try {
             const batch = writeBatch(db);
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
-            
-            itemsToAdjust.forEach(item => {
+            for (const item of itemsToAdjust) {
                 if (!item.isNew) {
                     const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
                     batch.update(inventoryLotRef, { quantityRemaining: item.countedQty });
@@ -4839,22 +4948,19 @@ const StocktakeSessionPage = () => {
                     quantityAfter: item.countedQty, variance: item.countedQty - item.systemQty,
                     reason: `Äiá»u chá»‰nh sau kiá»ƒm kÃª phiÃªn: ${sessionData.name}`
                 });
-            });
-
+            }
             const sessionRef = doc(db, 'stocktakes', sessionId);
             batch.update(sessionRef, { status: 'adjusted' });
-            
             await batch.commit();
             toast.success("ÄÃ£ Ä‘iá»u chá»‰nh tá»“n kho thÃ nh cÃ´ng!");
             fetchSessionData();
         } catch (error) {
-            console.error("Lá»—i khi Ä‘iá»u chá»‰nh tá»“n kho: ", error);
             toast.error("ÄÃ£ xáº£y ra lá»—i khi Ä‘iá»u chá»‰nh tá»“n kho.");
         }
     };
 
     const promptForAdjust = () => {
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.lotId]);
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
         if (itemsToAdjust.length === 0) {
             toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t máº·t hÃ ng Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
             return;
@@ -4867,125 +4973,116 @@ const StocktakeSessionPage = () => {
             confirmText: "Äá»“ng Ã½ Ä‘iá»u chá»‰nh"
         });
     };
-
-    const handleCheckboxChange = (lotId) => { setCheckedItems(prev => ({ ...prev, [lotId]: !prev[lotId] })); };
-
-    const handleCheckAll = (e) => {
-        const isChecked = e.target.checked;
-        const newCheckedItems = {};
-        if (isChecked) {
-            discrepancyItems.forEach(item => { newCheckedItems[item.lotId] = true; });
-        }
-        setCheckedItems(newCheckedItems);
-    };
-
-    const handleAddUnlistedItem = (newItem) => {
-        const updatedItems = [...sessionData.items, newItem];
-        setSessionData(prev => ({ ...prev, items: updatedItems }));
-        setIsAddItemModalOpen(false);
-        try {
-            const sessionRef = doc(db, 'stocktakes', sessionId);
-            updateDoc(sessionRef, { items: updatedItems });
-            toast.success("ÄÃ£ thÃªm máº·t hÃ ng má»›i vÃ o phiÃªn kiá»ƒm kÃª.");
-        } catch (error) {
-            toast.error("CÃ³ lá»—i khi lÆ°u máº·t hÃ ng má»›i, vui lÃ²ng thá»­ láº¡i.");
-        }
-    };
     
-    const handlePrint = () => { window.print(); };
+    const handleCheckboxChange = (itemId) => { setCheckedItems(prev => ({ ...prev, [itemId]: !prev[itemId] })); };
 
-    if (loading) return <Spinner />; // <-- ÄÃƒ THAY THáº¾
+    if (loadingSession) return <Spinner />;
+    if (!sessionData) return <div>KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.</div>;
 
     const isSessionInProgress = sessionData.status === 'in_progress';
-    const areAllDiscrepanciesChecked = discrepancyItems.length > 0 && discrepancyItems.every(item => checkedItems[item.lotId]);
 
     const CountInput = ({ item }) => {
         const [currentValue, setCurrentValue] = useState(item.countedQty ?? '');
-        const handleKeyDown = (e) => { if (e.key === 'Enter') { e.target.blur(); } };
-        
-        useEffect(() => {
-            setCurrentValue(item.countedQty ?? '');
-        }, [item.countedQty]);
-
+        const handleKeyDown = (e) => { if (e.key === 'Enter') e.target.blur(); };
+        useEffect(() => { setCurrentValue(item.countedQty ?? ''); }, [item.countedQty]);
         return (
             <input type="number" placeholder="Nháº­p sá»‘ Ä‘áº¿m" value={currentValue}
                 onChange={e => setCurrentValue(e.target.value)}
-                onBlur={() => handleCountChange(item.lotId, currentValue)}
+                onBlur={() => handleCountChange(item.id, item.countedQty, currentValue)}
                 onKeyDown={handleKeyDown} disabled={!isSessionInProgress}
-                style={{
-                    backgroundColor: item.isNew ? '#fff9e6' : ((item.countedQty !== null && item.countedQty !== '') ? '#e6fffa' : '#fff'),
-                    borderColor: (item.countedQty !== null && item.countedQty !== '' && item.countedQty !== item.systemQty) ? '#f56565' : '#ccc',
-                    cursor: !isSessionInProgress ? 'not-allowed' : 'text'
-                }}
+                style={{ backgroundColor: item.isNew ? '#fff9e6' : ((item.countedQty !== null && item.countedQty !== '') ? '#e6fffa' : '#fff') }}
             />
         );
     };
 
     return (
         <div>
-            <ConfirmationModal
-                isOpen={confirmModal.isOpen}
-                title={confirmModal.title}
-                message={confirmModal.message}
-                onConfirm={confirmModal.onConfirm}
-                onCancel={confirmModal.onCancel || (() => setConfirmModal({ isOpen: false }))}
-                confirmText={confirmModal.confirmText || "XÃ¡c nháº­n"}
-                cancelText={confirmModal.cancelText || "Há»§y"}
-            />
+            <ConfirmationModal isOpen={confirmModal.isOpen} {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
+
             <div className="page-header">
-                <h1>
-                    {sessionData.name}
-                    <span style={{fontSize: '16px', marginLeft: '15px'}}>
-                        <StatusBadge status={sessionData.status} />
-                    </span>
-                </h1>
+                <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
                 <div>
-                    <button onClick={handlePrint} className="btn-secondary" style={{marginRight: '10px'}}>In Phiáº¿u Äáº¿m Tay</button>
                     {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">HoÃ n táº¥t Ä‘áº¿m</button>)}
                 </div>
             </div>
-            <div className="form-section">
-                <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
-                    <div><label>Tá»•ng sá»‘ mÃ£ cáº§n Ä‘áº¿m</label><p><strong>{summaryStats.totalItems}</strong></p></div>
-                    <div><label>Sá»‘ mÃ£ Ä‘Ã£ Ä‘áº¿m</label><p style={{color: 'green'}}><strong>{summaryStats.countedItems}</strong></p></div>
-                    <div><label>Sá»‘ mÃ£ cÃ³ chÃªnh lá»‡ch</label><p style={{color: 'red'}}><strong>{summaryStats.discrepancies}</strong></p></div>
+
+            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
+                 <div className="form-section">
+                    <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
+                        <div><label>Tá»•ng sá»‘ mÃ£ cáº§n Ä‘áº¿m</label><p><strong>{summaryStats.totalItems}</strong></p></div>
+                        <div><label>Sá»‘ mÃ£ Ä‘Ã£ Ä‘áº¿m</label><p style={{color: 'green'}}><strong>{summaryStats.countedItems}</strong></p></div>
+                        <div><label>Sá»‘ mÃ£ cÃ³ chÃªnh lá»‡ch</label><p style={{color: 'red'}}><strong>{summaryStats.discrepancies}</strong></p></div>
+                    </div>
                 </div>
-            </div>
+            )}
+
             <div className="controls-container">
                 <div className="search-container">
-                    <input type="text" placeholder="TÃ¬m theo MÃ£ hÃ ng, TÃªn hÃ ng, Sá»‘ lÃ´..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
+                    <input type="text" placeholder="TÃ¬m theo MÃ£ hÃ ng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
                 </div>
                 {isSessionInProgress && (
                     <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ ThÃªm HÃ ng NgoÃ i DS</button>
                 )}
             </div>
+
+            {loadingItems ? <Spinner /> : (
+                <>
+                    <div className="table-container">
+                        <table className="products-table">
+                            <thead>
+                                <tr>
+                                    <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
+                                    <th>HSD</th><th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {items.map((item) => (
+                                    <tr key={item.id}>
+                                        <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
+                                        <td>{formatDate(item.expiryDate)}</td><td>{item.systemQty}</td>
+                                        <td><CountInput item={item} /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {!searchTerm && (
+                        <div className="pagination-controls">
+                            <button onClick={fetchFirstPage} disabled={page <= 1}>
+                                <FiChevronLeft /> Trang TrÆ°á»›c
+                            </button>
+                            <span>Trang {page}</span>
+                            <button onClick={fetchNextPage} disabled={isLastPage}>
+                                Trang Tiáº¿p <FiChevronRight />
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+
             {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
-                <div className="form-section">
+                <div className="form-section" style={{marginTop: '20px'}}>
                     <h3 style={{color: '#dc3545'}}>Xá»­ LÃ½ ChÃªnh Lá»‡ch</h3>
-                    <p>Chá»‰ nhá»¯ng máº·t hÃ ng cÃ³ sá»‘ lÆ°á»£ng thá»±c táº¿ khÃ¡c vá»›i há»‡ thá»‘ng Ä‘Æ°á»£c liá»‡t kÃª dÆ°á»›i Ä‘Ã¢y. Chá»n nhá»¯ng má»¥c báº¡n muá»‘n Ä‘iá»u chá»‰nh vÃ  xÃ¡c nháº­n.</p>
                     {discrepancyItems.length > 0 ? (
                         <>
                             <table className="products-table">
                                 <thead>
                                     <tr>
-                                        <th><input type="checkbox" onChange={handleCheckAll} checked={areAllDiscrepanciesChecked} disabled={sessionData.status === 'adjusted'} /></th>
+                                        <th><input type="checkbox" onChange={(e) => setCheckedItems(e.target.checked ? Object.fromEntries(discrepancyItems.map(i => [i.id, true])) : {})} disabled={sessionData.status === 'adjusted'} /></th>
                                         <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
                                         <th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>ChÃªnh lá»‡ch</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {discrepancyItems.map(item => {
-                                        const variance = item.countedQty - item.systemQty;
-                                        return (
-                                            <tr key={item.lotId} style={{backgroundColor: item.isNew ? '#fff9e6' : 'transparent'}}>
-                                                <td><input type="checkbox" checked={!!checkedItems[item.lotId]} onChange={() => handleCheckboxChange(item.lotId)} disabled={sessionData.status === 'adjusted'} /></td>
-                                                <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                                <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
-                                                <td style={{color: variance > 0 ? 'green' : 'red', fontWeight: 'bold'}}>{variance > 0 ? `+${variance}` : variance}</td>
-                                            </tr>
-                                        )
-                                    })}
+                                    {discrepancyItems.map(item => (
+                                        <tr key={item.id}>
+                                            <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => handleCheckboxChange(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
+                                            <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
+                                            <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
+                                            <td style={{color: item.countedQty > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{item.countedQty - item.systemQty}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                             {sessionData.status !== 'adjusted' && (
@@ -4998,96 +5095,6 @@ const StocktakeSessionPage = () => {
                     }
                 </div>
             )}
-            <div className="printable-stocktake-area">
-                <h2>Phiáº¿u Kiá»ƒm KÃª Kho</h2>
-                <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr', border: 'none', padding: 0, marginBottom: '20px'}}>
-                    <div><label>TÃªn PhiÃªn:</label><p><strong>{sessionData.name}</strong></p></div>
-                    <div><label>NgÃ y Táº¡o:</label><p><strong>{formatDate(sessionData.createdAt)}</strong></p></div>
-                    <div><label>Pháº¡m Vi:</label><p><strong>{sessionData.scope === 'all' ? 'ToÃ n bá»™ kho' : sessionData.scope}</strong></p></div>
-                </div>
-                <table className="products-table">
-                    <thead>
-                        <tr>
-                            <th>MÃ£ hÃ ng</th>
-                            <th>TÃªn hÃ ng</th>
-                            <th>Sá»‘ lÃ´</th>
-                            <th>HSD</th>
-                            <th>ÄVT</th>
-                            <th>Quy cÃ¡ch</th>
-                            <th>Tá»“n há»‡ thá»‘ng</th>
-                            <th>Tá»“n thá»±c táº¿</th>
-                            <th>Nhiá»‡t Ä‘á»™ BQ</th>
-                            <th>Team</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredItems.map((item) => (
-                            <tr key={item.lotId}>
-                                <td>{item.productId}</td>
-                                <td style={{textAlign: 'left'}}>{item.productName}</td>
-                                <td>{item.lotNumber}</td>
-                                <td>{item.isNew ? item.expiryDate : formatDate(item.expiryDate)}</td>
-                                <td>{item.unit}</td>
-                                <td>{item.packaging}</td>
-                                <td>{item.systemQty}</td>
-                                <td style={{height: '40px'}}></td>
-                                <td>{item.storageTemp}</td>
-                                <td>{item.team}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="table-container stocktake-table-container">
-                <table className="products-table">
-                    <thead>
-                        <tr>
-                            <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th><th>HSD</th>
-                            <th>ÄVT</th><th>Quy cÃ¡ch</th><th>Tá»“n há»‡ thá»‘ng</th>
-                            <th>Tá»“n thá»±c táº¿</th><th>Nhiá»‡t Ä‘á»™ BQ</th><th>Team</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredItems.map((item) => (
-                            <tr key={item.lotId} style={{backgroundColor: item.isNew ? '#fff9e6' : 'transparent'}}>
-                                <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                <td>{item.isNew ? item.expiryDate : formatDate(item.expiryDate)}</td>
-                                <td>{item.unit}</td><td>{item.packaging}</td><td>{item.systemQty}</td>
-                                <td><CountInput item={item} /></td><td>{item.storageTemp}</td><td>{item.team}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="stocktake-card-container">
-                {filteredItems.map((item) => (
-                    <div className="stocktake-card" key={item.lotId} style={{borderColor: item.isNew ? '#f59e0b' : 'var(--primary-color)'}}>
-                        <div className="card-header">
-                            <span className="card-product-id">{item.productId}</span>
-                            <span className="card-product-name">{item.productName}</span>
-                        </div>
-                        <div className="card-body">
-                            <div className="card-info-row">
-                                <span><strong>Sá»‘ lÃ´:</strong> {item.lotNumber}</span>
-                                <span><strong>HSD:</strong> {item.isNew ? item.expiryDate : formatDate(item.expiryDate)}</span>
-                            </div>
-                            <div className="card-count-area">
-                                <div className="count-box system-count">
-                                    <label>Há»‡ thá»‘ng</label>
-                                    <p>{item.systemQty}</p>
-                                </div>
-                                <div className="count-box actual-count">
-                                    <label>Thá»±c táº¿</label>
-                                    <CountInput item={item} />
-                                </div>
-                            </div>
-                            <div className="card-footer-info">
-                                <span><strong>Team:</strong> {item.team || 'N/A'}</span>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 };

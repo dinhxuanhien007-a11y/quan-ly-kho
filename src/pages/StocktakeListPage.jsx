@@ -2,14 +2,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, startAfter, doc, setDoc, writeBatch } from 'firebase/firestore';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-const PAGE_SIZE = 15; // SỐ PHIÊN TRÊN MỖI TRANG
+const PAGE_SIZE = 15;
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -18,7 +18,6 @@ const StocktakeListPage = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // --- STATE MỚI CHO PHÂN TRANG ---
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
@@ -30,7 +29,7 @@ const StocktakeListPage = () => {
 
             if (direction === 'next' && lastVisible) {
                 sessionsQuery = query(sessionsQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-            } else { // 'first' or default
+            } else {
                 sessionsQuery = query(sessionsQuery, limit(PAGE_SIZE));
                 setPage(1);
             }
@@ -65,14 +64,17 @@ const StocktakeListPage = () => {
         fetchSessions('first');
     };
 
+    // --- LOGIC TẠO PHIÊN KIỂM KÊ ĐÃ ĐƯỢC VIẾT LẠI HOÀN TOÀN ---
     const handleCreateStocktake = async (sessionData) => {
         setIsCreating(true);
+        toast.info("Đang lấy dữ liệu tồn kho, vui lòng chờ...");
         try {
+            // 1. Lấy tất cả các lô hàng tồn kho theo phạm vi
             let inventoryQuery;
             if (sessionData.scope === 'all') {
-                inventoryQuery = query(collection(db, "inventory_lots"));
+                inventoryQuery = query(collection(db, "inventory_lots"), where("quantityRemaining", ">", 0));
             } else {
-                inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope));
+                inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope), where("quantityRemaining", ">", 0));
             }
 
             const querySnapshot = await getDocs(inventoryQuery);
@@ -89,23 +91,38 @@ const StocktakeListPage = () => {
                     storageTemp: data.storageTemp,
                     team: data.team,
                     systemQty: data.quantityRemaining,
-                    countedQty: null,
+                    countedQty: null, // Giá trị đếm ban đầu là null
+                    isNew: false, // Đây là các mục có sẵn
                 };
             });
             
-            const newStocktakeSession = {
+            // 2. Tạo tài liệu chính cho phiên kiểm kê (không chứa mảng items)
+            const newStocktakeSessionRef = doc(collection(db, 'stocktakes'));
+            await setDoc(newStocktakeSessionRef, {
                 name: sessionData.sessionName,
                 scope: sessionData.scope,
                 status: 'in_progress',
                 createdAt: serverTimestamp(),
-                items: inventorySnapshotItems,
-            };
+            });
 
-            const docRef = await addDoc(collection(db, "stocktakes"), newStocktakeSession);
+            // 3. Ghi hàng loạt các mục vào subcollection 'items'
+            toast.info(`Đã lấy ${inventorySnapshotItems.length} mục. Bắt đầu ghi dữ liệu...`);
+            const itemsCollectionRef = collection(db, 'stocktakes', newStocktakeSessionRef.id, 'items');
+            const MAX_BATCH_SIZE = 500;
+
+            for (let i = 0; i < inventorySnapshotItems.length; i += MAX_BATCH_SIZE) {
+                const batch = writeBatch(db);
+                const chunk = inventorySnapshotItems.slice(i, i + MAX_BATCH_SIZE);
+                chunk.forEach(item => {
+                    const newItemRef = doc(itemsCollectionRef, item.lotId); // Dùng lotId làm ID cho item để dễ truy vấn
+                    batch.set(newItemRef, item);
+                });
+                await batch.commit();
+            }
             
             toast.success("Tạo phiên kiểm kê mới thành công!");
             setIsCreateModalOpen(false);
-            navigate(`/stocktakes/${docRef.id}`); // Chuyển đến trang mới, không cần tải lại danh sách
+            navigate(`/stocktakes/${newStocktakeSessionRef.id}`);
         } catch (error) {
             console.error("Lỗi khi tạo phiên kiểm kê: ", error);
             toast.error("Đã có lỗi xảy ra khi tạo phiên kiểm kê.");

@@ -1,109 +1,169 @@
 // src/pages/StocktakeSessionPage.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
-import Spinner from '../components/Spinner'; // <-- ĐÃ THÊM
+import Spinner from '../components/Spinner';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+
+const PAGE_SIZE = 50;
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
-    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+    const [loadingSession, setLoadingSession] = useState(true);
+    const [loadingItems, setLoadingItems] = useState(true);
     const [sessionData, setSessionData] = useState(null);
+    const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [discrepancyItems, setDiscrepancyItems] = useState([]);
     const [checkedItems, setCheckedItems] = useState({});
+    const [summaryStats, setSummaryStats] = useState({ totalItems: 0, countedItems: 0, discrepancies: 0 });
+    const [lastVisible, setLastVisible] = useState(null);
+    const [page, setPage] = useState(1);
+    const [isLastPage, setIsLastPage] = useState(false);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-    const fetchSessionData = async () => {
-        if (!loading) setLoading(true);
+    const fetchSessionData = useCallback(async () => {
+        setLoadingSession(true);
         const docRef = doc(db, 'stocktakes', sessionId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             setSessionData({ id: docSnap.id, ...docSnap.data() });
         } else {
-            console.log("Không tìm thấy phiên kiểm kê!");
-            toast.error("Không tìm thấy dữ liệu cho phiên kiểm kê này.");
+            toast.error("Không tìm thấy phiên kiểm kê!");
+            navigate('/stocktakes');
         }
-        setLoading(false);
+        setLoadingSession(false);
+    }, [sessionId, navigate]);
+
+    const buildItemsQuery = useCallback(() => {
+        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+        let q = query(itemsCollectionRef, orderBy('productId'));
+        if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+        }
+        return q;
+    }, [sessionId, searchTerm]);
+
+    const fetchFirstPage = useCallback(async () => {
+        if (!sessionId) return;
+        setLoadingItems(true);
+        try {
+            const q = buildItemsQuery();
+            const firstPageQuery = query(q, limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(firstPageQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setItems(itemsList);
+            setPage(1);
+        } catch (error) {
+            console.error("Lỗi khi tải vật tư kiểm kê: ", error);
+            toast.error("Không thể tải danh sách vật tư. Vui lòng kiểm tra Console (F12) để tạo Index nếu được yêu cầu.");
+        } finally {
+            setLoadingItems(false);
+        }
+    }, [sessionId, buildItemsQuery]);
+
+    const fetchNextPage = async () => {
+        if (!sessionId || !lastVisible) return;
+        setLoadingItems(true);
+        try {
+            const q = buildItemsQuery();
+            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(nextPageQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setItems(itemsList);
+            setPage(p => p + 1);
+        } catch (error) {
+            console.error("Lỗi khi tải vật tư kiểm kê: ", error);
+        } finally {
+            setLoadingItems(false);
+        }
     };
     
-    useEffect(() => { fetchSessionData(); }, [sessionId]);
-
-    const summaryStats = useMemo(() => {
-        if (!sessionData) return { totalItems: 0, countedItems: 0, discrepancies: 0 };
-        const totalItems = sessionData.items.filter(item => !item.isNew).length;
-        const countedItems = sessionData.items.filter(item => item.countedQty !== null).length;
-        const discrepancies = sessionData.items.filter(item => item.countedQty !== null && item.systemQty !== item.countedQty).length;
-        return { totalItems, countedItems, discrepancies };
-    }, [sessionData]);
-
-    const filteredItems = useMemo(() => {
-        if (!sessionData) return [];
-        const sortedItems = [...sessionData.items].sort((a, b) => {
-            if (a.productId < b.productId) return -1;
-            if (a.productId > b.productId) return 1;
-            const dateA = a.expiryDate?.toDate ? a.expiryDate.toDate() : new Date(0);
-            const dateB = b.expiryDate?.toDate ? b.expiryDate.toDate() : new Date(0);
-            if (dateA < dateB) return -1;
-            if (dateA > dateB) return 1;
-            return 0;
+    const fetchStatsAndDiscrepancies = useCallback(async () => {
+        if (!sessionId || !sessionData) return;
+        const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+        const totalQuery = query(itemsRef, where('isNew', '==', false));
+        const countedQuery = query(itemsRef, where('countedQty', '!=', null));
+        
+        const [totalSnap, countedDocsSnap] = await Promise.all([
+            getCountFromServer(totalQuery),
+            getDocs(countedQuery)
+        ]);
+        
+        const discrepancies = [];
+        countedDocsSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.systemQty !== data.countedQty) {
+                discrepancies.push({ id: doc.id, ...data });
+            }
         });
 
-        if (!searchTerm) return sortedItems;
-        const lowercasedFilter = searchTerm.toLowerCase();
-        return sortedItems.filter(item => (
-            item.productId?.toLowerCase().includes(lowercasedFilter) ||
-            item.productName?.toLowerCase().includes(lowercasedFilter) ||
-            item.lotNumber?.toLowerCase().includes(lowercasedFilter)
-        ));
-    }, [sessionData, searchTerm]);
+        setSummaryStats({
+            totalItems: totalSnap.data().count,
+            countedItems: countedDocsSnap.size,
+            discrepancies: discrepancies.length
+        });
+        setDiscrepancyItems(discrepancies.sort((a, b) => a.productId.localeCompare(b.productId)));
+    }, [sessionId, sessionData]);
 
-    const discrepancyItems = useMemo(() => {
-        if (!sessionData) return [];
-        return sessionData.items.filter(item => item.countedQty !== null && item.systemQty !== item.countedQty);
-    }, [sessionData]);
+    useEffect(() => { fetchSessionData(); }, [fetchSessionData]);
+    
+    useEffect(() => {
+        const debounce = setTimeout(() => {
+            fetchFirstPage();
+        }, 500);
+        return () => clearTimeout(debounce);
+    }, [searchTerm, fetchFirstPage]);
 
-    const performCountUpdate = async (lotId, finalCount) => {
-        const originalItems = sessionData.items;
-        const updatedItems = originalItems.map(item => item.lotId === lotId ? { ...item, countedQty: finalCount } : item);
-        setSessionData(prev => ({ ...prev, items: updatedItems })); 
+    useEffect(() => {
+        if (sessionData?.status === 'completed' || sessionData?.status === 'adjusted') {
+            fetchStatsAndDiscrepancies();
+        }
+    }, [sessionData, fetchStatsAndDiscrepancies]);
 
+    const performCountUpdate = async (itemId, finalCount) => {
+        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
         try {
-            const sessionRef = doc(db, 'stocktakes', sessionId);
-            await updateDoc(sessionRef, { items: updatedItems });
-            console.log(`Đã lưu số lượng cho lô ${lotId}`);
+            await updateDoc(itemRef, { countedQty: finalCount });
+            setItems(currentItems => 
+                currentItems.map(item => item.id === itemId ? { ...item, countedQty: finalCount } : item)
+            );
         } catch (error) {
-            console.error("Lỗi khi lưu:", error);
-            toast.error("Lỗi: Không thể lưu. Vui lòng kiểm tra kết nối mạng.");
-            setSessionData(prev => ({ ...prev, items: originalItems })); 
+            toast.error("Lỗi: Không thể lưu số lượng.");
         } finally {
             setConfirmModal({isOpen: false});
         }
     };
     
-    const handleCountChange = (lotId, newCountValue) => {
+    const handleCountChange = (itemId, countedQty, newCountValue) => {
         const newCount = newCountValue === '' ? null : Number(newCountValue);
-        const targetItem = sessionData.items.find(item => item.lotId === lotId);
-
-        if (targetItem && (targetItem.countedQty || 0) > 0 && newCount !== null) {
-            const cumulativeTotal = (targetItem.countedQty || 0) + newCount;
+        if ((countedQty || 0) > 0 && newCount !== null) {
+            const cumulativeTotal = (countedQty || 0) + newCount;
             setConfirmModal({
                 isOpen: true,
                 title: "Cộng Dồn hay Ghi Đè?",
-                message: `Đã đếm ${targetItem.countedQty}. Bạn muốn cộng dồn thêm ${newCount} (tổng: ${cumulativeTotal}) hay ghi đè bằng giá trị mới là ${newCount}?`,
-                onConfirm: () => performCountUpdate(lotId, cumulativeTotal),
-                onCancel: () => performCountUpdate(lotId, newCount),
+                message: `Đã đếm ${countedQty}. Bạn muốn cộng dồn thêm ${newCount} (tổng: ${cumulativeTotal}) hay ghi đè bằng giá trị mới là ${newCount}?`,
+                onConfirm: () => performCountUpdate(itemId, cumulativeTotal),
+                onCancel: () => performCountUpdate(itemId, newCount),
                 confirmText: "Cộng Dồn",
                 cancelText: "Ghi Đè"
             });
         } else {
-            performCountUpdate(lotId, newCount);
+            performCountUpdate(itemId, newCount);
         }
     };
 
@@ -115,34 +175,44 @@ const StocktakeSessionPage = () => {
             toast.success("Đã hoàn tất phiên kiểm kê!");
             fetchSessionData();
         } catch (error) {
-            console.error("Lỗi khi hoàn tất phiên kiểm kê: ", error);
             toast.error("Đã có lỗi xảy ra khi hoàn tất.");
         }
     };
 
     const promptForFinalize = () => {
-        const uncountedItems = sessionData.items.filter(item => item.countedQty === null && !item.isNew);
-        let message = "Tất cả các mã hàng đã được đếm. Bạn có muốn hoàn tất và khóa phiên kiểm kê này không?";
-        if (uncountedItems.length > 0) {
-            message = `Cảnh báo: Vẫn còn ${uncountedItems.length} mã hàng chưa được đếm. Bạn có chắc chắn muốn hoàn tất không?`;
-        }
         setConfirmModal({
             isOpen: true,
             title: "Hoàn tất phiên kiểm kê?",
-            message: message,
+            message: "Bạn có chắc chắn muốn hoàn tất và khóa phiên kiểm kê này? Sau khi hoàn tất, bạn có thể xử lý chênh lệch.",
             onConfirm: handleFinalizeCount,
             confirmText: "Hoàn tất"
         });
     };
 
+    const handleAddUnlistedItem = async (newItem) => {
+        const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+        try {
+            const docRef = doc(itemsRef, newItem.lotId);
+            await setDoc(docRef, newItem);
+            toast.success("Đã thêm mặt hàng mới vào phiên kiểm kê.");
+            fetchFirstPage();
+            setIsAddItemModalOpen(false);
+        } catch (error) {
+            toast.error("Có lỗi khi lưu mặt hàng mới, vui lòng thử lại.");
+        }
+    };
+
     const handleAdjustInventory = async () => {
         setConfirmModal({isOpen: false});
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.lotId]);
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
+        if (itemsToAdjust.length === 0) {
+            toast.warn("Vui lòng chọn mục để điều chỉnh.");
+            return;
+        }
         try {
             const batch = writeBatch(db);
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
-            
-            itemsToAdjust.forEach(item => {
+            for (const item of itemsToAdjust) {
                 if (!item.isNew) {
                     const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
                     batch.update(inventoryLotRef, { quantityRemaining: item.countedQty });
@@ -154,22 +224,19 @@ const StocktakeSessionPage = () => {
                     quantityAfter: item.countedQty, variance: item.countedQty - item.systemQty,
                     reason: `Điều chỉnh sau kiểm kê phiên: ${sessionData.name}`
                 });
-            });
-
+            }
             const sessionRef = doc(db, 'stocktakes', sessionId);
             batch.update(sessionRef, { status: 'adjusted' });
-            
             await batch.commit();
             toast.success("Đã điều chỉnh tồn kho thành công!");
             fetchSessionData();
         } catch (error) {
-            console.error("Lỗi khi điều chỉnh tồn kho: ", error);
             toast.error("Đã xảy ra lỗi khi điều chỉnh tồn kho.");
         }
     };
 
     const promptForAdjust = () => {
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.lotId]);
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
         if (itemsToAdjust.length === 0) {
             toast.warn("Vui lòng chọn ít nhất một mặt hàng để điều chỉnh.");
             return;
@@ -182,125 +249,116 @@ const StocktakeSessionPage = () => {
             confirmText: "Đồng ý điều chỉnh"
         });
     };
-
-    const handleCheckboxChange = (lotId) => { setCheckedItems(prev => ({ ...prev, [lotId]: !prev[lotId] })); };
-
-    const handleCheckAll = (e) => {
-        const isChecked = e.target.checked;
-        const newCheckedItems = {};
-        if (isChecked) {
-            discrepancyItems.forEach(item => { newCheckedItems[item.lotId] = true; });
-        }
-        setCheckedItems(newCheckedItems);
-    };
-
-    const handleAddUnlistedItem = (newItem) => {
-        const updatedItems = [...sessionData.items, newItem];
-        setSessionData(prev => ({ ...prev, items: updatedItems }));
-        setIsAddItemModalOpen(false);
-        try {
-            const sessionRef = doc(db, 'stocktakes', sessionId);
-            updateDoc(sessionRef, { items: updatedItems });
-            toast.success("Đã thêm mặt hàng mới vào phiên kiểm kê.");
-        } catch (error) {
-            toast.error("Có lỗi khi lưu mặt hàng mới, vui lòng thử lại.");
-        }
-    };
     
-    const handlePrint = () => { window.print(); };
+    const handleCheckboxChange = (itemId) => { setCheckedItems(prev => ({ ...prev, [itemId]: !prev[itemId] })); };
 
-    if (loading) return <Spinner />; // <-- ĐÃ THAY THẾ
+    if (loadingSession) return <Spinner />;
+    if (!sessionData) return <div>Không tìm thấy dữ liệu cho phiên kiểm kê này.</div>;
 
     const isSessionInProgress = sessionData.status === 'in_progress';
-    const areAllDiscrepanciesChecked = discrepancyItems.length > 0 && discrepancyItems.every(item => checkedItems[item.lotId]);
 
     const CountInput = ({ item }) => {
         const [currentValue, setCurrentValue] = useState(item.countedQty ?? '');
-        const handleKeyDown = (e) => { if (e.key === 'Enter') { e.target.blur(); } };
-        
-        useEffect(() => {
-            setCurrentValue(item.countedQty ?? '');
-        }, [item.countedQty]);
-
+        const handleKeyDown = (e) => { if (e.key === 'Enter') e.target.blur(); };
+        useEffect(() => { setCurrentValue(item.countedQty ?? ''); }, [item.countedQty]);
         return (
             <input type="number" placeholder="Nhập số đếm" value={currentValue}
                 onChange={e => setCurrentValue(e.target.value)}
-                onBlur={() => handleCountChange(item.lotId, currentValue)}
+                onBlur={() => handleCountChange(item.id, item.countedQty, currentValue)}
                 onKeyDown={handleKeyDown} disabled={!isSessionInProgress}
-                style={{
-                    backgroundColor: item.isNew ? '#fff9e6' : ((item.countedQty !== null && item.countedQty !== '') ? '#e6fffa' : '#fff'),
-                    borderColor: (item.countedQty !== null && item.countedQty !== '' && item.countedQty !== item.systemQty) ? '#f56565' : '#ccc',
-                    cursor: !isSessionInProgress ? 'not-allowed' : 'text'
-                }}
+                style={{ backgroundColor: item.isNew ? '#fff9e6' : ((item.countedQty !== null && item.countedQty !== '') ? '#e6fffa' : '#fff') }}
             />
         );
     };
 
     return (
         <div>
-            <ConfirmationModal
-                isOpen={confirmModal.isOpen}
-                title={confirmModal.title}
-                message={confirmModal.message}
-                onConfirm={confirmModal.onConfirm}
-                onCancel={confirmModal.onCancel || (() => setConfirmModal({ isOpen: false }))}
-                confirmText={confirmModal.confirmText || "Xác nhận"}
-                cancelText={confirmModal.cancelText || "Hủy"}
-            />
+            <ConfirmationModal isOpen={confirmModal.isOpen} {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
+
             <div className="page-header">
-                <h1>
-                    {sessionData.name}
-                    <span style={{fontSize: '16px', marginLeft: '15px'}}>
-                        <StatusBadge status={sessionData.status} />
-                    </span>
-                </h1>
+                <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
                 <div>
-                    <button onClick={handlePrint} className="btn-secondary" style={{marginRight: '10px'}}>In Phiếu Đếm Tay</button>
                     {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">Hoàn tất đếm</button>)}
                 </div>
             </div>
-            <div className="form-section">
-                <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
-                    <div><label>Tổng số mã cần đếm</label><p><strong>{summaryStats.totalItems}</strong></p></div>
-                    <div><label>Số mã đã đếm</label><p style={{color: 'green'}}><strong>{summaryStats.countedItems}</strong></p></div>
-                    <div><label>Số mã có chênh lệch</label><p style={{color: 'red'}}><strong>{summaryStats.discrepancies}</strong></p></div>
+
+            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
+                 <div className="form-section">
+                    <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
+                        <div><label>Tổng số mã cần đếm</label><p><strong>{summaryStats.totalItems}</strong></p></div>
+                        <div><label>Số mã đã đếm</label><p style={{color: 'green'}}><strong>{summaryStats.countedItems}</strong></p></div>
+                        <div><label>Số mã có chênh lệch</label><p style={{color: 'red'}}><strong>{summaryStats.discrepancies}</strong></p></div>
+                    </div>
                 </div>
-            </div>
+            )}
+
             <div className="controls-container">
                 <div className="search-container">
-                    <input type="text" placeholder="Tìm theo Mã hàng, Tên hàng, Số lô..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
+                    <input type="text" placeholder="Tìm theo Mã hàng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
                 </div>
                 {isSessionInProgress && (
                     <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ Thêm Hàng Ngoài DS</button>
                 )}
             </div>
+
+            {loadingItems ? <Spinner /> : (
+                <>
+                    <div className="table-container">
+                        <table className="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
+                                    <th>HSD</th><th>Tồn hệ thống</th><th>Tồn thực tế</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {items.map((item) => (
+                                    <tr key={item.id}>
+                                        <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
+                                        <td>{formatDate(item.expiryDate)}</td><td>{item.systemQty}</td>
+                                        <td><CountInput item={item} /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {!searchTerm && (
+                        <div className="pagination-controls">
+                            <button onClick={fetchFirstPage} disabled={page <= 1}>
+                                <FiChevronLeft /> Trang Trước
+                            </button>
+                            <span>Trang {page}</span>
+                            <button onClick={fetchNextPage} disabled={isLastPage}>
+                                Trang Tiếp <FiChevronRight />
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+
             {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
-                <div className="form-section">
+                <div className="form-section" style={{marginTop: '20px'}}>
                     <h3 style={{color: '#dc3545'}}>Xử Lý Chênh Lệch</h3>
-                    <p>Chỉ những mặt hàng có số lượng thực tế khác với hệ thống được liệt kê dưới đây. Chọn những mục bạn muốn điều chỉnh và xác nhận.</p>
                     {discrepancyItems.length > 0 ? (
                         <>
                             <table className="products-table">
                                 <thead>
                                     <tr>
-                                        <th><input type="checkbox" onChange={handleCheckAll} checked={areAllDiscrepanciesChecked} disabled={sessionData.status === 'adjusted'} /></th>
+                                        <th><input type="checkbox" onChange={(e) => setCheckedItems(e.target.checked ? Object.fromEntries(discrepancyItems.map(i => [i.id, true])) : {})} disabled={sessionData.status === 'adjusted'} /></th>
                                         <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
                                         <th>Tồn hệ thống</th><th>Tồn thực tế</th><th>Chênh lệch</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {discrepancyItems.map(item => {
-                                        const variance = item.countedQty - item.systemQty;
-                                        return (
-                                            <tr key={item.lotId} style={{backgroundColor: item.isNew ? '#fff9e6' : 'transparent'}}>
-                                                <td><input type="checkbox" checked={!!checkedItems[item.lotId]} onChange={() => handleCheckboxChange(item.lotId)} disabled={sessionData.status === 'adjusted'} /></td>
-                                                <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                                <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
-                                                <td style={{color: variance > 0 ? 'green' : 'red', fontWeight: 'bold'}}>{variance > 0 ? `+${variance}` : variance}</td>
-                                            </tr>
-                                        )
-                                    })}
+                                    {discrepancyItems.map(item => (
+                                        <tr key={item.id}>
+                                            <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => handleCheckboxChange(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
+                                            <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
+                                            <td>{item.systemQty}</td><td><strong>{item.countedQty}</strong></td>
+                                            <td style={{color: item.countedQty > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{item.countedQty - item.systemQty}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                             {sessionData.status !== 'adjusted' && (
@@ -313,96 +371,6 @@ const StocktakeSessionPage = () => {
                     }
                 </div>
             )}
-            <div className="printable-stocktake-area">
-                <h2>Phiếu Kiểm Kê Kho</h2>
-                <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr', border: 'none', padding: 0, marginBottom: '20px'}}>
-                    <div><label>Tên Phiên:</label><p><strong>{sessionData.name}</strong></p></div>
-                    <div><label>Ngày Tạo:</label><p><strong>{formatDate(sessionData.createdAt)}</strong></p></div>
-                    <div><label>Phạm Vi:</label><p><strong>{sessionData.scope === 'all' ? 'Toàn bộ kho' : sessionData.scope}</strong></p></div>
-                </div>
-                <table className="products-table">
-                    <thead>
-                        <tr>
-                            <th>Mã hàng</th>
-                            <th>Tên hàng</th>
-                            <th>Số lô</th>
-                            <th>HSD</th>
-                            <th>ĐVT</th>
-                            <th>Quy cách</th>
-                            <th>Tồn hệ thống</th>
-                            <th>Tồn thực tế</th>
-                            <th>Nhiệt độ BQ</th>
-                            <th>Team</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredItems.map((item) => (
-                            <tr key={item.lotId}>
-                                <td>{item.productId}</td>
-                                <td style={{textAlign: 'left'}}>{item.productName}</td>
-                                <td>{item.lotNumber}</td>
-                                <td>{item.isNew ? item.expiryDate : formatDate(item.expiryDate)}</td>
-                                <td>{item.unit}</td>
-                                <td>{item.packaging}</td>
-                                <td>{item.systemQty}</td>
-                                <td style={{height: '40px'}}></td>
-                                <td>{item.storageTemp}</td>
-                                <td>{item.team}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="table-container stocktake-table-container">
-                <table className="products-table">
-                    <thead>
-                        <tr>
-                            <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th><th>HSD</th>
-                            <th>ĐVT</th><th>Quy cách</th><th>Tồn hệ thống</th>
-                            <th>Tồn thực tế</th><th>Nhiệt độ BQ</th><th>Team</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredItems.map((item) => (
-                            <tr key={item.lotId} style={{backgroundColor: item.isNew ? '#fff9e6' : 'transparent'}}>
-                                <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                <td>{item.isNew ? item.expiryDate : formatDate(item.expiryDate)}</td>
-                                <td>{item.unit}</td><td>{item.packaging}</td><td>{item.systemQty}</td>
-                                <td><CountInput item={item} /></td><td>{item.storageTemp}</td><td>{item.team}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="stocktake-card-container">
-                {filteredItems.map((item) => (
-                    <div className="stocktake-card" key={item.lotId} style={{borderColor: item.isNew ? '#f59e0b' : 'var(--primary-color)'}}>
-                        <div className="card-header">
-                            <span className="card-product-id">{item.productId}</span>
-                            <span className="card-product-name">{item.productName}</span>
-                        </div>
-                        <div className="card-body">
-                            <div className="card-info-row">
-                                <span><strong>Số lô:</strong> {item.lotNumber}</span>
-                                <span><strong>HSD:</strong> {item.isNew ? item.expiryDate : formatDate(item.expiryDate)}</span>
-                            </div>
-                            <div className="card-count-area">
-                                <div className="count-box system-count">
-                                    <label>Hệ thống</label>
-                                    <p>{item.systemQty}</p>
-                                </div>
-                                <div className="count-box actual-count">
-                                    <label>Thực tế</label>
-                                    <CountInput item={item} />
-                                </div>
-                            </div>
-                            <div className="card-footer-info">
-                                <span><strong>Team:</strong> {item.team || 'N/A'}</span>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 };
