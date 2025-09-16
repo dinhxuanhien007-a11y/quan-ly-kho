@@ -1,4 +1,5 @@
-// src/App.jsx
+// src/App.jsx (Phiên bản nâng cấp với ErrorBoundary)
+
 import React from 'react';
 import LoginPage from './components/LoginPage';
 import AdminLayout from './components/AdminLayout';
@@ -9,9 +10,11 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/UserContext';
 
+// BƯỚC 2.1: Import ErrorBoundary
+import ErrorBoundary from './components/ErrorBoundary';
+
 const AppRoutes = () => {
   const { user, userRole, loading } = useAuth();
-
   if (loading) {
     return null; 
   }
@@ -40,7 +43,6 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* <-- NÂNG CẤP: Thêm thuộc tính closeButton={false} vào đây --> */}
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -54,7 +56,10 @@ function App() {
           theme="light"
           closeButton={false} 
         />
-        <AppRoutes />
+        {/* BƯỚC 2.2: Bọc AppRoutes trong ErrorBoundary */}
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -126,7 +126,7 @@ const StocktakeListPage = () => {
       
             {loading ? <Spinner /> : (
                 <>
-                    <table className="products-table">
+                    <table className="products-table list-page-table">
                         <thead>
                             <tr>
                                 <th>Tên Phiên Kiểm Kê</th>

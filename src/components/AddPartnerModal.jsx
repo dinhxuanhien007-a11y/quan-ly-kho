@@ -1,13 +1,15 @@
 // src/components/AddPartnerModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+
+// Import hàm service thay vì các hàm của firestore
+import { addPartner } from '../services/partnerService';
 
 const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
     const [partnerId, setPartnerId] = useState('');
     const [partnerName, setPartnerName] = useState('');
-    const [partnerType, setPartnerType] = useState('supplier'); // Mặc định là nhà cung cấp
+    const [partnerType, setPartnerType] = useState('supplier');
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -17,10 +19,11 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
             return;
         }
         setIsSaving(true);
+
         try {
             const newPartnerData = { partnerName, partnerType };
-            const partnerRef = doc(db, 'partners', partnerId.toUpperCase());
-            await setDoc(partnerRef, newPartnerData);
+            // Gọi hàm service để thêm đối tác
+            await addPartner(partnerId, newPartnerData);
 
             toast.success('Thêm đối tác mới thành công!');
             onPartnerAdded();
@@ -39,7 +42,7 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>Mã Đối Tác (ID)</label>
-                        <input type="text" value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required />
+                        <input type="text" value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required autoFocus/>
                     </div>
                     <div className="form-group">
                         <label>Tên Đối Tác</label>

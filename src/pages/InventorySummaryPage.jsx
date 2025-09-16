@@ -225,7 +225,7 @@ const InventorySummaryPage = () => {
     };
     
     return (
-        <div className="printable-inventory-area">
+        <div className="printable-inventory-area inventory-summary-page">
             <div className="page-header">
                 <h1>Tồn Kho Tổng Hợp</h1>
                 {(userRole === 'owner' || userRole === 'admin') && (

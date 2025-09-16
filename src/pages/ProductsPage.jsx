@@ -1,12 +1,16 @@
-// src/pages/ProductsPage.jsx
-import React, { useState, useMemo } from 'react'; // <-- THAY ĐỔI: Bỏ các import không cần thiết, thêm useMemo
-import { collection, query, orderBy, where, documentId } from 'firebase/firestore'; // <-- THAY ĐỔI: Import các hàm của firestore
+// src/pages/ProductsPage.jsx (Phiên bản đã tái cấu trúc)
+
+import React, { useState, useMemo } from 'react';
+import { collection, query, orderBy, where, documentId } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { db } from '../firebaseConfig'; // <-- THAY ĐỔI: Import db
-import { PAGE_SIZE } from '../constants'; // <-- THAY ĐỔI: Import PAGE_SIZE
-import { useFirestorePagination } from '../hooks/useFirestorePagination'; // <-- THAY ĐỔI: Import custom hook
-import { deleteProductById } from '../services/productService';
+import { db } from '../firebaseConfig';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+
+// BƯỚC 3.1: Import các hàm service
+import { deleteProduct } from '../services/productService'; 
+
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -19,7 +23,6 @@ const ProductsPage = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
-  // <-- THAY ĐỔI: Logic phân trang được chuyển vào custom hook
   const baseQuery = useMemo(() => {
     let q = query(collection(db, 'products'), orderBy(documentId()));
     if (searchTerm) {
@@ -36,20 +39,20 @@ const ProductsPage = () => {
     page,
     nextPage,
     prevPage,
-    reset, // Sử dụng hàm reset từ hook
+    reset,
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
   const handleProductAdded = () => {
     setIsAddModalOpen(false);
-    if (searchTerm) setSearchTerm(''); // Nếu đang tìm kiếm, xóa bộ lọc để thấy sản phẩm mới
-    else reset(); // Tải lại trang đầu
+    if (searchTerm) setSearchTerm('');
+    else reset();
   };
 
   const handleProductUpdated = () => {
     setIsEditModalOpen(false);
-    reset(); // Tải lại trang hiện tại để cập nhật
+    reset();
   };
-  
+
   const promptForDelete = (product) => {
     setConfirmModal({
         isOpen: true,
@@ -63,7 +66,9 @@ const ProductsPage = () => {
     const { item } = confirmModal;
     if (!item) return;
     try {
-        await deleteProductById(item.id);
+        // BƯỚC 3.2: Gọi hàm service thay vì logic cũ
+        await deleteProduct(item.id);
+
         toast.success('Xóa sản phẩm thành công!');
         if (searchTerm) setSearchTerm('');
         else reset();
@@ -79,7 +84,7 @@ const ProductsPage = () => {
     setCurrentProduct(product);
     setIsEditModalOpen(true);
   };
-  
+
   return (
     <div className="products-page-container">
       <ConfirmationModal
@@ -108,6 +113,10 @@ const ProductsPage = () => {
         </div>
       </div>
       
+      {/* BẠN SẼ LÀM TƯƠNG TỰ VỚI CÁC MODAL NÀY:
+        - Trong AddProductModal, gọi `addProduct` từ service.
+        - Trong EditProductModal, gọi `updateProduct` từ service.
+      */}
       {isAddModalOpen && <AddProductModal onClose={() => setIsAddModalOpen(false)} onProductAdded={handleProductAdded} />}
       {isEditModalOpen && <EditProductModal onClose={() => setIsEditModalOpen(false)} onProductUpdated={handleProductUpdated} productToEdit={currentProduct} />}
       

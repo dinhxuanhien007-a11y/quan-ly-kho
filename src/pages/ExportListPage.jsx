@@ -9,6 +9,7 @@ import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import ViewExportSlipModal from '../components/ViewExportSlipModal';
 import EditExportSlipModal from '../components/EditExportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
@@ -153,7 +154,7 @@ const ExportListPage = () => {
 
       {loading ? <Spinner /> : (
         <>
-            <table className="products-table">
+            <table className="products-table list-page-table">
                 <thead>
                 <tr>
                     <th>Ngày tạo</th>

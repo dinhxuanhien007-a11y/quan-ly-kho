@@ -95,7 +95,8 @@
 .products-table td {
   border: 1px solid var(--border-color);
   padding: 12px 15px;
-  text-align: left;
+  text-align: center; /* Sửa ở đây */
+  vertical-align: middle; /* Thêm dòng này */
 }
 
 .products-table th {
@@ -865,4 +866,53 @@ tbody tr.selected-row td {
 /* --- BẮT BUỘC BẢNG PHẢI TUÂN THEO KÍCH THƯỚC ĐÃ ĐỊNH --- */
 .products-page-container .products-table {
     table-layout: fixed;
+}
+
+/* Tinh chỉnh cho trang Tồn Kho Tổng Hợp */
+.inventory-summary-page .products-table th,
+.inventory-summary-page .products-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.inventory-summary-page .products-table th:nth-child(3),
+.inventory-summary-page .products-table td:nth-child(3) {
+    text-align: left;
+}
+
+/* Thêm vào cuối file AdminLayout.css */
+
+/* Class dùng chung để căn giữa các bảng danh sách */
+.list-page-table th,
+.list-page-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Thêm vào cuối file AdminLayout.css */
+
+/* Căn chỉnh cho bảng trong phiên kiểm kê */
+.stocktake-session-page-container .products-table th,
+.stocktake-session-page-container .products-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.stocktake-session-page-container .products-table th:nth-child(2),
+.stocktake-session-page-container .products-table td:nth-child(2) {
+    text-align: left;
+}
+
+/* === FIX: CĂN GIỮA CHO CÁC BẢNG DANH SÁCH (PHIÊN BẢN CUỐI CÙNG) === */
+/* Thêm !important để đảm bảo quy tắc này được ưu tiên cao nhất */
+.products-table.list-page-table th,
+.products-table.list-page-table td {
+    text-align: center !important;
+    vertical-align: middle;
+}
+
+/* Ghi đè căn trái cho cột Tên hàng (cột thứ 3 trong bảng Tồn Kho Tổng Hợp) */
+.summary-table th:nth-child(3),
+.summary-table td:nth-child(3) {
+    text-align: left;
 }

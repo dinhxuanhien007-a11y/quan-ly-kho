@@ -83,11 +83,6 @@ const Navbar = () => {
             <FiUpload className="nav-icon" />
           </NavLink>
         </li>
-        <li>
-          <NavLink to="/test" title="Trang Test">
-            <FiTool className="nav-icon" />
-          </NavLink>
-        </li>
       </ul>
     </nav>
   );

@@ -191,26 +191,45 @@ const NewExportPage = () => {
         }
         setItems(newItems);
     };
-      
+
     const handleItemChange = (index, field, value) => {
         const newItems = [...items];
         if (field === 'quantityToExport') {
-          const val = Number(value);
-          if (val < 0) return;
-          if (val > newItems[index].quantityRemaining) {
-            toast.warn('Cảnh báo: Số lượng xuất vượt quá số lượng tồn!');
-            newItems[index][field] = newItems[index].quantityRemaining;
-          } else {
-            newItems[index][field] = val;
-          }
+            if (value === '') {
+                newItems[index][field] = '';
+            } else {
+                const val = Number(value);
+                if (val < 0) return;
+                if (val > newItems[index].quantityRemaining) {
+                    toast.warn('Cảnh báo: Số lượng xuất vượt quá số lượng tồn!');
+                    newItems[index][field] = newItems[index].quantityRemaining;
+                } else {
+                    newItems[index][field] = val;
+                }
+            }
         } else {
-          newItems[index][field] = value;
+            newItems[index][field] = value;
         }
         setItems(newItems);
     };
     
     const addNewRow = () => {
-        setItems([...items, { id: Date.now(), productId: '', productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' }]);
+        setItems([...items, { 
+            id: Date.now(), 
+            productId: '', 
+            productName: '', 
+            unit: '', 
+            packaging: '', 
+            storageTemp: '', 
+            availableLots: [], 
+            selectedLotId: '', 
+            lotNumber: '', 
+            displayLotText: '', 
+            expiryDate: '', 
+            quantityRemaining: 0, 
+            quantityToExport: '', 
+            notes: '' 
+        }]);
     };
     
     const handleRemoveRow = (indexToRemove) => {

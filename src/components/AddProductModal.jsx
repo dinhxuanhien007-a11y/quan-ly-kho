@@ -1,9 +1,22 @@
 // src/components/AddProductModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants'; // <-- THÊM DÒNG NÀY
+import { z } from 'zod';
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants';
+
+// Import hàm service thay vì các hàm của firestore
+import { addProduct } from '../services/productService';
+
+const productSchema = z.object({
+  productId: z.string().min(1, { message: 'Mã hàng (ID) không được để trống.' }),
+  productName: z.string().min(1, { message: 'Tên hàng không được để trống.' }),
+  unit: z.string().min(1, { message: 'Đơn vị tính không được để trống.' }),
+  packaging: z.string().optional(),
+  storageTemp: z.string().optional(),
+  manufacturer: z.string().optional(),
+  team: z.string(),
+});
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
   const [productId, setProductId] = useState('');
@@ -17,22 +30,30 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!productId) {
-      toast.warn('Mã hàng không được để trống.');
+    setIsSaving(true);
+
+    const formData = {
+      productId: productId.trim().toUpperCase(),
+      productName: productName.trim(),
+      unit: unit.trim(),
+      packaging: packaging.trim(),
+      storageTemp: storageTemp.trim(),
+      manufacturer: manufacturer.trim(),
+      team,
+    };
+    
+    const validationResult = productSchema.safeParse(formData);
+
+    if (!validationResult.success) {
+      toast.warn(validationResult.error.issues[0].message);
+      setIsSaving(false);
       return;
     }
-    setIsSaving(true);
+
     try {
-      const newProductData = {
-        productName,
-        unit,
-        packaging,
-        storageTemp,
-        manufacturer,
-        team,
-      };
-      const productRef = doc(db, 'products', productId);
-      await setDoc(productRef, newProductData);
+      const { productId, ...newProductData } = validationResult.data;
+      // Gọi hàm service để thêm sản phẩm
+      await addProduct(productId, newProductData);
 
       toast.success('Thêm sản phẩm mới thành công!');
       onProductAdded();
@@ -51,22 +72,21 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
-              <label>Mã hàng (ID)</label>
-              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value.toUpperCase())} required />
+              <label>Mã hàng (ID) (*)</label>
+              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value.toUpperCase())} autoFocus />
             </div>
             <div className="form-group">
-              <label>Tên hàng</label>
-              <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} required />
+              <label>Tên hàng (*)</label>
+              <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} />
             </div>
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Đơn vị tính</label>
+              <label>Đơn vị tính (*)</label>
               <input
                 list="unit-options-add"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                required
                 placeholder="Chọn hoặc nhập ĐVT..."
               />
               <datalist id="unit-options-add">

@@ -1,4 +1,4 @@
-﻿--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewLotModal.jsx ---
+﻿--- FILE: D:\New folder\quan-ly-kho\src\components\AddNewLotModal.jsx ---
 
 
 // src/components/AddNewLotModal.jsx
@@ -66,7 +66,7 @@ export default AddNewLotModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
 
 
 // src/components/AddNewProductAndLotModal.jsx
@@ -85,12 +85,12 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [packaging, setPackaging] = useState('');
     const [storageTemp, setStorageTemp] = useState('');
     const [manufacturer, setManufacturer] = useState('');
-    const [team, setTeam] = useState('MED');
+    const [team, setTeam] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!productName || !lotNumber || !unit) {
+        if (!productName || !lotNumber || !unit || !team) {
             toast.warn('Vui lÃ²ng Ä‘iá»n cÃ¡c thÃ´ng tin báº¯t buá»™c: TÃªn hÃ ng, Sá»‘ lÃ´, ÄVT.');
             return;
         }
@@ -218,19 +218,21 @@ export default AddNewProductAndLotModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddPartnerModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\AddPartnerModal.jsx ---
 
 
 // src/components/AddPartnerModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+
+// Import hÃ m service thay vÃ¬ cÃ¡c hÃ m cá»§a firestore
+import { addPartner } from '../services/partnerService';
 
 const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
     const [partnerId, setPartnerId] = useState('');
     const [partnerName, setPartnerName] = useState('');
-    const [partnerType, setPartnerType] = useState('supplier'); // Máº·c Ä‘á»‹nh lÃ  nhÃ  cung cáº¥p
+    const [partnerType, setPartnerType] = useState('supplier');
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -240,10 +242,11 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
             return;
         }
         setIsSaving(true);
+
         try {
             const newPartnerData = { partnerName, partnerType };
-            const partnerRef = doc(db, 'partners', partnerId.toUpperCase());
-            await setDoc(partnerRef, newPartnerData);
+            // Gá»i hÃ m service Ä‘á»ƒ thÃªm Ä‘á»‘i tÃ¡c
+            await addPartner(partnerId, newPartnerData);
 
             toast.success('ThÃªm Ä‘á»‘i tÃ¡c má»›i thÃ nh cÃ´ng!');
             onPartnerAdded();
@@ -262,7 +265,7 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>MÃ£ Äá»‘i TÃ¡c (ID)</label>
-                        <input type="text" value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required />
+                        <input type="text" value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required autoFocus/>
                     </div>
                     <div className="form-group">
                         <label>TÃªn Äá»‘i TÃ¡c</label>
@@ -291,15 +294,28 @@ export default AddPartnerModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddProductModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\AddProductModal.jsx ---
 
 
 // src/components/AddProductModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants'; // <-- THÃŠM DÃ’NG NÃ€Y
+import { z } from 'zod';
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants';
+
+// Import hÃ m service thay vÃ¬ cÃ¡c hÃ m cá»§a firestore
+import { addProduct } from '../services/productService';
+
+const productSchema = z.object({
+  productId: z.string().min(1, { message: 'MÃ£ hÃ ng (ID) khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.' }),
+  productName: z.string().min(1, { message: 'TÃªn hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.' }),
+  unit: z.string().min(1, { message: 'ÄÆ¡n vá»‹ tÃ­nh khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.' }),
+  packaging: z.string().optional(),
+  storageTemp: z.string().optional(),
+  manufacturer: z.string().optional(),
+  team: z.string(),
+});
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
   const [productId, setProductId] = useState('');
@@ -313,22 +329,30 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!productId) {
-      toast.warn('MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.');
+    setIsSaving(true);
+
+    const formData = {
+      productId: productId.trim().toUpperCase(),
+      productName: productName.trim(),
+      unit: unit.trim(),
+      packaging: packaging.trim(),
+      storageTemp: storageTemp.trim(),
+      manufacturer: manufacturer.trim(),
+      team,
+    };
+    
+    const validationResult = productSchema.safeParse(formData);
+
+    if (!validationResult.success) {
+      toast.warn(validationResult.error.issues[0].message);
+      setIsSaving(false);
       return;
     }
-    setIsSaving(true);
+
     try {
-      const newProductData = {
-        productName,
-        unit,
-        packaging,
-        storageTemp,
-        manufacturer,
-        team,
-      };
-      const productRef = doc(db, 'products', productId);
-      await setDoc(productRef, newProductData);
+      const { productId, ...newProductData } = validationResult.data;
+      // Gá»i hÃ m service Ä‘á»ƒ thÃªm sáº£n pháº©m
+      await addProduct(productId, newProductData);
 
       toast.success('ThÃªm sáº£n pháº©m má»›i thÃ nh cÃ´ng!');
       onProductAdded();
@@ -347,22 +371,21 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
-              <label>MÃ£ hÃ ng (ID)</label>
-              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value.toUpperCase())} required />
+              <label>MÃ£ hÃ ng (ID) (*)</label>
+              <input type="text" value={productId} onChange={(e) => setProductId(e.target.value.toUpperCase())} autoFocus />
             </div>
             <div className="form-group">
-              <label>TÃªn hÃ ng</label>
-              <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} required />
+              <label>TÃªn hÃ ng (*)</label>
+              <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} />
             </div>
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>ÄÆ¡n vá»‹ tÃ­nh</label>
+              <label>ÄÆ¡n vá»‹ tÃ­nh (*)</label>
               <input
                 list="unit-options-add"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                required
                 placeholder="Chá»n hoáº·c nháº­p ÄVT..."
               />
               <datalist id="unit-options-add">
@@ -424,7 +447,7 @@ export default AddProductModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
 
 
 // src/components/AddUnlistedItemModal.jsx
@@ -548,7 +571,7 @@ export default AddUnlistedItemModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AdminLayout.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\AdminLayout.jsx ---
 
 
 // src/components/AdminLayout.jsx
@@ -568,7 +591,6 @@ import StocktakeListPage from '../pages/StocktakeListPage';
 import StocktakeSessionPage from '../pages/StocktakeSessionPage'; // Import trang má»›i
 import LotTracePage from '../pages/LotTracePage';
 import DataImportPage from '../pages/DataImportPage';
-import TestPage from '../pages/TestPage';
 
 const AdminLayout = () => {
   return (
@@ -588,7 +610,6 @@ const AdminLayout = () => {
           <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} /> {/* Route má»›i cho trang chi tiáº¿t */}
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
-          <Route path="/test" element={<TestPage />} />
         </Routes>
       </main>
     </div>
@@ -599,7 +620,7 @@ export default AdminLayout;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ConfirmationModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\ConfirmationModal.jsx ---
 
 
 // src/components/ConfirmationModal.jsx
@@ -634,7 +655,7 @@ export default ConfirmationModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
 
 
 // src/components/CreateStocktakeModal.jsx
@@ -695,7 +716,7 @@ export default CreateStocktakeModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
 
 
 // src/components/EditExportSlipModal.jsx
@@ -799,7 +820,7 @@ export default EditExportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
 
 
 // src/components/EditImportSlipModal.jsx
@@ -922,14 +943,16 @@ export default EditImportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditPartnerModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\EditPartnerModal.jsx ---
 
 
 // src/components/EditPartnerModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+
+// Import hÃ m service thay vÃ¬ cÃ¡c hÃ m cá»§a firestore
+import { updatePartner } from '../services/partnerService';
 
 const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
     const [partnerData, setPartnerData] = useState({ ...partnerToEdit });
@@ -944,11 +967,14 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
         e.preventDefault();
         setIsSaving(true);
         try {
-            const partnerDocRef = doc(db, 'partners', partnerToEdit.id);
-            await updateDoc(partnerDocRef, {
+            // Chuáº©n bá»‹ dá»¯ liá»‡u Ä‘á»ƒ cáº­p nháº­t
+            const dataToUpdate = {
                 partnerName: partnerData.partnerName,
                 partnerType: partnerData.partnerType,
-            });
+            };
+            // Gá»i hÃ m service Ä‘á»ƒ cáº­p nháº­t
+            await updatePartner(partnerToEdit.id, dataToUpdate);
+            
             toast.success('Cáº­p nháº­t thÃ´ng tin Ä‘á»‘i tÃ¡c thÃ nh cÃ´ng!');
             onPartnerUpdated();
         } catch (error) {
@@ -967,7 +993,7 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>TÃªn Äá»‘i TÃ¡c</label>
-                        <input type="text" name="partnerName" value={partnerData.partnerName || ''} onChange={handleChange} required />
+                        <input type="text" name="partnerName" value={partnerData.partnerName || ''} onChange={handleChange} required autoFocus />
                     </div>
                     <div className="form-group">
                         <label>PhÃ¢n Loáº¡i</label>
@@ -992,14 +1018,16 @@ export default EditPartnerModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditProductModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\EditProductModal.jsx ---
 
 
 // src/components/EditProductModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+
+// Import hÃ m service thay vÃ¬ cÃ¡c hÃ m cá»§a firestore
+import { updateProduct } from '../services/productService';
 
 const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
   const [productData, setProductData] = useState({ ...productToEdit });
@@ -1014,8 +1042,10 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const productDocRef = doc(db, 'products', productToEdit.id);
-      await updateDoc(productDocRef, productData);
+      // Gá»i hÃ m service Ä‘á»ƒ cáº­p nháº­t sáº£n pháº©m
+      // Dá»¯ liá»‡u trong state 'productData' Ä‘Ã£ bao gá»“m cÃ¡c trÆ°á»ng cáº§n thiáº¿t
+      await updateProduct(productToEdit.id, productData);
+      
       toast.success('Cáº­p nháº­t sáº£n pháº©m thÃ nh cÃ´ng!');
       onProductUpdated();
     } catch (error) {
@@ -1034,7 +1064,7 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>TÃªn hÃ ng</label>
-            <input type="text" name="productName" value={productData.productName || ''} onChange={handleChange} required />
+            <input type="text" name="productName" value={productData.productName || ''} onChange={handleChange} required autoFocus />
           </div>
           <div className="form-row">
             <div className="form-group">
@@ -1080,7 +1110,55 @@ export default EditProductModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\HomePage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\ErrorBoundary.jsx ---
+
+
+// src/components/ErrorBoundary.jsx
+
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    // Cáº­p nháº­t state Ä‘á»ƒ láº§n render tiáº¿p theo sáº½ hiá»ƒn thá»‹ UI dá»± phÃ²ng.
+    return { hasError: true, error: error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // Báº¡n cÅ©ng cÃ³ thá»ƒ log lá»—i nÃ y tá»›i má»™t dá»‹ch vá»¥ bÃ¡o cÃ¡o lá»—i
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Giao diá»‡n dá»± phÃ²ng khi cÃ³ lá»—i
+      return (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <h1>Ráº¥t tiáº¿c, Ä‘Ã£ cÃ³ lá»—i xáº£y ra.</h1>
+          <p>ÄÃ£ cÃ³ sá»± cá»‘ khÃ´ng mong muá»‘n trong á»©ng dá»¥ng.</p>
+          <p>Vui lÃ²ng thá»­ táº£i láº¡i trang hoáº·c liÃªn há»‡ vá»›i quáº£n trá»‹ viÃªn.</p>
+          <details style={{ whiteSpace: 'pre-wrap', marginTop: '20px' }}>
+            <summary>Chi tiáº¿t lá»—i (dÃ nh cho nhÃ  phÃ¡t triá»ƒn)</summary>
+            {this.state.error && this.state.error.toString()}
+          </details>
+        </div>
+      );
+    }
+
+    // Náº¿u khÃ´ng cÃ³ lá»—i, render cÃ¡c component con bÃ¬nh thÆ°á»ng
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\components\HomePage.jsx ---
 
 
 // src/components/HomePage.jsx
@@ -1120,7 +1198,7 @@ export default HomePage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\InventoryFilters.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\InventoryFilters.jsx ---
 
 
 // src/components/InventoryFilters.jsx
@@ -1201,7 +1279,7 @@ export default InventoryFilters;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LoginPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\LoginPage.jsx ---
 
 
 // src/components/LoginPage.jsx
@@ -1258,7 +1336,7 @@ export default LoginPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
 
 
 // src/components/LotJourneyExplorer.jsx
@@ -1375,7 +1453,7 @@ export default LotJourneyExplorer;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Navbar.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\Navbar.jsx ---
 
 
 // src/components/Navbar.jsx
@@ -1463,11 +1541,6 @@ const Navbar = () => {
             <FiUpload className="nav-icon" />
           </NavLink>
         </li>
-        <li>
-          <NavLink to="/test" title="Trang Test">
-            <FiTool className="nav-icon" />
-          </NavLink>
-        </li>
       </ul>
     </nav>
   );
@@ -1477,7 +1550,7 @@ export default Navbar;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Sidebar.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\Sidebar.jsx ---
 
 
 // src/components/Sidebar.jsx
@@ -1547,7 +1620,7 @@ export default Sidebar;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.css ---
 
 
 /* src/components/Spinner.css */
@@ -1581,7 +1654,7 @@ export default Sidebar;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.jsx ---
 
 
 // src/components/Spinner.jsx
@@ -1610,7 +1683,7 @@ export default Spinner;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatusBadge.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\StatusBadge.jsx ---
 
 
 // src/components/StatusBadge.jsx
@@ -1652,7 +1725,7 @@ export default React.memo(StatusBadge);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TeamBadge.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\TeamBadge.jsx ---
 
 
 // src/components/TeamBadge.jsx
@@ -1683,7 +1756,7 @@ export default React.memo(TeamBadge);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TempBadge.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\TempBadge.jsx ---
 
 
 // src/components/TempBadge.jsx
@@ -1712,7 +1785,7 @@ export default React.memo(TempBadge);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewerLayout.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\ViewerLayout.jsx ---
 
 
 // src/components/ViewerLayout.jsx
@@ -1778,7 +1851,7 @@ export default ViewerLayout;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
 
 
 // src/components/ViewExportSlipModal.jsx
@@ -1859,7 +1932,7 @@ export default ViewExportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
 
 
 // src/components/ViewImportSlipModal.jsx
@@ -1937,7 +2010,7 @@ export default ViewImportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\context\UserContext.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\context\UserContext.jsx ---
 
 
 // src/context/UserContext.jsx
@@ -1999,114 +2072,111 @@ export const useAuth = () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useFirestorePagination.js ---
+--- FILE: D:\New folder\quan-ly-kho\src\hooks\useFirestorePagination.js ---
 
 
 // src/hooks/useFirestorePagination.js
 import { useState, useEffect, useCallback } from 'react';
-import { getDocs, query, startAfter, limit } from 'firebase/firestore';
+import { getDocs, query, startAfter, limit, endBefore, limitToLast } from 'firebase/firestore'; // ThÃªm endBefore vÃ  limitToLast
 import { toast } from 'react-toastify';
 
-/**
- * // <-- THÃŠM Má»šI: Custom Hook Ä‘á»ƒ quáº£n lÃ½ viá»‡c phÃ¢n trang vá»›i Firestore.
- * @param {object} baseQuery - Query cÆ¡ báº£n cá»§a Firestore (Ä‘Ã£ bao gá»“m orderBy).
- * @param {number} pageSize - Sá»‘ lÆ°á»£ng má»¥c trÃªn má»—i trang.
- * @returns {object} - State vÃ  cÃ¡c hÃ m Ä‘á»ƒ Ä‘iá»u khiá»ƒn phÃ¢n trang.
- */
 export const useFirestorePagination = (baseQuery, pageSize) => {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isLastPage, setIsLastPage] = useState(false);
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
     
-    // LÆ°u con trá» cá»§a trang trÆ°á»›c Ä‘Ã³ Ä‘á»ƒ quay láº¡i
-    const [prevPageCursors, setPrevPageCursors] = useState([]);
+    // Sá»­a Ä‘á»•i: pageStartCursors sáº½ lÆ°u con trá» Äáº¦U TIÃŠN cá»§a má»—i trang
+    const [pageStartCursors, setPageStartCursors] = useState([null]); // Trang 1 luÃ´n báº¯t Ä‘áº§u tá»« null
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const fetchPage = useCallback(async (direction, cursor = null) => {
+    const fetchPage = useCallback(async (pageNumber, direction) => {
         setLoading(true);
         try {
             let pageQuery;
-            if (direction === 'next' && cursor) {
+            const cursor = pageStartCursors[pageNumber - 1];
+
+            if (direction === 'next') {
                 pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
-            } else { // 'first' or 'prev' (logic xá»­ lÃ½ prev náº±m á»Ÿ ngoÃ i)
+            } else if (direction === 'prev') {
+                 // Vá»›i prev, chÃºng ta cáº§n query ngÆ°á»£c láº¡i, nhÆ°ng Ä‘á»ƒ Ä‘Æ¡n giáº£n vÃ  hiá»‡u quáº£ hÆ¡n,
+                 // ta sáº½ query xuÃ´i tá»« con trá» Ä‘Ã£ lÆ°u.
+                pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
+                // Náº¿u cursor lÃ  null (tá»©c lÃ  quay vá» trang 1), khÃ´ng cáº§n startAfter
+                if (!cursor) {
+                    pageQuery = query(baseQuery, limit(pageSize));
+                }
+            }
+             else { // 'first'
                 pageQuery = query(baseQuery, limit(pageSize));
             }
 
             const docSnapshots = await getDocs(pageQuery);
             const list = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            if (list.length > 0) {
-                setDocuments(list);
-                const newLastVisible = docSnapshots.docs[docSnapshots.docs.length - 1];
-                setLastVisible(newLastVisible);
-                if (direction === 'next') {
-                    // LÆ°u con trá» hiá»‡n táº¡i trÆ°á»›c khi qua trang má»›i
-                    setPrevPageCursors(prev => [...prev, lastVisible]); 
-                }
-            } else {
-                setDocuments([]);
-            }
             
-            setIsLastPage(docSnapshots.docs.length < pageSize);
+            setDocuments(list);
 
+            if (direction === 'next' && list.length > 0) {
+                const lastVisible = docSnapshots.docs[docSnapshots.docs.length - 1];
+                // LÆ°u con trá» cuá»‘i cÃ¹ng cá»§a trang hiá»‡n táº¡i Ä‘á»ƒ lÃ m Ä‘iá»ƒm báº¯t Ä‘áº§u cho trang tiáº¿p theo
+                setPageStartCursors(prev => {
+                    const newCursors = [...prev];
+                    newCursors[pageNumber] = lastVisible; // Con trá» báº¯t Ä‘áº§u cá»§a trang Káº¾ TIáº¾P
+                    return newCursors;
+                });
+            }
+
+            setIsLastPage(docSnapshots.docs.length < pageSize);
         } catch (error) {
             console.error("Lá»—i khi phÃ¢n trang Firestore: ", error);
             toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u trang. Vui lÃ²ng kiá»ƒm tra Console (F12).");
         } finally {
             setLoading(false);
         }
-    }, [baseQuery, pageSize, lastVisible]); // ThÃªm lastVisible vÃ o dependency
+    }, [baseQuery, pageSize, pageStartCursors]);
 
-    // Tá»± Ä‘á»™ng fetch láº¡i trang Ä‘áº§u khi query thay Ä‘á»•i (vÃ­ dá»¥: khi tÃ¬m kiáº¿m)
     useEffect(() => {
-        setPage(1);
-        setLastVisible(null);
-        setPrevPageCursors([]);
-        fetchPage('first');
-    }, [baseQuery]); // Chá»‰ cháº¡y láº¡i khi baseQuery thay Ä‘á»•i
+        setCurrentPage(1);
+        setPageStartCursors([null]);
+        fetchPage(1, 'first');
+    }, [baseQuery]); // Chá»‰ cháº¡y láº¡i khi query cÆ¡ sá»Ÿ thay Ä‘á»•i
 
     const nextPage = () => {
         if (!isLastPage) {
-            setPage(p => p + 1);
-            fetchPage('next', lastVisible);
+            const nextPageNumber = currentPage + 1;
+            setCurrentPage(nextPageNumber);
+            fetchPage(nextPageNumber, 'next');
         }
     };
 
     const prevPage = () => {
-         if (page > 1) {
-            // Logic prevPage hiá»‡n táº¡i Ä‘Æ¡n giáº£n lÃ  fetch láº¡i trang Ä‘áº§u.
-            // Äá»ƒ quay láº¡i trang trÆ°á»›c chÃ­nh xÃ¡c, cáº§n má»™t logic phá»©c táº¡p hÆ¡n vá»›i `endBefore` vÃ  `limitToLast`
-            // mÃ  custom hook nÃ y chÆ°a há»— trá»£ Ä‘á»ƒ giá»¯ cho nÃ³ Ä‘Æ¡n giáº£n.
-            // Ta sáº½ reset vá» trang 1.
-            setPage(1);
-            setLastVisible(null);
-            setPrevPageCursors([]);
-            fetchPage('first');
+         if (currentPage > 1) {
+            const prevPageNumber = currentPage - 1;
+            setCurrentPage(prevPageNumber);
+            // ChÃºng ta khÃ´ng cáº§n xÃ³a con trá» cá»§a trang hiá»‡n táº¡i, chá»‰ cáº§n táº£i láº¡i trang trÆ°á»›c Ä‘Ã³
+            fetchPage(prevPageNumber, 'prev');
         }
     };
     
     const reset = () => {
-        setPage(1);
-        setLastVisible(null);
-        setPrevPageCursors([]);
-        fetchPage('first');
+        setCurrentPage(1);
+        setPageStartCursors([null]);
+        fetchPage(1, 'first');
     };
 
     return {
         documents,
         loading,
         isLastPage,
-        page,
+        page: currentPage, // Tráº£ vá» trang hiá»‡n táº¡i
         nextPage,
         prevPage,
-        reset // <-- ThÃªm hÃ m reset Ä‘á»ƒ táº£i láº¡i dá»¯ liá»‡u khi cáº§n
+        reset
     };
 };
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DashboardPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\DashboardPage.jsx ---
 
 
 // src/pages/DashboardPage.jsx
@@ -2186,7 +2256,7 @@ export default DashboardPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DataImportPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\DataImportPage.jsx ---
 
 
 // src/pages/DataImportPage.jsx
@@ -2468,7 +2538,7 @@ export default DataImportPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ExportListPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\ExportListPage.jsx ---
 
 
 // src/pages/ExportListPage.jsx
@@ -2482,6 +2552,7 @@ import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import ViewExportSlipModal from '../components/ViewExportSlipModal';
 import EditExportSlipModal from '../components/EditExportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
@@ -2626,7 +2697,7 @@ const ExportListPage = () => {
 
       {loading ? <Spinner /> : (
         <>
-            <table className="products-table">
+            <table className="products-table list-page-table">
                 <thead>
                 <tr>
                     <th>NgÃ y táº¡o</th>
@@ -2693,7 +2764,7 @@ export default ExportListPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ImportListPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\ImportListPage.jsx ---
 
 
 // src/pages/ImportListPage.jsx
@@ -2708,6 +2779,7 @@ import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString } from '../utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
@@ -2873,7 +2945,7 @@ export default ImportListPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventoryPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\InventoryPage.jsx ---
 
 
 // src/pages/InventoryPage.jsx
@@ -3115,7 +3187,7 @@ export default InventoryPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
 // src/pages/InventorySummaryPage.jsx
@@ -3345,7 +3417,7 @@ const InventorySummaryPage = () => {
     };
     
     return (
-        <div className="printable-inventory-area">
+        <div className="printable-inventory-area inventory-summary-page">
             <div className="page-header">
                 <h1>Tá»“n Kho Tá»•ng Há»£p</h1>
                 {(userRole === 'owner' || userRole === 'admin') && (
@@ -3467,7 +3539,7 @@ export default InventorySummaryPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\LotTracePage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\LotTracePage.jsx ---
 
 
 // src/pages/LotTracePage.jsx
@@ -3483,7 +3555,7 @@ import {
 import LotJourneyExplorer from '../components/LotJourneyExplorer';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-import Spinner from '../components/Spinner'; // <-- ÄÃƒ THÃŠM
+import Spinner from '../components/Spinner';
 
 const LotTracePage = () => {
   const [lotNumber, setLotNumber] = useState('');
@@ -3555,11 +3627,9 @@ const LotTracePage = () => {
   const handleNodeClick = (event, node) => {
     setSelectedNode(node.data);
   };
-
   const handlePaneClick = () => {
     setSelectedNode(null);
   };
-
   const filteredExportHistory = selectedNode && selectedNode.type === 'customer'
     ? exportHistory.filter(item => item.customer === selectedNode.name)
     : exportHistory;
@@ -3573,7 +3643,6 @@ const LotTracePage = () => {
     (sum, record) => sum + record.quantityRemaining,
     0,
   );
-
   return (
     <div>
       <div className="page-header">
@@ -3641,7 +3710,7 @@ const LotTracePage = () => {
 
           <div className="form-section">
             <h3 style={{ marginTop: 0 }}>Chi Tiáº¿t CÃ¡c Láº§n Nháº­p Kho</h3>
-            <table className="products-table">
+            <table className="products-table list-page-table">
               <thead>
                 <tr>
                   <th>NgÃ y nháº­p</th>
@@ -3671,7 +3740,7 @@ const LotTracePage = () => {
               }
             </h3>
             {filteredExportHistory.length > 0 ? (
-              <table className="products-table">
+              <table className="products-table list-page-table">
                 <thead>
                   <tr>
                     <th>NgÃ y xuáº¥t</th>
@@ -3703,7 +3772,7 @@ export default LotTracePage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\NewExportPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
 // src/pages/NewExportPage.jsx
@@ -3899,26 +3968,45 @@ const NewExportPage = () => {
         }
         setItems(newItems);
     };
-      
+
     const handleItemChange = (index, field, value) => {
         const newItems = [...items];
         if (field === 'quantityToExport') {
-          const val = Number(value);
-          if (val < 0) return;
-          if (val > newItems[index].quantityRemaining) {
-            toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
-            newItems[index][field] = newItems[index].quantityRemaining;
-          } else {
-            newItems[index][field] = val;
-          }
+            if (value === '') {
+                newItems[index][field] = '';
+            } else {
+                const val = Number(value);
+                if (val < 0) return;
+                if (val > newItems[index].quantityRemaining) {
+                    toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
+                    newItems[index][field] = newItems[index].quantityRemaining;
+                } else {
+                    newItems[index][field] = val;
+                }
+            }
         } else {
-          newItems[index][field] = value;
+            newItems[index][field] = value;
         }
         setItems(newItems);
     };
     
     const addNewRow = () => {
-        setItems([...items, { id: Date.now(), productId: '', productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' }]);
+        setItems([...items, { 
+            id: Date.now(), 
+            productId: '', 
+            productName: '', 
+            unit: '', 
+            packaging: '', 
+            storageTemp: '', 
+            availableLots: [], 
+            selectedLotId: '', 
+            lotNumber: '', 
+            displayLotText: '', 
+            expiryDate: '', 
+            quantityRemaining: 0, 
+            quantityToExport: '', 
+            notes: '' 
+        }]);
     };
     
     const handleRemoveRow = (indexToRemove) => {
@@ -4059,7 +4147,7 @@ export default NewExportPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\NewImportPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\NewImportPage.jsx ---
 
 
 // src/pages/NewImportPage.jsx
@@ -4519,10 +4607,11 @@ export default NewImportPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\PartnersPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\PartnersPage.jsx ---
 
 
 // src/pages/PartnersPage.jsx
+
 import React, { useState, useMemo } from 'react';
 import { collection, query, orderBy, documentId } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
@@ -4530,7 +4619,10 @@ import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
-import { deletePartnerById } from '../services/partnerService';
+
+// Import service Ä‘á»ƒ xá»­ lÃ½ logic nghiá»‡p vá»¥
+import { deletePartner } from '../services/partnerService';
+
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -4541,8 +4633,7 @@ const PartnersPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-
-    // <-- THAY Äá»”I: Sá»­ dá»¥ng hook phÃ¢n trang
+    
     const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy(documentId())), []);
     const { 
         documents: partners, 
@@ -4554,6 +4645,7 @@ const PartnersPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
+    
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
         reset();
@@ -4577,9 +4669,11 @@ const PartnersPage = () => {
         const { item } = confirmModal;
         if (!item) return;
         try {
-            await deletePartnerById(item.id);
+            // Gá»i hÃ m service Ä‘á»ƒ xÃ³a, thay vÃ¬ gá»i trá»±c tiáº¿p Firestore
+            await deletePartner(item.id);
+            
             toast.success('XÃ³a Ä‘á»‘i tÃ¡c thÃ nh cÃ´ng!');
-            reset();
+            reset(); // Táº£i láº¡i dá»¯ liá»‡u trang Ä‘áº§u tiÃªn
         } catch (error) {
             console.error("Lá»—i khi xÃ³a Ä‘á»‘i tÃ¡c: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ³a Ä‘á»‘i tÃ¡c.');
@@ -4593,6 +4687,9 @@ const PartnersPage = () => {
         setIsEditModalOpen(true);
     };
 
+    // Äá»ƒ hoÃ n thiá»‡n viá»‡c tÃ¡i cáº¥u trÃºc, báº¡n cÅ©ng nÃªn vÃ o 2 file modal
+    // vÃ  gá»i cÃ¡c hÃ m addPartner/updatePartner tÆ°Æ¡ng á»©ng tá»« service nhÃ©.
+    
     return (
         <div>
             <ConfirmationModal
@@ -4665,18 +4762,22 @@ export default PartnersPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ProductsPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\ProductsPage.jsx ---
 
 
-// src/pages/ProductsPage.jsx
-import React, { useState, useMemo } from 'react'; // <-- THAY Äá»”I: Bá» cÃ¡c import khÃ´ng cáº§n thiáº¿t, thÃªm useMemo
-import { collection, query, orderBy, where, documentId } from 'firebase/firestore'; // <-- THAY Äá»”I: Import cÃ¡c hÃ m cá»§a firestore
+// src/pages/ProductsPage.jsx (PhiÃªn báº£n Ä‘Ã£ tÃ¡i cáº¥u trÃºc)
+
+import React, { useState, useMemo } from 'react';
+import { collection, query, orderBy, where, documentId } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { db } from '../firebaseConfig'; // <-- THAY Äá»”I: Import db
-import { PAGE_SIZE } from '../constants'; // <-- THAY Äá»”I: Import PAGE_SIZE
-import { useFirestorePagination } from '../hooks/useFirestorePagination'; // <-- THAY Äá»”I: Import custom hook
-import { deleteProductById } from '../services/productService';
+import { db } from '../firebaseConfig';
+import { PAGE_SIZE } from '../constants';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+
+// BÆ¯á»šC 3.1: Import cÃ¡c hÃ m service
+import { deleteProduct } from '../services/productService'; 
+
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -4689,7 +4790,6 @@ const ProductsPage = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
-  // <-- THAY Äá»”I: Logic phÃ¢n trang Ä‘Æ°á»£c chuyá»ƒn vÃ o custom hook
   const baseQuery = useMemo(() => {
     let q = query(collection(db, 'products'), orderBy(documentId()));
     if (searchTerm) {
@@ -4706,20 +4806,20 @@ const ProductsPage = () => {
     page,
     nextPage,
     prevPage,
-    reset, // Sá»­ dá»¥ng hÃ m reset tá»« hook
+    reset,
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
   const handleProductAdded = () => {
     setIsAddModalOpen(false);
-    if (searchTerm) setSearchTerm(''); // Náº¿u Ä‘ang tÃ¬m kiáº¿m, xÃ³a bá»™ lá»c Ä‘á»ƒ tháº¥y sáº£n pháº©m má»›i
-    else reset(); // Táº£i láº¡i trang Ä‘áº§u
+    if (searchTerm) setSearchTerm('');
+    else reset();
   };
 
   const handleProductUpdated = () => {
     setIsEditModalOpen(false);
-    reset(); // Táº£i láº¡i trang hiá»‡n táº¡i Ä‘á»ƒ cáº­p nháº­t
+    reset();
   };
-  
+
   const promptForDelete = (product) => {
     setConfirmModal({
         isOpen: true,
@@ -4733,7 +4833,9 @@ const ProductsPage = () => {
     const { item } = confirmModal;
     if (!item) return;
     try {
-        await deleteProductById(item.id);
+        // BÆ¯á»šC 3.2: Gá»i hÃ m service thay vÃ¬ logic cÅ©
+        await deleteProduct(item.id);
+
         toast.success('XÃ³a sáº£n pháº©m thÃ nh cÃ´ng!');
         if (searchTerm) setSearchTerm('');
         else reset();
@@ -4749,7 +4851,7 @@ const ProductsPage = () => {
     setCurrentProduct(product);
     setIsEditModalOpen(true);
   };
-  
+
   return (
     <div className="products-page-container">
       <ConfirmationModal
@@ -4778,6 +4880,10 @@ const ProductsPage = () => {
         </div>
       </div>
       
+      {/* Báº N Sáº¼ LÃ€M TÆ¯Æ NG Tá»° Vá»šI CÃC MODAL NÃ€Y:
+        - Trong AddProductModal, gá»i `addProduct` tá»« service.
+        - Trong EditProductModal, gá»i `updateProduct` tá»« service.
+      */}
       {isAddModalOpen && <AddProductModal onClose={() => setIsAddModalOpen(false)} onProductAdded={handleProductAdded} />}
       {isEditModalOpen && <EditProductModal onClose={() => setIsEditModalOpen(false)} onProductUpdated={handleProductUpdated} productToEdit={currentProduct} />}
       
@@ -4850,7 +4956,7 @@ export default ProductsPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
 // src/pages/StocktakeListPage.jsx
@@ -4981,7 +5087,7 @@ const StocktakeListPage = () => {
       
             {loading ? <Spinner /> : (
                 <>
-                    <table className="products-table">
+                    <table className="products-table list-page-table">
                         <thead>
                             <tr>
                                 <th>TÃªn PhiÃªn Kiá»ƒm KÃª</th>
@@ -5049,7 +5155,7 @@ export default StocktakeListPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
 
 
 // src/pages/StocktakeSessionPage.jsx
@@ -5442,246 +5548,97 @@ export default StocktakeSessionPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\TestPage.jsx ---
-
-
-// src/pages/TestPage.jsx
-import React, { useState } from 'react';
-// ChÃºng ta váº«n cáº§n hÃ m nÃ y Ä‘á»ƒ Ä‘á»‹nh dáº¡ng
-import { formatExpiryDate } from '../utils/dateUtils';
-
-const TestPage = () => {
-  const [testDate, setTestDate] = useState('');
-
-  // HÃ€M Má»šI: Chá»‰ Ä‘á»‹nh dáº¡ng khi ngÆ°á»i dÃ¹ng rá»i khá»i Ã´ input
-  const handleBlurFormat = (e) => {
-    const formattedValue = formatExpiryDate(e.target.value);
-    setTestDate(formattedValue);
-  };
-
-  return (
-    <div style={{ padding: '40px' }}>
-      <h1>Trang Kiá»ƒm Tra Lá»—i HSD (Giáº£i PhÃ¡p Má»›i)</h1>
-      <p>
-        HÃ£y thá»­ gÃµ má»™t chuá»—i sá»‘ vÃ o Ã´ bÃªn dÆ°á»›i (vÃ­ dá»¥: 12122025), sau Ä‘Ã³ báº¥m phÃ­m Tab hoáº·c click chuá»™t ra ngoÃ i Ã´.
-      </p>
-
-      <div style={{ marginTop: '20px' }}>
-        <label htmlFor="test-input" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-          Ã” Input Test HSD (dd/mm/yyyy)
-        </label>
-        <input
-          id="test-input"
-          type="text"
-          value={testDate}
-          // HÃ€M CÅ¨: Giá» chá»‰ cáº­p nháº­t giÃ¡ trá»‹ thÃ´, khÃ´ng Ä‘á»‹nh dáº¡ng
-          onChange={(e) => setTestDate(e.target.value)}
-          // HÃ€M Má»šI: KÃ­ch hoáº¡t Ä‘á»‹nh dáº¡ng khi rá»i Ä‘i
-          onBlur={handleBlurFormat}
-          placeholder="dd/mm/yyyy"
-          style={{ padding: '10px', fontSize: '16px', width: '300px' }}
-        />
-      </div>
-
-      <div style={{ marginTop: '20px' }}>
-        <strong>GiÃ¡ trá»‹ hiá»‡n táº¡i cá»§a state:</strong> {testDate}
-      </div>
-    </div>
-  );
-};
-
-export default TestPage;
-
-
-
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\exportService.js ---
-
-
-// src/services/exportService.js
-import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, limitToLast } from 'firebase/firestore';
-
-const PAGE_SIZE = 15;
-const exportTicketsCollection = collection(db, 'export_tickets');
-
-/**
- * Láº¥y má»™t trang dá»¯ liá»‡u phiáº¿u xuáº¥t tá»« Firestore.
- * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
- * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore.
- * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>}
- */
-export const fetchExportSlipsPage = async (direction = 'first', cursor = null) => {
-    let q;
-    const baseQuery = query(exportTicketsCollection, orderBy("createdAt", "desc"));
-
-    if (direction === 'next' && cursor) {
-        q = query(baseQuery, startAfter(cursor), limit(PAGE_SIZE));
-    } else if (direction === 'prev' && cursor) {
-        q = query(baseQuery, endBefore(cursor), limitToLast(PAGE_SIZE));
-    } else { // first
-        q = query(baseQuery, limit(PAGE_SIZE));
-    }
-
-    const querySnapshot = await getDocs(q);
-    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    return {
-        list,
-        firstVisible: querySnapshot.docs[0] || null,
-        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
-    };
-};
-
-
-
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\importService.js ---
-
-
-// src/services/importService.js
-import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, limitToLast } from 'firebase/firestore';
-
-const PAGE_SIZE = 15;
-const importTicketsCollection = collection(db, 'import_tickets');
-
-/**
- * Láº¥y má»™t trang dá»¯ liá»‡u phiáº¿u nháº­p tá»« Firestore.
- * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
- * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore.
- * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>}
- */
-export const fetchImportSlipsPage = async (direction = 'first', cursor = null) => {
-    let q;
-    const baseQuery = query(importTicketsCollection, orderBy("createdAt", "desc"));
-
-    if (direction === 'next' && cursor) {
-        q = query(baseQuery, startAfter(cursor), limit(PAGE_SIZE));
-    } else if (direction === 'prev' && cursor) {
-        q = query(baseQuery, endBefore(cursor), limitToLast(PAGE_SIZE));
-    } else { // first
-        q = query(baseQuery, limit(PAGE_SIZE));
-    }
-
-    const querySnapshot = await getDocs(q);
-    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    return {
-        list,
-        firstVisible: querySnapshot.docs[0] || null,
-        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
-    };
-};
-
-
-
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\partnerService.js ---
+--- FILE: D:\New folder\quan-ly-kho\src\services\partnerService.js ---
 
 
 // src/services/partnerService.js
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, query, orderBy, limit, startAfter, endBefore, limitToLast, documentId } from 'firebase/firestore';
 
-const PAGE_SIZE = 15;
-const partnersCollection = collection(db, 'partners');
+import { db } from '../firebaseConfig';
+import {
+    doc,
+    setDoc,
+    updateDoc,
+    deleteDoc
+} from 'firebase/firestore';
 
 /**
- * Láº¥y má»™t trang dá»¯ liá»‡u Ä‘á»‘i tÃ¡c tá»« Firestore.
- * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
- * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore Ä‘á»ƒ báº¯t Ä‘áº§u hoáº·c káº¿t thÃºc.
- * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>} - Danh sÃ¡ch Ä‘á»‘i tÃ¡c vÃ  cÃ¡c con trá».
+ * ThÃªm má»™t Ä‘á»‘i tÃ¡c má»›i vÃ o Firestore.
+ * ID cá»§a Ä‘á»‘i tÃ¡c sáº½ Ä‘Æ°á»£c chuyá»ƒn thÃ nh chá»¯ hoa.
+ * @param {string} partnerId - ID cá»§a Ä‘á»‘i tÃ¡c má»›i.
+ * @param {object} partnerData - Dá»¯ liá»‡u cá»§a Ä‘á»‘i tÃ¡c (partnerName, partnerType).
  */
-export const fetchPartnersPage = async (direction = 'first', cursor = null) => {
-    let q;
-    const baseQuery = query(partnersCollection, orderBy(documentId()));
-
-    if (direction === 'next' && cursor) {
-        q = query(baseQuery, startAfter(cursor), limit(PAGE_SIZE));
-    } else if (direction === 'prev' && cursor) {
-        q = query(baseQuery, endBefore(cursor), limitToLast(PAGE_SIZE));
-    } else { // first
-        q = query(baseQuery, limit(PAGE_SIZE));
-    }
-
-    const querySnapshot = await getDocs(q);
-    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    return {
-        list,
-        firstVisible: querySnapshot.docs[0] || null,
-        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
-    };
+export const addPartner = async (partnerId, partnerData) => {
+    // LuÃ´n chuyá»ƒn ID thÃ nh chá»¯ hoa Ä‘á»ƒ Ä‘áº£m báº£o tÃ­nh nháº¥t quÃ¡n
+    const partnerRef = doc(db, 'partners', partnerId.toUpperCase());
+    await setDoc(partnerRef, partnerData);
 };
 
 /**
- * XÃ³a má»™t Ä‘á»‘i tÃ¡c khá»i Firestore.
- * @param {string} partnerId - ID cá»§a Ä‘á»‘i tÃ¡c cáº§n xÃ³a.
- * @returns {Promise<void>}
+ * Cáº­p nháº­t thÃ´ng tin má»™t Ä‘á»‘i tÃ¡c Ä‘Ã£ tá»“n táº¡i.
+ * @param {string} partnerId - ID cá»§a Ä‘á»‘i tÃ¡c cáº§n cáº­p nháº­t.
+ * @param {object} partnerData - Dá»¯ liá»‡u má»›i cá»§a Ä‘á»‘i tÃ¡c (partnerName, partnerType).
  */
-export const deletePartnerById = async (partnerId) => {
+export const updatePartner = async (partnerId, partnerData) => {
+    const partnerDocRef = doc(db, 'partners', partnerId);
+    await updateDoc(partnerDocRef, partnerData);
+};
+
+/**
+ * XÃ³a má»™t Ä‘á»‘i tÃ¡c khá»i Firestore dá»±a vÃ o ID.
+ * @param {string} partnerId - ID cá»§a Ä‘á»‘i tÃ¡c cáº§n xÃ³a.
+ */
+export const deletePartner = async (partnerId) => {
     const partnerDocRef = doc(db, 'partners', partnerId);
     await deleteDoc(partnerDocRef);
 };
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\productService.js ---
+--- FILE: D:\New folder\quan-ly-kho\src\services\productService.js ---
 
 
 // src/services/productService.js
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, query, orderBy, where, limit, startAfter, endBefore, limitToLast, documentId } from 'firebase/firestore';
 
-const PAGE_SIZE = 15;
-const productsCollection = collection(db, 'products');
+import { db } from '../firebaseConfig';
+import {
+    doc,
+    setDoc,
+    updateDoc,
+    deleteDoc
+} from 'firebase/firestore';
 
 /**
- * Láº¥y má»™t trang dá»¯ liá»‡u sáº£n pháº©m tá»« Firestore, cÃ³ há»— trá»£ tÃ¬m kiáº¿m.
- * @param {string} searchTerm - Tá»« khÃ³a tÃ¬m kiáº¿m theo ID sáº£n pháº©m.
- * @param {string} direction - HÆ°á»›ng phÃ¢n trang ('next', 'prev', 'first').
- * @param {object | null} cursor - Con trá» tÃ i liá»‡u Firestore.
- * @returns {Promise<{list: Array, firstVisible: object, lastVisible: object}>}
+ * ThÃªm má»™t sáº£n pháº©m má»›i vÃ o Firestore.
+ * @param {string} productId - ID cá»§a sáº£n pháº©m má»›i.
+ * @param {object} productData - Dá»¯ liá»‡u cá»§a sáº£n pháº©m.
  */
-export const fetchProductsPage = async (searchTerm, direction = 'first', cursor = null) => {
-    let q = query(productsCollection, orderBy(documentId()));
-
-    // Ãp dá»¥ng bá»™ lá»c tÃ¬m kiáº¿m
-    if (searchTerm) {
-        const upperSearchTerm = searchTerm.toUpperCase();
-        q = query(q, where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
-    }
-
-    // Ãp dá»¥ng logic phÃ¢n trang
-    if (direction === 'next' && cursor) {
-        q = query(q, startAfter(cursor), limit(PAGE_SIZE));
-    } else if (direction === 'prev' && cursor) {
-        q = query(q, endBefore(cursor), limitToLast(PAGE_SIZE));
-    } else { // first
-        q = query(q, limit(PAGE_SIZE));
-    }
-
-    const querySnapshot = await getDocs(q);
-    const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    return {
-        list,
-        firstVisible: querySnapshot.docs[0] || null,
-        lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
-    };
+export const addProduct = async (productId, productData) => {
+    const productRef = doc(db, 'products', productId);
+    await setDoc(productRef, productData);
 };
 
 /**
- * XÃ³a má»™t sáº£n pháº©m khá»i Firestore.
- * @param {string} productId - ID cá»§a sáº£n pháº©m cáº§n xÃ³a.
- * @returns {Promise<void>}
+ * Cáº­p nháº­t thÃ´ng tin má»™t sáº£n pháº©m Ä‘Ã£ cÃ³.
+ * @param {string} productId - ID cá»§a sáº£n pháº©m cáº§n cáº­p nháº­t.
+ * @param {object} productData - Dá»¯ liá»‡u má»›i cá»§a sáº£n pháº©m.
  */
-export const deleteProductById = async (productId) => {
+export const updateProduct = async (productId, productData) => {
+    const productDocRef = doc(db, 'products', productId);
+    await updateDoc(productDocRef, productData);
+};
+
+/**
+ * XÃ³a má»™t sáº£n pháº©m khá»i Firestore dá»±a vÃ o ID.
+ * @param {string} productId - ID cá»§a sáº£n pháº©m cáº§n xÃ³a.
+ */
+export const deleteProduct = async (productId) => {
     const productDocRef = doc(db, 'products', productId);
     await deleteDoc(productDocRef);
 };
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\stocktakeService.js ---
+--- FILE: D:\New folder\quan-ly-kho\src\services\stocktakeService.js ---
 
 
 // src/services/stocktakeService.js
@@ -5736,7 +5693,7 @@ export const deleteStocktakeSession = async (sessionId) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\AdminLayout.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\styles\AdminLayout.css ---
 
 
 :root {
@@ -5836,7 +5793,8 @@ export const deleteStocktakeSession = async (sessionId) => {
 .products-table td {
   border: 1px solid var(--border-color);
   padding: 12px 15px;
-  text-align: left;
+  text-align: center; /* Sá»­a á»Ÿ Ä‘Ã¢y */
+  vertical-align: middle; /* ThÃªm dÃ²ng nÃ y */
 }
 
 .products-table th {
@@ -6608,9 +6566,58 @@ tbody tr.selected-row td {
     table-layout: fixed;
 }
 
+/* Tinh chá»‰nh cho trang Tá»“n Kho Tá»•ng Há»£p */
+.inventory-summary-page .products-table th,
+.inventory-summary-page .products-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.inventory-summary-page .products-table th:nth-child(3),
+.inventory-summary-page .products-table td:nth-child(3) {
+    text-align: left;
+}
+
+/* ThÃªm vÃ o cuá»‘i file AdminLayout.css */
+
+/* Class dÃ¹ng chung Ä‘á»ƒ cÄƒn giá»¯a cÃ¡c báº£ng danh sÃ¡ch */
+.list-page-table th,
+.list-page-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* ThÃªm vÃ o cuá»‘i file AdminLayout.css */
+
+/* CÄƒn chá»‰nh cho báº£ng trong phiÃªn kiá»ƒm kÃª */
+.stocktake-session-page-container .products-table th,
+.stocktake-session-page-container .products-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.stocktake-session-page-container .products-table th:nth-child(2),
+.stocktake-session-page-container .products-table td:nth-child(2) {
+    text-align: left;
+}
+
+/* === FIX: CÄ‚N GIá»®A CHO CÃC Báº¢NG DANH SÃCH (PHIÃŠN Báº¢N CUá»I CÃ™NG) === */
+/* ThÃªm !important Ä‘á»ƒ Ä‘áº£m báº£o quy táº¯c nÃ y Ä‘Æ°á»£c Æ°u tiÃªn cao nháº¥t */
+.products-table.list-page-table th,
+.products-table.list-page-table td {
+    text-align: center !important;
+    vertical-align: middle;
+}
+
+/* Ghi Ä‘Ã¨ cÄƒn trÃ¡i cho cá»™t TÃªn hÃ ng (cá»™t thá»© 3 trong báº£ng Tá»“n Kho Tá»•ng Há»£p) */
+.summary-table th:nth-child(3),
+.summary-table td:nth-child(3) {
+    text-align: left;
+}
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\DashboardPage.css ---
+
+--- FILE: D:\New folder\quan-ly-kho\src\styles\DashboardPage.css ---
 
 
 /* src/styles/DashboardPage.css */
@@ -6667,7 +6674,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\DataImportPage.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\styles\DataImportPage.css ---
 
 
 /* src/styles/DataImportPage.css */
@@ -6792,7 +6799,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\print.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\styles\print.css ---
 
 
 /* src/styles/print.css (PhiÃªn báº£n Sá»­a Lá»—i Giao Diá»‡n In) */
@@ -6820,6 +6827,16 @@ tbody tr.selected-row td {
   .printable-area, .printable-inventory-area {
     position: absolute; left: 0; top: 0; width: 100%;
   }
+
+  /* THÃŠM ÄOáº N CODE NÃ€Y Äá»‚ Sá»¬A Lá»–I IN Dáº NG THáºº */
+.printable-area table, .printable-area tbody, .printable-area thead, 
+.printable-area tr, .printable-area th, .printable-area td {
+    display: revert !important;
+    position: static !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+.printable-area td::before { content: "" !important; display: none !important; }
 
   /* --- QUY Táº®C IN PHIáº¾U (NHáº¬P/XUáº¤T) --- */
   .printable-area {
@@ -6890,7 +6907,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\StocktakePage.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\styles\StocktakePage.css ---
 
 
 /* src/styles/StocktakePage.css */
@@ -7027,7 +7044,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\dateUtils.js ---
+--- FILE: D:\New folder\quan-ly-kho\src\utils\dateUtils.js ---
 
 
 // src/utils/dateUtils.js
@@ -7095,7 +7112,46 @@ export const formatExpiryDate = (value) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\App.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\utils\dateUtils.test.js ---
+
+
+import { describe, it, expect } from 'vitest';
+import { formatDate, formatExpiryDate } from './dateUtils';
+
+// NhÃ³m cÃ¡c bÃ i test cho file dateUtils
+describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
+
+    // NhÃ³m cÃ¡c bÃ i test cho hÃ m formatDate
+    describe('hÃ m formatDate', () => {
+
+        // Test trÆ°á»ng há»£p 1: NÃ³ pháº£i Ä‘á»‹nh dáº¡ng Ä‘Ãºng
+        it('pháº£i Ä‘á»‹nh dáº¡ng má»™t Ä‘á»‘i tÆ°á»£ng Timestamp thÃ nh chuá»—i dd/mm/yyyy', () => {
+            const mockTimestamp = { toDate: () => new Date(2025, 11, 25) }; // ThÃ¡ng 11 lÃ  thÃ¡ng 12
+            const ketQua = formatDate(mockTimestamp);
+            expect(ketQua).toBe('25/12/2025');
+        });
+
+        // Test trÆ°á»ng há»£p 2: NÃ³ pháº£i tráº£ vá» chuá»—i rá»—ng náº¿u Ä‘áº§u vÃ o lÃ  null
+        it('pháº£i tráº£ vá» chuá»—i rá»—ng náº¿u Ä‘áº§u vÃ o lÃ  null', () => {
+            expect(formatDate(null)).toBe('');
+        });
+    });
+
+    // NhÃ³m cÃ¡c bÃ i test cho hÃ m formatExpiryDate
+    describe('hÃ m formatExpiryDate', () => {
+        it('pháº£i tá»± Ä‘á»™ng thÃªm dáº¥u gáº¡ch chÃ©o', () => {
+            expect(formatExpiryDate('31122025')).toBe('31/12/2025');
+        });
+
+        it('pháº£i bá» qua cÃ¡c kÃ½ tá»± khÃ´ng pháº£i lÃ  sá»‘', () => {
+            expect(formatExpiryDate('31-abc-12-2025')).toBe('31/12/2025');
+        });
+    });
+});
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\App.css ---
 
 
 /* src/App.css */
@@ -7169,10 +7225,11 @@ button:hover {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\App.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\App.jsx ---
 
 
-// src/App.jsx
+// src/App.jsx (PhiÃªn báº£n nÃ¢ng cáº¥p vá»›i ErrorBoundary)
+
 import React from 'react';
 import LoginPage from './components/LoginPage';
 import AdminLayout from './components/AdminLayout';
@@ -7183,9 +7240,11 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/UserContext';
 
+// BÆ¯á»šC 2.1: Import ErrorBoundary
+import ErrorBoundary from './components/ErrorBoundary';
+
 const AppRoutes = () => {
   const { user, userRole, loading } = useAuth();
-
   if (loading) {
     return null; 
   }
@@ -7214,7 +7273,6 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* <-- NÃ‚NG Cáº¤P: ThÃªm thuá»™c tÃ­nh closeButton={false} vÃ o Ä‘Ã¢y --> */}
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -7228,7 +7286,10 @@ function App() {
           theme="light"
           closeButton={false} 
         />
-        <AppRoutes />
+        {/* BÆ¯á»šC 2.2: Bá»c AppRoutes trong ErrorBoundary */}
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );
@@ -7238,7 +7299,7 @@ export default App;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\constants.js ---
+--- FILE: D:\New folder\quan-ly-kho\src\constants.js ---
 
 
 /// src/constants.js
@@ -7254,23 +7315,23 @@ export const UNIT_OPTIONS = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»n
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\firebaseConfig.js ---
+--- FILE: D:\New folder\quan-ly-kho\src\firebaseConfig.js ---
 
 
 // src/firebaseConfig.js
-
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // == THÃ”NG TIN Cáº¤U HÃŒNH FIREBASE Cá»¦A Báº N ==
+// Äá»c thÃ´ng tin cáº¥u hÃ¬nh tá»« biáº¿n mÃ´i trÆ°á»ng
 const firebaseConfig = {
-  apiKey: "AIzaSyDLnv85ipAXZ4IXCIKMNFpQgZQCy_uF3PY",
-  authDomain: "kho-ptbiomed.firebaseapp.com",
-  projectId: "kho-ptbiomed",
-  storageBucket: "kho-ptbiomed.appspot.com",
-  messagingSenderId: "41298806902",
-  appId: "1:41298806902:web:7adb67dd5ee55918887757"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Khá»Ÿi táº¡o á»©ng dá»¥ng Firebase
@@ -7282,7 +7343,7 @@ export const auth = getAuth(app);         // Dá»‹ch vá»¥ xÃ¡c thá»±c
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\index.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\index.css ---
 
 
 /* src/index.css */
@@ -7303,7 +7364,7 @@ body {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\main.jsx ---
+--- FILE: D:\New folder\quan-ly-kho\src\main.jsx ---
 
 
 import { StrictMode } from 'react'

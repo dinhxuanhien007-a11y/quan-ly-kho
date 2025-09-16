@@ -14,12 +14,12 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [packaging, setPackaging] = useState('');
     const [storageTemp, setStorageTemp] = useState('');
     const [manufacturer, setManufacturer] = useState('');
-    const [team, setTeam] = useState('MED');
+    const [team, setTeam] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!productName || !lotNumber || !unit) {
+        if (!productName || !lotNumber || !unit || !team) {
             toast.warn('Vui lòng điền các thông tin bắt buộc: Tên hàng, Số lô, ĐVT.');
             return;
         }

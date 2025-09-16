@@ -24,6 +24,16 @@
     position: absolute; left: 0; top: 0; width: 100%;
   }
 
+  /* THÊM ĐOẠN CODE NÀY ĐỂ SỬA LỖI IN DẠNG THẺ */
+.printable-area table, .printable-area tbody, .printable-area thead, 
+.printable-area tr, .printable-area th, .printable-area td {
+    display: revert !important;
+    position: static !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+.printable-area td::before { content: "" !important; display: none !important; }
+
   /* --- QUY TẮC IN PHIẾU (NHẬP/XUẤT) --- */
   .printable-area {
     max-width: none !important; border: none !important; box-shadow: none !important;

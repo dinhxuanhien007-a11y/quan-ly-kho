@@ -15,7 +15,6 @@ import StocktakeListPage from '../pages/StocktakeListPage';
 import StocktakeSessionPage from '../pages/StocktakeSessionPage'; // Import trang mới
 import LotTracePage from '../pages/LotTracePage';
 import DataImportPage from '../pages/DataImportPage';
-import TestPage from '../pages/TestPage';
 
 const AdminLayout = () => {
   return (
@@ -35,7 +34,6 @@ const AdminLayout = () => {
           <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} /> {/* Route mới cho trang chi tiết */}
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
-          <Route path="/test" element={<TestPage />} />
         </Routes>
       </main>
     </div>

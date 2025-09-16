@@ -1,101 +1,98 @@
 // src/hooks/useFirestorePagination.js
 import { useState, useEffect, useCallback } from 'react';
-import { getDocs, query, startAfter, limit } from 'firebase/firestore';
+import { getDocs, query, startAfter, limit, endBefore, limitToLast } from 'firebase/firestore'; // Thêm endBefore và limitToLast
 import { toast } from 'react-toastify';
 
-/**
- * // <-- THÊM MỚI: Custom Hook để quản lý việc phân trang với Firestore.
- * @param {object} baseQuery - Query cơ bản của Firestore (đã bao gồm orderBy).
- * @param {number} pageSize - Số lượng mục trên mỗi trang.
- * @returns {object} - State và các hàm để điều khiển phân trang.
- */
 export const useFirestorePagination = (baseQuery, pageSize) => {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isLastPage, setIsLastPage] = useState(false);
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
     
-    // Lưu con trỏ của trang trước đó để quay lại
-    const [prevPageCursors, setPrevPageCursors] = useState([]);
+    // Sửa đổi: pageStartCursors sẽ lưu con trỏ ĐẦU TIÊN của mỗi trang
+    const [pageStartCursors, setPageStartCursors] = useState([null]); // Trang 1 luôn bắt đầu từ null
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const fetchPage = useCallback(async (direction, cursor = null) => {
+    const fetchPage = useCallback(async (pageNumber, direction) => {
         setLoading(true);
         try {
             let pageQuery;
-            if (direction === 'next' && cursor) {
+            const cursor = pageStartCursors[pageNumber - 1];
+
+            if (direction === 'next') {
                 pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
-            } else { // 'first' or 'prev' (logic xử lý prev nằm ở ngoài)
+            } else if (direction === 'prev') {
+                 // Với prev, chúng ta cần query ngược lại, nhưng để đơn giản và hiệu quả hơn,
+                 // ta sẽ query xuôi từ con trỏ đã lưu.
+                pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
+                // Nếu cursor là null (tức là quay về trang 1), không cần startAfter
+                if (!cursor) {
+                    pageQuery = query(baseQuery, limit(pageSize));
+                }
+            }
+             else { // 'first'
                 pageQuery = query(baseQuery, limit(pageSize));
             }
 
             const docSnapshots = await getDocs(pageQuery);
             const list = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            if (list.length > 0) {
-                setDocuments(list);
-                const newLastVisible = docSnapshots.docs[docSnapshots.docs.length - 1];
-                setLastVisible(newLastVisible);
-                if (direction === 'next') {
-                    // Lưu con trỏ hiện tại trước khi qua trang mới
-                    setPrevPageCursors(prev => [...prev, lastVisible]); 
-                }
-            } else {
-                setDocuments([]);
-            }
             
-            setIsLastPage(docSnapshots.docs.length < pageSize);
+            setDocuments(list);
 
+            if (direction === 'next' && list.length > 0) {
+                const lastVisible = docSnapshots.docs[docSnapshots.docs.length - 1];
+                // Lưu con trỏ cuối cùng của trang hiện tại để làm điểm bắt đầu cho trang tiếp theo
+                setPageStartCursors(prev => {
+                    const newCursors = [...prev];
+                    newCursors[pageNumber] = lastVisible; // Con trỏ bắt đầu của trang KẾ TIẾP
+                    return newCursors;
+                });
+            }
+
+            setIsLastPage(docSnapshots.docs.length < pageSize);
         } catch (error) {
             console.error("Lỗi khi phân trang Firestore: ", error);
             toast.error("Không thể tải dữ liệu trang. Vui lòng kiểm tra Console (F12).");
         } finally {
             setLoading(false);
         }
-    }, [baseQuery, pageSize, lastVisible]); // Thêm lastVisible vào dependency
+    }, [baseQuery, pageSize, pageStartCursors]);
 
-    // Tự động fetch lại trang đầu khi query thay đổi (ví dụ: khi tìm kiếm)
     useEffect(() => {
-        setPage(1);
-        setLastVisible(null);
-        setPrevPageCursors([]);
-        fetchPage('first');
-    }, [baseQuery]); // Chỉ chạy lại khi baseQuery thay đổi
+        setCurrentPage(1);
+        setPageStartCursors([null]);
+        fetchPage(1, 'first');
+    }, [baseQuery]); // Chỉ chạy lại khi query cơ sở thay đổi
 
     const nextPage = () => {
         if (!isLastPage) {
-            setPage(p => p + 1);
-            fetchPage('next', lastVisible);
+            const nextPageNumber = currentPage + 1;
+            setCurrentPage(nextPageNumber);
+            fetchPage(nextPageNumber, 'next');
         }
     };
 
     const prevPage = () => {
-         if (page > 1) {
-            // Logic prevPage hiện tại đơn giản là fetch lại trang đầu.
-            // Để quay lại trang trước chính xác, cần một logic phức tạp hơn với `endBefore` và `limitToLast`
-            // mà custom hook này chưa hỗ trợ để giữ cho nó đơn giản.
-            // Ta sẽ reset về trang 1.
-            setPage(1);
-            setLastVisible(null);
-            setPrevPageCursors([]);
-            fetchPage('first');
+         if (currentPage > 1) {
+            const prevPageNumber = currentPage - 1;
+            setCurrentPage(prevPageNumber);
+            // Chúng ta không cần xóa con trỏ của trang hiện tại, chỉ cần tải lại trang trước đó
+            fetchPage(prevPageNumber, 'prev');
         }
     };
     
     const reset = () => {
-        setPage(1);
-        setLastVisible(null);
-        setPrevPageCursors([]);
-        fetchPage('first');
+        setCurrentPage(1);
+        setPageStartCursors([null]);
+        fetchPage(1, 'first');
     };
 
     return {
         documents,
         loading,
         isLastPage,
-        page,
+        page: currentPage, // Trả về trang hiện tại
         nextPage,
         prevPage,
-        reset // <-- Thêm hàm reset để tải lại dữ liệu khi cần
+        reset
     };
 };

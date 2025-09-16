@@ -1,4 +1,5 @@
 // src/pages/PartnersPage.jsx
+
 import React, { useState, useMemo } from 'react';
 import { collection, query, orderBy, documentId } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
@@ -6,7 +7,10 @@ import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
-import { deletePartnerById } from '../services/partnerService';
+
+// Import service để xử lý logic nghiệp vụ
+import { deletePartner } from '../services/partnerService';
+
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -17,8 +21,7 @@ const PartnersPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-
-    // <-- THAY ĐỔI: Sử dụng hook phân trang
+    
     const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy(documentId())), []);
     const { 
         documents: partners, 
@@ -30,6 +33,7 @@ const PartnersPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
+    
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
         reset();
@@ -53,9 +57,11 @@ const PartnersPage = () => {
         const { item } = confirmModal;
         if (!item) return;
         try {
-            await deletePartnerById(item.id);
+            // Gọi hàm service để xóa, thay vì gọi trực tiếp Firestore
+            await deletePartner(item.id);
+            
             toast.success('Xóa đối tác thành công!');
-            reset();
+            reset(); // Tải lại dữ liệu trang đầu tiên
         } catch (error) {
             console.error("Lỗi khi xóa đối tác: ", error);
             toast.error('Đã xảy ra lỗi khi xóa đối tác.');
@@ -69,6 +75,9 @@ const PartnersPage = () => {
         setIsEditModalOpen(true);
     };
 
+    // Để hoàn thiện việc tái cấu trúc, bạn cũng nên vào 2 file modal
+    // và gọi các hàm addPartner/updatePartner tương ứng từ service nhé.
+    
     return (
         <div>
             <ConfirmationModal

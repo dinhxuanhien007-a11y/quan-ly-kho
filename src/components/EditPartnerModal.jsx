@@ -1,8 +1,10 @@
 // src/components/EditPartnerModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+
+// Import hàm service thay vì các hàm của firestore
+import { updatePartner } from '../services/partnerService';
 
 const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
     const [partnerData, setPartnerData] = useState({ ...partnerToEdit });
@@ -17,11 +19,14 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
         e.preventDefault();
         setIsSaving(true);
         try {
-            const partnerDocRef = doc(db, 'partners', partnerToEdit.id);
-            await updateDoc(partnerDocRef, {
+            // Chuẩn bị dữ liệu để cập nhật
+            const dataToUpdate = {
                 partnerName: partnerData.partnerName,
                 partnerType: partnerData.partnerType,
-            });
+            };
+            // Gọi hàm service để cập nhật
+            await updatePartner(partnerToEdit.id, dataToUpdate);
+            
             toast.success('Cập nhật thông tin đối tác thành công!');
             onPartnerUpdated();
         } catch (error) {
@@ -40,7 +45,7 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>Tên Đối Tác</label>
-                        <input type="text" name="partnerName" value={partnerData.partnerName || ''} onChange={handleChange} required />
+                        <input type="text" name="partnerName" value={partnerData.partnerName || ''} onChange={handleChange} required autoFocus />
                     </div>
                     <div className="form-group">
                         <label>Phân Loại</label>

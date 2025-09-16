@@ -1,8 +1,10 @@
 // src/components/EditProductModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
+
+// Import hàm service thay vì các hàm của firestore
+import { updateProduct } from '../services/productService';
 
 const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
   const [productData, setProductData] = useState({ ...productToEdit });
@@ -17,8 +19,10 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const productDocRef = doc(db, 'products', productToEdit.id);
-      await updateDoc(productDocRef, productData);
+      // Gọi hàm service để cập nhật sản phẩm
+      // Dữ liệu trong state 'productData' đã bao gồm các trường cần thiết
+      await updateProduct(productToEdit.id, productData);
+      
       toast.success('Cập nhật sản phẩm thành công!');
       onProductUpdated();
     } catch (error) {
@@ -37,7 +41,7 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Tên hàng</label>
-            <input type="text" name="productName" value={productData.productName || ''} onChange={handleChange} required />
+            <input type="text" name="productName" value={productData.productName || ''} onChange={handleChange} required autoFocus />
           </div>
           <div className="form-row">
             <div className="form-group">
