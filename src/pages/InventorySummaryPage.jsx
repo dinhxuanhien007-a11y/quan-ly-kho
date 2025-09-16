@@ -283,7 +283,7 @@ const InventorySummaryPage = () => {
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
                                             <td data-label="Mã hàng"><strong>{product.id}</strong></td>
-                                            <td data-label="Tên hàng" style={{textAlign: 'left'}}>{product.productName}</td>
+                                            <td data-label="Tên hàng">{product.productName}</td>
                                             <td data-label="HSD Gần Nhất">{formatDate(product.nearestExpiryDate)}</td>
                                             <td data-label="Tổng Tồn"><strong>{product.totalRemaining}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>

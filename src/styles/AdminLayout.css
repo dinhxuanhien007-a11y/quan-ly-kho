@@ -95,7 +95,7 @@
 .products-table td {
   border: 1px solid var(--border-color);
   padding: 12px 15px;
-  text-align: center; /* Sửa ở đây */
+  text-align: center;
   vertical-align: middle; /* Thêm dòng này */
 }
 
@@ -868,16 +868,18 @@ tbody tr.selected-row td {
     table-layout: fixed;
 }
 
-/* Tinh chỉnh cho trang Tồn Kho Tổng Hợp */
+/* --- TÙY CHỈNH CĂN LỀ CHO TRANG TỒN KHO TỔNG HỢP (PHIÊN BẢN MỚI NHẤT) --- */
+
+/* BƯỚC 1: Đưa TẤT CẢ thông tin trong bảng ra giữa ô (kể cả tiêu đề 'Tên hàng') */
 .inventory-summary-page .products-table th,
 .inventory-summary-page .products-table td {
-    text-align: center;
-    vertical-align: middle;
+    text-align: center !important;
+    vertical-align: middle !important;
 }
 
-.inventory-summary-page .products-table th:nth-child(3),
+/* BƯỚC 2: Ghi đè, đưa RIÊNG phần DỮ LIỆU của cột "Tên hàng" (cột thứ 3) về căn lề trái */
 .inventory-summary-page .products-table td:nth-child(3) {
-    text-align: left;
+    text-align: left !important;
 }
 
 /* Thêm vào cuối file AdminLayout.css */
