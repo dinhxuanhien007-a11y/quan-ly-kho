@@ -2,9 +2,15 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-
-// Import hàm service thay vì các hàm của firestore
+import { z } from 'zod'; // <-- IMPORT ZOD
 import { updatePartner } from '../services/partnerService';
+
+// <-- ĐỊNH NGHĨA SCHEMA -->
+const partnerSchema = z.object({
+  partnerName: z.string().trim().min(1, { message: "Tên Đối tác không được để trống." }),
+  partnerType: z.enum(['supplier', 'customer']),
+});
+
 
 const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
     const [partnerData, setPartnerData] = useState({ ...partnerToEdit });
@@ -17,15 +23,22 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // <-- SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
+        const validationResult = partnerSchema.safeParse({
+            partnerName: partnerData.partnerName,
+            partnerType: partnerData.partnerType,
+        });
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
+            return;
+        }
+
         setIsSaving(true);
         try {
-            // Chuẩn bị dữ liệu để cập nhật
-            const dataToUpdate = {
-                partnerName: partnerData.partnerName,
-                partnerType: partnerData.partnerType,
-            };
-            // Gọi hàm service để cập nhật
-            await updatePartner(partnerToEdit.id, dataToUpdate);
+            // Gửi dữ liệu đã được validate lên service
+            await updatePartner(partnerToEdit.id, validationResult.data);
             
             toast.success('Cập nhật thông tin đối tác thành công!');
             onPartnerUpdated();
@@ -44,7 +57,7 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
                 <p><strong>Mã Đối Tác:</strong> {partnerToEdit.id}</p>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Tên Đối Tác</label>
+                        <label>Tên Đối Tác (*)</label>
                         <input type="text" name="partnerName" value={partnerData.partnerName || ''} onChange={handleChange} required autoFocus />
                     </div>
                     <div className="form-group">

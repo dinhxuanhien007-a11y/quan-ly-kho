@@ -3,25 +3,37 @@
 
 // src/components/AddNewLotModal.jsx
 import React, { useState } from 'react';
-import { formatExpiryDate, parseDateString } from '../utils/dateUtils'; // ThÃªm parseDateString
+import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
+const newLotSchema = z.object({
+    expiryDate: z.string().refine(val => parseDateString(val) !== null, {
+        message: "Vui lÃ²ng nháº­p Háº¡n Sá»­ Dá»¥ng há»£p lá»‡ (dd/mm/yyyy)."
+    })
+});
 
 const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) => {
     const [expiryDate, setExpiryDate] = useState('');
 
     const handleSave = () => {
-        const parsedDate = parseDateString(expiryDate); // PhÃ¢n tÃ­ch chuá»—i ngÃ y thÃ¡ng
-        if (!parsedDate) { // Kiá»ƒm tra xem ngÃ y cÃ³ há»£p lá»‡ khÃ´ng
-            toast.warn('Vui lÃ²ng nháº­p Háº¡n Sá»­ Dá»¥ng há»£p lá»‡ (dd/mm/yyyy).');
+        // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+        const validationResult = newLotSchema.safeParse({ expiryDate });
+        
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return;
         }
+        
+        // Chá»‰ gá»i onSave khi dá»¯ liá»‡u Ä‘Ã£ há»£p lá»‡
         onSave(expiryDate);
     };
 
     const handleExpiryDateBlur = (e) => {
         setExpiryDate(formatExpiryDate(e.target.value));
     };
-
+    
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             handleSave();
@@ -70,12 +82,22 @@ export default AddNewLotModal;
 
 
 // src/components/AddNewProductAndLotModal.jsx
+
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
-import { formatExpiryDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants'; // <-- THÃŠM DÃ’NG NÃ€Y
+import { z } from 'zod';
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants';
+import { formatExpiryDate } from '../utils/dateUtils';
+import { addProduct } from '../services/productService';
+
+// Schema xÃ¡c thá»±c dá»¯ liá»‡u báº±ng Zod
+const productAndLotSchema = z.object({
+  productName: z.string().min(1, { message: "TÃªn hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  lotNumber: z.string().min(1, { message: "Sá»‘ lÃ´ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  unit: z.string().min(1, { message: "ÄÆ¡n vá»‹ tÃ­nh khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  team: z.string().min(1, { message: "Báº¡n pháº£i chá»n má»™t team." }), // Báº¯t buá»™c chá»n team
+});
+
 
 const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [productName, setProductName] = useState('');
@@ -85,24 +107,42 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [packaging, setPackaging] = useState('');
     const [storageTemp, setStorageTemp] = useState('');
     const [manufacturer, setManufacturer] = useState('');
-    const [team, setTeam] = useState('');
+    const [team, setTeam] = useState(''); // Bá» giÃ¡ trá»‹ máº·c Ä‘á»‹nh 'MED'
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Táº¡o má»™t ref Ä‘á»ƒ cÃ³ thá»ƒ submit form tá»« nÃºt báº¥m bÃªn ngoÃ i
+    const formRef = React.useRef(null);
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!productName || !lotNumber || !unit || !team) {
-            toast.warn('Vui lÃ²ng Ä‘iá»n cÃ¡c thÃ´ng tin báº¯t buá»™c: TÃªn hÃ ng, Sá»‘ lÃ´, ÄVT.');
+        // NgÄƒn hÃ nh vi máº·c Ä‘á»‹nh náº¿u sá»± kiá»‡n Ä‘Æ°á»£c truyá»n vÃ o
+        if (e) e.preventDefault();
+        
+        const formData = { productName, lotNumber, unit, team };
+        const validationResult = productAndLotSchema.safeParse(formData);
+        
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return;
         }
+        
         setIsSaving(true);
+        
         const newProductData = {
             productName, unit, packaging, storageTemp, manufacturer, team,
         };
+        
         try {
-            const productRef = doc(db, 'products', productId);
-            await setDoc(productRef, newProductData);
+            // 1. Táº¡o sáº£n pháº©m má»›i thÃ´ng qua service
+            await addProduct(productId, newProductData);
+            
+            // 2. Tráº£ vá» dá»¯ liá»‡u Ä‘á»ƒ trang NewImportPage tá»± Ä‘iá»n vÃ o dÃ²ng
             onSave({
-                ...newProductData, productId, lotNumber, expiryDate, quantity: '', notes: '',
+                ...newProductData,
+                productId,
+                lotNumber,
+                expiryDate,
+                quantity: '',
+                notes: '',
             });
             toast.success("Táº¡o sáº£n pháº©m vÃ  lÃ´ hÃ ng má»›i thÃ nh cÃ´ng!");
         } catch (error) {
@@ -116,40 +156,45 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const handleExpiryDateBlur = (e) => {
         setExpiryDate(formatExpiryDate(e.target.value));
     };
-
+    
     return (
         <div className="modal-backdrop">
             <div className="modal-content" style={{width: '600px'}}>
                 <h2>Táº¡o Nhanh Sáº£n Pháº©m Má»›i</h2>
                 <p>MÃ£ hÃ ng <strong>{productId}</strong> chÆ°a tá»“n táº¡i. Vui lÃ²ng cung cáº¥p thÃ´ng tin chi tiáº¿t.</p>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>MÃ£ hÃ ng (ID)</label>
-                        <input type="text" value={productId} readOnly disabled />
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>TÃªn hÃ ng (*)</label>
-                            <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} required />
-                        </div>
-                        <div className="form-group">
-                            <label>Team</label>
-                            <select value={team} onChange={(e) => setTeam(e.target.value)}>
-                                <option value="MED">MED</option>
-                                <option value="BIO">BIO</option>
-                                <option value="Spare Part">Spare Part</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="form-row">
+                
+                {/* Bá»c form trong div.modal-body Ä‘á»ƒ cÃ³ thá»ƒ cuá»™n */}
+                <div className="modal-body">
+                  <form ref={formRef} onSubmit={handleSubmit}>
+                      <div className="form-group">
+                          <label>MÃ£ hÃ ng (ID)</label>
+                          <input type="text" value={productId} readOnly disabled />
+                      </div>
+                      <div className="form-row">
+                          <div className="form-group">
+                              <label>TÃªn hÃ ng (*)</label>
+                              <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} autoFocus/>
+                          </div>
+                          <div className="form-group">
+                              <label>Team (*)</label>
+                              {/* ThÃªm lá»±a chá»n trá»‘ng vÃ  bá» giÃ¡ trá»‹ máº·c Ä‘á»‹nh */}
+                              <select value={team} onChange={(e) => setTeam(e.target.value)}>
+                                  <option value="" disabled>-- Chá»n team --</option>
+                                  <option value="MED">MED</option>
+                                  <option value="BIO">BIO</option>
+                                  <option value="Spare Part">Spare Part</option>
+                              </select>
+                          </div>
+                      </div>
+                      <div className="form-row">
                         <div className="form-group">
                             <label>Sá»‘ lÃ´ (*)</label>
-                            <input type="text" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} required />
+                            <input type="text" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} />
                         </div>
                         <div className="form-group">
                             <label>HSD (dd/mm/yyyy)</label>
                             <input 
-                                type="text" 
+                               type="text" 
                                 value={expiryDate} 
                                 onChange={(e) => setExpiryDate(e.target.value)} 
                                 onBlur={handleExpiryDateBlur}
@@ -164,7 +209,6 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                 list="unit-options"
                                 value={unit}
                                 onChange={(e) => setUnit(e.target.value)}
-                                required
                                 placeholder="Chá»n hoáº·c nháº­p ÄVT..."
                             />
                             <datalist id="unit-options">
@@ -202,13 +246,21 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                             </datalist>
                         </div>
                     </div>
-                    <div className="modal-actions">
-                        <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
-                        <button type="submit" className="btn-primary" disabled={isSaving}>
-                            {isSaving ? 'Äang lÆ°u...' : 'LÆ°u vÃ  Chá»n'}
-                        </button>
-                    </div>
-                </form>
+                  </form>
+                </div>
+
+                {/* Khu vá»±c nÃºt báº¥m náº±m bÃªn ngoÃ i vÃ¹ng cuá»™n */}
+                <div className="modal-actions">
+                    <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
+                    <button 
+                        type="button" 
+                        onClick={() => formRef.current.requestSubmit()} // Trigger submit cá»§a form
+                        className="btn-primary" 
+                        disabled={isSaving}
+                    >
+                        {isSaving ? 'Äang lÆ°u...' : 'LÆ°u vÃ  Chá»n'}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -225,9 +277,16 @@ export default AddNewProductAndLotModal;
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-
-// Import hÃ m service thay vÃ¬ cÃ¡c hÃ m cá»§a firestore
+import { z } from 'zod'; // <-- BÆ¯á»šC 1: IMPORT ZOD
 import { addPartner } from '../services/partnerService';
+
+// <-- BÆ¯á»šC 2: Äá»ŠNH NGHÄ¨A SCHEMA -->
+const partnerSchema = z.object({
+  partnerId: z.string().trim().min(1, { message: "MÃ£ Äá»‘i tÃ¡c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  partnerName: z.string().trim().min(1, { message: "TÃªn Äá»‘i tÃ¡c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  partnerType: z.enum(['supplier', 'customer']),
+});
+
 
 const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
     const [partnerId, setPartnerId] = useState('');
@@ -237,17 +296,25 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!partnerId || !partnerName) {
-            toast.warn('MÃ£ vÃ  TÃªn Ä‘á»‘i tÃ¡c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.');
+        
+        // <-- BÆ¯á»šC 3: Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+        const validationResult = partnerSchema.safeParse({
+            partnerId: partnerId,
+            partnerName: partnerName,
+            partnerType: partnerType,
+        });
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return;
         }
+
         setIsSaving(true);
-
         try {
-            const newPartnerData = { partnerName, partnerType };
-            // Gá»i hÃ m service Ä‘á»ƒ thÃªm Ä‘á»‘i tÃ¡c
-            await addPartner(partnerId, newPartnerData);
-
+            const { partnerId: validatedId, ...newPartnerData } = validationResult.data;
+            // Gá»­i ID Ä‘Ã£ Ä‘Æ°á»£c validate vÃ  viáº¿t hoa lÃªn service
+            await addPartner(validatedId.toUpperCase(), newPartnerData);
+            
             toast.success('ThÃªm Ä‘á»‘i tÃ¡c má»›i thÃ nh cÃ´ng!');
             onPartnerAdded();
         } catch (error) {
@@ -264,11 +331,11 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
                 <h2>ThÃªm Äá»‘i TÃ¡c Má»›i</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>MÃ£ Äá»‘i TÃ¡c (ID)</label>
+                        <label>MÃ£ Äá»‘i TÃ¡c (ID) (*)</label>
                         <input type="text" value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required autoFocus/>
                     </div>
                     <div className="form-group">
-                        <label>TÃªn Äá»‘i TÃ¡c</label>
+                        <label>TÃªn Äá»‘i TÃ¡c (*)</label>
                         <input type="text" value={partnerName} onChange={(e) => setPartnerName(e.target.value)} required />
                     </div>
                     <div className="form-group">
@@ -456,6 +523,27 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
+const unlistedItemSchema = z.object({
+    productId: z.string().trim().min(1, "MÃ£ hÃ ng lÃ  báº¯t buá»™c."),
+    productName: z.string(), // Sáº½ kiá»ƒm tra Ä‘iá»u kiá»‡n bÃªn dÆ°á»›i
+    countedQty: z.preprocess(
+        val => Number(val),
+        z.number({ required_error: "Sá»‘ lÆ°á»£ng Ä‘áº¿m lÃ  báº¯t buá»™c.", invalid_type_error: "Sá»‘ lÆ°á»£ng Ä‘áº¿m pháº£i lÃ  má»™t con sá»‘." })
+         .gt(0, "Sá»‘ lÆ°á»£ng Ä‘áº¿m pháº£i lá»›n hÆ¡n 0.")
+    )
+}).refine(data => { // ThÃªm Ä‘iá»u kiá»‡n refine
+    // Náº¿u isNewProduct lÃ  true (Ä‘Æ°á»£c truyá»n vÃ o context), thÃ¬ productName pháº£i cÃ³ giÃ¡ trá»‹
+    if (this.isNewProduct) {
+        return data.productName.trim().length > 0;
+    }
+    return true; // Náº¿u khÃ´ng pháº£i sáº£n pháº©m má»›i thÃ¬ khÃ´ng cáº§n check
+}, {
+    message: "TÃªn hÃ ng lÃ  báº¯t buá»™c Ä‘á»‘i vá»›i sáº£n pháº©m má»›i.",
+    path: ["productName"], // BÃ¡o lá»—i cho trÆ°á»ng productName
+});
 
 const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const [productId, setProductId] = useState('');
@@ -497,21 +585,32 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!productId || !countedQty || (!productName && isNewProduct)) {
-            toast.warn("Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ MÃ£ hÃ ng vÃ  Sá»‘ lÆ°á»£ng Ä‘áº¿m.");
+        
+        // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+        const validationResult = unlistedItemSchema.safeParse({
+            productId: productId,
+            productName: productName,
+            countedQty: countedQty,
+        }, {
+            // Truyá»n tráº¡ng thÃ¡i isNewProduct vÃ o context cá»§a Zod
+            context: { isNewProduct }
+        });
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return;
         }
         
         onAddItem({
-            productId: productId.trim(),
+            productId: validationResult.data.productId.trim(),
             productName: productName,
             lotNumber: lotNumber.trim() || 'N/A',
             expiryDate: expiryDate,
             unit: unit,
             packaging: packaging,
             systemQty: 0,
-            countedQty: Number(countedQty),
-            lotId: `new_${productId.trim()}_${lotNumber.trim() || Date.now()}`,
+            countedQty: validationResult.data.countedQty,
+            lotId: `new_${validationResult.data.productId.trim()}_${lotNumber.trim() || Date.now()}`,
             isNew: true,
             storageTemp: storageTemp,
             manufacturer: manufacturer,
@@ -529,11 +628,11 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
                 <h2>ThÃªm HÃ ng NgoÃ i Danh SÃ¡ch</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>MÃ£ hÃ ng (Báº¯t buá»™c)</label>
+                        <label>MÃ£ hÃ ng (*)</label>
                         <input type="text" value={productId} onChange={e => setProductId(e.target.value)} onBlur={handleProductSearch} required />
                     </div>
                     <div className="form-group">
-                        <label>TÃªn hÃ ng</label>
+                        <label>TÃªn hÃ ng {isNewProduct && '(*)'}</label>
                         <input type="text" value={productName} onChange={e => setProductName(e.target.value)} readOnly={!isNewProduct} required={isNewProduct} />
                     </div>
                     <div className="form-row">
@@ -553,7 +652,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
                         </div>
                     </div>
                     <div className="form-group">
-                        <label>Sá»‘ lÆ°á»£ng Ä‘áº¿m thá»±c táº¿ (Báº¯t buá»™c)</label>
+                        <label>Sá»‘ lÆ°á»£ng Ä‘áº¿m thá»±c táº¿ (*)</label>
                         <input type="number" value={countedQty} onChange={e => setCountedQty(e.target.value)} required />
                     </div>
                     
@@ -655,24 +754,129 @@ export default ConfirmationModal;
 
 
 
+--- FILE: D:\New folder\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
+
+
+// src/components/ConfirmationModal.test.jsx
+
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import ConfirmationModal from './ConfirmationModal.jsx';
+import React from 'react';
+
+// NhÃ³m cÃ¡c bÃ i test cho ConfirmationModal
+describe('Component: ConfirmationModal', () => {
+
+    it('khÃ´ng render gÃ¬ cáº£ khi prop "isOpen" lÃ  false', () => {
+        // Render modal vá»›i isOpen={false}
+        render(
+            <ConfirmationModal
+                isOpen={false}
+                title="Test Title"
+                message="Test Message"
+                onConfirm={() => {}}
+                onCancel={() => {}}
+            />
+        );
+        
+        // Sá»­ dá»¥ng queryByText vÃ¬ nÃ³ sáº½ tráº£ vá» null náº¿u khÃ´ng tÃ¬m tháº¥y (thay vÃ¬ bÃ¡o lá»—i)
+        const titleElement = screen.queryByText('Test Title');
+        expect(titleElement).toBeNull();
+    });
+
+    it('hiá»ƒn thá»‹ Ä‘Ãºng title vÃ  message khi "isOpen" lÃ  true', () => {
+        render(
+            <ConfirmationModal
+                isOpen={true}
+                title="TiÃªu Ä‘á» xÃ¡c nháº­n"
+                message="Báº¡n cÃ³ cháº¯c khÃ´ng?"
+                onConfirm={() => {}}
+                onCancel={() => {}}
+            />
+        );
+
+        // Kiá»ƒm tra title vÃ  message cÃ³ xuáº¥t hiá»‡n trÃªn mÃ n hÃ¬nh khÃ´ng
+        expect(screen.getByText('TiÃªu Ä‘á» xÃ¡c nháº­n')).toBeInTheDocument();
+        expect(screen.getByText('Báº¡n cÃ³ cháº¯c khÃ´ng?')).toBeInTheDocument();
+    });
+
+    it('gá»i hÃ m onConfirm khi nÃºt xÃ¡c nháº­n Ä‘Æ°á»£c click', () => {
+        // Táº¡o má»™t hÃ m giáº£ (mock function) cho onConfirm
+        const handleConfirm = vi.fn();
+        
+        render(
+            <ConfirmationModal
+                isOpen={true}
+                title="Test"
+                message="Test"
+                onConfirm={handleConfirm}
+                onCancel={() => {}}
+                confirmText="Äá»“ng Ã½"
+            />
+        );
+        
+        // TÃ¬m nÃºt xÃ¡c nháº­n dá»±a vÃ o text cá»§a nÃ³
+        const confirmButton = screen.getByRole('button', { name: /Äá»“ng Ã½/i });
+        
+        // MÃ´ phá»ng hÃ nh Ä‘á»™ng click
+        fireEvent.click(confirmButton);
+        
+        // Kiá»ƒm tra xem hÃ m giáº£ Ä‘Ã£ Ä‘Æ°á»£c gá»i Ä‘Ãºng 1 láº§n chÆ°a
+        expect(handleConfirm).toHaveBeenCalledTimes(1);
+    });
+
+    it('gá»i hÃ m onCancel khi nÃºt há»§y Ä‘Æ°á»£c click', () => {
+        // Táº¡o hÃ m giáº£ cho onCancel
+        const handleCancel = vi.fn();
+        
+        render(
+            <ConfirmationModal
+                isOpen={true}
+                title="Test"
+                message="Test"
+                onConfirm={() => {}}
+                onCancel={handleCancel}
+                cancelText="Bá» qua"
+            />
+        );
+
+        const cancelButton = screen.getByRole('button', { name: /Bá» qua/i });
+        fireEvent.click(cancelButton);
+        
+        expect(handleCancel).toHaveBeenCalledTimes(1);
+    });
+});
+
+
+
 --- FILE: D:\New folder\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
 
 
 // src/components/CreateStocktakeModal.jsx
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
 
-// *** PHIÃŠN Báº¢N Sá»¬A Lá»–I ***
+// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
+const stocktakeSchema = z.object({
+    sessionName: z.string().trim().min(1, { message: "Vui lÃ²ng Ä‘áº·t tÃªn cho phiÃªn kiá»ƒm kÃª." })
+});
+
 const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
     const [sessionName, setSessionName] = useState('');
     const [scope, setScope] = useState('all');
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!sessionName) {
-            toast.warn('Vui lÃ²ng Ä‘áº·t tÃªn cho phiÃªn kiá»ƒm kÃª.');
+        
+        // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+        const validationResult = stocktakeSchema.safeParse({ sessionName });
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return;
         }
+        
         onCreate({ sessionName, scope });
     };
 
@@ -682,7 +886,7 @@ const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
                 <h2>Táº¡o PhiÃªn Kiá»ƒm KÃª Má»›i</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>TÃªn PhiÃªn Kiá»ƒm KÃª</label>
+                        <label>TÃªn PhiÃªn Kiá»ƒm KÃª (*)</label>
                         <input
                             type="text"
                             value={sessionName}
@@ -703,7 +907,7 @@ const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
                     <div className="modal-actions">
                         <button type="button" onClick={onClose} className="btn-secondary" disabled={isCreating}>Há»§y</button>
                         <button type="submit" className="btn-primary" disabled={isCreating}>
-                            {isCreating ? 'Äang táº¡o...' : 'Báº¯t Ä‘áº§u'}
+                            {isCreating ? 'Äang táº¡o...' : 'Báº¯t Äáº§u'}
                         </button>
                     </div>
                 </form>
@@ -723,29 +927,39 @@ export default CreateStocktakeModal;
 
 import React, { useState } from 'react';
 import { FiXCircle } from 'react-icons/fi';
-import { toast } from 'react-toastify'; // Import toast
+import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// <-- Äá»ŠNH NGHÄ¨A SCHEMA XÃC THá»°C -->
+const exportItemSchema = z.object({
+  quantityToExport: z.preprocess(
+      val => Number(String(val).trim()),
+      z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
+       .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
+  ),
+  // Giá»¯ láº¡i cÃ¡c trÆ°á»ng khÃ¡c Ä‘á»ƒ cÃ³ thá»ƒ truyá»n nguyÃªn object item vÃ o validate
+  // vÃ  Ä‘á»ƒ thÃ´ng bÃ¡o lá»—i Ä‘Æ°á»£c rÃµ rÃ ng hÆ¡n
+  productId: z.string(),
+  lotNumber: z.string(),
+});
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
 
-  // *** PHIÃŠN Báº¢N Sá»¬A Lá»–I ***
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
     if (field === 'quantityToExport') {
       const numericValue = Number(value);
-      // LÆ°á»£ng xuáº¥t ban Ä‘áº§u trÃªn phiáº¿u khi chÆ°a sá»­a
       const originalExportedQty = slip.items[index].quantityToExport || slip.items[index].quantityExported;
-      // LÆ°á»£ng tá»“n kho kháº£ dá»¥ng = lÆ°á»£ng cÃ²n láº¡i trong kho + lÆ°á»£ng Ä‘Ã£ khai bÃ¡o xuáº¥t ban Ä‘áº§u
       const availableStock = updatedItems[index].quantityRemaining + originalExportedQty;
       
-      if (numericValue < 0) return; // Cháº·n sá»‘ Ã¢m
+      if (numericValue < 0) return; 
       
-      // Kiá»ƒm tra vá»›i lÆ°á»£ng tá»“n kho kháº£ dá»¥ng
       if (numericValue > availableStock) {
         toast.warn(`Sá»‘ lÆ°á»£ng xuáº¥t (${numericValue}) khÃ´ng thá»ƒ vÆ°á»£t quÃ¡ tá»“n kho hiá»‡n cÃ³ (${availableStock}).`);
         updatedItems[index][field] = availableStock;
       } else {
-        updatedItems[index][field] = numericValue;
+        updatedItems[index][field] = value;
       }
     } else {
       updatedItems[index][field] = value;
@@ -760,9 +974,32 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   };
 
   const handleSaveChanges = () => {
+    // Lá»c ra cÃ¡c dÃ²ng cÃ³ productId vÃ  sá»‘ lÆ°á»£ng > 0 trÆ°á»›c khi validate
+    const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
+    
+    if (itemsToValidate.length === 0) {
+        toast.warn("Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng vá»›i sá»‘ lÆ°á»£ng lá»›n hÆ¡n 0.");
+        onSave({ ...slipData, items: [] }); // Gá»­i máº£ng rá»—ng Ä‘á»ƒ xÃ³a háº¿t
+        return;
+    }
+
+    // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+    // DÃ¹ng .safeParse trÃªn tá»«ng item vÃ  kiá»ƒm tra
+    for (let i = 0; i < itemsToValidate.length; i++) {
+        const item = itemsToValidate[i];
+        const validationResult = exportItemSchema.safeParse(item);
+        if (!validationResult.success) {
+            // XÃ¡c Ä‘á»‹nh dÃ²ng lá»—i dá»±a trÃªn index trong máº£ng gá»‘c Ä‘á»ƒ thÃ´ng bÃ¡o chÃ­nh xÃ¡c
+            const originalIndex = slipData.items.findIndex(originalItem => originalItem.id === item.id);
+            const errorMessage = `Lá»—i á»Ÿ dÃ²ng ${originalIndex + 1} (MÃ£: ${item.productId}): ${validationResult.error.issues[0].message}`;
+            toast.warn(errorMessage);
+            return;
+        }
+    }
+
     const finalSlipData = {
         ...slipData,
-        items: slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0)
+        items: itemsToValidate // Chá»‰ gá»­i Ä‘i nhá»¯ng dÃ²ng há»£p lá»‡
     };
     onSave(finalSlipData);
   };
@@ -779,7 +1016,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
           <div className="grid-header">Sá»‘ lÃ´</div>
           <div className="grid-header">ÄVT</div>
           <div className="grid-header">Quy cÃ¡ch</div>
-          <div className="grid-header">SL Xuáº¥t</div>
+          <div className="grid-header">SL Xuáº¥t (*)</div>
           <div className="grid-header">Ghi chÃº</div>
           <div className="grid-header">Thao tÃ¡c</div>
 
@@ -824,22 +1061,47 @@ export default EditExportSlipModal;
 
 
 // src/components/EditImportSlipModal.jsx
-import React, { useState, useRef, useEffect } from 'react'; // <-- THÃŠM Má»šI: import useRef, useEffect
+import React, { useState, useRef, useEffect } from 'react';
 import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
-import { formatExpiryDate } from '../utils/dateUtils';
+import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
+import { toast } from 'react-toastify'; 
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// <-- Äá»ŠNH NGHÄ¨A SCHEMA XÃC THá»°C -->
+const importItemSchema = z.object({
+  productId: z.string().trim().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  productName: z.string(), // TÃªn hÃ ng lÃ  readOnly nÃªn khÃ´ng cáº§n check
+  lotNumber: z.string().trim().min(1, { message: "Sá»‘ lÃ´ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  expiryDate: z.string().refine(val => parseDateString(val) !== null, {
+      message: "HSD cÃ³ Ä‘á»‹nh dáº¡ng khÃ´ng há»£p lá»‡ (cáº§n lÃ  dd/mm/yyyy)."
+  }),
+  quantity: z.preprocess(
+      val => Number(String(val).trim()), // Chuyá»ƒn Ä‘á»•i giÃ¡ trá»‹ sang sá»‘
+      z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng pháº£i lÃ  má»™t con sá»‘." })
+       .gt(0, { message: "Sá»‘ lÆ°á»£ng pháº£i lá»›n hÆ¡n 0." })
+  ),
+  // CÃ¡c trÆ°á»ng khÃ¡c lÃ  tÃ¹y chá»n hoáº·c readOnly
+  unit: z.string().optional(),
+  packaging: z.string().optional(),
+  notes: z.string().optional(),
+  storageTemp: z.string().optional(),
+  team: z.string().optional(),
+});
+
+const importSlipSchema = z.object({
+    items: z.array(importItemSchema).min(1, { message: "Phiáº¿u nháº­p pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡." })
+});
+
 
 const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
-  // <-- THÃŠM Má»šI: Ref Ä‘á»ƒ tham chiáº¿u Ä‘áº¿n input cuá»‘i cÃ¹ng
   const lastInputRef = useRef(null);
 
-  // <-- THÃŠM Má»šI: useEffect Ä‘á»ƒ focus vÃ o input cá»§a dÃ²ng má»›i Ä‘Æ°á»£c thÃªm
   useEffect(() => {
     if (lastInputRef.current) {
         lastInputRef.current.focus();
     }
-  }, [slipData.items.length]); // Cháº¡y má»—i khi sá»‘ lÆ°á»£ng dÃ²ng thay Ä‘á»•i
-
+  }, [slipData.items.length]);
 
   const handleExpiryDateBlur = (index, value) => {
     const updatedItems = [...slipData.items];
@@ -871,22 +1133,37 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   };
 
   const handleSaveChanges = () => {
-    onSave(slipData);
+    // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+    const itemsToValidate = slipData.items.filter(item => item.productId); // Chá»‰ validate nhá»¯ng dÃ²ng cÃ³ mÃ£ hÃ ng
+    const validationResult = importSlipSchema.safeParse({ items: itemsToValidate });
+
+    if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0];
+        const errorPath = firstError.path; // vÃ­ dá»¥: ['items', 0, 'lotNumber']
+        const errorIndex = errorPath[1];
+        const errorMessage = `Lá»—i á»Ÿ DÃ²ng ${errorIndex + 1}: ${firstError.message}`;
+        
+        toast.warn(errorMessage);
+        return;
+    }
+
+    // Náº¿u há»£p lá»‡, chá»‰ gá»­i Ä‘i dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c validate
+    onSave({ ...slipData, items: validationResult.data.items });
   };
+
   return (
     <div className="modal-backdrop">
       <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
         <h2>Chá»‰nh sá»­a Phiáº¿u Nháº­p Kho (ID: {slipData.id})</h2>
         <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-          {/* ... grid headers ... */}
-          <div className="grid-header">MÃ£ hÃ ng</div>
+          <div className="grid-header">MÃ£ hÃ ng (*)</div>
           <div className="grid-header">TÃªn hÃ ng</div>
-          <div className="grid-header">Sá»‘ lÃ´</div>
-          <div className="grid-header">HSD</div>
+          <div className="grid-header">Sá»‘ lÃ´ (*)</div>
+          <div className="grid-header">HSD (*)</div>
           <div className="grid-header">ÄVT</div>
           <div className="grid-header">Quy cÃ¡ch</div>
-          <div className="grid-header">Sá»‘ lÆ°á»£ng</div>
+          <div className="grid-header">Sá»‘ lÆ°á»£ng (*)</div>
           <div className="grid-header">Ghi chÃº</div>
           <div className="grid-header">Thao tÃ¡c</div>
 
@@ -897,7 +1174,6 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
                     type="text" 
                     value={item.productId} 
                     onChange={e => handleItemChange(index, 'productId', e.target.value)} 
-                    // <-- THAY Äá»”I: GÃ¡n ref cho Ã´ input cá»§a dÃ²ng cuá»‘i cÃ¹ng
                     ref={index === slipData.items.length - 1 ? lastInputRef : null}
                 />
               </div>
@@ -950,9 +1226,15 @@ export default EditImportSlipModal;
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-
-// Import hÃ m service thay vÃ¬ cÃ¡c hÃ m cá»§a firestore
+import { z } from 'zod'; // <-- IMPORT ZOD
 import { updatePartner } from '../services/partnerService';
+
+// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
+const partnerSchema = z.object({
+  partnerName: z.string().trim().min(1, { message: "TÃªn Äá»‘i tÃ¡c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  partnerType: z.enum(['supplier', 'customer']),
+});
+
 
 const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
     const [partnerData, setPartnerData] = useState({ ...partnerToEdit });
@@ -965,15 +1247,22 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+        const validationResult = partnerSchema.safeParse({
+            partnerName: partnerData.partnerName,
+            partnerType: partnerData.partnerType,
+        });
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
+            return;
+        }
+
         setIsSaving(true);
         try {
-            // Chuáº©n bá»‹ dá»¯ liá»‡u Ä‘á»ƒ cáº­p nháº­t
-            const dataToUpdate = {
-                partnerName: partnerData.partnerName,
-                partnerType: partnerData.partnerType,
-            };
-            // Gá»i hÃ m service Ä‘á»ƒ cáº­p nháº­t
-            await updatePartner(partnerToEdit.id, dataToUpdate);
+            // Gá»­i dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c validate lÃªn service
+            await updatePartner(partnerToEdit.id, validationResult.data);
             
             toast.success('Cáº­p nháº­t thÃ´ng tin Ä‘á»‘i tÃ¡c thÃ nh cÃ´ng!');
             onPartnerUpdated();
@@ -992,7 +1281,7 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
                 <p><strong>MÃ£ Äá»‘i TÃ¡c:</strong> {partnerToEdit.id}</p>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>TÃªn Äá»‘i TÃ¡c</label>
+                        <label>TÃªn Äá»‘i TÃ¡c (*)</label>
                         <input type="text" name="partnerName" value={partnerData.partnerName || ''} onChange={handleChange} required autoFocus />
                     </div>
                     <div className="form-group">
@@ -1025,9 +1314,18 @@ export default EditPartnerModal;
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-
-// Import hÃ m service thay vÃ¬ cÃ¡c hÃ m cá»§a firestore
+import { z } from 'zod'; // <-- IMPORT ZOD
 import { updateProduct } from '../services/productService';
+
+// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
+const productSchema = z.object({
+  productName: z.string().trim().min(1, { message: 'TÃªn hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.' }),
+  unit: z.string().trim().min(1, { message: 'ÄÆ¡n vá»‹ tÃ­nh khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.' }),
+  packaging: z.string().optional(),
+  storageTemp: z.string().optional(),
+  manufacturer: z.string().optional(),
+  team: z.string(),
+});
 
 const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
   const [productData, setProductData] = useState({ ...productToEdit });
@@ -1040,15 +1338,23 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+    const validationResult = productSchema.safeParse(productData);
+    
+    if (!validationResult.success) {
+        toast.warn(validationResult.error.issues[0].message);
+        return;
+    }
+
     setIsSaving(true);
     try {
-      // Gá»i hÃ m service Ä‘á»ƒ cáº­p nháº­t sáº£n pháº©m
-      // Dá»¯ liá»‡u trong state 'productData' Ä‘Ã£ bao gá»“m cÃ¡c trÆ°á»ng cáº§n thiáº¿t
-      await updateProduct(productToEdit.id, productData);
+      // Gá»­i dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c validate lÃªn service
+      await updateProduct(productToEdit.id, validationResult.data);
       
       toast.success('Cáº­p nháº­t sáº£n pháº©m thÃ nh cÃ´ng!');
       onProductUpdated();
-    } catch (error) {
+    } catch (error)      {
       console.error("Lá»—i khi cáº­p nháº­t sáº£n pháº©m: ", error);
       toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t sáº£n pháº©m.');
     } finally {
@@ -1063,12 +1369,12 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
         <p><strong>MÃ£ hÃ ng:</strong> {productToEdit.id}</p>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>TÃªn hÃ ng</label>
+            <label>TÃªn hÃ ng (*)</label>
             <input type="text" name="productName" value={productData.productName || ''} onChange={handleChange} required autoFocus />
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>ÄÆ¡n vá»‹ tÃ­nh</label>
+              <label>ÄÆ¡n vá»‹ tÃ­nh (*)</label>
               <input type="text" name="unit" value={productData.unit || ''} onChange={handleChange} required />
             </div>
             <div className="form-group">
@@ -1287,25 +1593,38 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { toast } from 'react-toastify';
+import { z } from 'zod';
+import styles from './LoginPage.module.css'; // <-- Cáº­p nháº­t import
+
+const loginSchema = z.object({
+    email: z.string().email({ message: "Äá»‹a chá»‰ email khÃ´ng há»£p lá»‡." }),
+    password: z.string().min(6, { message: "Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±." })
+});
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  
   const handleLogin = async (e) => {
     e.preventDefault();
+    const validationResult = loginSchema.safeParse({ email, password });
+
+    if (!validationResult.success) {
+        toast.warn(validationResult.error.issues[0].message);
+        return;
+    }
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('ÄÄƒng nháº­p thÃ nh cÃ´ng!', userCredential.user);
+      const userCredential = await signInWithEmailAndPassword(auth, validationResult.data.email, validationResult.data.password);
       toast.success('ÄÄƒng nháº­p thÃ nh cÃ´ng!');
     } catch (error) {
-      console.error('Lá»—i Ä‘Äƒng nháº­p:', error.code, error.message);
       toast.error('Sai email hoáº·c máº­t kháº©u. Vui lÃ²ng thá»­ láº¡i!');
     }
   };
 
   return (
-    <div className="login-container">
+    // LÆ°u Ã½: class 'loginPageWrapper' Ä‘Æ°á»£c Ã¡p dá»¥ng á»Ÿ file App.jsx
+    <div className={styles.loginContainer}>
       <h2>ÄÄƒng Nháº­p Há»‡ Thá»‘ng</h2>
       <form onSubmit={handleLogin}>
         <div className="form-group">
@@ -1333,6 +1652,51 @@ function LoginPage() {
 }
 
 export default LoginPage;
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\components\LoginPage.module.css ---
+
+
+/* src/components/LoginPage.module.css */
+
+.loginPageWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.loginContainer {
+  padding: 40px;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 350px;
+}
+
+.loginContainer h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #333;
+}
+
+/* NÃºt báº¥m trong form Ä‘Äƒng nháº­p */
+.loginContainer button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.loginContainer button:hover {
+  background-color: #0056b3;
+}
 
 
 
@@ -1480,16 +1844,20 @@ import '../styles/AdminLayout.css';
 const Navbar = () => {
   return (
     <nav className="top-navbar">
-      <div className="navbar-brand">
+  
+     <div className="navbar-brand">
         <h3>Kho PT Biomed</h3>
       </div>
       <ul className="nav-items">
         <li>
-          <NavLink to="/view" title="Xem Sá»• CÃ¡i Tá»“n Kho">
+          {/* ======================= THAY Äá»”I DUY NHáº¤T á»ž ÄÃ‚Y ======================= */}
+          <a href="/view" title="Xem Sá»• CÃ¡i Tá»“n Kho">
             <FiBookOpen className="nav-icon" />
-          </NavLink>
+          </a>
+          {/* ======================================================================= */}
         </li>
         <li>
+        
           <NavLink to="/" title="Báº£ng Ä‘iá»u khiá»ƒn">
             <FiGrid className="nav-icon" />
           </NavLink>
@@ -1499,6 +1867,7 @@ const Navbar = () => {
             <FiArchive className="nav-icon" />
           </NavLink>
         </li>
+      
         <li>
           <NavLink to="/partners" title="Quáº£n lÃ½ Äá»‘i tÃ¡c"><FiUsers className="nav-icon" /></NavLink> {/* <-- LINK Má»šI */}
         </li>
@@ -1507,7 +1876,8 @@ const Navbar = () => {
           <NavLink to="/new-import" title="Táº¡o Phiáº¿u Nháº­p">
             <FiFilePlus className="nav-icon" />
           </NavLink>
-        </li>
+   
+         </li>
         {/* --- THAY Äá»”I: ICON Táº O PHIáº¾U XUáº¤T --- */}
         <li>
           <NavLink to="/new-export" title="Táº¡o Phiáº¿u Xuáº¥t">
@@ -1515,7 +1885,8 @@ const Navbar = () => {
           </NavLink>
         </li>
         {/* --- THAY Äá»”I: ICON DANH SÃCH PHIáº¾U NHáº¬P --- */}
-        <li>
+   
+         <li>
           <NavLink to="/imports" title="Danh sÃ¡ch Phiáº¿u Nháº­p">
             <FiClipboard className="nav-icon" />
           </NavLink>
@@ -1523,7 +1894,8 @@ const Navbar = () => {
         {/* --- THAY Äá»”I: ICON DANH SÃCH PHIáº¾U XUáº¤T --- */}
         <li>
           <NavLink to="/exports" title="Danh sÃ¡ch Phiáº¿u Xuáº¥t">
-            <FiFileText className="nav-icon" />
+     
+           <FiFileText className="nav-icon" />
           </NavLink>
         </li>
         <li>
@@ -1542,6 +1914,7 @@ const Navbar = () => {
           </NavLink>
         </li>
       </ul>
+    
     </nav>
   );
 };
@@ -1620,11 +1993,40 @@ export default Sidebar;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.jsx ---
 
 
-/* src/components/Spinner.css */
-.spinner-container {
+// src/components/Spinner.jsx
+import React from 'react';
+import styles from './Spinner.module.css'; // Cáº­p nháº­t import
+
+const Spinner = ({ forTable = false }) => {
+    if (forTable) {
+        return (
+            <tr className={styles.spinnerTableRow}>
+                <td colSpan="100%">
+                    <div className={styles.spinner}></div>
+                </td>
+            </tr>
+        );
+    }
+
+    return (
+        <div className={styles.spinnerContainer}>
+            <div className={styles.spinner}></div>
+        </div>
+    );
+};
+
+export default Spinner;
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.module.css ---
+
+
+/* src/components/Spinner.module.css */
+.spinnerContainer {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1634,7 +2036,8 @@ export default Sidebar;
 .spinner {
     width: 50px;
     height: 50px;
-    border: 5px solid #f3f3f3; /* Light grey */
+    border: 5px solid #f3f3f3;
+    /* Light grey */
     border-top: 5px solid #007bff; /* Primary color */
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -1646,40 +2049,11 @@ export default Sidebar;
 }
 
 /* DÃ¹ng cho spinner bÃªn trong báº£ng */
-.spinner-table-row td {
+.spinnerTableRow td {
     text-align: center;
     padding: 40px;
     border: none;
 }
-
-
-
---- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.jsx ---
-
-
-// src/components/Spinner.jsx
-import React from 'react';
-import './Spinner.css';
-
-const Spinner = ({ forTable = false }) => {
-    if (forTable) {
-        return (
-            <tr className="spinner-table-row">
-                <td colSpan="100%"> {/* colSpan lá»›n Ä‘á»ƒ hoáº¡t Ä‘á»™ng vá»›i má»i báº£ng */}
-                    <div className="spinner"></div>
-                </td>
-            </tr>
-        );
-    }
-
-    return (
-        <div className="spinner-container">
-            <div className="spinner"></div>
-        </div>
-    );
-};
-
-export default Spinner;
 
 
 
@@ -1722,6 +2096,77 @@ const StatusBadge = ({ status }) => {
 // trÃ¡nh viá»‡c re-render khÃ´ng cáº§n thiáº¿t khi props khÃ´ng thay Ä‘á»•i.
 export default React.memo(StatusBadge);
 
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\components\StatusBadge.test.jsx ---
+
+
+// src/components/StatusBadge.test.jsx
+
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import StatusBadge from './StatusBadge';
+import React from 'react';
+
+// NhÃ³m cÃ¡c bÃ i test cho component StatusBadge
+describe('Component: StatusBadge', () => {
+
+    it('hiá»ƒn thá»‹ Ä‘Ãºng text vÃ  class cho tráº¡ng thÃ¡i "pending"', () => {
+        // B1: Render component vá»›i props cáº§n test
+        render(<StatusBadge status="pending" />);
+        
+        // B2: TÃ¬m element trong DOM áº£o dá»±a trÃªn ná»™i dung text cá»§a nÃ³
+        const badgeElement = screen.getByText('Äang chá»');
+        
+        // B3: Kiá»ƒm tra (Assert) xem element cÃ³ tá»“n táº¡i khÃ´ng vÃ  cÃ³ Ä‘Ãºng class CSS khÃ´ng
+        expect(badgeElement).toBeInTheDocument();
+        expect(badgeElement).toHaveClass('status-badge');
+        expect(badgeElement).toHaveClass('status-pending');
+    });
+
+    it('hiá»ƒn thá»‹ Ä‘Ãºng text vÃ  class cho tráº¡ng thÃ¡i "completed"', () => {
+        render(<StatusBadge status="completed" />);
+        const badgeElement = screen.getByText('HoÃ n thÃ nh');
+        
+        expect(badgeElement).toBeInTheDocument();
+        expect(badgeElement).toHaveClass('status-completed');
+    });
+
+    it('hiá»ƒn thá»‹ Ä‘Ãºng text vÃ  class cho tráº¡ng thÃ¡i "cancelled"', () => {
+        render(<StatusBadge status="cancelled" />);
+        const badgeElement = screen.getByText('ÄÃ£ há»§y');
+
+        expect(badgeElement).toBeInTheDocument();
+        expect(badgeElement).toHaveClass('status-cancelled');
+    });
+    
+    it('hiá»ƒn thá»‹ Ä‘Ãºng text vÃ  class cho tráº¡ng thÃ¡i "in_progress"', () => {
+        render(<StatusBadge status="in_progress" />);
+        const badgeElement = screen.getByText('Äang thá»±c hiá»‡n');
+
+        expect(badgeElement).toBeInTheDocument();
+        // TÃ¡i sá»­ dá»¥ng style cá»§a pending
+        expect(badgeElement).toHaveClass('status-pending');
+    });
+    
+    it('hiá»ƒn thá»‹ Ä‘Ãºng text vÃ  class cho tráº¡ng thÃ¡i "adjusted"', () => {
+        render(<StatusBadge status="adjusted" />);
+        const badgeElement = screen.getByText('ÄÃ£ Ä‘iá»u chá»‰nh');
+
+        expect(badgeElement).toBeInTheDocument();
+        expect(badgeElement).toHaveClass('status-adjusted');
+    });
+
+    it('hiá»ƒn thá»‹ chÃ­nh giÃ¡ trá»‹ status náº¿u khÃ´ng khá»›p vá»›i case nÃ o', () => {
+        const randomStatus = "unknown_status";
+        render(<StatusBadge status={randomStatus} />);
+        const badgeElement = screen.getByText(randomStatus);
+
+        expect(badgeElement).toBeInTheDocument();
+        expect(badgeElement).toHaveClass(`status-${randomStatus}`);
+    });
+});
 
 
 
@@ -1869,7 +2314,7 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
     
     return (
         <div className="modal-backdrop">
-            <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
+            <div className="modal-content printable-area export-slip" style={{ width: '90vw', maxWidth: '1200px' }}>
                 <h2>Chi Tiáº¿t Phiáº¿u Xuáº¥t Kho</h2>
                 
                 <div className="compact-info-grid">
@@ -1950,7 +2395,7 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
 
     return (
         <div className="modal-backdrop">
-            <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
+            <div className="modal-content printable-area import-slip" style={{ width: '90vw', maxWidth: '1200px' }}>
                 <h2>Chi Tiáº¿t Phiáº¿u Nháº­p Kho</h2>
                 
                 <div className="compact-info-grid">
@@ -2077,102 +2522,211 @@ export const useAuth = () => {
 
 // src/hooks/useFirestorePagination.js
 import { useState, useEffect, useCallback } from 'react';
-import { getDocs, query, startAfter, limit, endBefore, limitToLast } from 'firebase/firestore'; // ThÃªm endBefore vÃ  limitToLast
+import { getDocs, query, startAfter, limit, endBefore, limitToLast } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 export const useFirestorePagination = (baseQuery, pageSize) => {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isLastPage, setIsLastPage] = useState(false);
     
-    // Sá»­a Ä‘á»•i: pageStartCursors sáº½ lÆ°u con trá» Äáº¦U TIÃŠN cá»§a má»—i trang
-    const [pageStartCursors, setPageStartCursors] = useState([null]); // Trang 1 luÃ´n báº¯t Ä‘áº§u tá»« null
-    const [currentPage, setCurrentPage] = useState(1);
+    // State má»›i Ä‘á»ƒ lÆ°u con trá»: má»—i pháº§n tá»­ lÃ  [con trá» Ä‘áº§u trang, con trá» cuá»‘i trang]
+    const [pageCursors, setPageCursors] = useState([]); 
+    const [currentPageIndex, setCurrentPageIndex] = useState(0);
+    const [isLastPage, setIsLastPage] = useState(false);
 
-    const fetchPage = useCallback(async (pageNumber, direction) => {
+    const fetchPage = useCallback(async (pageIndex, direction) => {
         setLoading(true);
         try {
             let pageQuery;
-            const cursor = pageStartCursors[pageNumber - 1];
+            const currentCursor = pageCursors[pageIndex];
 
             if (direction === 'next') {
-                pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
+                const lastVisible = pageCursors[pageIndex - 1]?.[1]; // Láº¥y con trá» cuá»‘i cá»§a trang trÆ°á»›c
+                pageQuery = query(baseQuery, startAfter(lastVisible), limit(pageSize));
             } else if (direction === 'prev') {
-                 // Vá»›i prev, chÃºng ta cáº§n query ngÆ°á»£c láº¡i, nhÆ°ng Ä‘á»ƒ Ä‘Æ¡n giáº£n vÃ  hiá»‡u quáº£ hÆ¡n,
-                 // ta sáº½ query xuÃ´i tá»« con trá» Ä‘Ã£ lÆ°u.
-                pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
-                // Náº¿u cursor lÃ  null (tá»©c lÃ  quay vá» trang 1), khÃ´ng cáº§n startAfter
-                if (!cursor) {
-                    pageQuery = query(baseQuery, limit(pageSize));
-                }
-            }
-             else { // 'first'
+                const firstVisible = pageCursors[pageIndex + 1]?.[0]; // Láº¥y con trá» Ä‘áº§u cá»§a trang sau
+                pageQuery = query(baseQuery, endBefore(firstVisible), limitToLast(pageSize));
+            } else { // 'first' or 'reset'
                 pageQuery = query(baseQuery, limit(pageSize));
             }
 
             const docSnapshots = await getDocs(pageQuery);
             const list = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            if (!docSnapshots.empty) {
+                const firstCursor = docSnapshots.docs[0];
+                const lastCursor = docSnapshots.docs[docSnapshots.docs.length - 1];
+
+                setPageCursors(prev => {
+                    const newCursors = [...prev];
+                    newCursors[pageIndex] = [firstCursor, lastCursor];
+                    return newCursors;
+                });
+                
+                // Kiá»ƒm tra xem cÃ³ pháº£i lÃ  trang cuá»‘i cÃ¹ng khÃ´ng
+                const checkLastPageQuery = query(baseQuery, startAfter(lastCursor), limit(1));
+                const nextDoc = await getDocs(checkLastPageQuery);
+                setIsLastPage(nextDoc.empty);
+
+            } else {
+                 if (direction === 'next') setIsLastPage(true);
+            }
             
             setDocuments(list);
 
-            if (direction === 'next' && list.length > 0) {
-                const lastVisible = docSnapshots.docs[docSnapshots.docs.length - 1];
-                // LÆ°u con trá» cuá»‘i cÃ¹ng cá»§a trang hiá»‡n táº¡i Ä‘á»ƒ lÃ m Ä‘iá»ƒm báº¯t Ä‘áº§u cho trang tiáº¿p theo
-                setPageStartCursors(prev => {
-                    const newCursors = [...prev];
-                    newCursors[pageNumber] = lastVisible; // Con trá» báº¯t Ä‘áº§u cá»§a trang Káº¾ TIáº¾P
-                    return newCursors;
-                });
-            }
-
-            setIsLastPage(docSnapshots.docs.length < pageSize);
         } catch (error) {
             console.error("Lá»—i khi phÃ¢n trang Firestore: ", error);
             toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u trang. Vui lÃ²ng kiá»ƒm tra Console (F12).");
         } finally {
             setLoading(false);
         }
-    }, [baseQuery, pageSize, pageStartCursors]);
+    }, [baseQuery, pageSize, pageCursors]);
 
+    // Effect nÃ y sáº½ cháº¡y khi baseQuery thay Ä‘á»•i (vÃ­ dá»¥: khi tÃ¬m kiáº¿m)
     useEffect(() => {
-        setCurrentPage(1);
-        setPageStartCursors([null]);
-        fetchPage(1, 'first');
-    }, [baseQuery]); // Chá»‰ cháº¡y láº¡i khi query cÆ¡ sá»Ÿ thay Ä‘á»•i
+        setDocuments([]);
+        setPageCursors([]);
+        setCurrentPageIndex(0);
+        setIsLastPage(false);
+        fetchPage(0, 'first');
+    }, [baseQuery]);
 
     const nextPage = () => {
         if (!isLastPage) {
-            const nextPageNumber = currentPage + 1;
-            setCurrentPage(nextPageNumber);
-            fetchPage(nextPageNumber, 'next');
+            const nextPageIndex = currentPageIndex + 1;
+            setCurrentPageIndex(nextPageIndex);
+            fetchPage(nextPageIndex, 'next');
         }
     };
 
     const prevPage = () => {
-         if (currentPage > 1) {
-            const prevPageNumber = currentPage - 1;
-            setCurrentPage(prevPageNumber);
-            // ChÃºng ta khÃ´ng cáº§n xÃ³a con trá» cá»§a trang hiá»‡n táº¡i, chá»‰ cáº§n táº£i láº¡i trang trÆ°á»›c Ä‘Ã³
-            fetchPage(prevPageNumber, 'prev');
+         if (currentPageIndex > 0) {
+            const prevPageIndex = currentPageIndex - 1;
+            setCurrentPageIndex(prevPageIndex);
+            fetchPage(prevPageIndex, 'prev');
         }
     };
     
+    // HÃ m reset Ä‘á»ƒ táº£i láº¡i trang Ä‘áº§u tiÃªn
     const reset = () => {
-        setCurrentPage(1);
-        setPageStartCursors([null]);
-        fetchPage(1, 'first');
+        setCurrentPageIndex(0);
+        setPageCursors([]);
+        fetchPage(0, 'reset');
     };
 
     return {
         documents,
         loading,
         isLastPage,
-        page: currentPage, // Tráº£ vá» trang hiá»‡n táº¡i
+        page: currentPageIndex + 1, // Tráº£ vá» sá»‘ trang thÃ¢n thiá»‡n vá»›i ngÆ°á»i dÃ¹ng (báº¯t Ä‘áº§u tá»« 1)
         nextPage,
         prevPage,
         reset
     };
 };
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
+
+
+// src/hooks/useFirestorePagination.test.js
+import { renderHook, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useFirestorePagination } from './useFirestorePagination';
+
+// Cho Vitest biáº¿t ráº±ng má»—i khi cÃ³ code nÃ o import 'firebase/firestore',
+// nÃ³ sáº½ trá» Ä‘áº¿n file mock cá»§a chÃºng ta.
+vi.mock('firebase/firestore', async () => {
+  const mocks = await vi.importActual('../../src/test/__mocks__/firebaseFirestore.js');
+  return mocks;
+});
+
+// Import cÃ¡c hÃ m Ä‘Ã£ Ä‘Æ°á»£c mock
+import { getDocs, startAfter, setupMockData } from 'firebase/firestore';
+
+describe('Hook: useFirestorePagination', () => {
+
+    const mockBaseQuery = { type: 'baseQuery' };
+    const pageSize = 2;
+
+    // Reset cÃ¡c mock trÆ°á»›c má»—i bÃ i test Ä‘á»ƒ Ä‘áº£m báº£o chÃºng Ä‘á»™c láº­p
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('nÃªn táº£i trang Ä‘áº§u tiÃªn má»™t cÃ¡ch chÃ­nh xÃ¡c', async () => {
+        // Arrange: Chuáº©n bá»‹ dá»¯ liá»‡u máº«u cho trang 1
+        setupMockData(1);
+
+        // Act: Render hook
+        const { result } = renderHook(() => useFirestorePagination(mockBaseQuery, pageSize));
+
+        // Assert: Kiá»ƒm tra tráº¡ng thÃ¡i loading ban Ä‘áº§u
+        expect(result.current.loading).toBe(true);
+        
+        // Chá» cho Ä‘áº¿n khi hook háº¿t loading
+        await waitFor(() => {
+            expect(result.current.loading).toBe(false);
+        });
+        
+        // Assert: Kiá»ƒm tra káº¿t quáº£ sau khi táº£i xong
+        expect(result.current.documents).toHaveLength(2);
+        expect(result.current.documents[0].id).toBe('partner-01');
+        expect(result.current.page).toBe(1);
+        expect(result.current.isLastPage).toBe(false);
+        expect(getDocs).toHaveBeenCalledTimes(2); // 1 láº§n cho data, 1 láº§n Ä‘á»ƒ check isLastPage
+    });
+
+    it('nÃªn táº£i trang tiáº¿p theo khi gá»i hÃ m nextPage', async () => {
+        // Arrange: Setup trang 1
+        setupMockData(1);
+        const { result } = renderHook(() => useFirestorePagination(mockBaseQuery, pageSize));
+        await waitFor(() => expect(result.current.loading).toBe(false));
+        
+        // Setup dá»¯ liá»‡u cho trang 2
+        setupMockData(2);
+
+        // Act: Gá»i hÃ m nextPage
+        act(() => {
+            result.current.nextPage();
+        });
+        
+        // Assert: Chá» loading vÃ  kiá»ƒm tra káº¿t quáº£
+        expect(result.current.loading).toBe(true);
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        expect(result.current.documents).toHaveLength(2);
+        expect(result.current.documents[0].id).toBe('partner-03');
+        expect(result.current.page).toBe(2);
+        expect(startAfter).toHaveBeenCalled(); // Kiá»ƒm tra xem hÃ m startAfter cÃ³ Ä‘Æ°á»£c gá»i khÃ´ng
+    });
+    
+    it('nÃªn reset vá» trang Ä‘áº§u tiÃªn khi gá»i hÃ m reset', async () => {
+        // Arrange: Táº£i trang 1, rá»“i táº£i trang 2
+        setupMockData(1);
+        const { result } = renderHook(() => useFirestorePagination(mockBaseQuery, pageSize));
+        await waitFor(() => expect(result.current.loading).toBe(false));
+        
+        setupMockData(2);
+        act(() => { result.current.nextPage(); });
+        await waitFor(() => expect(result.current.loading).toBe(false));
+        expect(result.current.page).toBe(2); // Äáº£m báº£o Ä‘ang á»Ÿ trang 2
+
+        // Setup láº¡i dá»¯ liá»‡u cho trang 1
+        setupMockData(1);
+        
+        // Act: Gá»i hÃ m reset
+        act(() => {
+            result.current.reset();
+        });
+
+        // Assert: Chá» loading vÃ  kiá»ƒm tra Ä‘Ã£ vá» trang 1
+        await waitFor(() => expect(result.current.loading).toBe(false));
+        expect(result.current.documents[0].id).toBe('partner-01');
+        expect(result.current.page).toBe(1);
+    });
+});
 
 
 
@@ -2184,15 +2738,17 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { FiArchive, FiAlertTriangle, FiFileText } from 'react-icons/fi';
-import '../styles/DashboardPage.css';
 import Spinner from '../components/Spinner';
 
+// Cáº­p nháº­t import vÃ  Ä‘á»•i tÃªn class CSS
+import styles from '../styles/DashboardPage.module.css';
+
 const DashboardCard = ({ icon, tieuDe, giaTri, mauSac }) => (
-  <div className="dashboard-card" style={{ borderLeftColor: mauSac }}>
-    <div className="card-icon" style={{ backgroundColor: mauSac }}>{icon}</div>
-    <div className="card-info">
-      <div className="card-title">{tieuDe}</div>
-      <div className="card-value">{giaTri}</div>
+  <div className={styles.dashboardCard} style={{ borderLeftColor: mauSac }}>
+    <div className={styles.cardIcon} style={{ backgroundColor: mauSac }}>{icon}</div>
+    <div className={styles.cardInfo}>
+      <div className={styles.cardTitle}>{tieuDe}</div>
+      <div className={styles.cardValue}>{giaTri}</div>
     </div>
   </div>
 );
@@ -2241,9 +2797,9 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className={styles.dashboardContainer}>
       <h1>Báº£ng Ä‘iá»u khiá»ƒn</h1>
-      <div className="cards-grid">
+      <div className={styles.cardsGrid}>
         <DashboardCard icon={<FiArchive />} tieuDe="Tá»•ng sá»‘ mÃ£ hÃ ng" giaTri={thongKe.tongSanPham} mauSac="#007bff" />
         <DashboardCard icon={<FiAlertTriangle />} tieuDe="Sáº¯p háº¿t háº¡n (30 ngÃ y)" giaTri={thongKe.sapHetHan} mauSac="#ffc107" />
         <DashboardCard icon={<FiFileText />} tieuDe="Phiáº¿u chá» duyá»‡t" giaTri={thongKe.phieuChoDuyet} mauSac="#6c757d" />
@@ -2268,10 +2824,10 @@ import { toast } from 'react-toastify';
 import Papa from 'papaparse';
 import { FiUpload, FiDownload, FiInfo } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
-import '../styles/DataImportPage.css';
+import styles from '../styles/DataImportPage.module.css'; // Cáº­p nháº­t import
 
 const DataImportPage = () => {
-    const [importType, setImportType] = useState('inventory'); // <-- THAY Äá»”I: Máº·c Ä‘á»‹nh lÃ  import tá»•ng há»£p
+    const [importType, setImportType] = useState('inventory');
     const [pastedData, setPastedData] = useState('');
     const [isImporting, setIsImporting] = useState(false);
     const [importLog, setImportLog] = useState([]);
@@ -2328,36 +2884,30 @@ const DataImportPage = () => {
         setIsImporting(true);
         setImportLog([]);
         logMessage(`PhÃ¡t hiá»‡n ${data.length} dÃ²ng. Báº¯t Ä‘áº§u xá»­ lÃ½ cho loáº¡i: ${importType}...`);
-
         try {
-            const MAX_BATCH_SIZE = 499; // Giá»›i háº¡n an toÃ n cá»§a Firestore lÃ  500 thao tÃ¡c/batch
+            const MAX_BATCH_SIZE = 499;
             let batch = writeBatch(db);
             let operationCount = 0;
             let totalSuccess = 0;
             
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
-
-                // --- LOGIC Gá»˜P Sáº¢N PHáº¨M & Tá»’N KHO ---
                 if (importType === 'inventory') {
-                    // 1. Kiá»ƒm tra cÃ¡c trÆ°á»ng báº¯t buá»™c
                     if (!row.productId || !row.productName || !row.lotNumber || !row.quantityRemaining) {
                         logMessage(`Bá» qua dÃ²ng ${i + 2}: Thiáº¿u thÃ´ng tin báº¯t buá»™c (MÃ£, TÃªn, LÃ´, SL Tá»“n).`, 'warn');
                         continue;
                     }
                     
                     const expiryDate = parseDateString(row.expiryDate);
-                    if (!expiryDate && row.expiryDate) { // Chá»‰ bÃ¡o lá»—i náº¿u cÃ³ nháº­p HSD nhÆ°ng sai Ä‘á»‹nh dáº¡ng
+                    if (!expiryDate && row.expiryDate) {
                         logMessage(`Bá» qua dÃ²ng ${i + 2}: Sai Ä‘á»‹nh dáº¡ng HSD (cáº§n lÃ  dd/mm/yyyy).`, 'warn');
                         continue;
                     }
 
                     const productId = row.productId.trim().toUpperCase();
-
-                    // 2. Tá»± Ä‘á»™ng táº¡o sáº£n pháº©m má»›i náº¿u chÆ°a tá»“n táº¡i
                     const productRef = doc(db, 'products', productId);
                     const productSnap = await getDoc(productRef);
-                    
+
                     if (!productSnap.exists()) {
                         const newProductData = {
                             productName: row.productName,
@@ -2372,7 +2922,6 @@ const DataImportPage = () => {
                         logMessage(`ÄÃ£ táº¡o sáº£n pháº©m má»›i: ${productId}`);
                     }
                     
-                    // 3. LuÃ´n táº¡o má»™t lÃ´ hÃ ng má»›i cho tá»“n Ä‘áº§u ká»³
                     const inventoryRef = doc(collection(db, 'inventory_lots'));
                     const inventoryData = {
                         productId: productId,
@@ -2393,7 +2942,6 @@ const DataImportPage = () => {
                     operationCount++;
                     totalSuccess++;
                 
-                // --- LOGIC IMPORT Äá»I TÃC (Giá»¯ nguyÃªn) ---
                 } else if (importType === 'partners') {
                     if (!row.partnerId) {
                         logMessage(`Bá» qua dÃ²ng ${i + 2}: Thiáº¿u partnerId.`, 'warn');
@@ -2410,7 +2958,6 @@ const DataImportPage = () => {
                     totalSuccess++;
                 }
 
-                // Thá»±c thi batch khi Ä‘áº§y
                 if (operationCount >= MAX_BATCH_SIZE) {
                     await batch.commit();
                     logMessage(`ÄÃ£ ghi thÃ nh cÃ´ng ${operationCount} thao tÃ¡c...`);
@@ -2419,7 +2966,6 @@ const DataImportPage = () => {
                 }
             }
 
-            // Thá»±c thi batch cuá»‘i cÃ¹ng
             if (operationCount > 0) {
                 await batch.commit();
                 logMessage(`ÄÃ£ ghi thÃ nh cÃ´ng ${operationCount} thao tÃ¡c cuá»‘i cÃ¹ng.`);
@@ -2440,12 +2986,11 @@ const DataImportPage = () => {
     
     const downloadTemplate = () => {
         let headers, filename, sampleData;
-        
         if (importType === 'partners') {
             headers = "partnerId*,partnerName*,partnerType";
             filename = "mau_import_doi_tac.csv";
             sampleData = "NCC-01,CÃ”NG TY DÆ¯á»¢C PHáº¨M ABC,supplier\nKH-01,Bá»†NH VIá»†N XYZ,customer";
-        } else { // Máº«u chung cho Sáº£n pháº©m + Tá»“n kho
+        } else {
             headers = "productId*,productName*,lotNumber*,quantityRemaining*,expiryDate,unit,packaging,storageTemp,team,manufacturer";
             filename = "mau_import_san_pham_ton_kho.csv";
             sampleData = "SP001,BÃ”NG Cá»’N ALKOCIDE,L202501,100,31/12/2025,Há»™p,100 miáº¿ng/há»™p,Nhiá»‡t Ä‘á»™ phÃ²ng,MED,DentaLife\nSP002,GÄ‚NG TAY Y Táº¾,GT001,50,,Há»™p,50 Ä‘Ã´i/há»™p,,MED,";
@@ -2462,18 +3007,17 @@ const DataImportPage = () => {
     };
 
     return (
-        <div className="data-import-page">
+        <div className={styles.dataImportPage}>
             <div className="page-header">
                 <h1>Import Dá»¯ Liá»‡u HÃ ng Loáº¡t</h1>
             </div>
 
-            <div className="import-container">
-                <div className="import-controls">
+            <div className={styles.importContainer}>
+                <div className={styles.importControls}>
                     <h3>1. Chá»n loáº¡i dá»¯ liá»‡u</h3>
-                    <div className="import-type-selector">
-                        {/* <-- THAY Äá»”I: Gá»™p Sáº£n pháº©m vÃ  Tá»“n kho lÃ m má»™t --> */}
-                        <button onClick={() => setImportType('inventory')} className={importType === 'inventory' ? 'active' : ''}>Sáº£n pháº©m & Tá»“n kho</button>
-                        <button onClick={() => setImportType('partners')} className={importType === 'partners' ? 'active' : ''}>Äá»‘i tÃ¡c</button>
+                    <div className={styles.importTypeSelector}>
+                        <button onClick={() => setImportType('inventory')} className={importType === 'inventory' ? styles.active : ''}>Sáº£n pháº©m & Tá»“n kho</button>
+                        <button onClick={() => setImportType('partners')} className={importType === 'partners' ? styles.active : ''}>Äá»‘i tÃ¡c</button>
                     </div>
 
                     <h3>2. Chuáº©n bá»‹ dá»¯ liá»‡u</h3>
@@ -2482,13 +3026,12 @@ const DataImportPage = () => {
                         <FiDownload /> Táº£i File Máº«u
                     </button>
                     
-                    <div className="import-instructions">
+                    <div className={styles.importInstructions}>
                          <FiInfo /> 
                          <div>
                             <strong>LÆ°u Ã½ quan trá»ng:</strong>
                             <ul>
                                 <li>Cá»™t tiÃªu Ä‘á» (cÃ³ dáº¥u `*`) lÃ  báº¯t buá»™c pháº£i cÃ³ dá»¯ liá»‡u.</li>
-                                {/* <-- THAY Äá»”I: Giáº£i thÃ­ch logic má»›i --> */}
                                 <li>Náº¿u `productId` chÆ°a cÃ³, má»™t sáº£n pháº©m má»›i sáº½ Ä‘Æ°á»£c tá»± Ä‘á»™ng táº¡o.</li>
                                 <li>Má»—i dÃ²ng trong file sáº½ táº¡o ra má»™t lÃ´ hÃ ng tá»“n kho má»›i.</li>
                                 <li>Náº¿u `partnerId` Ä‘Ã£ tá»“n táº¡i, dá»¯ liá»‡u cÅ© sáº½ bá»‹ **ghi Ä‘Ã¨**.</li>
@@ -2497,14 +3040,13 @@ const DataImportPage = () => {
                     </div>
                 </div>
 
-                <div className="import-actions">
+                <div className={styles.importActions}>
                     <h3>3. Táº£i lÃªn vÃ  thá»±c hiá»‡n</h3>
-                     {/* ... Giao diá»‡n táº£i lÃªn vÃ  nháº­t kÃ½ giá»¯ nguyÃªn ... */}
-                     <div className="import-method">
+                     <div className={styles.importMethod}>
                         <h4>CÃ¡ch 1: Táº£i lÃªn file .csv</h4>
                         <input type="file" accept=".csv" onChange={handleFileImport} disabled={isImporting} />
                     </div>
-                     <div className="import-method">
+                     <div className={styles.importMethod}>
                         <h4>CÃ¡ch 2: DÃ¡n dá»¯ liá»‡u tá»« Excel/Google Sheets</h4>
                         <textarea 
                             rows="8" 
@@ -2517,12 +3059,12 @@ const DataImportPage = () => {
                             <FiUpload /> {isImporting ? 'Äang import...' : 'Import tá»« dá»¯ liá»‡u Ä‘Ã£ dÃ¡n'}
                         </button>
                     </div>
-                    <div className="import-log-container">
+                    <div className={styles.importLogContainer}>
                         <h4>Nháº­t kÃ½ Import</h4>
-                        <div className="import-log">
+                        <div className={styles.importLog}>
                             {importLog.length === 0 && <p>ChÆ°a cÃ³ hoáº¡t Ä‘á»™ng nÃ o.</p>}
                             {importLog.map((log, index) => (
-                                <p key={index} className={`log-item log-${log.type}`}>
+                                <p key={index} className={`${styles.logItem} ${styles[`log-${log.type}`]}`}>
                                     <span>[{log.time}]</span> {log.message}
                                 </p>
                             ))}
@@ -3475,7 +4017,7 @@ const InventorySummaryPage = () => {
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
                                             <td data-label="MÃ£ hÃ ng"><strong>{product.id}</strong></td>
-                                            <td data-label="TÃªn hÃ ng" style={{textAlign: 'left'}}>{product.productName}</td>
+                                            <td data-label="TÃªn hÃ ng">{product.productName}</td>
                                             <td data-label="HSD Gáº§n Nháº¥t">{formatDate(product.nearestExpiryDate)}</td>
                                             <td data-label="Tá»•ng Tá»“n"><strong>{product.totalRemaining}</strong></td>
                                             <td data-label="ÄVT">{product.unit}</td>
@@ -3783,6 +4325,25 @@ import { FiXCircle, FiChevronDown } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// Äá»‹nh nghÄ©a Schema xÃ¡c thá»±c cho tá»«ng máº·t hÃ ng vÃ  toÃ n bá»™ phiáº¿u xuáº¥t
+const exportItemSchema = z.object({
+    productId: z.string().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+    selectedLotId: z.string().min(1, { message: "Vui lÃ²ng chá»n má»™t lÃ´ hÃ ng." }),
+    quantityToExport: z.preprocess(
+        val => Number(val), // Chuyá»ƒn Ä‘á»•i giÃ¡ trá»‹ sang sá»‘ trÆ°á»›c khi xÃ¡c thá»±c
+        z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
+         .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
+    )
+});
+
+const exportSlipSchema = z.object({
+    customerId: z.string().min(1, { message: "MÃ£ khÃ¡ch hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+    customerName: z.string().min(1, { message: "KhÃ´ng tÃ¬m tháº¥y tÃªn khÃ¡ch hÃ ng tÆ°Æ¡ng á»©ng." }),
+    items: z.array(exportItemSchema).min(1, { message: "Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng." })
+});
+
 
 const NewExportPage = () => {
     const today = new Date();
@@ -3834,23 +4395,42 @@ const NewExportPage = () => {
     };
 
     const getValidSlipData = () => {
-        if (!customerId || !customerName) {
-            toast.warn('Vui lÃ²ng nháº­p MÃ£ KhÃ¡ch hÃ ng há»£p lá»‡.');
+        const validItems = items.filter(item => item.productId && item.selectedLotId && item.quantityToExport);
+        
+        const slipToValidate = {
+            customerId: customerId.trim(),
+            customerName: customerName.trim(),
+            items: validItems
+        };
+
+        const validationResult = exportSlipSchema.safeParse(slipToValidate);
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return null;
         }
-        const validItems = items.filter(item => item.selectedLotId && Number(item.quantityToExport) > 0);
-        if (validItems.length === 0) {
-            toast.warn('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng vÃ  nháº­p sá»‘ lÆ°á»£ng xuáº¥t.');
-            return null;
-        }
+
         return {
-            exportDate, customerId: customerId.toUpperCase(), customer: customerName,
-            description, items: validItems.map(item => ({
-                productId: item.productId, productName: item.productName, lotId: item.selectedLotId,
-                lotNumber: item.lotNumber, expiryDate: item.expiryDate, unit: item.unit,
-                packaging: item.packaging, storageTemp: item.storageTemp,
-                quantityToExport: Number(item.quantityToExport), notes: item.notes
-            })), createdAt: serverTimestamp()
+            exportDate, 
+            customerId: customerId.toUpperCase(), 
+            customer: customerName,
+            description, 
+            items: validationResult.data.items.map(item => {
+                const fullItemData = items.find(i => i.selectedLotId === item.selectedLotId);
+                return {
+                    productId: item.productId,
+                    productName: fullItemData?.productName || '',
+                    lotId: item.selectedLotId,
+                    lotNumber: fullItemData?.lotNumber || '',
+                    expiryDate: fullItemData?.expiryDate || '',
+                    unit: fullItemData?.unit || '',
+                    packaging: fullItemData?.packaging || '',
+                    storageTemp: fullItemData?.storageTemp || '',
+                    quantityToExport: item.quantityToExport,
+                    notes: fullItemData?.notes || ''
+                }
+            }), 
+            createdAt: serverTimestamp()
         };
     };
 
@@ -3862,7 +4442,7 @@ const NewExportPage = () => {
             quantityRemaining: 0, quantityToExport: '', notes: '' 
         }]);
     };
-
+    
     const handleSaveDraft = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -3906,15 +4486,16 @@ const NewExportPage = () => {
     };
 
     const promptForDirectExport = () => {
-        if (!getValidSlipData()) return;
-        setConfirmModal({
-            isOpen: true,
-            title: "XÃ¡c nháº­n xuáº¥t kho?",
-            message: "HÃ nh Ä‘á»™ng nÃ y sáº½ trá»« tá»“n kho ngay láº­p tá»©c. Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c?",
-            onConfirm: handleDirectExport
-        });
+        if (getValidSlipData()) { // Chá»‰ gá»i getValidSlipData má»™t láº§n Ä‘á»ƒ hiá»ƒn thá»‹ toast náº¿u cÃ³ lá»—i
+             setConfirmModal({
+                isOpen: true,
+                title: "XÃ¡c nháº­n xuáº¥t kho?",
+                message: "HÃ nh Ä‘á»™ng nÃ y sáº½ trá»« tá»“n kho ngay láº­p tá»©c. Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c?",
+                onConfirm: handleDirectExport
+            });
+        }
     };
-
+    
     const handleProductSearch = async (index, productId) => {
         if (!productId) return;
         const newItems = [...items];
@@ -3941,6 +4522,7 @@ const NewExportPage = () => {
           } else {
             let foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
+            
             currentItem.availableLots = foundLots;
             setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
           }
@@ -3968,7 +4550,6 @@ const NewExportPage = () => {
         }
         setItems(newItems);
     };
-
     const handleItemChange = (index, field, value) => {
         const newItems = [...items];
         if (field === 'quantityToExport') {
@@ -3992,14 +4573,14 @@ const NewExportPage = () => {
     
     const addNewRow = () => {
         setItems([...items, { 
-            id: Date.now(), 
+             id: Date.now(), 
             productId: '', 
             productName: '', 
             unit: '', 
             packaging: '', 
             storageTemp: '', 
             availableLots: [], 
-            selectedLotId: '', 
+             selectedLotId: '', 
             lotNumber: '', 
             displayLotText: '', 
             expiryDate: '', 
@@ -4035,12 +4616,12 @@ const NewExportPage = () => {
             <h1>Táº¡o Phiáº¿u Xuáº¥t Kho</h1>
             <div className="form-section">
                 <div className="form-row">
-                    <div className="form-group">
+                     <div className="form-group">
                         <label>NgÃ y xuáº¥t</label>
-                        <input type="text" value={exportDate} onChange={(e) => setExportDate(e.target.value)} />
+                        <input type="text" value={exportDate} readOnly style={{backgroundColor: '#f0f0f0'}} />
                     </div>
                     <div className="form-group">
-                        <label>MÃ£ KhÃ¡ch HÃ ng</label>
+                         <label>MÃ£ KhÃ¡ch HÃ ng (*)</label>
                         <input
                             list="customers-list"
                             type="text"
@@ -4053,87 +4634,88 @@ const NewExportPage = () => {
                             {allCustomers.map(cus => (
                                 <option key={cus.id} value={cus.id}>
                                     {cus.partnerName}
-                                </option>
+                                 </option>
                             ))}
                         </datalist>
                     </div>
                     <div className="form-group">
-                        <label>TÃªn KhÃ¡ch HÃ ng / NÆ¡i nháº­n</label>
+                         <label>TÃªn KhÃ¡ch HÃ ng / NÆ¡i nháº­n (*)</label>
                         <input
                             type="text"
                             value={customerName}
                             readOnly
                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
-                    </div>
+                     </div>
                 </div>
                 <div className="form-group">
                     <label>Diá»…n giáº£i</label>
                     <textarea rows="2" placeholder="Ghi chÃº cho phiáº¿u xuáº¥t..." value={description} onChange={e => setDescription(e.target.value)}></textarea>
-                </div>
+                 </div>
             </div>
 
             <h2>Chi Tiáº¿t HÃ ng HÃ³a Xuáº¥t Kho</h2>
             <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-                <div className="grid-header">MÃ£ hÃ ng</div>
+                <div className="grid-header">MÃ£ hÃ ng (*)</div>
                 <div className="grid-header">TÃªn hÃ ng</div>
-                <div className="grid-header">Sá»‘ lÃ´</div>
+                <div className="grid-header">Sá»‘ lÃ´ (*)</div>
                 <div className="grid-header">ÄVT</div>
                 <div className="grid-header">Quy cÃ¡ch</div>
-                <div className="grid-header">SL Xuáº¥t</div>
+                <div className="grid-header">SL Xuáº¥t (*)</div>
                 <div className="grid-header">Ghi chÃº</div>
-                <div className="grid-header">XÃ³a</div>
+                 <div className="grid-header">XÃ³a</div>
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
                         <div className="grid-cell">
                             <input type="text" placeholder="Nháº­p mÃ£ hÃ ng..." value={item.productId}
                                 onChange={e => handleItemChange(index, 'productId', e.target.value.toUpperCase())}
                                 onBlur={e => handleProductSearch(index, e.target.value)} />
-                        </div>
+                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell">
-                            {item.selectedLotId ? (
+                            {item.selectedLotId ?
+                            (
                                 <div className="selected-lot-view">
                                     <input type="text" value={item.displayLotText} readOnly className="selected-lot-input" />
-                                    <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn">
+                                     <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn">
                                         <FiChevronDown />
                                     </button>
-                                </div>
+                                 </div>
                             ) : (
                                 <select
-                                    ref={el => lotSelectRefs.current[index] = el}
+                                     ref={el => lotSelectRefs.current[index] = el}
                                     value={item.selectedLotId}
                                     onChange={e => handleLotSelection(index, e.target.value)}
                                     disabled={item.availableLots.length === 0}
                                     style={{width: '100%'}}
-                                >
+                                 >
                                     <option value="">-- Chá»n lÃ´ tá»“n kho --</option>
                                     {item.availableLots.map(lot => (
-                                        <option key={lot.id} value={lot.id}>
+                                       <option key={lot.id} value={lot.id}>
                                         {`LÃ´: ${lot.lotNumber} | HSD: ${formatDate(lot.expiryDate)} | Tá»“n: ${lot.quantityRemaining}`}
                                         </option>
                                     ))}
-                                </select>
+                             </select>
                             )}
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input type="number" value={item.quantityToExport}
-                                ref={el => quantityInputRefs.current[index] = el}
+                         ref={el => quantityInputRefs.current[index] = el}
                                 onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} />
                         </div>
                         <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell">
                             <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRow(index)}><FiXCircle /></button>
                         </div>
-                    </React.Fragment>
+                     </React.Fragment>
                 ))}
             </div>
             <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             <div className="page-actions">
                 <button onClick={handleSaveDraft} className="btn-secondary" disabled={isProcessing}>
-                    {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
+                     {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
                 </button>
                 <button onClick={promptForDirectExport} className="btn-primary" disabled={isProcessing}>
                     {isProcessing ? 'Äang xá»­ lÃ½...' : 'Xuáº¥t Kho Trá»±c Tiáº¿p'}
@@ -4160,6 +4742,28 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
 import { FiInfo } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// Äá»‹nh nghÄ©a Schema xÃ¡c thá»±c
+const importItemSchema = z.object({
+  productId: z.string().min(1, "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng."),
+  lotNumber: z.string().min(1, "Sá»‘ lÃ´ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng."),
+  quantity: z.preprocess(
+      val => Number(val),
+      z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng pháº£i lÃ  má»™t con sá»‘." })
+       .gt(0, "Sá»‘ lÆ°á»£ng pháº£i lá»›n hÆ¡n 0.")
+  ),
+  expiryDate: z.string().refine(val => parseDateString(val) !== null, {
+      message: "Háº¡n sá»­ dá»¥ng khÃ´ng há»£p lá»‡ (cáº§n Ä‘á»‹nh dáº¡ng dd/mm/yyyy)."
+  }),
+});
+
+const importSlipSchema = z.object({
+    supplierId: z.string().min(1, "MÃ£ nhÃ  cung cáº¥p khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng."),
+    supplierName: z.string().min(1, "KhÃ´ng tÃ¬m tháº¥y tÃªn nhÃ  cung cáº¥p."),
+    items: z.array(importItemSchema).min(1, "Phiáº¿u nháº­p pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.")
+});
+
 
 const NewImportPage = () => {
     const today = new Date();
@@ -4189,6 +4793,33 @@ const NewImportPage = () => {
         fetchSuppliers();
     }, []);
 
+    const getValidSlipData = () => {
+        const validItems = items.filter(item => 
+            item.productId && item.lotNumber && item.quantity && item.expiryDate
+        );
+        
+        const slipToValidate = {
+            supplierId: supplierId.trim(),
+            supplierName: supplierName.trim(),
+            items: validItems
+        };
+
+        const validationResult = importSlipSchema.safeParse(slipToValidate);
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
+            return null;
+        }
+
+        return {
+            ...validationResult.data,
+            importDate: formattedDate,
+            description,
+            status: '', // Sáº½ Ä‘Æ°á»£c gÃ¡n sau
+            createdAt: serverTimestamp()
+        };
+    }
+
     const handleSupplierSearch = async () => {
         if (!supplierId) {
             setSupplierName('');
@@ -4201,7 +4832,6 @@ const NewImportPage = () => {
                 setSupplierName(partnerSnap.data().partnerName);
             } else {
                 setSupplierName('');
-                // --- THAY THáº¾ ALERT Báº°NG TOAST ---
                 toast.error(`KhÃ´ng tÃ¬m tháº¥y NhÃ  cung cáº¥p vá»›i mÃ£ "${supplierId}" hoáº·c Ä‘á»‘i tÃ¡c khÃ´ng pháº£i lÃ  NhÃ  cung cáº¥p.`);
             }
         } catch (error) {
@@ -4332,33 +4962,23 @@ const NewImportPage = () => {
         ]);
     };
 
+    const resetForm = () => {
+        setSupplierId('');
+        setSupplierName('');
+        setDescription('');
+        setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
+    }
+
     const handleSaveSlip = async () => {
-        if (!supplierId || !supplierName) {
-            toast.warn('Vui lÃ²ng nháº­p MÃ£ NhÃ  cung cáº¥p há»£p lá»‡.');
-            return;
-        }
-        const validItems = items.filter(item => item.productId && item.quantity > 0);
-        if (validItems.length === 0) {
-            toast.warn('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡ vÃ o phiáº¿u.');
-            return;
-        }
+        const slipData = getValidSlipData();
+        if (!slipData) return;
+
         setIsSaving(true);
         try {
-            const slipData = {
-                importDate: formattedDate,
-                supplierId: supplierId.toUpperCase(),
-                supplier: supplierName,
-                description,
-                items: validItems,
-                status: 'pending',
-                createdAt: serverTimestamp()
-            };
-            const docRef = await addDoc(collection(db, 'import_tickets'), slipData);
+            const finalSlipData = { ...slipData, status: 'pending' };
+            const docRef = await addDoc(collection(db, 'import_tickets'), finalSlipData);
             toast.success(`LÆ°u táº¡m phiáº¿u nháº­p thÃ nh cÃ´ng! ID phiáº¿u: ${docRef.id}`);
-            setSupplierId('');
-            setSupplierName('');
-            setDescription('');
-            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
+            resetForm();
         } catch (error) {
             console.error("Lá»—i khi lÆ°u phiáº¿u nháº­p: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi lÆ°u phiáº¿u.');
@@ -4368,51 +4988,40 @@ const NewImportPage = () => {
     };
 
     const handleDirectImport = async () => {
+        const slipData = getValidSlipData();
+        if (!slipData) return;
+
         setConfirmModal({ isOpen: false });
         setIsSaving(true);
         try {
-            const validItems = items.filter(item => item.productId && item.quantity > 0);
-            for (const item of validItems) {
-                const expiryDateObject = parseDateString(item.expiryDate);
-                if (!expiryDateObject) {
-                    toast.error(`HSD cá»§a máº·t hÃ ng ${item.productName} (${item.lotNumber}) cÃ³ Ä‘á»‹nh dáº¡ng sai.`);
-                    setIsSaving(false);
-                    return;
-                }
-                const expiryTimestamp = Timestamp.fromDate(expiryDateObject);
+            for (const item of slipData.items) {
+                const expiryTimestamp = Timestamp.fromDate(parseDateString(item.expiryDate));
+                const fullItemData = items.find(i => i.productId === item.productId && i.lotNumber === item.lotNumber);
+                
                 const newLotData = {
                     importDate: Timestamp.now(),
                     productId: item.productId,
-                    productName: item.productName,
+                    productName: fullItemData.productName,
                     lotNumber: item.lotNumber,
                     expiryDate: expiryTimestamp,
-                    unit: item.unit,
-                    packaging: item.packaging,
-                    storageTemp: item.storageTemp,
-                    team: item.team,
-                    manufacturer: item.manufacturer,
+                    unit: fullItemData.unit,
+                    packaging: fullItemData.packaging,
+                    storageTemp: fullItemData.storageTemp,
+                    team: fullItemData.team,
+                    manufacturer: fullItemData.manufacturer,
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
-                    notes: item.notes,
-                    supplier: supplierName,
+                    notes: fullItemData.notes,
+                    supplier: slipData.supplierName,
                 };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
-            const slipData = {
-                importDate: formattedDate,
-                supplierId: supplierId.toUpperCase(),
-                supplier: supplierName,
-                description,
-                items: validItems,
-                status: 'completed',
-                createdAt: serverTimestamp()
-            };
-            await addDoc(collection(db, 'import_tickets'), slipData);
+            
+            const finalSlipData = { ...slipData, status: 'completed' };
+            await addDoc(collection(db, 'import_tickets'), finalSlipData);
+            
             toast.success('Nháº­p kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
-            setSupplierId('');
-            setSupplierName('');
-            setDescription('');
-            setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
+            resetForm();
         } catch (error) {
             console.error("Lá»—i khi nháº­p kho trá»±c tiáº¿p: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi nháº­p kho trá»±c tiáº¿p.');
@@ -4420,22 +5029,16 @@ const NewImportPage = () => {
             setIsSaving(false);
         }
     };
-    
+
     const promptForDirectImport = () => {
-        if (!supplierId || !supplierName) {
-            toast.warn('Vui lÃ²ng nháº­p MÃ£ NhÃ  cung cáº¥p há»£p lá»‡.');
-            return;
+        if (getValidSlipData()) {
+            setConfirmModal({
+                isOpen: true,
+                title: "XÃ¡c nháº­n nháº­p kho trá»±c tiáº¿p?",
+                message: "Thao tÃ¡c nÃ y sáº½ cáº­p nháº­t tá»“n kho ngay láº­p tá»©c vÃ  khÃ´ng thá»ƒ hoÃ n tÃ¡c. Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c?",
+                onConfirm: handleDirectImport
+            });
         }
-        if (items.filter(item => item.productId && item.quantity > 0).length === 0) {
-            toast.warn('Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.');
-            return;
-        }
-        setConfirmModal({
-            isOpen: true,
-            title: "XÃ¡c nháº­n nháº­p kho trá»±c tiáº¿p?",
-            message: "Thao tÃ¡c nÃ y sáº½ cáº­p nháº­t tá»“n kho ngay láº­p tá»©c vÃ  khÃ´ng thá»ƒ hoÃ n tÃ¡c. Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c?",
-            onConfirm: handleDirectImport
-        });
     };
 
     return (
@@ -4470,10 +5073,10 @@ const NewImportPage = () => {
                 <div className="form-row">
                     <div className="form-group">
                         <label>NgÃ y nháº­p</label>
-                        <input type="text" value={importDate} onChange={(e) => setImportDate(e.target.value)} />
+                        <input type="text" value={importDate} readOnly style={{backgroundColor: '#f0f0f0'}} />
                     </div>
                     <div className="form-group">
-                        <label>MÃ£ NhÃ  Cung Cáº¥p</label>
+                         <label>MÃ£ NhÃ  Cung Cáº¥p (*)</label>
                         <input 
                             list="suppliers-list"
                             type="text" 
@@ -4491,14 +5094,14 @@ const NewImportPage = () => {
                         </datalist>
                     </div>
                     <div className="form-group">
-                        <label>TÃªn NhÃ  Cung Cáº¥p</label>
+                        <label>TÃªn NhÃ  Cung Cáº¥p (*)</label>
                         <input 
                             type="text" 
                             value={supplierName} 
                             readOnly 
                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
-                    </div>
+                     </div>
                 </div>
                 <div className="form-group">
                     <label>Diá»…n giáº£i</label>
@@ -4508,13 +5111,13 @@ const NewImportPage = () => {
 
             <h2>Chi tiáº¿t hÃ ng hÃ³a</h2>
             <div className="item-details-grid">
-                <div className="grid-header">MÃ£ hÃ ng</div>
+                <div className="grid-header">MÃ£ hÃ ng (*)</div>
                 <div className="grid-header">TÃªn hÃ ng</div>
-                <div className="grid-header">Sá»‘ lÃ´</div>
-                <div className="grid-header">HSD</div>
+                 <div className="grid-header">Sá»‘ lÃ´ (*)</div>
+                <div className="grid-header">HSD (*)</div>
                 <div className="grid-header">ÄVT</div>
                 <div className="grid-header">Quy cÃ¡ch</div>
-                <div className="grid-header">Sá»‘ lÆ°á»£ng</div>
+                <div className="grid-header">Sá»‘ lÆ°á»£ng (*)</div>
                 <div className="grid-header">Ghi chÃº</div>
                 <div className="grid-header">Nhiá»‡t Ä‘á»™ BQ</div>
                 <div className="grid-header">Team</div>
@@ -4540,55 +5143,55 @@ const NewImportPage = () => {
                                 </button>
                             )}
                         </div>
-                        <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
-                                ref={el => inputRefs.current[index * 3 + 1] = el}
+                                 ref={el => inputRefs.current[index * 3 + 1] = el}
                                 onKeyDown={(e) => handleKeyDown(e, index, 1)}
                                 type="text"
-                                value={item.lotNumber}
+                                 value={item.lotNumber}
                                 onChange={e => handleItemChange(index, 'lotNumber', e.target.value)}
                                 onBlur={() => checkExistingLot(index)}
-                            />
+                             />
                             {item.lotStatus === 'exists' && item.existingLotInfo && (
                                 <div className="existing-lot-info">
-                                    <FiInfo />
+                                     <FiInfo />
                                     <span>LÃ´ Ä‘Ã£ cÃ³ | Tá»“n: {item.existingLotInfo.quantityRemaining} | HSD: {item.existingLotInfo.expiryDate}</span>
                                 </div>
                             )}
                             {item.lotStatus === 'new' && (
-                                <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
+                                 <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
                                     [+] Khai bÃ¡o lÃ´ má»›i...
-                                </button>
+                                 </button>
                             )}
                         </div>
                         <div className="grid-cell">
-                            <input 
+                             <input 
                                 type="text" 
                                 placeholder="dd/mm/yyyy" 
-                                value={item.expiryDate} 
+                                 value={item.expiryDate} 
                                 onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} 
                                 onBlur={e => handleExpiryDateBlur(index, e.target.value)}
-                                readOnly={item.lotStatus === 'exists'}
+                                 readOnly={item.lotStatus === 'exists'}
                                 style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
                             />
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input
-                                ref={el => inputRefs.current[index * 3 + 2] = el}
+                                 ref={el => inputRefs.current[index * 3 + 2] = el}
                                 type="number"
                                 value={item.quantity}
-                                onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                                 onChange={e => handleItemChange(index, 'quantity', e.target.value)}
                             />
                         </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
-                        <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
+                         <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
                     </React.Fragment>
                 ))}
-            </div>
+             </div>
             
             <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             <div className="page-actions">
@@ -4622,18 +5225,20 @@ import { useFirestorePagination } from '../hooks/useFirestorePagination';
 
 // Import service Ä‘á»ƒ xá»­ lÃ½ logic nghiá»‡p vá»¥
 import { deletePartner } from '../services/partnerService';
-
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
+
+// ======================= BÆ¯á»šC 1: IMPORT CSS MODULE =======================
+import styles from './PartnersPage.module.css';
+// =========================================================================
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-    
     const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy(documentId())), []);
     const { 
         documents: partners, 
@@ -4645,17 +5250,14 @@ const PartnersPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
         reset();
     };
-
     const handlePartnerUpdated = () => {
         setIsEditModalOpen(false);
         reset();
     };
-
     const promptForDelete = (partner) => {
         setConfirmModal({
             isOpen: true,
@@ -4669,11 +5271,9 @@ const PartnersPage = () => {
         const { item } = confirmModal;
         if (!item) return;
         try {
-            // Gá»i hÃ m service Ä‘á»ƒ xÃ³a, thay vÃ¬ gá»i trá»±c tiáº¿p Firestore
             await deletePartner(item.id);
-            
             toast.success('XÃ³a Ä‘á»‘i tÃ¡c thÃ nh cÃ´ng!');
-            reset(); // Táº£i láº¡i dá»¯ liá»‡u trang Ä‘áº§u tiÃªn
+            reset();
         } catch (error) {
             console.error("Lá»—i khi xÃ³a Ä‘á»‘i tÃ¡c: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ³a Ä‘á»‘i tÃ¡c.');
@@ -4687,9 +5287,6 @@ const PartnersPage = () => {
         setIsEditModalOpen(true);
     };
 
-    // Äá»ƒ hoÃ n thiá»‡n viá»‡c tÃ¡i cáº¥u trÃºc, báº¡n cÅ©ng nÃªn vÃ o 2 file modal
-    // vÃ  gá»i cÃ¡c hÃ m addPartner/updatePartner tÆ°Æ¡ng á»©ng tá»« service nhÃ©.
-    
     return (
         <div>
             <ConfirmationModal
@@ -4697,50 +5294,65 @@ const PartnersPage = () => {
                 title={confirmModal.title}
                 message={confirmModal.message}
                 onConfirm={handleDelete}
-                onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+               
+                 onCancel={() => setConfirmModal({ isOpen: false, item: null })}
                 confirmText="Váº«n xÃ³a"
             />
             {isAddModalOpen && <AddPartnerModal onClose={() => setIsAddModalOpen(false)} onPartnerAdded={handlePartnerAdded} />}
             {isEditModalOpen && <EditPartnerModal onClose={() => setIsEditModalOpen(false)} onPartnerUpdated={handlePartnerUpdated} partnerToEdit={currentPartner} />}
 
             <div className="page-header">
-                <h1>Quáº£n LÃ½ Äá»‘i TÃ¡c</h1>
+           
+                 <h1>Quáº£n LÃ½ Äá»‘i TÃ¡c</h1>
                 <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
                     <FiPlus style={{ marginRight: '5px' }} />
                     ThÃªm Äá»‘i TÃ¡c
                 </button>
-            </div>
+       
+             </div>
             
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table">
                         <thead>
                             <tr>
-                                <th>MÃ£ Äá»‘i TÃ¡c</th>
+        
+                                 <th>MÃ£ Äá»‘i TÃ¡c</th>
                                 <th>TÃªn Äá»‘i TÃ¡c</th>
                                 <th>PhÃ¢n Loáº¡i</th>
-                                <th>Thao tÃ¡c</th>
+     
+                                 <th>Thao tÃ¡c</th>
                             </tr>
                         </thead>
-                        <tbody>
+                    
+                         <tbody>
                             {partners.map(partner => (
                                 <tr key={partner.id}>
-                                    <td><strong>{partner.id}</strong></td>
+                                    {/* ================ BÆ¯á»šC 2: Sá»¬ Dá»¤NG CLASS Tá»ª MODULE ================ */}
+                                    <td className={styles.partnerIdCell}>{partner.id}</td>
                                     <td>{partner.partnerName}</td>
-                                    <td>{partner.partnerType === 'supplier' ? 'NhÃ  Cung Cáº¥p' : 'KhÃ¡ch HÃ ng'}</td>
-                                    <td>
+                                    <td className={styles.partnerTypeCell}>
+                                        {partner.partnerType === 'supplier' ? 'NhÃ  Cung Cáº¥p' : 'KhÃ¡ch HÃ ng'}
+                                    </td>
+                                    {/* ================================================================= */}
+                                     <td>
                                         <div className="action-buttons">
-                                            <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
+                                       
+                                         <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
                                                 <FiEdit />
-                                            </button>
+                                         
+                                             </button>
                                             <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
+                                                
                                                 <FiTrash2 />
                                             </button>
                                         </div>
-                                    </td>
+               
+                                     </td>
                                 </tr>
                             ))}
-                        </tbody>
+                   
+                         </tbody>
                     </table>
 
                     <div className="pagination-controls">
@@ -4748,17 +5360,38 @@ const PartnersPage = () => {
                             <FiChevronLeft /> Trang TrÆ°á»›c
                         </button>
                         <span>Trang {page}</span>
-                        <button onClick={nextPage} disabled={isLastPage || loading}>
+                    
+                         <button onClick={nextPage} disabled={isLastPage || loading}>
                             Trang Tiáº¿p <FiChevronRight />
                         </button>
                     </div>
                 </>
-            )}
+ 
+                       )}
         </div>
     );
 };
 
 export default PartnersPage;
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\pages\PartnersPage.module.css ---
+
+
+/* src/pages/PartnersPage.module.css */
+
+.partnerIdCell {
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 14px;
+    color: #0056b3;
+}
+
+.partnerTypeCell {
+    font-style: italic;
+    color: #555;
+}
 
 
 
@@ -5793,7 +6426,7 @@ export const deleteStocktakeSession = async (sessionId) => {
 .products-table td {
   border: 1px solid var(--border-color);
   padding: 12px 15px;
-  text-align: center; /* Sá»­a á»Ÿ Ä‘Ã¢y */
+  text-align: center;
   vertical-align: middle; /* ThÃªm dÃ²ng nÃ y */
 }
 
@@ -5910,10 +6543,12 @@ export const deleteStocktakeSession = async (sessionId) => {
   margin-top: 20px;
 }
 
+/* THÃŠM ÄOáº N MÃƒ NÃ€Y VÃ€O */
 .modal-body {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 10px 0;
+  flex-grow: 1; /* Cho phÃ©p khu vá»±c nÃ y giÃ£n ra Ä‘á»ƒ chiáº¿m khÃ´ng gian trá»‘ng */
+  overflow-y: auto; /* Tá»± Ä‘á»™ng hiá»ƒn thá»‹ thanh cuá»™n dá»c khi ná»™i dung quÃ¡ dÃ i */
+  padding: 10px 5px; /* ThÃªm má»™t chÃºt Ä‘á»‡m Ä‘á»ƒ ná»™i dung khÃ´ng dÃ­nh sÃ¡t viá»n */
+  margin: 0 -5px; /* BÃ¹ láº¡i pháº§n padding Ä‘á»ƒ cÄƒn lá» tháº³ng hÃ ng */
 }
 
 /* --- BUTTONS & FORMS --- */
@@ -6566,16 +7201,18 @@ tbody tr.selected-row td {
     table-layout: fixed;
 }
 
-/* Tinh chá»‰nh cho trang Tá»“n Kho Tá»•ng Há»£p */
+/* --- TÃ™Y CHá»ˆNH CÄ‚N Lá»€ CHO TRANG Tá»’N KHO Tá»”NG Há»¢P (PHIÃŠN Báº¢N Má»šI NHáº¤T) --- */
+
+/* BÆ¯á»šC 1: ÄÆ°a Táº¤T Cáº¢ thÃ´ng tin trong báº£ng ra giá»¯a Ã´ (ká»ƒ cáº£ tiÃªu Ä‘á» 'TÃªn hÃ ng') */
 .inventory-summary-page .products-table th,
 .inventory-summary-page .products-table td {
-    text-align: center;
-    vertical-align: middle;
+    text-align: center !important;
+    vertical-align: middle !important;
 }
 
-.inventory-summary-page .products-table th:nth-child(3),
+/* BÆ¯á»šC 2: Ghi Ä‘Ã¨, Ä‘Æ°a RIÃŠNG pháº§n Dá»® LIá»†U cá»§a cá»™t "TÃªn hÃ ng" (cá»™t thá»© 3) vá» cÄƒn lá» trÃ¡i */
 .inventory-summary-page .products-table td:nth-child(3) {
-    text-align: left;
+    text-align: left !important;
 }
 
 /* ThÃªm vÃ o cuá»‘i file AdminLayout.css */
@@ -6617,23 +7254,23 @@ tbody tr.selected-row td {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\styles\DashboardPage.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\styles\DashboardPage.module.css ---
 
 
-/* src/styles/DashboardPage.css */
+/* src/styles/DashboardPage.module.css */
 
-.dashboard-container {
+.dashboardContainer {
   padding: 20px;
 }
 
-.cards-grid {
+.cardsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-top: 20px;
 }
 
-.dashboard-card {
+.dashboardCard {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -6643,7 +7280,7 @@ tbody tr.selected-row td {
   border-left: 5px solid;
 }
 
-.card-icon {
+.cardIcon {
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -6655,18 +7292,18 @@ tbody tr.selected-row td {
   margin-right: 20px;
 }
 
-.card-info {
+.cardInfo {
   display: flex;
   flex-direction: column;
 }
 
-.card-title {
+.cardTitle {
   color: #6c757d;
   font-size: 14px;
   margin-bottom: 5px;
 }
 
-.card-value {
+.cardValue {
   color: #343a40;
   font-size: 28px;
   font-weight: bold;
@@ -6674,43 +7311,43 @@ tbody tr.selected-row td {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\styles\DataImportPage.css ---
+--- FILE: D:\New folder\quan-ly-kho\src\styles\DataImportPage.module.css ---
 
 
-/* src/styles/DataImportPage.css */
+/* src/styles/DataImportPage.module.css */
 
-.data-import-page {
+.dataImportPage {
     padding: 20px;
 }
 
-.import-container {
+.importContainer {
     display: grid;
     grid-template-columns: 1fr 1.5fr;
     gap: 30px;
     margin-top: 20px;
 }
 
-.import-controls, .import-actions {
+.importControls, .importActions {
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.import-controls h3, .import-actions h3 {
+.importControls h3, .importActions h3 {
     margin-top: 0;
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
     margin-bottom: 15px;
 }
 
-.import-type-selector {
+.importTypeSelector {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
 }
 
-.import-type-selector button {
+.importTypeSelector button {
     flex-grow: 1;
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
@@ -6718,13 +7355,13 @@ tbody tr.selected-row td {
     transition: all 0.2s ease;
 }
 
-.import-type-selector button.active {
+.importTypeSelector button.active {
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
 }
 
-.import-instructions {
+.importInstructions {
     margin-top: 20px;
     padding: 15px;
     background-color: #e7f3ff;
@@ -6733,33 +7370,33 @@ tbody tr.selected-row td {
     gap: 10px;
     align-items: flex-start;
 }
-.import-instructions svg {
+.importInstructions svg {
     font-size: 20px;
     color: #007bff;
     flex-shrink: 0;
     margin-top: 3px;
 }
-.import-instructions ul {
+.importInstructions ul {
     margin: 0;
     padding-left: 20px;
     font-size: 14px;
     color: #333;
 }
-.import-instructions li {
+.importInstructions li {
     margin-bottom: 5px;
 }
 
-.import-method {
+.importMethod {
     margin-bottom: 25px;
 }
-.import-method h4 {
+.importMethod h4 {
     margin-top: 0;
     margin-bottom: 10px;
 }
-.import-method input[type="file"] {
+.importMethod input[type="file"] {
     width: 100%;
 }
-.import-method textarea {
+.importMethod textarea {
     width: 100%;
     font-family: monospace;
     font-size: 12px;
@@ -6768,10 +7405,10 @@ tbody tr.selected-row td {
     padding: 10px;
 }
 
-.import-log-container {
+.importLogContainer {
     margin-top: 20px;
 }
-.import-log {
+.importLog {
     background-color: #2d333b;
     color: #cdd9e5;
     font-family: monospace;
@@ -6781,18 +7418,19 @@ tbody tr.selected-row td {
     height: 200px;
     overflow-y: auto;
 }
-.import-log p {
+.importLog p {
     margin: 0 0 5px 0;
     white-space: pre-wrap;
     word-break: break-all;
 }
-.log-item.log-info { color: #cdd9e5; }
-.log-item.log-success { color: #56d364; }
-.log-item.log-warn { color: #e3b341; }
-.log-item.log-error { color: #f85149; font-weight: bold; }
+
+.logItem.log-info { color: #cdd9e5; }
+.logItem.log-success { color: #56d364; }
+.logItem.log-warn { color: #e3b341; }
+.logItem.log-error { color: #f85149; font-weight: bold; }
 
 @media (max-width: 992px) {
-    .import-container {
+    .importContainer {
         grid-template-columns: 1fr;
     }
 }
@@ -6802,13 +7440,13 @@ tbody tr.selected-row td {
 --- FILE: D:\New folder\quan-ly-kho\src\styles\print.css ---
 
 
-/* src/styles/print.css (PhiÃªn báº£n Sá»­a Lá»—i Giao Diá»‡n In) */
+/* src/styles/print.css (PhiÃªn báº£n cuá»‘i cÃ¹ng) */
 
 @media print {
   /* --- CÃ€I Äáº¶T TRANG IN CHUNG --- */
   @page {
-    size: landscape; /* In khá»• ngang */
-    margin: 5mm;     /* Lá» 5mm cho táº¥t cáº£ cÃ¡c cáº¡nh */
+    size: portrait; /* In khá»• dá»c */
+    margin: 5mm;
   }
 
   body {
@@ -6817,31 +7455,41 @@ tbody tr.selected-row td {
     font-size: 9pt; 
   }
 
-  /* --- QUY Táº®C CHUNG CHO CÃC KHU Vá»°C IN --- */
+  /* --- QUY Táº®C áº¨N/HIá»†N --- */
   body * { visibility: hidden; }
   .printable-area, .printable-area *, 
   .printable-inventory-area, .printable-inventory-area * {
     visibility: visible;
   }
 
-  .printable-area, .printable-inventory-area {
+  /* === BÆ¯á»šC Sá»¬A Lá»–I QUAN TRá»ŒNG NHáº¤T (PHIÃŠN Báº¢N Má»šI) === */
+  /* ÄÆ°a khu vá»±c in ra khá»i luá»“ng vÃ  Ä‘áº·t láº¡i vá»‹ trÃ­ á»Ÿ gÃ³c trÃªn cÃ¹ng bÃªn trÃ¡i */
+  .printable-area {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .printable-inventory-area {
     position: absolute; left: 0; top: 0; width: 100%;
   }
 
-  /* THÃŠM ÄOáº N CODE NÃ€Y Äá»‚ Sá»¬A Lá»–I IN Dáº NG THáºº */
-.printable-area table, .printable-area tbody, .printable-area thead, 
-.printable-area tr, .printable-area th, .printable-area td {
+  .printable-area table, .printable-area tbody, .printable-area thead, 
+  .printable-area tr, .printable-area th, .printable-area td {
     display: revert !important;
     position: static !important;
     width: auto !important;
     min-width: 0 !important;
-}
-.printable-area td::before { content: "" !important; display: none !important; }
+  }
+  .printable-area td::before { content: "" !important; display: none !important; }
 
   /* --- QUY Táº®C IN PHIáº¾U (NHáº¬P/XUáº¤T) --- */
-  .printable-area {
-    max-width: none !important; border: none !important; box-shadow: none !important;
-  }
   .printable-area .modal-actions { display: none; }
   .printable-area h2 { font-size: 20pt; text-align: center; margin-bottom: 25px; }
   .printable-area .compact-info-grid { border: none; padding: 0; font-size: 11pt; margin-bottom: 25px; }
@@ -6849,46 +7497,66 @@ tbody tr.selected-row td {
   .printable-area .products-table th, .printable-area .products-table td { border: 1px solid #333; padding: 8px; word-wrap: break-word; vertical-align: middle; text-align: center; }
   .printable-area .products-table th { background-color: #f2f2f2 !important; font-weight: bold; }
   .printable-area .products-table td:nth-child(2) { text-align: left; }
+  
+  /* --- TÃ™Y CHá»ˆNH Äá»˜ Rá»˜NG Cá»˜T CHO Tá»ªNG LOáº I PHIáº¾U --- */
+  
+  /* 1. DÃ nh cho Phiáº¿u Nháº­p (7 cá»™t) */
+  .import-slip .products-table th:nth-child(1) { width: 11%; }
+  .import-slip .products-table th:nth-child(2) { width: 45%; }
+  .import-slip .products-table th:nth-child(3) { width: 11%; }
+  .import-slip .products-table th:nth-child(4) { width: 11%; }
+  .import-slip .products-table th:nth-child(5) { width: 8%; }
+  .import-slip .products-table th:nth-child(6) { width: 6%; }
+  .import-slip .products-table th:nth-child(7) { width: 8%; }
+
+  /* 2. DÃ nh cho Phiáº¿u Xuáº¥t (8 cá»™t) */
+  .export-slip .products-table th:nth-child(1) { width: 9%; }
+  .export-slip .products-table th:nth-child(2) { width: 40%; }
+  .export-slip .products-table th:nth-child(3) { width: 9%; }
+  .export-slip .products-table th:nth-child(4) { width: 9%; }
+  .export-slip .products-table th:nth-child(5) { width: 6%; }
+  .export-slip .products-table th:nth-child(6) { width: 10%; }
+  .export-slip .products-table th:nth-child(7) { width: 7%; }
+  .export-slip .products-table th:nth-child(8) { width: 10%; }
 
   /* --- QUY Táº®C IN BÃO CÃO Tá»’N KHO --- */
+  /* (CÃ¡c quy táº¯c bÃªn dÆ°á»›i giá»¯ nguyÃªn) */
   .printable-inventory-area .page-header,
   .printable-inventory-area .controls-container,
   .printable-inventory-area .pagination-controls,
   .printable-inventory-area .view-toggle,
-  .printable-inventory-area th:first-child, /* áº¨n cá»™t mÅ©i tÃªn expand */
+  .printable-inventory-area th:first-child,
   .printable-inventory-area td:first-child {
     display: none;
   }
 
-  /* *** NÃ‚NG Cáº¤P QUAN TRá»ŒNG: VÃ” HIá»†U HÃ“A GIAO DIá»†N THáºº KHI IN *** */
   .printable-inventory-area table, .printable-inventory-area tbody, .printable-inventory-area thead, 
   .printable-inventory-area tr, .printable-inventory-area th, .printable-inventory-area td {
-      display: revert !important; /* Tráº£ vá» giÃ¡ trá»‹ máº·c Ä‘á»‹nh cá»§a CSS cho báº£ng */
+      display: revert !important;
       position: static !important;
-      width: auto !important; /* Äá»ƒ trÃ¬nh duyá»‡t tá»± tÃ­nh toÃ¡n Ä‘á»™ rá»™ng */
-      min-width: 0 !important; /* Bá» min-width Ä‘á»ƒ trÃ¡nh co cá»™t */
+      width: auto !important;
+      min-width: 0 !important;
   }
   .printable-inventory-area td::before { content: "" !important; display: none !important; }
 
-  /* Äá»‹nh dáº¡ng láº¡i báº£ng Ä‘á»ƒ in */
   .printable-inventory-area table {
-    width: 100% !important; border-collapse: collapse; box-shadow: none; table-layout: auto;
+    width: 100% !important;
+    border-collapse: collapse; box-shadow: none; table-layout: auto;
   }
   .printable-inventory-area th, .printable-inventory-area td {
-    border: 1px solid #666; padding: 5px; text-align: left; white-space: normal;
+    border: 1px solid #666;
+    padding: 5px; text-align: left; white-space: normal;
   }
   .printable-inventory-area th { background-color: #f2f2f2 !important; font-weight: bold; }
   
-  /* CÄƒn giá»¯a cho cÃ¡c cá»™t sá»‘ lÆ°á»£ng vÃ  ÄVT */
-  .printable-inventory-area th:nth-child(6), .printable-inventory-area td:nth-child(6), /* ÄVT */
-  .printable-inventory-area th:nth-child(8), .printable-inventory-area td:nth-child(8), /* SL Nháº­p */
-  .printable-inventory-area th:nth-child(9), .printable-inventory-area td:nth-child(9)  /* SL CÃ²n láº¡i */
+  .printable-inventory-area th:nth-child(6), .printable-inventory-area td:nth-child(6),
+  .printable-inventory-area th:nth-child(8), .printable-inventory-area td:nth-child(8),
+  .printable-inventory-area th:nth-child(9), .printable-inventory-area td:nth-child(9)
   {
       text-align: center !important;
   }
-  .printable-inventory-area .inventory-table td:nth-child(9) { font-weight: bold; } /* In Ä‘áº­m SL cÃ²n láº¡i */
+  .printable-inventory-area .inventory-table td:nth-child(9) { font-weight: bold; }
 
-  /* *** NÃ‚NG Cáº¤P QUAN TRá»ŒNG: LUÃ”N HIá»‚N THá»Š CHI TIáº¾T LÃ” KHI IN *** */
   .printable-inventory-area .lot-details-row {
     display: table-row !important;
   }
@@ -6897,10 +7565,10 @@ tbody tr.selected-row td {
     padding-left: 20px !important;
   }
   .printable-inventory-area .lot-details-container ul {
-      display: block !important; /* Hiá»ƒn thá»‹ cÃ¡c lÃ´ dÆ°á»›i dáº¡ng danh sÃ¡ch */
+      display: block !important;
   }
   .printable-inventory-area .lot-details-container li {
-      display: block !important; /* Má»—i lÃ´ trÃªn má»™t dÃ²ng */
+      display: block !important;
       margin-bottom: 3px;
   }
 }
@@ -7044,6 +7712,72 @@ tbody tr.selected-row td {
 
 
 
+--- FILE: D:\New folder\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
+
+
+// src/test/__mocks__/firebaseFirestore.js
+import { vi } from 'vitest';
+
+// Dá»¯ liá»‡u máº«u
+const mockDataPage1 = [
+    { id: 'partner-01', data: () => ({ partnerName: 'CÃ´ng ty A' }) },
+    { id: 'partner-02', data: () => ({ partnerName: 'CÃ´ng ty B' }) },
+];
+
+const mockDataPage2 = [
+    { id: 'partner-03', data: () => ({ partnerName: 'CÃ´ng ty C' }) },
+    { id: 'partner-04', data: () => ({ partnerName: 'CÃ´ng ty D' }) },
+];
+
+// Táº¡o hÃ m mock getDocs
+const mockGetDocs = vi.fn();
+
+// HÃ m tiá»‡n Ã­ch Ä‘á»ƒ thiáº¿t láº­p dá»¯ liá»‡u tráº£ vá» cho getDocs
+export const setupMockData = (page) => {
+    let docs = [];
+    if (page === 1) {
+        docs = mockDataPage1;
+    } else if (page === 2) {
+        docs = mockDataPage2;
+    }
+
+    mockGetDocs.mockResolvedValue({
+        docs: docs,
+        empty: docs.length === 0,
+    });
+};
+
+// Mock cÃ¡c hÃ m khÃ¡c mÃ  hook sá»­ dá»¥ng
+export const getDocs = mockGetDocs;
+export const query = vi.fn((...args) => ({ _query: args, type: 'query' }));
+export const limit = vi.fn((...args) => ({ _limit: args, type: 'limit' }));
+export const startAfter = vi.fn((...args) => ({ _startAfter: args, type: 'startAfter' }));
+export const endBefore = vi.fn((...args) => ({ _endBefore: args, type: 'endBefore' }));
+export const limitToLast = vi.fn((...args) => ({ _limitToLast: args, type: 'limitToLast' }));
+export const collection = vi.fn((...args) => ({ _collection: args, type: 'collection' }));
+export const orderBy = vi.fn((...args) => ({ _orderBy: args, type: 'orderBy' }));
+export const documentId = vi.fn(() => 'mockDocumentId');
+
+
+
+--- FILE: D:\New folder\quan-ly-kho\src\test\setup.js ---
+
+
+// src/test/setup.js
+import { expect, afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+// Má»Ÿ rá»™ng expect cá»§a vitest vá»›i cÃ¡c matchers tá»« jest-dom
+expect.extend(matchers);
+
+// Tá»± Ä‘á»™ng dá»n dáº¹p DOM áº£o sau má»—i bÃ i test
+afterEach(() => {
+  cleanup();
+});
+
+
+
 --- FILE: D:\New folder\quan-ly-kho\src\utils\dateUtils.js ---
 
 
@@ -7151,97 +7885,24 @@ describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\App.css ---
-
-
-/* src/App.css */
-
-/* Class má»›i nÃ y chá»‰ dÃ¹ng Ä‘á»ƒ cÄƒn giá»¯a trang Ä‘Äƒng nháº­p */
-.login-page-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-
-/* CÃ¡c style cho form Ä‘Äƒng nháº­p, giá»¯ nguyÃªn nhÆ° cÅ© */
-.login-container {
-  padding: 40px;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  width: 350px;
-}
-
-.login-container h2 {
-  text-align: center;
-  margin-bottom: 24px;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
-  color: #555;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 4px;
-  background-color: #007bff;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-button:hover {
-  background-color: #0056b3;
-}
-
-.logout-button {
-  background-color: #dc3545;
-  margin-top: 20px;
-}
-
-.logout-button:hover {
-  background-color: #c82333;
-}
-
-
-
 --- FILE: D:\New folder\quan-ly-kho\src\App.jsx ---
 
 
-// src/App.jsx (PhiÃªn báº£n nÃ¢ng cáº¥p vá»›i ErrorBoundary)
+// src/App.jsx
 
 import React from 'react';
 import LoginPage from './components/LoginPage';
 import AdminLayout from './components/AdminLayout';
 import ViewerLayout from './components/ViewerLayout';
-import './App.css';
+// import './App.css'; // KhÃ´ng cáº§n import App.css ná»¯a
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/UserContext';
-
-// BÆ¯á»šC 2.1: Import ErrorBoundary
 import ErrorBoundary from './components/ErrorBoundary';
+
+// Import login styles Ä‘á»ƒ dÃ¹ng cho wrapper
+import loginStyles from './components/LoginPage.module.css';
 
 const AppRoutes = () => {
   const { user, userRole, loading } = useAuth();
@@ -7261,7 +7922,7 @@ const AppRoutes = () => {
           <Route path="/view/*" element={<ViewerLayout />} />
         </Routes>
       ) : (
-        <div className="login-page-wrapper">
+        <div className={loginStyles.loginPageWrapper}>
           <LoginPage />
         </div>
       )}
@@ -7286,7 +7947,6 @@ function App() {
           theme="light"
           closeButton={false} 
         />
-        {/* BÆ¯á»šC 2.2: Bá»c AppRoutes trong ErrorBoundary */}
         <ErrorBoundary>
           <AppRoutes />
         </ErrorBoundary>

@@ -3,25 +3,38 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { toast } from 'react-toastify';
+import { z } from 'zod';
+import styles from './LoginPage.module.css'; // <-- Cập nhật import
+
+const loginSchema = z.object({
+    email: z.string().email({ message: "Địa chỉ email không hợp lệ." }),
+    password: z.string().min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự." })
+});
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  
   const handleLogin = async (e) => {
     e.preventDefault();
+    const validationResult = loginSchema.safeParse({ email, password });
+
+    if (!validationResult.success) {
+        toast.warn(validationResult.error.issues[0].message);
+        return;
+    }
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Đăng nhập thành công!', userCredential.user);
+      const userCredential = await signInWithEmailAndPassword(auth, validationResult.data.email, validationResult.data.password);
       toast.success('Đăng nhập thành công!');
     } catch (error) {
-      console.error('Lỗi đăng nhập:', error.code, error.message);
       toast.error('Sai email hoặc mật khẩu. Vui lòng thử lại!');
     }
   };
 
   return (
-    <div className="login-container">
+    // Lưu ý: class 'loginPageWrapper' được áp dụng ở file App.jsx
+    <div className={styles.loginContainer}>
       <h2>Đăng Nhập Hệ Thống</h2>
       <form onSubmit={handleLogin}>
         <div className="form-group">

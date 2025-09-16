@@ -2,29 +2,39 @@
 
 import React, { useState } from 'react';
 import { FiXCircle } from 'react-icons/fi';
-import { toast } from 'react-toastify'; // Import toast
+import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// <-- ĐỊNH NGHĨA SCHEMA XÁC THỰC -->
+const exportItemSchema = z.object({
+  quantityToExport: z.preprocess(
+      val => Number(String(val).trim()),
+      z.number({ invalid_type_error: "Số lượng xuất phải là một con số." })
+       .gt(0, { message: "Số lượng xuất phải lớn hơn 0." })
+  ),
+  // Giữ lại các trường khác để có thể truyền nguyên object item vào validate
+  // và để thông báo lỗi được rõ ràng hơn
+  productId: z.string(),
+  lotNumber: z.string(),
+});
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
 
-  // *** PHIÊN BẢN SỬA LỖI ***
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
     if (field === 'quantityToExport') {
       const numericValue = Number(value);
-      // Lượng xuất ban đầu trên phiếu khi chưa sửa
       const originalExportedQty = slip.items[index].quantityToExport || slip.items[index].quantityExported;
-      // Lượng tồn kho khả dụng = lượng còn lại trong kho + lượng đã khai báo xuất ban đầu
       const availableStock = updatedItems[index].quantityRemaining + originalExportedQty;
       
-      if (numericValue < 0) return; // Chặn số âm
+      if (numericValue < 0) return; 
       
-      // Kiểm tra với lượng tồn kho khả dụng
       if (numericValue > availableStock) {
         toast.warn(`Số lượng xuất (${numericValue}) không thể vượt quá tồn kho hiện có (${availableStock}).`);
         updatedItems[index][field] = availableStock;
       } else {
-        updatedItems[index][field] = numericValue;
+        updatedItems[index][field] = value;
       }
     } else {
       updatedItems[index][field] = value;
@@ -39,9 +49,32 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
   };
 
   const handleSaveChanges = () => {
+    // Lọc ra các dòng có productId và số lượng > 0 trước khi validate
+    const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
+    
+    if (itemsToValidate.length === 0) {
+        toast.warn("Phiếu xuất phải có ít nhất một mặt hàng với số lượng lớn hơn 0.");
+        onSave({ ...slipData, items: [] }); // Gửi mảng rỗng để xóa hết
+        return;
+    }
+
+    // <-- SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
+    // Dùng .safeParse trên từng item và kiểm tra
+    for (let i = 0; i < itemsToValidate.length; i++) {
+        const item = itemsToValidate[i];
+        const validationResult = exportItemSchema.safeParse(item);
+        if (!validationResult.success) {
+            // Xác định dòng lỗi dựa trên index trong mảng gốc để thông báo chính xác
+            const originalIndex = slipData.items.findIndex(originalItem => originalItem.id === item.id);
+            const errorMessage = `Lỗi ở dòng ${originalIndex + 1} (Mã: ${item.productId}): ${validationResult.error.issues[0].message}`;
+            toast.warn(errorMessage);
+            return;
+        }
+    }
+
     const finalSlipData = {
         ...slipData,
-        items: slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0)
+        items: itemsToValidate // Chỉ gửi đi những dòng hợp lệ
     };
     onSave(finalSlipData);
   };
@@ -58,7 +91,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
           <div className="grid-header">Số lô</div>
           <div className="grid-header">ĐVT</div>
           <div className="grid-header">Quy cách</div>
-          <div className="grid-header">SL Xuất</div>
+          <div className="grid-header">SL Xuất (*)</div>
           <div className="grid-header">Ghi chú</div>
           <div className="grid-header">Thao tác</div>
 

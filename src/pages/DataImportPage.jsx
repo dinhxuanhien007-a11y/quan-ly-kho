@@ -7,10 +7,10 @@ import { toast } from 'react-toastify';
 import Papa from 'papaparse';
 import { FiUpload, FiDownload, FiInfo } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
-import '../styles/DataImportPage.css';
+import styles from '../styles/DataImportPage.module.css'; // Cập nhật import
 
 const DataImportPage = () => {
-    const [importType, setImportType] = useState('inventory'); // <-- THAY ĐỔI: Mặc định là import tổng hợp
+    const [importType, setImportType] = useState('inventory');
     const [pastedData, setPastedData] = useState('');
     const [isImporting, setIsImporting] = useState(false);
     const [importLog, setImportLog] = useState([]);
@@ -67,36 +67,30 @@ const DataImportPage = () => {
         setIsImporting(true);
         setImportLog([]);
         logMessage(`Phát hiện ${data.length} dòng. Bắt đầu xử lý cho loại: ${importType}...`);
-
         try {
-            const MAX_BATCH_SIZE = 499; // Giới hạn an toàn của Firestore là 500 thao tác/batch
+            const MAX_BATCH_SIZE = 499;
             let batch = writeBatch(db);
             let operationCount = 0;
             let totalSuccess = 0;
             
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
-
-                // --- LOGIC GỘP SẢN PHẨM & TỒN KHO ---
                 if (importType === 'inventory') {
-                    // 1. Kiểm tra các trường bắt buộc
                     if (!row.productId || !row.productName || !row.lotNumber || !row.quantityRemaining) {
                         logMessage(`Bỏ qua dòng ${i + 2}: Thiếu thông tin bắt buộc (Mã, Tên, Lô, SL Tồn).`, 'warn');
                         continue;
                     }
                     
                     const expiryDate = parseDateString(row.expiryDate);
-                    if (!expiryDate && row.expiryDate) { // Chỉ báo lỗi nếu có nhập HSD nhưng sai định dạng
+                    if (!expiryDate && row.expiryDate) {
                         logMessage(`Bỏ qua dòng ${i + 2}: Sai định dạng HSD (cần là dd/mm/yyyy).`, 'warn');
                         continue;
                     }
 
                     const productId = row.productId.trim().toUpperCase();
-
-                    // 2. Tự động tạo sản phẩm mới nếu chưa tồn tại
                     const productRef = doc(db, 'products', productId);
                     const productSnap = await getDoc(productRef);
-                    
+
                     if (!productSnap.exists()) {
                         const newProductData = {
                             productName: row.productName,
@@ -111,7 +105,6 @@ const DataImportPage = () => {
                         logMessage(`Đã tạo sản phẩm mới: ${productId}`);
                     }
                     
-                    // 3. Luôn tạo một lô hàng mới cho tồn đầu kỳ
                     const inventoryRef = doc(collection(db, 'inventory_lots'));
                     const inventoryData = {
                         productId: productId,
@@ -132,7 +125,6 @@ const DataImportPage = () => {
                     operationCount++;
                     totalSuccess++;
                 
-                // --- LOGIC IMPORT ĐỐI TÁC (Giữ nguyên) ---
                 } else if (importType === 'partners') {
                     if (!row.partnerId) {
                         logMessage(`Bỏ qua dòng ${i + 2}: Thiếu partnerId.`, 'warn');
@@ -149,7 +141,6 @@ const DataImportPage = () => {
                     totalSuccess++;
                 }
 
-                // Thực thi batch khi đầy
                 if (operationCount >= MAX_BATCH_SIZE) {
                     await batch.commit();
                     logMessage(`Đã ghi thành công ${operationCount} thao tác...`);
@@ -158,7 +149,6 @@ const DataImportPage = () => {
                 }
             }
 
-            // Thực thi batch cuối cùng
             if (operationCount > 0) {
                 await batch.commit();
                 logMessage(`Đã ghi thành công ${operationCount} thao tác cuối cùng.`);
@@ -179,12 +169,11 @@ const DataImportPage = () => {
     
     const downloadTemplate = () => {
         let headers, filename, sampleData;
-        
         if (importType === 'partners') {
             headers = "partnerId*,partnerName*,partnerType";
             filename = "mau_import_doi_tac.csv";
             sampleData = "NCC-01,CÔNG TY DƯỢC PHẨM ABC,supplier\nKH-01,BỆNH VIỆN XYZ,customer";
-        } else { // Mẫu chung cho Sản phẩm + Tồn kho
+        } else {
             headers = "productId*,productName*,lotNumber*,quantityRemaining*,expiryDate,unit,packaging,storageTemp,team,manufacturer";
             filename = "mau_import_san_pham_ton_kho.csv";
             sampleData = "SP001,BÔNG CỒN ALKOCIDE,L202501,100,31/12/2025,Hộp,100 miếng/hộp,Nhiệt độ phòng,MED,DentaLife\nSP002,GĂNG TAY Y TẾ,GT001,50,,Hộp,50 đôi/hộp,,MED,";
@@ -201,18 +190,17 @@ const DataImportPage = () => {
     };
 
     return (
-        <div className="data-import-page">
+        <div className={styles.dataImportPage}>
             <div className="page-header">
                 <h1>Import Dữ Liệu Hàng Loạt</h1>
             </div>
 
-            <div className="import-container">
-                <div className="import-controls">
+            <div className={styles.importContainer}>
+                <div className={styles.importControls}>
                     <h3>1. Chọn loại dữ liệu</h3>
-                    <div className="import-type-selector">
-                        {/* <-- THAY ĐỔI: Gộp Sản phẩm và Tồn kho làm một --> */}
-                        <button onClick={() => setImportType('inventory')} className={importType === 'inventory' ? 'active' : ''}>Sản phẩm & Tồn kho</button>
-                        <button onClick={() => setImportType('partners')} className={importType === 'partners' ? 'active' : ''}>Đối tác</button>
+                    <div className={styles.importTypeSelector}>
+                        <button onClick={() => setImportType('inventory')} className={importType === 'inventory' ? styles.active : ''}>Sản phẩm & Tồn kho</button>
+                        <button onClick={() => setImportType('partners')} className={importType === 'partners' ? styles.active : ''}>Đối tác</button>
                     </div>
 
                     <h3>2. Chuẩn bị dữ liệu</h3>
@@ -221,13 +209,12 @@ const DataImportPage = () => {
                         <FiDownload /> Tải File Mẫu
                     </button>
                     
-                    <div className="import-instructions">
+                    <div className={styles.importInstructions}>
                          <FiInfo /> 
                          <div>
                             <strong>Lưu ý quan trọng:</strong>
                             <ul>
                                 <li>Cột tiêu đề (có dấu `*`) là bắt buộc phải có dữ liệu.</li>
-                                {/* <-- THAY ĐỔI: Giải thích logic mới --> */}
                                 <li>Nếu `productId` chưa có, một sản phẩm mới sẽ được tự động tạo.</li>
                                 <li>Mỗi dòng trong file sẽ tạo ra một lô hàng tồn kho mới.</li>
                                 <li>Nếu `partnerId` đã tồn tại, dữ liệu cũ sẽ bị **ghi đè**.</li>
@@ -236,14 +223,13 @@ const DataImportPage = () => {
                     </div>
                 </div>
 
-                <div className="import-actions">
+                <div className={styles.importActions}>
                     <h3>3. Tải lên và thực hiện</h3>
-                     {/* ... Giao diện tải lên và nhật ký giữ nguyên ... */}
-                     <div className="import-method">
+                     <div className={styles.importMethod}>
                         <h4>Cách 1: Tải lên file .csv</h4>
                         <input type="file" accept=".csv" onChange={handleFileImport} disabled={isImporting} />
                     </div>
-                     <div className="import-method">
+                     <div className={styles.importMethod}>
                         <h4>Cách 2: Dán dữ liệu từ Excel/Google Sheets</h4>
                         <textarea 
                             rows="8" 
@@ -256,12 +242,12 @@ const DataImportPage = () => {
                             <FiUpload /> {isImporting ? 'Đang import...' : 'Import từ dữ liệu đã dán'}
                         </button>
                     </div>
-                    <div className="import-log-container">
+                    <div className={styles.importLogContainer}>
                         <h4>Nhật ký Import</h4>
-                        <div className="import-log">
+                        <div className={styles.importLog}>
                             {importLog.length === 0 && <p>Chưa có hoạt động nào.</p>}
                             {importLog.map((log, index) => (
-                                <p key={index} className={`log-item log-${log.type}`}>
+                                <p key={index} className={`${styles.logItem} ${styles[`log-${log.type}`]}`}>
                                     <span>[{log.time}]</span> {log.message}
                                 </p>
                             ))}

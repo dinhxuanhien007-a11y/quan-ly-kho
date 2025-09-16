@@ -1,21 +1,21 @@
 // src/components/Spinner.jsx
 import React from 'react';
-import './Spinner.css';
+import styles from './Spinner.module.css'; // Cập nhật import
 
 const Spinner = ({ forTable = false }) => {
     if (forTable) {
         return (
-            <tr className="spinner-table-row">
-                <td colSpan="100%"> {/* colSpan lớn để hoạt động với mọi bảng */}
-                    <div className="spinner"></div>
+            <tr className={styles.spinnerTableRow}>
+                <td colSpan="100%">
+                    <div className={styles.spinner}></div>
                 </td>
             </tr>
         );
     }
 
     return (
-        <div className="spinner-container">
-            <div className="spinner"></div>
+        <div className={styles.spinnerContainer}>
+            <div className={styles.spinner}></div>
         </div>
     );
 };

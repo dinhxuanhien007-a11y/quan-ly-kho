@@ -6,6 +6,25 @@ import { FiXCircle, FiChevronDown } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// Định nghĩa Schema xác thực cho từng mặt hàng và toàn bộ phiếu xuất
+const exportItemSchema = z.object({
+    productId: z.string().min(1, { message: "Mã hàng không được để trống." }),
+    selectedLotId: z.string().min(1, { message: "Vui lòng chọn một lô hàng." }),
+    quantityToExport: z.preprocess(
+        val => Number(val), // Chuyển đổi giá trị sang số trước khi xác thực
+        z.number({ invalid_type_error: "Số lượng xuất phải là một con số." })
+         .gt(0, { message: "Số lượng xuất phải lớn hơn 0." })
+    )
+});
+
+const exportSlipSchema = z.object({
+    customerId: z.string().min(1, { message: "Mã khách hàng không được để trống." }),
+    customerName: z.string().min(1, { message: "Không tìm thấy tên khách hàng tương ứng." }),
+    items: z.array(exportItemSchema).min(1, { message: "Phiếu xuất phải có ít nhất một mặt hàng." })
+});
+
 
 const NewExportPage = () => {
     const today = new Date();
@@ -57,23 +76,42 @@ const NewExportPage = () => {
     };
 
     const getValidSlipData = () => {
-        if (!customerId || !customerName) {
-            toast.warn('Vui lòng nhập Mã Khách hàng hợp lệ.');
+        const validItems = items.filter(item => item.productId && item.selectedLotId && item.quantityToExport);
+        
+        const slipToValidate = {
+            customerId: customerId.trim(),
+            customerName: customerName.trim(),
+            items: validItems
+        };
+
+        const validationResult = exportSlipSchema.safeParse(slipToValidate);
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return null;
         }
-        const validItems = items.filter(item => item.selectedLotId && Number(item.quantityToExport) > 0);
-        if (validItems.length === 0) {
-            toast.warn('Vui lòng thêm ít nhất một mặt hàng và nhập số lượng xuất.');
-            return null;
-        }
+
         return {
-            exportDate, customerId: customerId.toUpperCase(), customer: customerName,
-            description, items: validItems.map(item => ({
-                productId: item.productId, productName: item.productName, lotId: item.selectedLotId,
-                lotNumber: item.lotNumber, expiryDate: item.expiryDate, unit: item.unit,
-                packaging: item.packaging, storageTemp: item.storageTemp,
-                quantityToExport: Number(item.quantityToExport), notes: item.notes
-            })), createdAt: serverTimestamp()
+            exportDate, 
+            customerId: customerId.toUpperCase(), 
+            customer: customerName,
+            description, 
+            items: validationResult.data.items.map(item => {
+                const fullItemData = items.find(i => i.selectedLotId === item.selectedLotId);
+                return {
+                    productId: item.productId,
+                    productName: fullItemData?.productName || '',
+                    lotId: item.selectedLotId,
+                    lotNumber: fullItemData?.lotNumber || '',
+                    expiryDate: fullItemData?.expiryDate || '',
+                    unit: fullItemData?.unit || '',
+                    packaging: fullItemData?.packaging || '',
+                    storageTemp: fullItemData?.storageTemp || '',
+                    quantityToExport: item.quantityToExport,
+                    notes: fullItemData?.notes || ''
+                }
+            }), 
+            createdAt: serverTimestamp()
         };
     };
 
@@ -85,7 +123,7 @@ const NewExportPage = () => {
             quantityRemaining: 0, quantityToExport: '', notes: '' 
         }]);
     };
-
+    
     const handleSaveDraft = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -129,15 +167,16 @@ const NewExportPage = () => {
     };
 
     const promptForDirectExport = () => {
-        if (!getValidSlipData()) return;
-        setConfirmModal({
-            isOpen: true,
-            title: "Xác nhận xuất kho?",
-            message: "Hành động này sẽ trừ tồn kho ngay lập tức. Bạn có chắc chắn muốn tiếp tục?",
-            onConfirm: handleDirectExport
-        });
+        if (getValidSlipData()) { // Chỉ gọi getValidSlipData một lần để hiển thị toast nếu có lỗi
+             setConfirmModal({
+                isOpen: true,
+                title: "Xác nhận xuất kho?",
+                message: "Hành động này sẽ trừ tồn kho ngay lập tức. Bạn có chắc chắn muốn tiếp tục?",
+                onConfirm: handleDirectExport
+            });
+        }
     };
-
+    
     const handleProductSearch = async (index, productId) => {
         if (!productId) return;
         const newItems = [...items];
@@ -164,6 +203,7 @@ const NewExportPage = () => {
           } else {
             let foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
+            
             currentItem.availableLots = foundLots;
             setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
           }
@@ -191,7 +231,6 @@ const NewExportPage = () => {
         }
         setItems(newItems);
     };
-
     const handleItemChange = (index, field, value) => {
         const newItems = [...items];
         if (field === 'quantityToExport') {
@@ -215,14 +254,14 @@ const NewExportPage = () => {
     
     const addNewRow = () => {
         setItems([...items, { 
-            id: Date.now(), 
+             id: Date.now(), 
             productId: '', 
             productName: '', 
             unit: '', 
             packaging: '', 
             storageTemp: '', 
             availableLots: [], 
-            selectedLotId: '', 
+             selectedLotId: '', 
             lotNumber: '', 
             displayLotText: '', 
             expiryDate: '', 
@@ -258,12 +297,12 @@ const NewExportPage = () => {
             <h1>Tạo Phiếu Xuất Kho</h1>
             <div className="form-section">
                 <div className="form-row">
-                    <div className="form-group">
+                     <div className="form-group">
                         <label>Ngày xuất</label>
-                        <input type="text" value={exportDate} onChange={(e) => setExportDate(e.target.value)} />
+                        <input type="text" value={exportDate} readOnly style={{backgroundColor: '#f0f0f0'}} />
                     </div>
                     <div className="form-group">
-                        <label>Mã Khách Hàng</label>
+                         <label>Mã Khách Hàng (*)</label>
                         <input
                             list="customers-list"
                             type="text"
@@ -276,87 +315,88 @@ const NewExportPage = () => {
                             {allCustomers.map(cus => (
                                 <option key={cus.id} value={cus.id}>
                                     {cus.partnerName}
-                                </option>
+                                 </option>
                             ))}
                         </datalist>
                     </div>
                     <div className="form-group">
-                        <label>Tên Khách Hàng / Nơi nhận</label>
+                         <label>Tên Khách Hàng / Nơi nhận (*)</label>
                         <input
                             type="text"
                             value={customerName}
                             readOnly
                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
-                    </div>
+                     </div>
                 </div>
                 <div className="form-group">
                     <label>Diễn giải</label>
                     <textarea rows="2" placeholder="Ghi chú cho phiếu xuất..." value={description} onChange={e => setDescription(e.target.value)}></textarea>
-                </div>
+                 </div>
             </div>
 
             <h2>Chi Tiết Hàng Hóa Xuất Kho</h2>
             <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-                <div className="grid-header">Mã hàng</div>
+                <div className="grid-header">Mã hàng (*)</div>
                 <div className="grid-header">Tên hàng</div>
-                <div className="grid-header">Số lô</div>
+                <div className="grid-header">Số lô (*)</div>
                 <div className="grid-header">ĐVT</div>
                 <div className="grid-header">Quy cách</div>
-                <div className="grid-header">SL Xuất</div>
+                <div className="grid-header">SL Xuất (*)</div>
                 <div className="grid-header">Ghi chú</div>
-                <div className="grid-header">Xóa</div>
+                 <div className="grid-header">Xóa</div>
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
                         <div className="grid-cell">
                             <input type="text" placeholder="Nhập mã hàng..." value={item.productId}
                                 onChange={e => handleItemChange(index, 'productId', e.target.value.toUpperCase())}
                                 onBlur={e => handleProductSearch(index, e.target.value)} />
-                        </div>
+                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell">
-                            {item.selectedLotId ? (
+                            {item.selectedLotId ?
+                            (
                                 <div className="selected-lot-view">
                                     <input type="text" value={item.displayLotText} readOnly className="selected-lot-input" />
-                                    <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn">
+                                     <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn">
                                         <FiChevronDown />
                                     </button>
-                                </div>
+                                 </div>
                             ) : (
                                 <select
-                                    ref={el => lotSelectRefs.current[index] = el}
+                                     ref={el => lotSelectRefs.current[index] = el}
                                     value={item.selectedLotId}
                                     onChange={e => handleLotSelection(index, e.target.value)}
                                     disabled={item.availableLots.length === 0}
                                     style={{width: '100%'}}
-                                >
+                                 >
                                     <option value="">-- Chọn lô tồn kho --</option>
                                     {item.availableLots.map(lot => (
-                                        <option key={lot.id} value={lot.id}>
+                                       <option key={lot.id} value={lot.id}>
                                         {`Lô: ${lot.lotNumber} | HSD: ${formatDate(lot.expiryDate)} | Tồn: ${lot.quantityRemaining}`}
                                         </option>
                                     ))}
-                                </select>
+                             </select>
                             )}
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input type="number" value={item.quantityToExport}
-                                ref={el => quantityInputRefs.current[index] = el}
+                         ref={el => quantityInputRefs.current[index] = el}
                                 onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} />
                         </div>
                         <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell">
                             <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRow(index)}><FiXCircle /></button>
                         </div>
-                    </React.Fragment>
+                     </React.Fragment>
                 ))}
             </div>
             <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">
                 <button onClick={handleSaveDraft} className="btn-secondary" disabled={isProcessing}>
-                    {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
+                     {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
                 </button>
                 <button onClick={promptForDirectExport} className="btn-primary" disabled={isProcessing}>
                     {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}

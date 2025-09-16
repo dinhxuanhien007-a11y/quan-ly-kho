@@ -2,9 +2,16 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-
-// Import hàm service thay vì các hàm của firestore
+import { z } from 'zod'; // <-- BƯỚC 1: IMPORT ZOD
 import { addPartner } from '../services/partnerService';
+
+// <-- BƯỚC 2: ĐỊNH NGHĨA SCHEMA -->
+const partnerSchema = z.object({
+  partnerId: z.string().trim().min(1, { message: "Mã Đối tác không được để trống." }),
+  partnerName: z.string().trim().min(1, { message: "Tên Đối tác không được để trống." }),
+  partnerType: z.enum(['supplier', 'customer']),
+});
+
 
 const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
     const [partnerId, setPartnerId] = useState('');
@@ -14,17 +21,25 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!partnerId || !partnerName) {
-            toast.warn('Mã và Tên đối tác không được để trống.');
+        
+        // <-- BƯỚC 3: SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
+        const validationResult = partnerSchema.safeParse({
+            partnerId: partnerId,
+            partnerName: partnerName,
+            partnerType: partnerType,
+        });
+
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return;
         }
+
         setIsSaving(true);
-
         try {
-            const newPartnerData = { partnerName, partnerType };
-            // Gọi hàm service để thêm đối tác
-            await addPartner(partnerId, newPartnerData);
-
+            const { partnerId: validatedId, ...newPartnerData } = validationResult.data;
+            // Gửi ID đã được validate và viết hoa lên service
+            await addPartner(validatedId.toUpperCase(), newPartnerData);
+            
             toast.success('Thêm đối tác mới thành công!');
             onPartnerAdded();
         } catch (error) {
@@ -41,11 +56,11 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
                 <h2>Thêm Đối Tác Mới</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Mã Đối Tác (ID)</label>
+                        <label>Mã Đối Tác (ID) (*)</label>
                         <input type="text" value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required autoFocus/>
                     </div>
                     <div className="form-group">
-                        <label>Tên Đối Tác</label>
+                        <label>Tên Đối Tác (*)</label>
                         <input type="text" value={partnerName} onChange={(e) => setPartnerName(e.target.value)} required />
                     </div>
                     <div className="form-group">

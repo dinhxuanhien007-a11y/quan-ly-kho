@@ -22,16 +22,20 @@ import '../styles/AdminLayout.css';
 const Navbar = () => {
   return (
     <nav className="top-navbar">
-      <div className="navbar-brand">
+  
+     <div className="navbar-brand">
         <h3>Kho PT Biomed</h3>
       </div>
       <ul className="nav-items">
         <li>
-          <NavLink to="/view" title="Xem Sổ Cái Tồn Kho">
+          {/* ======================= THAY ĐỔI DUY NHẤT Ở ĐÂY ======================= */}
+          <a href="/view" title="Xem Sổ Cái Tồn Kho">
             <FiBookOpen className="nav-icon" />
-          </NavLink>
+          </a>
+          {/* ======================================================================= */}
         </li>
         <li>
+        
           <NavLink to="/" title="Bảng điều khiển">
             <FiGrid className="nav-icon" />
           </NavLink>
@@ -41,6 +45,7 @@ const Navbar = () => {
             <FiArchive className="nav-icon" />
           </NavLink>
         </li>
+      
         <li>
           <NavLink to="/partners" title="Quản lý Đối tác"><FiUsers className="nav-icon" /></NavLink> {/* <-- LINK MỚI */}
         </li>
@@ -49,7 +54,8 @@ const Navbar = () => {
           <NavLink to="/new-import" title="Tạo Phiếu Nhập">
             <FiFilePlus className="nav-icon" />
           </NavLink>
-        </li>
+   
+         </li>
         {/* --- THAY ĐỔI: ICON TẠO PHIẾU XUẤT --- */}
         <li>
           <NavLink to="/new-export" title="Tạo Phiếu Xuất">
@@ -57,7 +63,8 @@ const Navbar = () => {
           </NavLink>
         </li>
         {/* --- THAY ĐỔI: ICON DANH SÁCH PHIẾU NHẬP --- */}
-        <li>
+   
+         <li>
           <NavLink to="/imports" title="Danh sách Phiếu Nhập">
             <FiClipboard className="nav-icon" />
           </NavLink>
@@ -65,7 +72,8 @@ const Navbar = () => {
         {/* --- THAY ĐỔI: ICON DANH SÁCH PHIẾU XUẤT --- */}
         <li>
           <NavLink to="/exports" title="Danh sách Phiếu Xuất">
-            <FiFileText className="nav-icon" />
+     
+           <FiFileText className="nav-icon" />
           </NavLink>
         </li>
         <li>
@@ -84,6 +92,7 @@ const Navbar = () => {
           </NavLink>
         </li>
       </ul>
+    
     </nav>
   );
 };

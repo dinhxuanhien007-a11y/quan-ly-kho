@@ -1,24 +1,36 @@
 // src/components/AddNewLotModal.jsx
 import React, { useState } from 'react';
-import { formatExpiryDate, parseDateString } from '../utils/dateUtils'; // Thêm parseDateString
+import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// <-- ĐỊNH NGHĨA SCHEMA -->
+const newLotSchema = z.object({
+    expiryDate: z.string().refine(val => parseDateString(val) !== null, {
+        message: "Vui lòng nhập Hạn Sử Dụng hợp lệ (dd/mm/yyyy)."
+    })
+});
 
 const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) => {
     const [expiryDate, setExpiryDate] = useState('');
 
     const handleSave = () => {
-        const parsedDate = parseDateString(expiryDate); // Phân tích chuỗi ngày tháng
-        if (!parsedDate) { // Kiểm tra xem ngày có hợp lệ không
-            toast.warn('Vui lòng nhập Hạn Sử Dụng hợp lệ (dd/mm/yyyy).');
+        // <-- SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
+        const validationResult = newLotSchema.safeParse({ expiryDate });
+        
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
             return;
         }
+        
+        // Chỉ gọi onSave khi dữ liệu đã hợp lệ
         onSave(expiryDate);
     };
 
     const handleExpiryDateBlur = (e) => {
         setExpiryDate(formatExpiryDate(e.target.value));
     };
-
+    
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             handleSave();

@@ -1,20 +1,45 @@
 // src/components/EditImportSlipModal.jsx
-import React, { useState, useRef, useEffect } from 'react'; // <-- THÊM MỚI: import useRef, useEffect
+import React, { useState, useRef, useEffect } from 'react';
 import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
-import { formatExpiryDate } from '../utils/dateUtils';
+import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
+import { toast } from 'react-toastify'; 
+import { z } from 'zod'; // <-- IMPORT ZOD
+
+// <-- ĐỊNH NGHĨA SCHEMA XÁC THỰC -->
+const importItemSchema = z.object({
+  productId: z.string().trim().min(1, { message: "Mã hàng không được để trống." }),
+  productName: z.string(), // Tên hàng là readOnly nên không cần check
+  lotNumber: z.string().trim().min(1, { message: "Số lô không được để trống." }),
+  expiryDate: z.string().refine(val => parseDateString(val) !== null, {
+      message: "HSD có định dạng không hợp lệ (cần là dd/mm/yyyy)."
+  }),
+  quantity: z.preprocess(
+      val => Number(String(val).trim()), // Chuyển đổi giá trị sang số
+      z.number({ invalid_type_error: "Số lượng phải là một con số." })
+       .gt(0, { message: "Số lượng phải lớn hơn 0." })
+  ),
+  // Các trường khác là tùy chọn hoặc readOnly
+  unit: z.string().optional(),
+  packaging: z.string().optional(),
+  notes: z.string().optional(),
+  storageTemp: z.string().optional(),
+  team: z.string().optional(),
+});
+
+const importSlipSchema = z.object({
+    items: z.array(importItemSchema).min(1, { message: "Phiếu nhập phải có ít nhất một mặt hàng hợp lệ." })
+});
+
 
 const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
-  // <-- THÊM MỚI: Ref để tham chiếu đến input cuối cùng
   const lastInputRef = useRef(null);
 
-  // <-- THÊM MỚI: useEffect để focus vào input của dòng mới được thêm
   useEffect(() => {
     if (lastInputRef.current) {
         lastInputRef.current.focus();
     }
-  }, [slipData.items.length]); // Chạy mỗi khi số lượng dòng thay đổi
-
+  }, [slipData.items.length]);
 
   const handleExpiryDateBlur = (index, value) => {
     const updatedItems = [...slipData.items];
@@ -46,22 +71,37 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   };
 
   const handleSaveChanges = () => {
-    onSave(slipData);
+    // <-- SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
+    const itemsToValidate = slipData.items.filter(item => item.productId); // Chỉ validate những dòng có mã hàng
+    const validationResult = importSlipSchema.safeParse({ items: itemsToValidate });
+
+    if (!validationResult.success) {
+        const firstError = validationResult.error.issues[0];
+        const errorPath = firstError.path; // ví dụ: ['items', 0, 'lotNumber']
+        const errorIndex = errorPath[1];
+        const errorMessage = `Lỗi ở Dòng ${errorIndex + 1}: ${firstError.message}`;
+        
+        toast.warn(errorMessage);
+        return;
+    }
+
+    // Nếu hợp lệ, chỉ gửi đi dữ liệu đã được validate
+    onSave({ ...slipData, items: validationResult.data.items });
   };
+
   return (
     <div className="modal-backdrop">
       <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
         <h2>Chỉnh sửa Phiếu Nhập Kho (ID: {slipData.id})</h2>
         <h3>Chi tiết hàng hóa</h3>
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-          {/* ... grid headers ... */}
-          <div className="grid-header">Mã hàng</div>
+          <div className="grid-header">Mã hàng (*)</div>
           <div className="grid-header">Tên hàng</div>
-          <div className="grid-header">Số lô</div>
-          <div className="grid-header">HSD</div>
+          <div className="grid-header">Số lô (*)</div>
+          <div className="grid-header">HSD (*)</div>
           <div className="grid-header">ĐVT</div>
           <div className="grid-header">Quy cách</div>
-          <div className="grid-header">Số lượng</div>
+          <div className="grid-header">Số lượng (*)</div>
           <div className="grid-header">Ghi chú</div>
           <div className="grid-header">Thao tác</div>
 
@@ -72,7 +112,6 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
                     type="text" 
                     value={item.productId} 
                     onChange={e => handleItemChange(index, 'productId', e.target.value)} 
-                    // <-- THAY ĐỔI: Gán ref cho ô input của dòng cuối cùng
                     ref={index === slipData.items.length - 1 ? lastInputRef : null}
                 />
               </div>

@@ -13,7 +13,7 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
     
     return (
         <div className="modal-backdrop">
-            <div className="modal-content printable-area" style={{ width: '90vw', maxWidth: '1200px' }}>
+            <div className="modal-content printable-area export-slip" style={{ width: '90vw', maxWidth: '1200px' }}>
                 <h2>Chi Tiết Phiếu Xuất Kho</h2>
                 
                 <div className="compact-info-grid">

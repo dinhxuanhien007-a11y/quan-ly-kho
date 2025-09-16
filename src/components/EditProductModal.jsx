@@ -2,9 +2,18 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-
-// Import hàm service thay vì các hàm của firestore
+import { z } from 'zod'; // <-- IMPORT ZOD
 import { updateProduct } from '../services/productService';
+
+// <-- ĐỊNH NGHĨA SCHEMA -->
+const productSchema = z.object({
+  productName: z.string().trim().min(1, { message: 'Tên hàng không được để trống.' }),
+  unit: z.string().trim().min(1, { message: 'Đơn vị tính không được để trống.' }),
+  packaging: z.string().optional(),
+  storageTemp: z.string().optional(),
+  manufacturer: z.string().optional(),
+  team: z.string(),
+});
 
 const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
   const [productData, setProductData] = useState({ ...productToEdit });
@@ -17,15 +26,23 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // <-- SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
+    const validationResult = productSchema.safeParse(productData);
+    
+    if (!validationResult.success) {
+        toast.warn(validationResult.error.issues[0].message);
+        return;
+    }
+
     setIsSaving(true);
     try {
-      // Gọi hàm service để cập nhật sản phẩm
-      // Dữ liệu trong state 'productData' đã bao gồm các trường cần thiết
-      await updateProduct(productToEdit.id, productData);
+      // Gửi dữ liệu đã được validate lên service
+      await updateProduct(productToEdit.id, validationResult.data);
       
       toast.success('Cập nhật sản phẩm thành công!');
       onProductUpdated();
-    } catch (error) {
+    } catch (error)      {
       console.error("Lỗi khi cập nhật sản phẩm: ", error);
       toast.error('Đã xảy ra lỗi khi cập nhật sản phẩm.');
     } finally {
@@ -40,12 +57,12 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
         <p><strong>Mã hàng:</strong> {productToEdit.id}</p>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Tên hàng</label>
+            <label>Tên hàng (*)</label>
             <input type="text" name="productName" value={productData.productName || ''} onChange={handleChange} required autoFocus />
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Đơn vị tính</label>
+              <label>Đơn vị tính (*)</label>
               <input type="text" name="unit" value={productData.unit || ''} onChange={handleChange} required />
             </div>
             <div className="form-group">

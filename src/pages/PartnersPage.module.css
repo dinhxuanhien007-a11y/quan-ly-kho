@@ -1,0 +1,13 @@
+/* src/pages/PartnersPage.module.css */
+
+.partnerIdCell {
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 14px;
+    color: #0056b3;
+}
+
+.partnerTypeCell {
+    font-style: italic;
+    color: #555;
+}

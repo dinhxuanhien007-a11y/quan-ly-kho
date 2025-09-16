@@ -1,96 +1,102 @@
 // src/hooks/useFirestorePagination.js
 import { useState, useEffect, useCallback } from 'react';
-import { getDocs, query, startAfter, limit, endBefore, limitToLast } from 'firebase/firestore'; // Thêm endBefore và limitToLast
+import { getDocs, query, startAfter, limit, endBefore, limitToLast } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 export const useFirestorePagination = (baseQuery, pageSize) => {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isLastPage, setIsLastPage] = useState(false);
     
-    // Sửa đổi: pageStartCursors sẽ lưu con trỏ ĐẦU TIÊN của mỗi trang
-    const [pageStartCursors, setPageStartCursors] = useState([null]); // Trang 1 luôn bắt đầu từ null
-    const [currentPage, setCurrentPage] = useState(1);
+    // State mới để lưu con trỏ: mỗi phần tử là [con trỏ đầu trang, con trỏ cuối trang]
+    const [pageCursors, setPageCursors] = useState([]); 
+    const [currentPageIndex, setCurrentPageIndex] = useState(0);
+    const [isLastPage, setIsLastPage] = useState(false);
 
-    const fetchPage = useCallback(async (pageNumber, direction) => {
+    const fetchPage = useCallback(async (pageIndex, direction) => {
         setLoading(true);
         try {
             let pageQuery;
-            const cursor = pageStartCursors[pageNumber - 1];
+            const currentCursor = pageCursors[pageIndex];
 
             if (direction === 'next') {
-                pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
+                const lastVisible = pageCursors[pageIndex - 1]?.[1]; // Lấy con trỏ cuối của trang trước
+                pageQuery = query(baseQuery, startAfter(lastVisible), limit(pageSize));
             } else if (direction === 'prev') {
-                 // Với prev, chúng ta cần query ngược lại, nhưng để đơn giản và hiệu quả hơn,
-                 // ta sẽ query xuôi từ con trỏ đã lưu.
-                pageQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
-                // Nếu cursor là null (tức là quay về trang 1), không cần startAfter
-                if (!cursor) {
-                    pageQuery = query(baseQuery, limit(pageSize));
-                }
-            }
-             else { // 'first'
+                const firstVisible = pageCursors[pageIndex + 1]?.[0]; // Lấy con trỏ đầu của trang sau
+                pageQuery = query(baseQuery, endBefore(firstVisible), limitToLast(pageSize));
+            } else { // 'first' or 'reset'
                 pageQuery = query(baseQuery, limit(pageSize));
             }
 
             const docSnapshots = await getDocs(pageQuery);
             const list = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            if (!docSnapshots.empty) {
+                const firstCursor = docSnapshots.docs[0];
+                const lastCursor = docSnapshots.docs[docSnapshots.docs.length - 1];
+
+                setPageCursors(prev => {
+                    const newCursors = [...prev];
+                    newCursors[pageIndex] = [firstCursor, lastCursor];
+                    return newCursors;
+                });
+                
+                // Kiểm tra xem có phải là trang cuối cùng không
+                const checkLastPageQuery = query(baseQuery, startAfter(lastCursor), limit(1));
+                const nextDoc = await getDocs(checkLastPageQuery);
+                setIsLastPage(nextDoc.empty);
+
+            } else {
+                 if (direction === 'next') setIsLastPage(true);
+            }
             
             setDocuments(list);
 
-            if (direction === 'next' && list.length > 0) {
-                const lastVisible = docSnapshots.docs[docSnapshots.docs.length - 1];
-                // Lưu con trỏ cuối cùng của trang hiện tại để làm điểm bắt đầu cho trang tiếp theo
-                setPageStartCursors(prev => {
-                    const newCursors = [...prev];
-                    newCursors[pageNumber] = lastVisible; // Con trỏ bắt đầu của trang KẾ TIẾP
-                    return newCursors;
-                });
-            }
-
-            setIsLastPage(docSnapshots.docs.length < pageSize);
         } catch (error) {
             console.error("Lỗi khi phân trang Firestore: ", error);
             toast.error("Không thể tải dữ liệu trang. Vui lòng kiểm tra Console (F12).");
         } finally {
             setLoading(false);
         }
-    }, [baseQuery, pageSize, pageStartCursors]);
+    }, [baseQuery, pageSize, pageCursors]);
 
+    // Effect này sẽ chạy khi baseQuery thay đổi (ví dụ: khi tìm kiếm)
     useEffect(() => {
-        setCurrentPage(1);
-        setPageStartCursors([null]);
-        fetchPage(1, 'first');
-    }, [baseQuery]); // Chỉ chạy lại khi query cơ sở thay đổi
+        setDocuments([]);
+        setPageCursors([]);
+        setCurrentPageIndex(0);
+        setIsLastPage(false);
+        fetchPage(0, 'first');
+    }, [baseQuery]);
 
     const nextPage = () => {
         if (!isLastPage) {
-            const nextPageNumber = currentPage + 1;
-            setCurrentPage(nextPageNumber);
-            fetchPage(nextPageNumber, 'next');
+            const nextPageIndex = currentPageIndex + 1;
+            setCurrentPageIndex(nextPageIndex);
+            fetchPage(nextPageIndex, 'next');
         }
     };
 
     const prevPage = () => {
-         if (currentPage > 1) {
-            const prevPageNumber = currentPage - 1;
-            setCurrentPage(prevPageNumber);
-            // Chúng ta không cần xóa con trỏ của trang hiện tại, chỉ cần tải lại trang trước đó
-            fetchPage(prevPageNumber, 'prev');
+         if (currentPageIndex > 0) {
+            const prevPageIndex = currentPageIndex - 1;
+            setCurrentPageIndex(prevPageIndex);
+            fetchPage(prevPageIndex, 'prev');
         }
     };
     
+    // Hàm reset để tải lại trang đầu tiên
     const reset = () => {
-        setCurrentPage(1);
-        setPageStartCursors([null]);
-        fetchPage(1, 'first');
+        setCurrentPageIndex(0);
+        setPageCursors([]);
+        fetchPage(0, 'reset');
     };
 
     return {
         documents,
         loading,
         isLastPage,
-        page: currentPage, // Trả về trang hiện tại
+        page: currentPageIndex + 1, // Trả về số trang thân thiện với người dùng (bắt đầu từ 1)
         nextPage,
         prevPage,
         reset
