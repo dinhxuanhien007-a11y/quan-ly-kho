@@ -212,10 +212,12 @@
   margin-top: 20px;
 }
 
+/* THÊM ĐOẠN MÃ NÀY VÀO */
 .modal-body {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 10px 0;
+  flex-grow: 1; /* Cho phép khu vực này giãn ra để chiếm không gian trống */
+  overflow-y: auto; /* Tự động hiển thị thanh cuộn dọc khi nội dung quá dài */
+  padding: 10px 5px; /* Thêm một chút đệm để nội dung không dính sát viền */
+  margin: 0 -5px; /* Bù lại phần padding để căn lề thẳng hàng */
 }
 
 /* --- BUTTONS & FORMS --- */
