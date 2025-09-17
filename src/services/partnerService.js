@@ -5,7 +5,8 @@ import {
     doc,
     setDoc,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+    serverTimestamp // <-- THÊM IMPORT
 } from 'firebase/firestore';
 
 /**
@@ -17,7 +18,8 @@ import {
 export const addPartner = async (partnerId, partnerData) => {
     // Luôn chuyển ID thành chữ hoa để đảm bảo tính nhất quán
     const partnerRef = doc(db, 'partners', partnerId.toUpperCase());
-    await setDoc(partnerRef, partnerData);
+    // <-- THÊM DỮ LIỆU createdAt VÀO ĐÂY
+    await setDoc(partnerRef, { ...partnerData, createdAt: serverTimestamp() });
 };
 
 /**

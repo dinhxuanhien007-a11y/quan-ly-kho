@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, getDocs, where, orderBy, documentId, limit, startAfter, Timestamp } from 'firebase/firestore';
-import { formatDate } from '../utils/dateUtils';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { FiChevronDown, FiChevronRight, FiChevronLeft, FiPrinter } from 'react-icons/fi';
@@ -12,22 +11,12 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 
+// <-- THAY ĐỔI 1: Import thêm hàm getRowColorByExpiry
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+
 const PAGE_SIZE = 15;
 
-const getRowColorByExpiry = (expiryDate) => {
-    if (!expiryDate || !expiryDate.toDate) return '';
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expDate = expiryDate.toDate();
-    expDate.setHours(0, 0, 0, 0);
-    const diffTime = expDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return 'expired-black';
-    if (diffDays <= 60) return 'near-expiry-red';
-    if (diffDays <= 90) return 'near-expiry-orange';
-    if (diffDays <= 120) return 'near-expiry-yellow';
-    return '';
-};
+// <-- THAY ĐỔI 2: Xóa toàn bộ hàm getRowColorByExpiry ở đây
 
 const getLotItemColorClass = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
@@ -61,22 +50,18 @@ const InventorySummaryPage = () => {
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            // <-- NÂNG CẤP: Thay đổi logic sắp xếp mặc định -->
-            // Sắp xếp theo Mã hàng (productId) tăng dần làm ưu tiên chính.
             let q = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
-
-            if (activeFilter.type === 'team') {
+       
+             if (activeFilter.type === 'team') {
                 q = query(q, where("team", "==", activeFilter.value));
             } else if (activeFilter.type === 'near_expiry') {
                 const today = Timestamp.now();
                 const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + 120);
+                 futureDate.setDate(futureDate.getDate() + 120);
                 const futureTimestamp = Timestamp.fromDate(futureDate);
-                // Khi lọc, ta sẽ sắp xếp theo HSD để đưa các mã cận date lên đầu
                 q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp), orderBy("nearestExpiryDate", "asc"));
             } else if (activeFilter.type === 'expired') {
                 const today = Timestamp.now();
-                // Tương tự, sắp xếp theo HSD
                 q = query(q, where("nearestExpiryDate", "<", today), orderBy("nearestExpiryDate", "asc"));
             }
 
@@ -114,13 +99,14 @@ const InventorySummaryPage = () => {
                 collection(db, "inventory_lots"),
                 where("lotNumber", "==", term)
             );
+  
             const [productSnap, lotSnap] = await Promise.all([
                 getDocs(productSearchQuery),
                 getDocs(lotSearchQuery)
             ]);
             const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
             lotSnap.docs.forEach(doc => foundProductIds.add(doc.data().productId));
-            
+         
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
@@ -152,7 +138,6 @@ const InventorySummaryPage = () => {
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchTerm, activeFilter, fetchData, performSearch]);
-
 
     const toggleRow = async (productId) => {
         const isCurrentlyExpanded = !!expandedRows[productId];
@@ -207,10 +192,8 @@ const InventorySummaryPage = () => {
             if (!lotDetails[id]) return toggleRow(id);
             return Promise.resolve();
         });
-        
         toast.info("Đang chuẩn bị dữ liệu để in, vui lòng chờ...");
         await Promise.all(fetchPromises);
-        
         const allExpanded = allProductIds.reduce((acc, id) => {
             acc[id] = true;
             return acc;
@@ -235,7 +218,7 @@ const InventorySummaryPage = () => {
                     </button>
                 )}
             </div>
-            
+       
             <div className="controls-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
                  <div className="filter-group">
                     <button className={activeFilter.value === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lọc hàng MED</button>
@@ -273,6 +256,7 @@ const InventorySummaryPage = () => {
                                     <th>Team</th>
                                 </tr>
                             </thead>
+                 
                             <tbody>
                                 {summaries.map(product => (
                                     <React.Fragment key={product.id}>
@@ -290,6 +274,7 @@ const InventorySummaryPage = () => {
                                             <td data-label="Nhiệt độ BQ"><TempBadge temperature={product.storageTemp} /></td>
                                             <td data-label="Team"><TeamBadge team={product.team} /></td>
                                         </tr>
+                             
                                         {expandedRows[product.id] && (
                                             <tr className="lot-details-row">
                                                 <td colSpan="8">

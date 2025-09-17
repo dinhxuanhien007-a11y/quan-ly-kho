@@ -523,20 +523,20 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
+import { z } from 'zod';
 
-// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
+// Äá»‹nh nghÄ©a Schema vá»›i logic .refine() Ä‘Ã£ Ä‘Æ°á»£c sá»­a lá»—i
 const unlistedItemSchema = z.object({
     productId: z.string().trim().min(1, "MÃ£ hÃ ng lÃ  báº¯t buá»™c."),
-    productName: z.string(), // Sáº½ kiá»ƒm tra Ä‘iá»u kiá»‡n bÃªn dÆ°á»›i
+    productName: z.string(), 
     countedQty: z.preprocess(
         val => Number(val),
         z.number({ required_error: "Sá»‘ lÆ°á»£ng Ä‘áº¿m lÃ  báº¯t buá»™c.", invalid_type_error: "Sá»‘ lÆ°á»£ng Ä‘áº¿m pháº£i lÃ  má»™t con sá»‘." })
          .gt(0, "Sá»‘ lÆ°á»£ng Ä‘áº¿m pháº£i lá»›n hÆ¡n 0.")
     )
-}).refine(data => { // ThÃªm Ä‘iá»u kiá»‡n refine
+}).refine((data, ctx) => { // <-- Sá»¬A Lá»–I 1: ThÃªm (data, ctx) Ä‘á»ƒ nháº­n context
     // Náº¿u isNewProduct lÃ  true (Ä‘Æ°á»£c truyá»n vÃ o context), thÃ¬ productName pháº£i cÃ³ giÃ¡ trá»‹
-    if (this.isNewProduct) {
+    if (ctx.isNewProduct) { // <-- Sá»¬A Lá»–I 2: Sá»­ dá»¥ng ctx.isNewProduct thay vÃ¬ this.isNewProduct
         return data.productName.trim().length > 0;
     }
     return true; // Náº¿u khÃ´ng pháº£i sáº£n pháº©m má»›i thÃ¬ khÃ´ng cáº§n check
@@ -560,8 +560,9 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
 
     const handleProductSearch = async () => {
         if (!productId) return;
-        const productRef = doc(db, 'products', productId.trim());
+        const productRef = doc(db, 'products', productId.trim().toUpperCase());
         const productSnap = await getDoc(productRef);
+
         if (productSnap.exists()) {
             const data = productSnap.data();
             setProductName(data.productName);
@@ -586,7 +587,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
+        // Sá»­ dá»¥ng schema Ä‘á»ƒ xÃ¡c thá»±c
         const validationResult = unlistedItemSchema.safeParse({
             productId: productId,
             productName: productName,
@@ -602,7 +603,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
         }
         
         onAddItem({
-            productId: validationResult.data.productId.trim(),
+            productId: validationResult.data.productId.trim().toUpperCase(),
             productName: productName,
             lotNumber: lotNumber.trim() || 'N/A',
             expiryDate: expiryDate,
@@ -610,7 +611,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
             packaging: packaging,
             systemQty: 0,
             countedQty: validationResult.data.countedQty,
-            lotId: `new_${validationResult.data.productId.trim()}_${lotNumber.trim() || Date.now()}`,
+            lotId: `new_${validationResult.data.productId.trim().toUpperCase()}_${lotNumber.trim() || Date.now()}`,
             isNew: true,
             storageTemp: storageTemp,
             manufacturer: manufacturer,
@@ -629,7 +630,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>MÃ£ hÃ ng (*)</label>
-                        <input type="text" value={productId} onChange={e => setProductId(e.target.value)} onBlur={handleProductSearch} required />
+                        <input type="text" value={productId} onChange={e => setProductId(e.target.value)} onBlur={handleProductSearch} required autoFocus />
                     </div>
                     <div className="form-group">
                         <label>TÃªn hÃ ng {isNewProduct && '(*)'}</label>
@@ -678,7 +679,7 @@ export default AddUnlistedItemModal;
 import React from 'react';
 import Navbar from './Navbar';
 import '../styles/AdminLayout.css';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
 import PartnersPage from '../pages/PartnersPage';
@@ -687,15 +688,23 @@ import ImportListPage from '../pages/ImportListPage';
 import NewExportPage from '../pages/NewExportPage';
 import ExportListPage from '../pages/ExportListPage';
 import StocktakeListPage from '../pages/StocktakeListPage';
-import StocktakeSessionPage from '../pages/StocktakeSessionPage'; // Import trang má»›i
+import StocktakeSessionPage from '../pages/StocktakeSessionPage';
 import LotTracePage from '../pages/LotTracePage';
 import DataImportPage from '../pages/DataImportPage';
+import ExportSlipCounter from './ExportSlipCounter';
+import ImportSlipCounter from './ImportSlipCounter'; // <-- Import counter má»›i
 
 const AdminLayout = () => {
+  const location = useLocation();
+
   return (
     <div className="admin-layout-horizontal">
       <Navbar />
       <main className="main-content">
+        {/* Hiá»ƒn thá»‹ counter cÃ³ Ä‘iá»u kiá»‡n dá»±a trÃªn Ä‘Æ°á»ng dáº«n hiá»‡n táº¡i */}
+        {location.pathname === '/new-export' && <ExportSlipCounter />}
+        {location.pathname === '/new-import' && <ImportSlipCounter />}
+        
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
@@ -704,9 +713,8 @@ const AdminLayout = () => {
           <Route path="/new-export" element={<NewExportPage />} />
           <Route path="/imports" element={<ImportListPage />} />
           <Route path="/exports" element={<ExportListPage />} />
-          {/* Cáº­p nháº­t Ä‘Æ°á»ng dáº«n cho Kiá»ƒm KÃª Kho */}
           <Route path="/stocktakes" element={<StocktakeListPage />} />
-          <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} /> {/* Route má»›i cho trang chi tiáº¿t */}
+          <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} />
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
         </Routes>
@@ -1464,6 +1472,44 @@ export default ErrorBoundary;
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ExportSlipCounter.jsx ---
+
+
+// src/components/ExportSlipCounter.jsx
+
+import React from 'react';
+import useExportSlipStore from '../stores/exportSlipStore';
+
+const ExportSlipCounter = () => {
+    // Component nÃ y chá»‰ "Ä‘Äƒng kÃ½" láº¯ng nghe sá»± thay Ä‘á»•i cá»§a `items`
+    const items = useExportSlipStore(state => state.items);
+    
+    // Chá»‰ láº¥y nhá»¯ng item Ä‘Ã£ cÃ³ thÃ´ng tin
+    const itemCount = items.filter(item => item.productId).length;
+
+    if (itemCount === 0) {
+        return null; // KhÃ´ng hiá»ƒn thá»‹ gÃ¬ náº¿u chÆ°a cÃ³ item nÃ o
+    }
+    
+    return (
+        <span style={{ 
+            marginLeft: '15px', 
+            padding: '5px 10px', 
+            backgroundColor: '#007bff', 
+            color: 'white', 
+            borderRadius: '15px',
+            fontSize: '12px',
+            fontWeight: 'bold'
+        }}>
+            Phiáº¿u xuáº¥t: {itemCount} máº·t hÃ ng
+        </span>
+    );
+};
+
+export default ExportSlipCounter;
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\HomePage.jsx ---
 
 
@@ -1501,6 +1547,45 @@ function HomePage({ user }) {
 }
 
 export default HomePage;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
+
+
+// src/components/ImportSlipCounter.jsx
+
+import React from 'react';
+import useImportSlipStore from '../stores/importSlipStore';
+
+const ImportSlipCounter = () => {
+    // Component nÃ y chá»‰ "láº¯ng nghe" sá»± thay Ä‘á»•i cá»§a `items` trong store.
+    const items = useImportSlipStore(state => state.items);
+    
+    // Chá»‰ Ä‘áº¿m nhá»¯ng item Ä‘Ã£ cÃ³ thÃ´ng tin mÃ£ hÃ ng.
+    const itemCount = items.filter(item => item.productId && item.productId.trim() !== '').length;
+
+    // KhÃ´ng hiá»ƒn thá»‹ gÃ¬ náº¿u chÆ°a cÃ³ item nÃ o.
+    if (itemCount === 0) {
+        return null;
+    }
+    
+    return (
+        <span style={{ 
+            marginLeft: '15px', 
+            padding: '5px 10px', 
+            backgroundColor: '#28a745', // MÃ u xanh lÃ¡ cho phiáº¿u nháº­p
+            color: 'white', 
+            borderRadius: '15px',
+            fontSize: '12px',
+            fontWeight: 'bold'
+        }}>
+            Phiáº¿u nháº­p: {itemCount} máº·t hÃ ng
+        </span>
+    );
+};
+
+export default ImportSlipCounter;
 
 
 
@@ -2735,12 +2820,11 @@ describe('Hook: useFirestorePagination', () => {
 
 // src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+// <-- THAY Äá»”I 1: Import thÃªm 'onSnapshot'
+import { collection, query, where, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { FiArchive, FiAlertTriangle, FiFileText } from 'react-icons/fi';
 import Spinner from '../components/Spinner';
-
-// Cáº­p nháº­t import vÃ  Ä‘á»•i tÃªn class CSS
 import styles from '../styles/DashboardPage.module.css';
 
 const DashboardCard = ({ icon, tieuDe, giaTri, mauSac }) => (
@@ -2761,37 +2845,71 @@ const DashboardPage = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // <-- THAY Äá»”I 2: ToÃ n bá»™ logic trong useEffect Ä‘Ã£ Ä‘Æ°á»£c viáº¿t láº¡i
   useEffect(() => {
-    const layDuLieuDashboard = async () => {
-      setLoading(true);
-      try {
-        const sanPhamSnapshot = await getDocs(collection(db, 'products'));
-        const tongSanPham = sanPhamSnapshot.size;
-        
-        const baMuoiNgayToi = new Date();
-        baMuoiNgayToi.setDate(baMuoiNgayToi.getDate() + 30);
-        const qSapHetHan = query(
-          collection(db, 'inventory_lots'),
-          where('expiryDate', '<=', Timestamp.fromDate(baMuoiNgayToi)),
-          where('expiryDate', '>=', Timestamp.now())
-        );
-        const sapHetHanSnapshot = await getDocs(qSapHetHan);
-        const sapHetHan = sapHetHanSnapshot.size;
+    setLoading(true);
 
-        const qPhieuCho = query(collection(db, 'import_tickets'), where('status', '==', 'pending'));
-        const phieuChoSnapshot = await getDocs(qPhieuCho);
-        const phieuChoDuyet = phieuChoSnapshot.size;
+    // Máº£ng Ä‘á»ƒ lÆ°u cÃ¡c hÃ m unsubscribe
+    const unsubscribers = [];
+    let initialLoads = 0;
+    const totalListeners = 3;
 
-        setThongKe({ tongSanPham, sapHetHan, phieuChoDuyet });
-      } catch (error) {
-        console.error("Lá»—i khi láº¥y dá»¯ liá»‡u dashboard: ", error);
-      } finally {
-        setLoading(false);
-      }
+    // HÃ m kiá»ƒm tra Ä‘á»ƒ táº¯t spinner sau khi táº¥t cáº£ listener Ä‘Ã£ táº£i láº§n Ä‘áº§u
+    const checkInitialLoad = () => {
+        initialLoads++;
+        if (initialLoads === totalListeners) {
+            setLoading(false);
+        }
     };
-    layDuLieuDashboard();
-  }, []);
 
+    // --- Listener 1: Láº¯ng nghe tá»•ng sá»‘ sáº£n pháº©m ---
+    const productsQuery = query(collection(db, 'products'));
+    const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+      setThongKe(prev => ({ ...prev, tongSanPham: snapshot.size }));
+      checkInitialLoad();
+    }, (error) => {
+        console.error("Lá»—i listener sáº£n pháº©m:", error);
+        checkInitialLoad();
+    });
+    unsubscribers.push(unsubscribeProducts);
+
+    // --- Listener 2: Láº¯ng nghe sá»‘ lÃ´ sáº¯p háº¿t háº¡n ---
+    const baMuoiNgayToi = new Date();
+    baMuoiNgayToi.setDate(baMuoiNgayToi.getDate() + 30);
+    const qSapHetHan = query(
+      collection(db, 'inventory_lots'),
+      where('expiryDate', '<=', Timestamp.fromDate(baMuoiNgayToi)),
+      where('expiryDate', '>=', Timestamp.now())
+    );
+    const unsubscribeNearExpiry = onSnapshot(qSapHetHan, (snapshot) => {
+      setThongKe(prev => ({ ...prev, sapHetHan: snapshot.size }));
+      checkInitialLoad();
+    }, (error) => {
+        console.error("Lá»—i listener sáº¯p háº¿t háº¡n:", error);
+        checkInitialLoad();
+    });
+    unsubscribers.push(unsubscribeNearExpiry);
+
+    // --- Listener 3: Láº¯ng nghe sá»‘ phiáº¿u nháº­p Ä‘ang chá» ---
+    const qPhieuCho = query(collection(db, 'import_tickets'), where('status', '==', 'pending'));
+    const unsubscribePending = onSnapshot(qPhieuCho, (snapshot) => {
+      setThongKe(prev => ({ ...prev, phieuChoDuyet: snapshot.size }));
+      checkInitialLoad();
+    }, (error) => {
+        console.error("Lá»—i listener phiáº¿u chá»:", error);
+        checkInitialLoad();
+    });
+    unsubscribers.push(unsubscribePending);
+
+    // --- HÃ m dá»n dáº¹p ---
+    // Khi component bá»‹ unmount (rá»i khá»i trang), hÃ m nÃ y sáº½ Ä‘Æ°á»£c gá»i
+    // Ä‘á»ƒ Ä‘Ã³ng táº¥t cáº£ cÃ¡c káº¿t ná»‘i thá»i gian thá»±c, trÃ¡nh rÃ² rá»‰ bá»™ nhá»›.
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, []); // Máº£ng phá»¥ thuá»™c rá»—ng, chá»‰ cháº¡y má»™t láº§n khi component Ä‘Æ°á»£c mount
+
+  // Pháº§n JSX khÃ´ng cÃ³ gÃ¬ thay Ä‘á»•i
   if (loading) {
     return <Spinner />;
   }
@@ -3084,9 +3202,9 @@ export default DataImportPage;
 
 
 // src/pages/ExportListPage.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
@@ -3103,8 +3221,8 @@ const ExportListPage = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'XÃ¡c nháº­n' });
+  const [hasNewData, setHasNewData] = useState(false);
 
-  // <-- THAY Äá»”I: Sá»­ dá»¥ng hook phÃ¢n trang
   const baseQuery = useMemo(() => query(collection(db, 'export_tickets'), orderBy("createdAt", "desc")), []);
   const {
     documents: exportSlips,
@@ -3115,6 +3233,24 @@ const ExportListPage = () => {
     prevPage,
     reset
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+  useEffect(() => {
+    if (page !== 1) return;
+    const newestDocQuery = query(collection(db, 'export_tickets'), orderBy("createdAt", "desc"), limit(1));
+    const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
+        const newestDocId = snapshot.docs[0]?.id;
+        const currentFirstDocId = exportSlips[0]?.id;
+        if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+            setHasNewData(true);
+        }
+    });
+    return () => unsubscribe();
+  }, [exportSlips, page]);
+
+  const handleRefresh = () => {
+      setHasNewData(false);
+      reset();
+  };
 
   const handleConfirmExport = async (slip) => {
     try {
@@ -3232,10 +3368,17 @@ const ExportListPage = () => {
       />
       {isEditModalOpen && ( <EditExportSlipModal slip={selectedSlip} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveSlipChanges} /> )}
       {isViewModalOpen && ( <ViewExportSlipModal slip={selectedSlip} onClose={() => setIsViewModalOpen(false)} /> )}
-     
+      
       <div className="page-header">
         <h1>Danh sÃ¡ch Phiáº¿u Xuáº¥t Kho</h1>
       </div>
+
+      {hasNewData && (
+          <div className="new-data-notification">
+              <p>CÃ³ phiáº¿u xuáº¥t má»›i!</p>
+              <button onClick={handleRefresh} className="btn-primary">Táº£i láº¡i danh sÃ¡ch</button>
+          </div>
+      )}
 
       {loading ? <Spinner /> : (
         <>
@@ -3253,7 +3396,7 @@ const ExportListPage = () => {
                 {exportSlips.length > 0 ? (
                     exportSlips.map(slip => (
                     <tr key={slip.id}>
-                        <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
+                        <td>{formatDate(slip.createdAt)}</td>
                         <td>{slip.customer}</td>
                         <td>{slip.description}</td>
                         <td><StatusBadge status={slip.status} /></td>
@@ -3310,8 +3453,8 @@ export default ExportListPage;
 
 
 // src/pages/ImportListPage.jsx
-import React, { useState, useMemo } from 'react';
-import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy } from 'firebase/firestore';
+import React, { useState, useMemo, useEffect } from 'react';
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
@@ -3320,8 +3463,7 @@ import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { parseDateString } from '../utils/dateUtils';
-import { formatDate } from '../utils/dateUtils';
+import { parseDateString, formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 
@@ -3330,8 +3472,8 @@ const ImportListPage = () => {
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-  
-  // <-- THAY Äá»”I: Sá»­ dá»¥ng hook phÃ¢n trang
+  const [hasNewData, setHasNewData] = useState(false);
+
   const baseQuery = useMemo(() => query(collection(db, 'import_tickets'), orderBy("createdAt", "desc")), []);
   const { 
     documents: importSlips, 
@@ -3342,6 +3484,24 @@ const ImportListPage = () => {
     prevPage,
     reset
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+  useEffect(() => {
+    if (page !== 1) return;
+    const newestDocQuery = query(collection(db, 'import_tickets'), orderBy("createdAt", "desc"), limit(1));
+    const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
+        const newestDocId = snapshot.docs[0]?.id;
+        const currentFirstDocId = importSlips[0]?.id;
+        if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+            setHasNewData(true);
+        }
+    });
+    return () => unsubscribe();
+  }, [importSlips, page]);
+
+  const handleRefresh = () => {
+    setHasNewData(false);
+    reset();
+  };
 
   const handleConfirmImport = async () => {
     const slip = confirmModal.item;
@@ -3427,9 +3587,16 @@ const ImportListPage = () => {
         <h1>Danh sÃ¡ch Phiáº¿u Nháº­p Kho</h1>
       </div>
 
+      {hasNewData && (
+          <div className="new-data-notification">
+              <p>CÃ³ phiáº¿u nháº­p má»›i!</p>
+              <button onClick={handleRefresh} className="btn-primary">Táº£i láº¡i danh sÃ¡ch</button>
+          </div>
+      )}
+
       {loading ? <Spinner /> : (
         <>
-            <table className="products-table">
+            <table className="products-table list-page-table">
                 <thead>
                 <tr>
                     <th>NgÃ y táº¡o</th>
@@ -3491,47 +3658,31 @@ export default ImportListPage;
 
 
 // src/pages/InventoryPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where, orderBy, limit, startAfter, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi'; // <-- NÃ‚NG Cáº¤P: ThÃªm icon FiPrinter
+import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { PAGE_SIZE } from '../constants';
 
-const PAGE_SIZE = 20;
+// <-- THAY Äá»”I 1: Import thÃªm hÃ m getRowColorByExpiry
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 
-const getRowColorByExpiry = (expiryDate) => {
-    if (!expiryDate || !expiryDate.toDate) return '';
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expDate = expiryDate.toDate();
-    const diffTime = expDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return 'expired-black';
-    if (diffDays <= 60) return 'near-expiry-red';
-    if (diffDays <= 90) return 'near-expiry-orange';
-    if (diffDays <= 120) return 'near-expiry-yellow';
-    return '';
-};
+// <-- THAY Äá»”I 2: XÃ³a toÃ n bá»™ hÃ m getRowColorByExpiry á»Ÿ Ä‘Ã¢y
 
 const InventoryPage = () => {
     const { userRole } = useAuth();
-
-    const [inventory, setInventory] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
-    const [isLastPage, setIsLastPage] = useState(false);
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    const buildQuery = () => {
+    const baseQuery = useMemo(() => {
         let q = query(
             collection(db, "inventory_lots"),
             orderBy("productId", "asc"),
@@ -3549,14 +3700,11 @@ const InventoryPage = () => {
         }
 
         if (filters.dateStatus === 'expired') {
-            const today = Timestamp.now();
-            q = query(q, where("expiryDate", "<", today));
+            q = query(q, where("expiryDate", "<", Timestamp.now()));
         } else if (filters.dateStatus === 'near_expiry') {
-            const today = Timestamp.now();
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 120);
-            const futureTimestamp = Timestamp.fromDate(futureDate);
-            q = query(q, where("expiryDate", ">=", today), where("expiryDate", "<=", futureTimestamp));
+            q = query(q, where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
         }
         
         if (searchTerm) {
@@ -3564,57 +3712,17 @@ const InventoryPage = () => {
             q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
         }
         return q;
-    };
-
-    const fetchFirstPage = useCallback(async () => {
-        setLoading(true);
-        try {
-            const q = buildQuery();
-            const firstPageQuery = query(q, limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(firstPageQuery);
-            
-            const inventoryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setInventory(inventoryList);
-
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setPage(1);
-        } catch (error) {
-            console.error("Lá»—i khi táº£i dá»¯ liá»‡u tá»“n kho: ", error);
-            toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u. Vui lÃ²ng kiá»ƒm tra Console (F12) Ä‘á»ƒ táº¡o Index náº¿u Ä‘Æ°á»£c yÃªu cáº§u.");
-        } finally {
-            setLoading(false);
-        }
     }, [userRole, filters, searchTerm]);
 
-    const fetchNextPage = useCallback(async () => {
-        if (!lastVisible) return;
-        setLoading(true);
-        try {
-            const q = buildQuery();
-            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(nextPageQuery);
+    const {
+        documents: inventory,
+        loading,
+        isLastPage,
+        page,
+        nextPage,
+        prevPage
+    } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-            const inventoryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setInventory(inventoryList);
-
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setPage(p => p + 1);
-        } catch (error) {
-            console.error("Lá»—i khi táº£i dá»¯ liá»‡u tá»“n kho: ", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible, userRole, filters, searchTerm]);
-
-    useEffect(() => {
-        const debounce = setTimeout(() => {
-            fetchFirstPage();
-        }, 500);
-        return () => clearTimeout(debounce);
-    }, [fetchFirstPage]);
-    
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
     };
@@ -3622,21 +3730,18 @@ const InventoryPage = () => {
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
-
-    // <-- NÃ‚NG Cáº¤P: HÃ m xá»­ lÃ½ viá»‡c in -->
+    
     const handlePrint = () => {
         const originalTitle = document.title;
         document.title = `BaoCao_TonKho_ChiTiet_${new Date().toLocaleDateString('vi-VN')}`;
         window.print();
-        document.title = originalTitle; // KhÃ´i phá»¥c tiÃªu Ä‘á» cÅ© sau khi in
+        document.title = originalTitle;
     };
-    
+
     return (
-        // <-- NÃ‚NG Cáº¤P: Bá»c toÃ n bá»™ ná»™i dung trong div Ä‘á»ƒ cÃ³ thá»ƒ in -->
         <div className="printable-inventory-area">
             <div className="page-header">
                 <h1>Tá»“n Kho Chi Tiáº¿t</h1>
-                {/* <-- NÃ‚NG Cáº¤P: ThÃªm nÃºt In vÃ  kiá»ƒm tra quyá»n --> */}
                 {(userRole === 'owner' || userRole === 'admin') && (
                     <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
                         <FiPrinter style={{marginRight: '5px'}} />
@@ -3652,7 +3757,7 @@ const InventoryPage = () => {
                     activeFilters={filters}
                 />
                 <div className="search-container">
-                    <input
+                     <input
                         type="text"
                         placeholder="TÃ¬m theo MÃ£ hÃ ng..."
                         value={searchTerm}
@@ -3706,18 +3811,16 @@ const InventoryPage = () => {
                             </tbody>
                         </table>
                     </div>
-                    
-                    {!searchTerm && (
-                        <div className="pagination-controls">
-                            <button onClick={() => { setLastVisible(null); fetchFirstPage(); }} disabled={page <= 1}>
-                                <FiChevronLeft /> Trang TrÆ°á»›c
-                            </button>
-                            <span>Trang {page}</span>
-                            <button onClick={fetchNextPage} disabled={isLastPage}>
-                                Trang Tiáº¿p <FiChevronRight />
-                            </button>
-                        </div>
-                    )}
+             
+                    <div className="pagination-controls">
+                        <button onClick={prevPage} disabled={page <= 1 || loading}>
+                            <FiChevronLeft /> Trang TrÆ°á»›c
+                        </button>
+                        <span>Trang {page}</span>
+                        <button onClick={nextPage} disabled={isLastPage || loading}>
+                            Trang Tiáº¿p <FiChevronRight />
+                        </button>
+                    </div>
                 </>
             )}
         </div>
@@ -3728,7 +3831,6 @@ export default InventoryPage;
 
 
 
-
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
@@ -3736,7 +3838,6 @@ export default InventoryPage;
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, getDocs, where, orderBy, documentId, limit, startAfter, Timestamp } from 'firebase/firestore';
-import { formatDate } from '../utils/dateUtils';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { FiChevronDown, FiChevronRight, FiChevronLeft, FiPrinter } from 'react-icons/fi';
@@ -3746,22 +3847,12 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 
+// <-- THAY Äá»”I 1: Import thÃªm hÃ m getRowColorByExpiry
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+
 const PAGE_SIZE = 15;
 
-const getRowColorByExpiry = (expiryDate) => {
-    if (!expiryDate || !expiryDate.toDate) return '';
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expDate = expiryDate.toDate();
-    expDate.setHours(0, 0, 0, 0);
-    const diffTime = expDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return 'expired-black';
-    if (diffDays <= 60) return 'near-expiry-red';
-    if (diffDays <= 90) return 'near-expiry-orange';
-    if (diffDays <= 120) return 'near-expiry-yellow';
-    return '';
-};
+// <-- THAY Äá»”I 2: XÃ³a toÃ n bá»™ hÃ m getRowColorByExpiry á»Ÿ Ä‘Ã¢y
 
 const getLotItemColorClass = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
@@ -3795,22 +3886,18 @@ const InventorySummaryPage = () => {
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            // <-- NÃ‚NG Cáº¤P: Thay Ä‘á»•i logic sáº¯p xáº¿p máº·c Ä‘á»‹nh -->
-            // Sáº¯p xáº¿p theo MÃ£ hÃ ng (productId) tÄƒng dáº§n lÃ m Æ°u tiÃªn chÃ­nh.
             let q = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
-
-            if (activeFilter.type === 'team') {
+       
+             if (activeFilter.type === 'team') {
                 q = query(q, where("team", "==", activeFilter.value));
             } else if (activeFilter.type === 'near_expiry') {
                 const today = Timestamp.now();
                 const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + 120);
+                 futureDate.setDate(futureDate.getDate() + 120);
                 const futureTimestamp = Timestamp.fromDate(futureDate);
-                // Khi lá»c, ta sáº½ sáº¯p xáº¿p theo HSD Ä‘á»ƒ Ä‘Æ°a cÃ¡c mÃ£ cáº­n date lÃªn Ä‘áº§u
                 q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp), orderBy("nearestExpiryDate", "asc"));
             } else if (activeFilter.type === 'expired') {
                 const today = Timestamp.now();
-                // TÆ°Æ¡ng tá»±, sáº¯p xáº¿p theo HSD
                 q = query(q, where("nearestExpiryDate", "<", today), orderBy("nearestExpiryDate", "asc"));
             }
 
@@ -3848,13 +3935,14 @@ const InventorySummaryPage = () => {
                 collection(db, "inventory_lots"),
                 where("lotNumber", "==", term)
             );
+  
             const [productSnap, lotSnap] = await Promise.all([
                 getDocs(productSearchQuery),
                 getDocs(lotSearchQuery)
             ]);
             const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
             lotSnap.docs.forEach(doc => foundProductIds.add(doc.data().productId));
-            
+         
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
@@ -3886,7 +3974,6 @@ const InventorySummaryPage = () => {
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchTerm, activeFilter, fetchData, performSearch]);
-
 
     const toggleRow = async (productId) => {
         const isCurrentlyExpanded = !!expandedRows[productId];
@@ -3941,10 +4028,8 @@ const InventorySummaryPage = () => {
             if (!lotDetails[id]) return toggleRow(id);
             return Promise.resolve();
         });
-        
         toast.info("Äang chuáº©n bá»‹ dá»¯ liá»‡u Ä‘á»ƒ in, vui lÃ²ng chá»...");
         await Promise.all(fetchPromises);
-        
         const allExpanded = allProductIds.reduce((acc, id) => {
             acc[id] = true;
             return acc;
@@ -3969,7 +4054,7 @@ const InventorySummaryPage = () => {
                     </button>
                 )}
             </div>
-            
+       
             <div className="controls-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
                  <div className="filter-group">
                     <button className={activeFilter.value === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lá»c hÃ ng MED</button>
@@ -4007,6 +4092,7 @@ const InventorySummaryPage = () => {
                                     <th>Team</th>
                                 </tr>
                             </thead>
+                 
                             <tbody>
                                 {summaries.map(product => (
                                     <React.Fragment key={product.id}>
@@ -4024,6 +4110,7 @@ const InventorySummaryPage = () => {
                                             <td data-label="Nhiá»‡t Ä‘á»™ BQ"><TempBadge temperature={product.storageTemp} /></td>
                                             <td data-label="Team"><TeamBadge team={product.team} /></td>
                                         </tr>
+                             
                                         {expandedRows[product.id] && (
                                             <tr className="lot-details-row">
                                                 <td colSpan="8">
@@ -4325,14 +4412,15 @@ import { FiXCircle, FiChevronDown } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
+import { z } from 'zod';
+import useExportSlipStore from '../stores/exportSlipStore';
 
-// Äá»‹nh nghÄ©a Schema xÃ¡c thá»±c cho tá»«ng máº·t hÃ ng vÃ  toÃ n bá»™ phiáº¿u xuáº¥t
+// Schema validation khÃ´ng thay Ä‘á»•i
 const exportItemSchema = z.object({
     productId: z.string().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
     selectedLotId: z.string().min(1, { message: "Vui lÃ²ng chá»n má»™t lÃ´ hÃ ng." }),
     quantityToExport: z.preprocess(
-        val => Number(val), // Chuyá»ƒn Ä‘á»•i giÃ¡ trá»‹ sang sá»‘ trÆ°á»›c khi xÃ¡c thá»±c
+        val => Number(val),
         z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
          .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
     )
@@ -4344,26 +4432,30 @@ const exportSlipSchema = z.object({
     items: z.array(exportItemSchema).min(1, { message: "Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng." })
 });
 
-
 const NewExportPage = () => {
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-    const [exportDate, setExportDate] = useState(formattedDate);
-    const [customerId, setCustomerId] = useState('');
-    const [customerName, setCustomerName] = useState('');
-    const [description, setDescription] = useState('');
-    const [items, setItems] = useState([{ 
-        id: Date.now(), 
-        productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
-        availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-        expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' 
-    }]);
+    // Láº¥y toÃ n bá»™ state vÃ  actions cáº§n thiáº¿t tá»« Zustand store
+    const {
+        customerId,
+        customerName,
+        description,
+        items,
+        setCustomer,
+        setDescription,
+        addNewItemRow,
+        removeItemRow,
+        updateItem,
+        replaceItem,
+        resetSlip
+    } = useExportSlipStore();
+    
+    // CÃ¡c state cá»¥c bá»™ cho viá»‡c xá»­ lÃ½ giao diá»‡n (loading, modal) váº«n Ä‘Æ°á»£c giá»¯ láº¡i
     const [isProcessing, setIsProcessing] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+    const [allCustomers, setAllCustomers] = useState([]);
     const lotSelectRefs = useRef([]);
     const quantityInputRefs = useRef([]);
-    const [allCustomers, setAllCustomers] = useState([]);
 
+    // Láº¥y danh sÃ¡ch khÃ¡ch hÃ ng khi component Ä‘Æ°á»£c mount
     useEffect(() => {
         const fetchCustomers = async () => {
             const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
@@ -4376,42 +4468,108 @@ const NewExportPage = () => {
 
     const handleCustomerSearch = async () => {
         if (!customerId) {
-            setCustomerName('');
+            setCustomer(customerId, ''); // Gá»i action tá»« store
             return;
         }
         try {
             const partnerRef = doc(db, 'partners', customerId.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
-                setCustomerName(partnerSnap.data().partnerName);
+                setCustomer(customerId, partnerSnap.data().partnerName); // Gá»i action
             } else {
-                setCustomerName('');
+                setCustomer(customerId, ''); // Gá»i action
                 toast.error(`KhÃ´ng tÃ¬m tháº¥y KhÃ¡ch hÃ ng vá»›i mÃ£ "${customerId}"`);
             }
         } catch (error) {
             console.error("Lá»—i khi tÃ¬m khÃ¡ch hÃ ng:", error);
-            setCustomerName('');
+            setCustomer(customerId, ''); // Gá»i action
         }
     };
 
-    const getValidSlipData = () => {
-        const validItems = items.filter(item => item.productId && item.selectedLotId && item.quantityToExport);
+    const handleProductSearch = async (index, productId) => {
+        if (!productId) return;
         
+        replaceItem(index, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0 });
+        
+        try {
+          const productRef = doc(db, 'products', productId);
+          const productSnap = await getDoc(productRef);
+          if (!productSnap.exists()) {
+            toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+            return;
+          }
+          const productData = productSnap.data();
+          const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
+          const lotsSnapshot = await getDocs(lotsQuery);
+          
+          let foundLots = [];
+          if (lotsSnapshot.empty) {
+            toast.warn(`Cáº£nh bÃ¡o: Sáº£n pháº©m mÃ£ '${productId}' Ä‘Ã£ háº¿t hÃ ng tá»“n kho.`);
+          } else {
+            foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
+            setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
+          }
+          
+          replaceItem(index, {
+              productName: productData.productName,
+              unit: productData.unit,
+              packaging: productData.packaging,
+              storageTemp: productData.storageTemp,
+              availableLots: foundLots
+          });
+        } catch (error) {
+          console.error("Lá»—i khi tÃ¬m kiáº¿m:", error);
+          toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi tÃ¬m kiáº¿m.");
+        }
+    };
+    
+    const handleLotSelection = (index, selectedLotId) => {
+        const currentItem = items[index];
+        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+        if (selectedLot) {
+          replaceItem(index, {
+              selectedLotId: selectedLotId,
+              lotNumber: selectedLot.lotNumber,
+              expiryDate: formatDate(selectedLot.expiryDate),
+              quantityRemaining: selectedLot.quantityRemaining,
+              displayLotText: selectedLot.lotNumber
+          });
+          setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
+        } else {
+           replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
+        }
+    };
+    
+    const handleRemoveRowWithConfirmation = (index) => {
+        if (items.length <= 1) return;
+        setConfirmModal({
+            isOpen: true,
+            title: "XÃ¡c nháº­n xÃ³a dÃ²ng?",
+            message: "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a dÃ²ng hÃ ng nÃ y khá»i phiáº¿u xuáº¥t?",
+            onConfirm: () => {
+                removeItemRow(index); // Gá»i action
+                setConfirmModal({ isOpen: false });
+            }
+        });
+    };
+
+    const getValidSlipData = () => {
+        const today = new Date();
+        const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+        const validItems = items.filter(item => item.productId && item.selectedLotId && item.quantityToExport);
         const slipToValidate = {
             customerId: customerId.trim(),
             customerName: customerName.trim(),
             items: validItems
         };
-
         const validationResult = exportSlipSchema.safeParse(slipToValidate);
-
         if (!validationResult.success) {
             toast.warn(validationResult.error.issues[0].message);
             return null;
         }
-
         return {
-            exportDate, 
+            exportDate: formattedDate, 
             customerId: customerId.toUpperCase(), 
             customer: customerName,
             description, 
@@ -4434,15 +4592,6 @@ const NewExportPage = () => {
         };
     };
 
-    const resetForm = () => {
-        setCustomerId(''); setCustomerName(''); setDescription('');
-        setItems([{ 
-            id: Date.now(), productId: '', productName: '', unit: '', packaging: '', storageTemp: '', 
-            availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', 
-            quantityRemaining: 0, quantityToExport: '', notes: '' 
-        }]);
-    };
-    
     const handleSaveDraft = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -4450,7 +4599,7 @@ const NewExportPage = () => {
         try {
             await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'pending' });
             toast.success('LÆ°u nhÃ¡p phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
-            resetForm();
+            resetSlip(); // Gá»i action
         } catch (error) {
             console.error("Lá»—i khi lÆ°u nhÃ¡p phiáº¿u xuáº¥t: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi lÆ°u nhÃ¡p.');
@@ -4476,7 +4625,7 @@ const NewExportPage = () => {
             }
             await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'completed' });
             toast.success('Xuáº¥t kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
-            resetForm();
+            resetSlip(); // Gá»i action
         } catch (error) {
             console.error("Lá»—i khi xuáº¥t kho trá»±c tiáº¿p: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i trong quÃ¡ trÃ¬nh xuáº¥t kho.');
@@ -4486,7 +4635,7 @@ const NewExportPage = () => {
     };
 
     const promptForDirectExport = () => {
-        if (getValidSlipData()) { // Chá»‰ gá»i getValidSlipData má»™t láº§n Ä‘á»ƒ hiá»ƒn thá»‹ toast náº¿u cÃ³ lá»—i
+        if (getValidSlipData()) {
              setConfirmModal({
                 isOpen: true,
                 title: "XÃ¡c nháº­n xuáº¥t kho?",
@@ -4496,113 +4645,6 @@ const NewExportPage = () => {
         }
     };
     
-    const handleProductSearch = async (index, productId) => {
-        if (!productId) return;
-        const newItems = [...items];
-        const currentItem = newItems[index];
-        Object.assign(currentItem, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0 });
-        setItems(newItems);
-        try {
-          const productRef = doc(db, 'products', productId);
-          const productSnap = await getDoc(productRef);
-          if (!productSnap.exists()) {
-            toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
-            return;
-          }
-          const productData = productSnap.data();
-          currentItem.productName = productData.productName;
-          currentItem.unit = productData.unit;
-          currentItem.packaging = productData.packaging;
-          currentItem.storageTemp = productData.storageTemp;
-          const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
-          const lotsSnapshot = await getDocs(lotsQuery);
-          if (lotsSnapshot.empty) {
-            toast.warn(`Cáº£nh bÃ¡o: Sáº£n pháº©m mÃ£ '${productId}' Ä‘Ã£ háº¿t hÃ ng tá»“n kho.`);
-            currentItem.availableLots = [];
-          } else {
-            let foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
-            
-            currentItem.availableLots = foundLots;
-            setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
-          }
-        } catch (error) {
-          console.error("Lá»—i khi tÃ¬m kiáº¿m:", error);
-          toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi tÃ¬m kiáº¿m.");
-        } finally {
-          setItems([...newItems]);
-        }
-    };
-    
-    const handleLotSelection = (index, selectedLotId) => {
-        const newItems = [...items];
-        const currentItem = newItems[index];
-        currentItem.selectedLotId = selectedLotId;
-        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
-        if (selectedLot) {
-          currentItem.lotNumber = selectedLot.lotNumber;
-          currentItem.expiryDate = formatDate(selectedLot.expiryDate);
-          currentItem.quantityRemaining = selectedLot.quantityRemaining;
-          currentItem.displayLotText = selectedLot.lotNumber;
-          setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
-        } else {
-            Object.assign(currentItem, { lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
-        }
-        setItems(newItems);
-    };
-    const handleItemChange = (index, field, value) => {
-        const newItems = [...items];
-        if (field === 'quantityToExport') {
-            if (value === '') {
-                newItems[index][field] = '';
-            } else {
-                const val = Number(value);
-                if (val < 0) return;
-                if (val > newItems[index].quantityRemaining) {
-                    toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
-                    newItems[index][field] = newItems[index].quantityRemaining;
-                } else {
-                    newItems[index][field] = val;
-                }
-            }
-        } else {
-            newItems[index][field] = value;
-        }
-        setItems(newItems);
-    };
-    
-    const addNewRow = () => {
-        setItems([...items, { 
-             id: Date.now(), 
-            productId: '', 
-            productName: '', 
-            unit: '', 
-            packaging: '', 
-            storageTemp: '', 
-            availableLots: [], 
-             selectedLotId: '', 
-            lotNumber: '', 
-            displayLotText: '', 
-            expiryDate: '', 
-            quantityRemaining: 0, 
-            quantityToExport: '', 
-            notes: '' 
-        }]);
-    };
-    
-    const handleRemoveRow = (indexToRemove) => {
-        if (items.length <= 1) return;
-        setConfirmModal({
-            isOpen: true,
-            title: "XÃ¡c nháº­n xÃ³a dÃ²ng?",
-            message: "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a dÃ²ng hÃ ng nÃ y khá»i phiáº¿u xuáº¥t?",
-            onConfirm: () => {
-                setItems(prevItems => prevItems.filter((_, index) => index !== indexToRemove));
-                setConfirmModal({ isOpen: false });
-            }
-        });
-    };
-
     return (
         <div>
             <ConfirmationModal
@@ -4618,7 +4660,7 @@ const NewExportPage = () => {
                 <div className="form-row">
                      <div className="form-group">
                         <label>NgÃ y xuáº¥t</label>
-                        <input type="text" value={exportDate} readOnly style={{backgroundColor: '#f0f0f0'}} />
+                        <input type="text" value={formatDate(new Date())} readOnly style={{backgroundColor: '#f0f0f0'}} />
                     </div>
                     <div className="form-group">
                          <label>MÃ£ KhÃ¡ch HÃ ng (*)</label>
@@ -4627,7 +4669,7 @@ const NewExportPage = () => {
                             type="text"
                             placeholder="Nháº­p hoáº·c chá»n mÃ£ KH..."
                             value={customerId}
-                            onChange={e => setCustomerId(e.target.value)}
+                            onChange={e => setCustomer(e.target.value.toUpperCase(), customerName)}
                             onBlur={handleCustomerSearch}
                         />
                         <datalist id="customers-list">
@@ -4668,7 +4710,7 @@ const NewExportPage = () => {
                     <React.Fragment key={item.id}>
                         <div className="grid-cell">
                             <input type="text" placeholder="Nháº­p mÃ£ hÃ ng..." value={item.productId}
-                                onChange={e => handleItemChange(index, 'productId', e.target.value.toUpperCase())}
+                                onChange={e => updateItem(index, 'productId', e.target.value.toUpperCase())}
                                 onBlur={e => handleProductSearch(index, e.target.value)} />
                          </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
@@ -4703,16 +4745,16 @@ const NewExportPage = () => {
                         <div className="grid-cell">
                             <input type="number" value={item.quantityToExport}
                          ref={el => quantityInputRefs.current[index] = el}
-                                onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} />
+                                onChange={e => updateItem(index, 'quantityToExport', e.target.value)} />
                         </div>
-                        <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+                        <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell">
-                            <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRow(index)}><FiXCircle /></button>
+                            <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRowWithConfirmation(index)}><FiXCircle /></button>
                         </div>
                      </React.Fragment>
                 ))}
             </div>
-            <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
+            <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             <div className="page-actions">
                 <button onClick={handleSaveDraft} className="btn-secondary" disabled={isProcessing}>
                      {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
@@ -4742,9 +4784,10 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
 import { FiInfo } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
+import { z } from 'zod';
+import useImportSlipStore from '../stores/importSlipStore'; // <-- THAY Äá»”I 1: Import store
 
-// Äá»‹nh nghÄ©a Schema xÃ¡c thá»±c
+// Schema validation khÃ´ng thay Ä‘á»•i
 const importItemSchema = z.object({
   productId: z.string().min(1, "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng."),
   lotNumber: z.string().min(1, "Sá»‘ lÃ´ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng."),
@@ -4764,24 +4807,31 @@ const importSlipSchema = z.object({
     items: z.array(importItemSchema).min(1, "Phiáº¿u nháº­p pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.")
 });
 
-
 const NewImportPage = () => {
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    // THAY Äá»”I 2: Láº¥y state vÃ  actions tá»« Zustand store
+    const {
+        supplierId,
+        supplierName,
+        description,
+        items,
+        setSupplier,
+        setDescription,
+        addNewItemRow,
+        updateItem,
+        handleProductSearchResult,
+        handleLotCheckResult,
+        declareNewLot,
+        fillNewProductData,
+        resetSlip
+    } = useImportSlipStore();
 
-    const [importDate, setImportDate] = useState(formattedDate);
-    const [supplierId, setSupplierId] = useState('');
-    const [supplierName, setSupplierName] = useState('');
-    const [description, setDescription] = useState('');
-    const [items, setItems] = useState([
-        { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }
-    ]);
+    // CÃ¡c state cá»¥c bá»™ cho UI váº«n Ä‘Æ°á»£c giá»¯ láº¡i
     const [isSaving, setIsSaving] = useState(false);
     const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const inputRefs = useRef([]);
     const [allSuppliers, setAllSuppliers] = useState([]);
+    const inputRefs = useRef([]);
 
     useEffect(() => {
         const fetchSuppliers = async () => {
@@ -4797,13 +4847,11 @@ const NewImportPage = () => {
         const validItems = items.filter(item => 
             item.productId && item.lotNumber && item.quantity && item.expiryDate
         );
-        
         const slipToValidate = {
             supplierId: supplierId.trim(),
             supplierName: supplierName.trim(),
             items: validItems
         };
-
         const validationResult = importSlipSchema.safeParse(slipToValidate);
 
         if (!validationResult.success) {
@@ -4813,50 +4861,37 @@ const NewImportPage = () => {
 
         return {
             ...validationResult.data,
-            importDate: formattedDate,
+            importDate: formatDate(new Date()),
             description,
-            status: '', // Sáº½ Ä‘Æ°á»£c gÃ¡n sau
+            status: '',
             createdAt: serverTimestamp()
         };
     }
 
     const handleSupplierSearch = async () => {
         if (!supplierId) {
-            setSupplierName('');
+            setSupplier(supplierId, '');
             return;
         }
         try {
             const partnerRef = doc(db, 'partners', supplierId.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
+            
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'supplier') {
-                setSupplierName(partnerSnap.data().partnerName);
+                setSupplier(supplierId, partnerSnap.data().partnerName);
             } else {
-                setSupplierName('');
-                toast.error(`KhÃ´ng tÃ¬m tháº¥y NhÃ  cung cáº¥p vá»›i mÃ£ "${supplierId}" hoáº·c Ä‘á»‘i tÃ¡c khÃ´ng pháº£i lÃ  NhÃ  cung cáº¥p.`);
+                setSupplier(supplierId, '');
+                toast.error(`KhÃ´ng tÃ¬m tháº¥y NhÃ  cung cáº¥p vá»›i mÃ£ "${supplierId}"`);
             }
         } catch (error) {
             console.error("Lá»—i khi tÃ¬m nhÃ  cung cáº¥p:", error);
-            setSupplierName('');
+            toast.error("KhÃ´ng thá»ƒ Ä‘á»c dá»¯ liá»‡u NCC. Kiá»ƒm tra Console (F12)!"); 
+            setSupplier(supplierId, '');
         }
     };
     
     const handleExpiryDateBlur = (index, value) => {
-        const newItems = [...items];
-        newItems[index].expiryDate = formatExpiryDate(value);
-        setItems(newItems);
-    };
-
-    const handleItemChange = (index, field, value) => {
-        const newItems = [...items];
-        newItems[index][field] = value;
-        
-        if (field === 'productId' || field === 'lotNumber') {
-            newItems[index].lotStatus = 'unchecked';
-            newItems[index].expiryDate = '';
-            newItems[index].existingLotInfo = null;
-        }
-        
-        setItems(newItems);
+        updateItem(index, 'expiryDate', formatExpiryDate(value));
     };
 
     const checkExistingLot = async (index) => {
@@ -4871,103 +4906,39 @@ const NewImportPage = () => {
             );
             const querySnapshot = await getDocs(q);
             
-            const newItems = [...items];
             if (!querySnapshot.empty) {
                 const existingLotData = querySnapshot.docs[0].data();
-                newItems[index].lotStatus = 'exists';
-                newItems[index].expiryDate = formatDate(existingLotData.expiryDate);
-                newItems[index].existingLotInfo = {
-                    quantityRemaining: existingLotData.quantityRemaining,
-                    expiryDate: formatDate(existingLotData.expiryDate)
-                };
+                handleLotCheckResult(index, existingLotData, true); // Cáº­p nháº­t store
             } else {
-                newItems[index].lotStatus = 'new';
-                newItems[index].existingLotInfo = null;
+                handleLotCheckResult(index, null, false); // Cáº­p nháº­t store
             }
-            setItems(newItems);
         } catch (error) {
             console.error("Lá»—i khi kiá»ƒm tra lÃ´ tá»“n táº¡i: ", error);
         }
     };
 
-    const handleNewLotDeclared = (index, declaredExpiryDate) => {
-        const newItems = [...items];
-        newItems[index].expiryDate = declaredExpiryDate;
-        newItems[index].lotStatus = 'declared';
-        setItems(newItems);
-        setNewLotModal({ isOpen: false, index: -1 });
-    };
-
     const handleProductSearch = async (index, productId) => {
         if (!productId) return;
-        const newItems = [...items];
         try {
             const productRef = doc(db, 'products', productId);
             const productSnap = await getDoc(productRef);
             if (productSnap.exists()) {
-                const productData = productSnap.data();
-                newItems[index] = {
-                    ...newItems[index],
-                    productName: productData.productName || '',
-                    unit: productData.unit || '',
-                    packaging: productData.packaging || '',
-                    storageTemp: productData.storageTemp || '',
-                    team: productData.team || '',
-                    manufacturer: productData.manufacturer || '',
-                    productNotFound: false,
-                };
+                handleProductSearchResult(index, productSnap.data(), true); // Cáº­p nháº­t store
             } else {
-                newItems[index].productName = '';
-                newItems[index].productNotFound = true;
+                handleProductSearchResult(index, null, false); // Cáº­p nháº­t store
             }
         } catch (error) {
             console.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m:", error);
-            newItems[index].productName = 'Lá»—i khi tÃ¬m kiáº¿m!';
-            newItems[index].productNotFound = false;
-        } finally {
-            setItems(newItems);
+            toast.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m!");
         }
     };
     
     const handleNewProductCreated = (newData) => {
-        const newItems = [...items];
         const { index } = newProductModal;
-        newItems[index] = {
-            ...newItems[index], 
-            ...newData,
-            productNotFound: false,
-        };
-        setItems(newItems);
+        fillNewProductData(index, newData); // Cáº­p nháº­t store
         setNewProductModal({ isOpen: false, productId: '', index: -1 });
-        setTimeout(() => {
-            inputRefs.current[index * 3 + 2]?.focus();
-        }, 100);
+        setTimeout(() => inputRefs.current[index * 3 + 2]?.focus(), 100);
     };
-
-    const handleKeyDown = (e, rowIndex, inputIndex) => {
-        if (e.key === 'Tab' && !e.shiftKey) {
-            e.preventDefault();
-            const nextInputIndex = (rowIndex * 3) + inputIndex + 1;
-            const nextInput = inputRefs.current[nextInputIndex];
-            if (nextInput) {
-                nextInput.focus();
-            }
-        }
-    };
-
-    const addNewRow = () => {
-        setItems([
-            ...items,
-            { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }
-        ]);
-    };
-
-    const resetForm = () => {
-        setSupplierId('');
-        setSupplierName('');
-        setDescription('');
-        setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
-    }
 
     const handleSaveSlip = async () => {
         const slipData = getValidSlipData();
@@ -4978,7 +4949,7 @@ const NewImportPage = () => {
             const finalSlipData = { ...slipData, status: 'pending' };
             const docRef = await addDoc(collection(db, 'import_tickets'), finalSlipData);
             toast.success(`LÆ°u táº¡m phiáº¿u nháº­p thÃ nh cÃ´ng! ID phiáº¿u: ${docRef.id}`);
-            resetForm();
+            resetSlip(); // Reset state trong store
         } catch (error) {
             console.error("Lá»—i khi lÆ°u phiáº¿u nháº­p: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi lÆ°u phiáº¿u.');
@@ -4997,7 +4968,6 @@ const NewImportPage = () => {
             for (const item of slipData.items) {
                 const expiryTimestamp = Timestamp.fromDate(parseDateString(item.expiryDate));
                 const fullItemData = items.find(i => i.productId === item.productId && i.lotNumber === item.lotNumber);
-                
                 const newLotData = {
                     importDate: Timestamp.now(),
                     productId: item.productId,
@@ -5021,7 +4991,7 @@ const NewImportPage = () => {
             await addDoc(collection(db, 'import_tickets'), finalSlipData);
             
             toast.success('Nháº­p kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
-            resetForm();
+            resetSlip(); // Reset state trong store
         } catch (error) {
             console.error("Lá»—i khi nháº­p kho trá»±c tiáº¿p: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi nháº­p kho trá»±c tiáº¿p.');
@@ -5040,6 +5010,9 @@ const NewImportPage = () => {
             });
         }
     };
+
+    // --- CÃ¡c hÃ m vÃ  JSX cÃ²n láº¡i pháº§n lá»›n giá»¯ nguyÃªn cáº¥u trÃºc ---
+    // Chá»‰ thay Ä‘á»•i cÃ¡ch gá»i `setState` thÃ nh gá»i action cá»§a store
 
     return (
         <div>
@@ -5064,7 +5037,7 @@ const NewImportPage = () => {
                     productName={items[newLotModal.index].productName}
                     lotNumber={items[newLotModal.index].lotNumber}
                     onClose={() => setNewLotModal({ isOpen: false, index: -1 })}
-                    onSave={(expiry) => handleNewLotDeclared(newLotModal.index, expiry)}
+                    onSave={(expiry) => declareNewLot(newLotModal.index, expiry)}
                 />
             )}
 
@@ -5073,33 +5046,33 @@ const NewImportPage = () => {
                 <div className="form-row">
                     <div className="form-group">
                         <label>NgÃ y nháº­p</label>
-                        <input type="text" value={importDate} readOnly style={{backgroundColor: '#f0f0f0'}} />
+                        <input type="text" value={formatDate(new Date())} readOnly style={{backgroundColor: '#f0f0f0'}} />
                     </div>
                     <div className="form-group">
                          <label>MÃ£ NhÃ  Cung Cáº¥p (*)</label>
                         <input 
-                            list="suppliers-list"
+                             list="suppliers-list"
                             type="text" 
                             placeholder="Nháº­p hoáº·c chá»n mÃ£ NCC..." 
                             value={supplierId} 
-                            onChange={e => setSupplierId(e.target.value)}
+                            onChange={e => setSupplier(e.target.value.toUpperCase(), '')} // <-- Chá»‰ cáº­p nháº­t ID
                             onBlur={handleSupplierSearch}
                         />
-                        <datalist id="suppliers-list">
+                         <datalist id="suppliers-list">
                             {allSuppliers.map(sup => (
                                 <option key={sup.id} value={sup.id}>
-                                    {sup.partnerName}
+                                     {sup.partnerName}
                                 </option>
                             ))}
-                        </datalist>
+                         </datalist>
                     </div>
                     <div className="form-group">
                         <label>TÃªn NhÃ  Cung Cáº¥p (*)</label>
-                        <input 
+                         <input 
                             type="text" 
                             value={supplierName} 
                             readOnly 
-                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
                      </div>
                 </div>
@@ -5126,74 +5099,69 @@ const NewImportPage = () => {
                     <React.Fragment key={item.id}>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
-                                ref={el => inputRefs.current[index * 3] = el}
-                                onKeyDown={(e) => handleKeyDown(e, index, 0)}
                                 type="text"
                                 value={item.productId}
-                                onChange={e => handleItemChange(index, 'productId', e.target.value.toUpperCase())}
+                                onChange={e => updateItem(index, 'productId', e.target.value.toUpperCase())}
                                 onBlur={e => handleProductSearch(index, e.target.value)}
                             />
                             {item.productNotFound && (
                                 <button
-                                    onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
+                                     onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
                                     className="btn-link"
-                                    style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
+                                     style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
                                 >
                                     MÃ£ nÃ y khÃ´ng tá»“n táº¡i. Táº¡o má»›i...
                                 </button>
                             )}
                         </div>
-                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+                        <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
-                                 ref={el => inputRefs.current[index * 3 + 1] = el}
-                                onKeyDown={(e) => handleKeyDown(e, index, 1)}
                                 type="text"
-                                 value={item.lotNumber}
-                                onChange={e => handleItemChange(index, 'lotNumber', e.target.value)}
+                                value={item.lotNumber}
+                                onChange={e => updateItem(index, 'lotNumber', e.target.value)}
                                 onBlur={() => checkExistingLot(index)}
-                             />
+                            />
                             {item.lotStatus === 'exists' && item.existingLotInfo && (
                                 <div className="existing-lot-info">
-                                     <FiInfo />
+                                    <FiInfo />
                                     <span>LÃ´ Ä‘Ã£ cÃ³ | Tá»“n: {item.existingLotInfo.quantityRemaining} | HSD: {item.existingLotInfo.expiryDate}</span>
                                 </div>
                             )}
                             {item.lotStatus === 'new' && (
-                                 <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
+                                <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
                                     [+] Khai bÃ¡o lÃ´ má»›i...
-                                 </button>
+                                </button>
                             )}
                         </div>
                         <div className="grid-cell">
-                             <input 
+                            <input 
                                 type="text" 
                                 placeholder="dd/mm/yyyy" 
-                                 value={item.expiryDate} 
-                                onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} 
+                                value={item.expiryDate} 
+                                onChange={e => updateItem(index, 'expiryDate', e.target.value)} 
                                 onBlur={e => handleExpiryDateBlur(index, e.target.value)}
-                                 readOnly={item.lotStatus === 'exists'}
+                                readOnly={item.lotStatus === 'exists'}
                                 style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
                             />
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input
-                                 ref={el => inputRefs.current[index * 3 + 2] = el}
                                 type="number"
                                 value={item.quantity}
-                                 onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                                onChange={e => updateItem(index, 'quantity', e.target.value)}
                             />
                         </div>
-                        <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
-                         <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
+                        <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
+                        <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
                     </React.Fragment>
                 ))}
-             </div>
+            </div>
             
-            <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
+            <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             <div className="page-actions">
                 <button onClick={handleSaveSlip} className="btn-secondary" disabled={isSaving}>
                     {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
@@ -5214,32 +5182,28 @@ export default NewImportPage;
 
 
 // src/pages/PartnersPage.jsx
-
-import React, { useState, useMemo } from 'react';
-import { collection, query, orderBy, documentId } from 'firebase/firestore';
+import React, { useState, useMemo, useEffect } from 'react';
+import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
-
-// Import service Ä‘á»ƒ xá»­ lÃ½ logic nghiá»‡p vá»¥
 import { deletePartner } from '../services/partnerService';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
-
-// ======================= BÆ¯á»šC 1: IMPORT CSS MODULE =======================
 import styles from './PartnersPage.module.css';
-// =========================================================================
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-    const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy(documentId())), []);
+    const [hasNewData, setHasNewData] = useState(false);
+
+    const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy("createdAt", "desc")), []);
     const { 
         documents: partners, 
         loading, 
@@ -5249,6 +5213,24 @@ const PartnersPage = () => {
         prevPage,
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+    useEffect(() => {
+        if (page !== 1) return;
+        const newestDocQuery = query(collection(db, 'partners'), orderBy("createdAt", "desc"), limit(1));
+        const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
+            const newestDocId = snapshot.docs[0]?.id;
+            const currentFirstDocId = partners[0]?.id;
+            if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+                setHasNewData(true);
+            }
+        });
+        return () => unsubscribe();
+    }, [partners, page]);
+    
+    const handleRefresh = () => {
+        setHasNewData(false);
+        reset();
+    };
 
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
@@ -5294,65 +5276,67 @@ const PartnersPage = () => {
                 title={confirmModal.title}
                 message={confirmModal.message}
                 onConfirm={handleDelete}
-               
-                 onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+                onCancel={() => setConfirmModal({ isOpen: false, item: null })}
                 confirmText="Váº«n xÃ³a"
             />
             {isAddModalOpen && <AddPartnerModal onClose={() => setIsAddModalOpen(false)} onPartnerAdded={handlePartnerAdded} />}
             {isEditModalOpen && <EditPartnerModal onClose={() => setIsEditModalOpen(false)} onPartnerUpdated={handlePartnerUpdated} partnerToEdit={currentPartner} />}
 
             <div className="page-header">
-           
-                 <h1>Quáº£n LÃ½ Äá»‘i TÃ¡c</h1>
+                <h1>Quáº£n LÃ½ Äá»‘i TÃ¡c</h1>
                 <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
                     <FiPlus style={{ marginRight: '5px' }} />
                     ThÃªm Äá»‘i TÃ¡c
                 </button>
-       
-             </div>
+            </div>
             
+            {hasNewData && (
+                <div className="new-data-notification">
+                    <p>CÃ³ Ä‘á»‘i tÃ¡c má»›i Ä‘Æ°á»£c thÃªm!</p>
+                    <button onClick={handleRefresh} className="btn-primary">Táº£i láº¡i danh sÃ¡ch</button>
+                </div>
+            )}
+
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table">
                         <thead>
                             <tr>
-        
-                                 <th>MÃ£ Äá»‘i TÃ¡c</th>
+                                <th>MÃ£ Äá»‘i TÃ¡c</th>
                                 <th>TÃªn Äá»‘i TÃ¡c</th>
                                 <th>PhÃ¢n Loáº¡i</th>
-     
-                                 <th>Thao tÃ¡c</th>
+                                <th>Thao tÃ¡c</th>
                             </tr>
                         </thead>
-                    
-                         <tbody>
-                            {partners.map(partner => (
-                                <tr key={partner.id}>
-                                    {/* ================ BÆ¯á»šC 2: Sá»¬ Dá»¤NG CLASS Tá»ª MODULE ================ */}
-                                    <td className={styles.partnerIdCell}>{partner.id}</td>
-                                    <td>{partner.partnerName}</td>
-                                    <td className={styles.partnerTypeCell}>
-                                        {partner.partnerType === 'supplier' ? 'NhÃ  Cung Cáº¥p' : 'KhÃ¡ch HÃ ng'}
+                        <tbody>
+                            {partners.length > 0 ? (
+                                partners.map(partner => (
+                                    <tr key={partner.id}>
+                                        <td className={styles.partnerIdCell}>{partner.id}</td>
+                                        <td>{partner.partnerName}</td>
+                                        <td className={styles.partnerTypeCell}>
+                                            {partner.partnerType === 'supplier' ? 'NhÃ  Cung Cáº¥p' : 'KhÃ¡ch HÃ ng'}
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
+                                                    <FiEdit />
+                                                </button>
+                                                <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
+                                                    <FiTrash2 />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" style={{ textAlign: 'center' }}>
+                                        ChÆ°a cÃ³ Ä‘á»‘i tÃ¡c nÃ o.
                                     </td>
-                                    {/* ================================================================= */}
-                                     <td>
-                                        <div className="action-buttons">
-                                       
-                                         <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
-                                                <FiEdit />
-                                         
-                                             </button>
-                                            <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
-                                                
-                                                <FiTrash2 />
-                                            </button>
-                                        </div>
-               
-                                     </td>
                                 </tr>
-                            ))}
-                   
-                         </tbody>
+                            )}
+                        </tbody>
                     </table>
 
                     <div className="pagination-controls">
@@ -5360,14 +5344,12 @@ const PartnersPage = () => {
                             <FiChevronLeft /> Trang TrÆ°á»›c
                         </button>
                         <span>Trang {page}</span>
-                    
-                         <button onClick={nextPage} disabled={isLastPage || loading}>
+                        <button onClick={nextPage} disabled={isLastPage || loading}>
                             Trang Tiáº¿p <FiChevronRight />
                         </button>
                     </div>
                 </>
- 
-                       )}
+            )}
         </div>
     );
 };
@@ -5395,22 +5377,113 @@ export default PartnersPage;
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\PartnersPage.test.jsx ---
+
+
+// src/pages/PartnersPage.test.jsx
+
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
+
+// BÆ¯á»šC 1: Mock toÃ n bá»™ custom hook mÃ  component nÃ y sá»­ dá»¥ng
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+vi.mock('../hooks/useFirestorePagination');
+
+// Import component cáº§n test
+import PartnersPage from './PartnersPage';
+
+// Component PartnersPage cÃ³ thá»ƒ chá»©a <NavLink> hoáº·c cÃ¡c hook cá»§a react-router,
+// nÃªn chÃºng ta cáº§n bá»c nÃ³ trong <BrowserRouter> khi test.
+const MockWrapper = ({ children }) => <BrowserRouter>{children}</BrowserRouter>;
+
+describe('Page: PartnersPage', () => {
+    
+    beforeEach(() => {
+        // Reset mock trÆ°á»›c má»—i bÃ i test Ä‘á»ƒ Ä‘áº£m báº£o chÃºng Ä‘á»™c láº­p
+        vi.clearAllMocks();
+    });
+
+    // Test case 1: Tráº¡ng thÃ¡i Ä‘ang táº£i dá»¯ liá»‡u
+    it('nÃªn hiá»ƒn thá»‹ Spinner khi Ä‘ang loading', () => {
+        // Arrange: Giáº£ láº­p hook tráº£ vá» tráº¡ng thÃ¡i loading
+        useFirestorePagination.mockReturnValue({
+            documents: [],
+            loading: true,
+            // CÃ¡c giÃ¡ trá»‹ khÃ¡c khÃ´ng quan trá»ng trong test case nÃ y
+            isLastPage: true, 
+            page: 1,
+            nextPage: vi.fn(),
+            prevPage: vi.fn(),
+            reset: vi.fn(),
+        });
+
+        // Act: Render component
+        render(<PartnersPage />, { wrapper: MockWrapper });
+
+        // Assert:
+        // - TiÃªu Ä‘á» trang pháº£i luÃ´n hiá»ƒn thá»‹
+        expect(screen.getByRole('heading', { name: /Quáº£n LÃ½ Äá»‘i TÃ¡c/i })).toBeInTheDocument();
+        // - Spinner khÃ´ng cÃ³ text, nÃªn ta kiá»ƒm tra sá»± Váº®NG Máº¶T cá»§a ná»™i dung báº£ng
+        expect(screen.queryByText('MÃ£ Äá»‘i TÃ¡c')).toBeNull(); 
+    });
+
+    // Test case 2: Táº£i thÃ nh cÃ´ng vÃ  cÃ³ dá»¯ liá»‡u
+    it('nÃªn hiá»ƒn thá»‹ báº£ng vá»›i dá»¯ liá»‡u Ä‘á»‘i tÃ¡c khi táº£i thÃ nh cÃ´ng', () => {
+        // Arrange: Giáº£ láº­p hook tráº£ vá» má»™t máº£ng dá»¯ liá»‡u máº«u
+        const mockPartners = [
+            { id: 'NCC-01', partnerName: 'NhÃ  Cung Cáº¥p A', partnerType: 'supplier' },
+            { id: 'KH-01', partnerName: 'KhÃ¡ch HÃ ng B', partnerType: 'customer' },
+        ];
+        useFirestorePagination.mockReturnValue({
+            documents: mockPartners,
+            loading: false,
+            // ... cÃ¡c giÃ¡ trá»‹ khÃ¡c
+        });
+
+        // Act
+        render(<PartnersPage />, { wrapper: MockWrapper });
+
+        // Assert: Kiá»ƒm tra xem cÃ¡c tÃªn Ä‘á»‘i tÃ¡c cÃ³ Ä‘Æ°á»£c render ra khÃ´ng
+        expect(screen.getByText('NhÃ  Cung Cáº¥p A')).toBeInTheDocument();
+        expect(screen.getByText('KhÃ¡ch HÃ ng B')).toBeInTheDocument();
+        // Kiá»ƒm tra cáº£ loáº¡i Ä‘á»‘i tÃ¡c
+        expect(screen.getByText('NhÃ  Cung Cáº¥p')).toBeInTheDocument();
+        expect(screen.getByText('KhÃ¡ch HÃ ng')).toBeInTheDocument();
+    });
+
+    // Test case 3: Táº£i thÃ nh cÃ´ng nhÆ°ng khÃ´ng cÃ³ dá»¯ liá»‡u
+    it('nÃªn hiá»ƒn thá»‹ thÃ´ng bÃ¡o khi khÃ´ng cÃ³ Ä‘á»‘i tÃ¡c nÃ o', () => {
+        // Arrange: Giáº£ láº­p hook tráº£ vá» má»™t máº£ng rá»—ng
+        useFirestorePagination.mockReturnValue({
+            documents: [],
+            loading: false,
+            // ... cÃ¡c giÃ¡ trá»‹ khÃ¡c
+        });
+
+        // Act
+        render(<PartnersPage />, { wrapper: MockWrapper });
+
+        // Assert: Kiá»ƒm tra thÃ´ng bÃ¡o "ChÆ°a cÃ³ Ä‘á»‘i tÃ¡c nÃ o." Ä‘Ã£ Ä‘Æ°á»£c hiá»ƒn thá»‹
+        expect(screen.getByText('ChÆ°a cÃ³ Ä‘á»‘i tÃ¡c nÃ o.')).toBeInTheDocument();
+    });
+});
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductsPage.jsx ---
 
 
-// src/pages/ProductsPage.jsx (PhiÃªn báº£n Ä‘Ã£ tÃ¡i cáº¥u trÃºc)
-
-import React, { useState, useMemo } from 'react';
-import { collection, query, orderBy, where, documentId } from 'firebase/firestore';
+// src/pages/ProductsPage.jsx
+import React, { useState, useMemo, useEffect } from 'react';
+import { collection, query, orderBy, where, documentId, onSnapshot, limit } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
-
-// BÆ¯á»šC 3.1: Import cÃ¡c hÃ m service
-import { deleteProduct } from '../services/productService'; 
-
+import { deleteProduct } from '../services/productService';
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -5422,12 +5495,15 @@ const ProductsPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
+  const [hasNewData, setHasNewData] = useState(false);
 
   const baseQuery = useMemo(() => {
-    let q = query(collection(db, 'products'), orderBy(documentId()));
+    // Sáº¯p xáº¿p theo 'createdAt' Ä‘á»ƒ luÃ´n láº¥y Ä‘Æ°á»£c sáº£n pháº©m má»›i nháº¥t lÃªn Ä‘áº§u
+    let q = query(collection(db, 'products'), orderBy("createdAt", "desc"));
     if (searchTerm) {
+        // TÃ¬m kiáº¿m váº«n dÃ¹ng documentId vÃ¬ hiá»‡u quáº£ hÆ¡n
         const upperSearchTerm = searchTerm.toUpperCase();
-        q = query(q, where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
+        q = query(collection(db, 'products'), where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
     }
     return q;
   }, [searchTerm]);
@@ -5442,9 +5518,30 @@ const ProductsPage = () => {
     reset,
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
+  useEffect(() => {
+    // KhÃ´ng hiá»ƒn thá»‹ thÃ´ng bÃ¡o khi Ä‘ang tÃ¬m kiáº¿m
+    if (page !== 1 || searchTerm) return;
+
+    const newestDocQuery = query(collection(db, 'products'), orderBy("createdAt", "desc"), limit(1));
+    const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
+        const newestDocId = snapshot.docs[0]?.id;
+        const currentFirstDocId = products[0]?.id;
+        if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+            setHasNewData(true);
+        }
+    });
+    return () => unsubscribe();
+  }, [products, page, searchTerm]);
+
+  const handleRefresh = () => {
+      setHasNewData(false);
+      reset();
+  };
+  
   const handleProductAdded = () => {
     setIsAddModalOpen(false);
-    if (searchTerm) setSearchTerm('');
+    // Náº¿u Ä‘ang tÃ¬m kiáº¿m thÃ¬ xÃ³a tÃ¬m kiáº¿m Ä‘á»ƒ tháº¥y sáº£n pháº©m má»›i, náº¿u khÃ´ng thÃ¬ reset
+    if (searchTerm) setSearchTerm(''); 
     else reset();
   };
 
@@ -5466,9 +5563,7 @@ const ProductsPage = () => {
     const { item } = confirmModal;
     if (!item) return;
     try {
-        // BÆ¯á»šC 3.2: Gá»i hÃ m service thay vÃ¬ logic cÅ©
         await deleteProduct(item.id);
-
         toast.success('XÃ³a sáº£n pháº©m thÃ nh cÃ´ng!');
         if (searchTerm) setSearchTerm('');
         else reset();
@@ -5513,16 +5608,17 @@ const ProductsPage = () => {
         </div>
       </div>
       
-      {/* Báº N Sáº¼ LÃ€M TÆ¯Æ NG Tá»° Vá»šI CÃC MODAL NÃ€Y:
-        - Trong AddProductModal, gá»i `addProduct` tá»« service.
-        - Trong EditProductModal, gá»i `updateProduct` tá»« service.
-      */}
       {isAddModalOpen && <AddProductModal onClose={() => setIsAddModalOpen(false)} onProductAdded={handleProductAdded} />}
       {isEditModalOpen && <EditProductModal onClose={() => setIsEditModalOpen(false)} onProductUpdated={handleProductUpdated} productToEdit={currentProduct} />}
       
-      {loading ? (
-        <Spinner />
-      ) : (
+      {hasNewData && (
+          <div className="new-data-notification">
+              <p>CÃ³ sáº£n pháº©m má»›i Ä‘Æ°á»£c thÃªm!</p>
+              <button onClick={handleRefresh} className="btn-primary">Táº£i láº¡i danh sÃ¡ch</button>
+          </div>
+      )}
+
+      {loading ? <Spinner /> : (
         <>
           <table className="products-table">
             <thead>
@@ -5589,28 +5685,127 @@ export default ProductsPage;
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductsPage.test.jsx ---
+
+
+// src/pages/ProductsPage.test.jsx
+
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
+
+// Mock hook vÃ  cÃ¡c component con
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+vi.mock('../hooks/useFirestorePagination');
+
+// Import component cáº§n test
+import ProductsPage from './ProductsPage';
+
+const MockWrapper = ({ children }) => <BrowserRouter>{children}</BrowserRouter>;
+
+describe('Page: ProductsPage', () => {
+    
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('nÃªn hiá»ƒn thá»‹ Spinner khi Ä‘ang loading', () => {
+        // Arrange
+        useFirestorePagination.mockReturnValue({
+            documents: [],
+            loading: true,
+        });
+
+        // Act
+        render(<ProductsPage />, { wrapper: MockWrapper });
+
+        // Assert
+        expect(screen.getByRole('heading', { name: /Quáº£n LÃ½ HÃ ng HÃ³a/i })).toBeInTheDocument();
+        // Kiá»ƒm tra sá»± váº¯ng máº·t cá»§a header báº£ng
+        expect(screen.queryByText('MÃ£ hÃ ng')).toBeNull(); 
+    });
+
+    it('nÃªn hiá»ƒn thá»‹ báº£ng sáº£n pháº©m khi táº£i thÃ nh cÃ´ng', () => {
+        // Arrange
+        const mockProducts = [
+            { id: 'SP001', productName: 'BÃ´ng cá»“n', unit: 'Há»™p', team: 'MED' },
+            { id: 'SP002', productName: 'GÄƒng tay y táº¿', unit: 'ThÃ¹ng', team: 'BIO' },
+        ];
+        useFirestorePagination.mockReturnValue({
+            documents: mockProducts,
+            loading: false,
+        });
+
+        // Act
+        render(<ProductsPage />, { wrapper: MockWrapper });
+
+        // Assert
+        expect(screen.getByText('BÃ´ng cá»“n')).toBeInTheDocument();
+        expect(screen.getByText('GÄƒng tay y táº¿')).toBeInTheDocument();
+        // Láº¥y táº¥t cáº£ cÃ¡c dÃ²ng trong báº£ng (bao gá»“m cáº£ header)
+        const rows = screen.getAllByRole('row');
+        // Mong Ä‘á»£i cÃ³ 1 dÃ²ng header + 2 dÃ²ng dá»¯ liá»‡u = 3 dÃ²ng
+        expect(rows).toHaveLength(3);
+    });
+    
+    it('nÃªn hiá»ƒn thá»‹ thÃ´ng bÃ¡o khi khÃ´ng tÃ¬m tháº¥y sáº£n pháº©m nÃ o', () => {
+        // Arrange: Giáº£ láº­p hook tráº£ vá» máº£ng rá»—ng
+        useFirestorePagination.mockReturnValue({
+            documents: [],
+            loading: false,
+        });
+
+        // Act
+        render(<ProductsPage />, { wrapper: MockWrapper });
+
+        // Assert
+        expect(screen.getByText('KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m nÃ o.')).toBeInTheDocument();
+    });
+
+    it('nÃªn cáº­p nháº­t giÃ¡ trá»‹ cá»§a Ã´ tÃ¬m kiáº¿m khi ngÆ°á»i dÃ¹ng nháº­p liá»‡u', () => {
+        // Arrange
+        useFirestorePagination.mockReturnValue({
+            documents: [],
+            loading: false,
+        });
+        render(<ProductsPage />, { wrapper: MockWrapper });
+
+        // Act
+        const searchInput = screen.getByPlaceholderText('TÃ¬m theo MÃ£ hÃ ng...');
+        // MÃ´ phá»ng ngÆ°á»i dÃ¹ng gÃµ "TEST-SEARCH"
+        fireEvent.change(searchInput, { target: { value: 'TEST-SEARCH' } });
+
+        // Assert: Kiá»ƒm tra xem giÃ¡ trá»‹ cá»§a Ã´ input Ä‘Ã£ Ä‘Æ°á»£c cáº­p nháº­t Ä‘Ãºng chÆ°a
+        expect(searchInput.value).toBe('TEST-SEARCH');
+    });
+});
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
 // src/pages/StocktakeListPage.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch, onSnapshot, limit } from 'firebase/firestore';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // <-- NÃ‚NG Cáº¤P: Import component xÃ¡c nháº­n
-import { deleteStocktakeSession } from '../services/stocktakeService'; // <-- NÃ‚NG Cáº¤P: Import hÃ m xÃ³a má»›i
+import ConfirmationModal from '../components/ConfirmationModal';
+import { deleteStocktakeSession } from '../services/stocktakeService';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi'; // <-- NÃ‚NG Cáº¤P: Import icon thÃ¹ng rÃ¡c
+import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null }); // <-- NÃ‚NG Cáº¤P: ThÃªm state cho modal xÃ¡c nháº­n
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
+    const [hasNewData, setHasNewData] = useState(false);
     const navigate = useNavigate();
     
     const baseQuery = useMemo(() => query(collection(db, "stocktakes"), orderBy("createdAt", "desc")), []);
@@ -5621,8 +5816,26 @@ const StocktakeListPage = () => {
         page,
         nextPage,
         prevPage,
-        reset // <-- NÃ‚NG Cáº¤P: Sá»­ dá»¥ng hÃ m reset tá»« hook
+        reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+    useEffect(() => {
+        if (page !== 1) return;
+        const newestDocQuery = query(collection(db, 'stocktakes'), orderBy("createdAt", "desc"), limit(1));
+        const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
+            const newestDocId = snapshot.docs[0]?.id;
+            const currentFirstDocId = stocktakeSessions[0]?.id;
+            if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+                setHasNewData(true);
+            }
+        });
+        return () => unsubscribe();
+    }, [stocktakeSessions, page]);
+
+    const handleRefresh = () => {
+        setHasNewData(false);
+        reset();
+    };
 
     const handleCreateStocktake = async (sessionData) => {
         setIsCreating(true);
@@ -5668,7 +5881,6 @@ const StocktakeListPage = () => {
         }
     };
 
-    // <-- NÃ‚NG Cáº¤P: HÃ m Ä‘á»ƒ má»Ÿ há»™p thoáº¡i xÃ¡c nháº­n xÃ³a -->
     const promptForDelete = (session) => {
         setConfirmModal({
             isOpen: true,
@@ -5680,7 +5892,6 @@ const StocktakeListPage = () => {
         });
     };
 
-    // <-- NÃ‚NG Cáº¤P: HÃ m thá»±c hiá»‡n viá»‡c xÃ³a sau khi xÃ¡c nháº­n -->
     const handleDeleteSession = async () => {
         const sessionToDelete = confirmModal.item;
         if (!sessionToDelete) return;
@@ -5689,7 +5900,7 @@ const StocktakeListPage = () => {
             toast.info(`Äang xÃ³a phiÃªn "${sessionToDelete.name}"...`);
             await deleteStocktakeSession(sessionToDelete.id);
             toast.success(`ÄÃ£ xÃ³a thÃ nh cÃ´ng phiÃªn kiá»ƒm kÃª.`);
-            reset(); // Táº£i láº¡i danh sÃ¡ch
+            reset();
         } catch (error) {
             console.error("Lá»—i khi xÃ³a phiÃªn kiá»ƒm kÃª: ", error);
             toast.error("ÄÃ£ xáº£y ra lá»—i khi xÃ³a phiÃªn kiá»ƒm kÃª.");
@@ -5700,7 +5911,6 @@ const StocktakeListPage = () => {
 
     return (
         <div className="stocktake-list-page-container">
-            {/* <-- NÃ‚NG Cáº¤P: ThÃªm component Modal vÃ o giao diá»‡n --> */}
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
@@ -5718,6 +5928,13 @@ const StocktakeListPage = () => {
                 <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">Táº¡o PhiÃªn Má»›i</button>
             </div>
       
+            {hasNewData && (
+                <div className="new-data-notification">
+                    <p>CÃ³ phiÃªn kiá»ƒm kÃª má»›i!</p>
+                    <button onClick={handleRefresh} className="btn-primary">Táº£i láº¡i danh sÃ¡ch</button>
+                </div>
+            )}
+
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table list-page-table">
@@ -5739,7 +5956,6 @@ const StocktakeListPage = () => {
                                         <td>{session.scope === 'all' ? 'ToÃ n bá»™ kho' : session.scope}</td>
                                         <td><StatusBadge status={session.status} /></td>
                                         <td>
-                                            {/* <-- NÃ‚NG Cáº¤P: Bá»c cÃ¡c nÃºt trong div Ä‘á»ƒ dá»… sáº¯p xáº¿p --> */}
                                             <div className="action-buttons">
                                                 <button 
                                                     className="btn-secondary" 
@@ -5749,7 +5965,6 @@ const StocktakeListPage = () => {
                                                     Xem/Thá»±c hiá»‡n
                                                 </button>
                                                 
-                                                {/* <-- NÃ‚NG Cáº¤P: Hiá»ƒn thá»‹ nÃºt xÃ³a cÃ³ Ä‘iá»u kiá»‡n --> */}
                                                 {session.status === 'in_progress' && (
                                                     <button
                                                         className="btn-icon btn-delete"
@@ -5804,90 +6019,101 @@ import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import useStocktakeStore from '../stores/stocktakeStore'; // <-- THAY Äá»”I 1: Import store
 
 const PAGE_SIZE = 50;
+
+// Component con Ä‘á»ƒ xá»­ lÃ½ Ã´ nháº­p liá»‡u, giÃºp tá»‘i Æ°u re-render
+const CountInput = ({ item }) => {
+    const { id, countedQty, isNew } = item;
+    const { updateItemCountInUI } = useStocktakeStore();
+    const sessionData = useStocktakeStore(state => state.sessionData);
+    const [currentValue, setCurrentValue] = useState(countedQty ?? '');
+
+    const isSessionInProgress = sessionData?.status === 'in_progress';
+
+    // HÃ m gá»i láº¡i khi component cha re-render (vÃ­ dá»¥ khi chuyá»ƒn trang)
+    useEffect(() => {
+        setCurrentValue(countedQty ?? '');
+    }, [countedQty]);
+
+    const handleBlur = () => {
+        // Chá»‰ cáº­p nháº­t láº¡i state cá»§a store náº¿u giÃ¡ trá»‹ thá»±c sá»± thay Ä‘á»•i
+        const newCount = currentValue === '' ? null : Number(currentValue);
+        if (newCount !== countedQty) {
+            updateItemCountInUI(id, newCount);
+        }
+    };
+    
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.target.blur();
+        }
+    };
+
+    return (
+        <input 
+            type="number" 
+            placeholder="Nháº­p sá»‘ Ä‘áº¿m" 
+            value={currentValue}
+            onChange={e => setCurrentValue(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown} 
+            disabled={!isSessionInProgress}
+            style={{ 
+                backgroundColor: isNew ? '#fff9e6' : 
+                    ((countedQty !== null && countedQty !== '') ? '#e6fffa' : '#fff') 
+            }}
+        />
+    );
+};
+
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
     const navigate = useNavigate();
-    const [loadingSession, setLoadingSession] = useState(true);
+
+    // <-- THAY Äá»”I 2: Láº¥y state vÃ  actions tá»« store
+    const {
+        sessionData,
+        items,
+        discrepancyItems,
+        checkedItems,
+        summaryStats,
+        loading,
+        initializeSession,
+        setItems,
+        setSummary,
+        setSessionStatus,
+        toggleCheckedItem,
+        toggleAllCheckedItems,
+        clearStore
+    } = useStocktakeStore();
+
+    // State cá»¥c bá»™ cho UI (pagination, modals, search)
     const [loadingItems, setLoadingItems] = useState(true);
-    const [sessionData, setSessionData] = useState(null);
-    const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [discrepancyItems, setDiscrepancyItems] = useState([]);
-    const [checkedItems, setCheckedItems] = useState({});
-    const [summaryStats, setSummaryStats] = useState({ totalItems: 0, countedItems: 0, discrepancies: 0 });
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-    const fetchSessionData = useCallback(async () => {
-        setLoadingSession(true);
-        const docRef = doc(db, 'stocktakes', sessionId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            setSessionData({ id: docSnap.id, ...docSnap.data() });
-        } else {
-            toast.error("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
-            navigate('/stocktakes');
-        }
-        setLoadingSession(false);
-    }, [sessionId, navigate]);
-
-    const buildItemsQuery = useCallback(() => {
-        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-        let q = query(itemsCollectionRef, orderBy('productId'));
-        if (searchTerm) {
-            const upperSearchTerm = searchTerm.toUpperCase();
-            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
-        }
-        return q;
-    }, [sessionId, searchTerm]);
-
-    const fetchFirstPage = useCallback(async () => {
-        if (!sessionId) return;
-        setLoadingItems(true);
+    // HÃ m lÆ°u sá»‘ Ä‘áº¿m lÃªn Firestore
+    const saveCountToDb = async (itemId, finalCount) => {
+        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
         try {
-            const q = buildItemsQuery();
-            const firstPageQuery = query(q, limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(firstPageQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setItems(itemsList);
-            setPage(1);
+            await updateDoc(itemRef, { countedQty: finalCount });
+            return true;
         } catch (error) {
-            console.error("Lá»—i khi táº£i váº­t tÆ° kiá»ƒm kÃª: ", error);
-            toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch váº­t tÆ°. Vui lÃ²ng kiá»ƒm tra Console (F12) Ä‘á»ƒ táº¡o Index náº¿u Ä‘Æ°á»£c yÃªu cáº§u.");
-        } finally {
-            setLoadingItems(false);
-        }
-    }, [sessionId, buildItemsQuery]);
-
-    const fetchNextPage = async () => {
-        if (!sessionId || !lastVisible) return;
-        setLoadingItems(true);
-        try {
-            const q = buildItemsQuery();
-            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(nextPageQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setItems(itemsList);
-            setPage(p => p + 1);
-        } catch (error) {
-            console.error("Lá»—i khi táº£i váº­t tÆ° kiá»ƒm kÃª: ", error);
-        } finally {
-            setLoadingItems(false);
+            toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
+            return false;
         }
     };
 
+    // HÃ m tÃ­nh toÃ¡n láº¡i thá»‘ng kÃª vÃ  chÃªnh lá»‡ch
     const fetchStatsAndDiscrepancies = useCallback(async () => {
-        if (!sessionId || !sessionData) return;
+        if (!sessionId) return;
         const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
         const totalQuery = query(itemsRef, where('isNew', '==', false));
         const countedQuery = query(itemsRef, where('countedQty', '!=', null));
@@ -5905,82 +6131,96 @@ const StocktakeSessionPage = () => {
             }
         });
 
-        setSummaryStats({
+        const newSummary = {
             totalItems: totalSnap.data().count,
             countedItems: countedDocsSnap.size,
             discrepancies: discrepancies.length
-        });
-        setDiscrepancyItems(discrepancies.sort((a, b) => a.productId.localeCompare(b.productId)));
-    }, [sessionId, sessionData]);
+        };
+        const sortedDiscrepancies = discrepancies.sort((a, b) => a.productId.localeCompare(b.productId));
+        setSummary(newSummary, sortedDiscrepancies);
+    }, [sessionId, setSummary]);
 
-    useEffect(() => { fetchSessionData(); }, [fetchSessionData]);
-    
+    // Láº¥y dá»¯ liá»‡u chÃ­nh cá»§a phiÃªn khi táº£i trang vÃ  dá»n dáº¹p khi rá»i Ä‘i
     useEffect(() => {
+        const fetchSessionData = async () => {
+            const docRef = doc(db, 'stocktakes', sessionId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                await fetchStatsAndDiscrepancies();
+                // Láº¥y láº¡i dá»¯ liá»‡u stats má»›i nháº¥t trÆ°á»›c khi init
+                const storeState = useStocktakeStore.getState();
+                initializeSession(
+                    { id: docSnap.id, ...docSnap.data() }, 
+                    storeState.summaryStats, 
+                    storeState.discrepancyItems
+                );
+            } else {
+                toast.error("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
+                navigate('/stocktakes');
+            }
+        };
+
+        fetchSessionData();
+        
+        // Dá»n dáº¹p store khi component bá»‹ unmount
+        return () => {
+            clearStore();
+        }
+    }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
+    
+    const buildItemsQuery = useCallback(() => {
+        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+        let q = query(itemsCollectionRef, orderBy('productId'));
+        if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+        }
+        return q;
+    }, [sessionId, searchTerm]);
+
+    // Fetch dá»¯ liá»‡u váº­t tÆ° theo trang
+    const fetchItemsPage = useCallback(async (newQuery, isNextPage = false) => {
+        if (!sessionId) return;
+        setLoadingItems(true);
+        try {
+            const docSnapshots = await getDocs(newQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setItems(itemsList);
+            if (!isNextPage) setPage(1);
+        } catch (error) {
+            console.error("Lá»—i khi táº£i váº­t tÆ° kiá»ƒm kÃª: ", error);
+            toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch váº­t tÆ°.");
+        } finally {
+            setLoadingItems(false);
+        }
+    }, [sessionId, setItems]);
+
+    useEffect(() => {
+        const q = buildItemsQuery();
+        const firstPageQuery = query(q, limit(PAGE_SIZE));
         const debounce = setTimeout(() => {
-            fetchFirstPage();
+            fetchItemsPage(firstPageQuery);
         }, 500);
         return () => clearTimeout(debounce);
-    }, [searchTerm, fetchFirstPage]);
-
-    useEffect(() => {
-        if (sessionData?.status) {
-            fetchStatsAndDiscrepancies();
-        }
-    }, [sessionData, fetchStatsAndDiscrepancies]);
-
-    const performCountUpdate = async (itemId, finalCount) => {
-        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
-        try {
-            await updateDoc(itemRef, { countedQty: finalCount });
-            setItems(currentItems => 
-                currentItems.map(item => item.id === itemId ? { ...item, countedQty: finalCount } : item)
-            );
-            fetchStatsAndDiscrepancies();
-        } catch (error) {
-            toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
-        } finally {
-            setConfirmModal({isOpen: false});
-        }
-    };
+    }, [searchTerm, buildItemsQuery, fetchItemsPage]);
     
-    const handleCountChange = (itemId, countedQty, newCountValue) => {
-        const newCount = newCountValue === '' ? null : Number(newCountValue);
-        if ((countedQty || 0) > 0 && newCount !== null) {
-            const cumulativeTotal = (countedQty || 0) + newCount;
-            setConfirmModal({
-                isOpen: true,
-                title: "Cá»™ng Dá»“n hay Ghi ÄÃ¨?",
-                message: `ÄÃ£ Ä‘áº¿m ${countedQty}. Báº¡n muá»‘n cá»™ng dá»“n thÃªm ${newCount} (tá»•ng: ${cumulativeTotal}) hay ghi Ä‘Ã¨ báº±ng giÃ¡ trá»‹ má»›i lÃ  ${newCount}?`,
-                onConfirm: () => performCountUpdate(itemId, cumulativeTotal),
-                onCancel: () => performCountUpdate(itemId, newCount),
-                confirmText: "Cá»™ng Dá»“n",
-                cancelText: "Ghi ÄÃ¨"
-            });
-        } else {
-            performCountUpdate(itemId, newCount);
-        }
-    };
-
+    // CÃ¡c hÃ m xá»­ lÃ½ hÃ nh Ä‘á»™ng cá»§a ngÆ°á»i dÃ¹ng
     const handleFinalizeCount = async () => {
         setConfirmModal({isOpen: false});
-        try {
-            const sessionRef = doc(db, 'stocktakes', sessionId);
-            await updateDoc(sessionRef, { status: 'completed' });
-            toast.success("ÄÃ£ hoÃ n táº¥t phiÃªn kiá»ƒm kÃª!");
-            fetchSessionData();
-        } catch (error) {
-            toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi hoÃ n táº¥t.");
-        }
+        const sessionRef = doc(db, 'stocktakes', sessionId);
+        await updateDoc(sessionRef, { status: 'completed' });
+        setSessionStatus('completed');
+        toast.success("ÄÃ£ hoÃ n táº¥t phiÃªn kiá»ƒm kÃª!");
     };
-
+    
     const promptForFinalize = () => {
         const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
         let message = "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.";
-        
         if (uncountedItems > 0) {
             message = `Cáº¢NH BÃO: Váº«n cÃ²n ${uncountedItems} mÃ£ hÃ ng chÆ°a Ä‘Æ°á»£c Ä‘áº¿m. Náº¿u báº¡n hoÃ n táº¥t, sá»‘ lÆ°á»£ng cá»§a chÃºng sáº½ Ä‘Æ°á»£c coi lÃ  0. ` + message;
         }
-
         setConfirmModal({
             isOpen: true,
             title: "HoÃ n táº¥t phiÃªn kiá»ƒm kÃª?",
@@ -5996,7 +6236,10 @@ const StocktakeSessionPage = () => {
             const docRef = doc(itemsRef, newItem.lotId);
             await setDoc(docRef, newItem);
             toast.success("ÄÃ£ thÃªm máº·t hÃ ng má»›i vÃ o phiÃªn kiá»ƒm kÃª.");
-            fetchFirstPage();
+            // Táº£i láº¡i trang Ä‘áº§u
+            const q = buildItemsQuery();
+            const firstPageQuery = query(q, limit(PAGE_SIZE));
+            fetchItemsPage(firstPageQuery);
             setIsAddItemModalOpen(false);
         } catch (error) {
             toast.error("CÃ³ lá»—i khi lÆ°u máº·t hÃ ng má»›i, vui lÃ²ng thá»­ láº¡i.");
@@ -6007,8 +6250,7 @@ const StocktakeSessionPage = () => {
         setConfirmModal({isOpen: false});
         const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
         if (itemsToAdjust.length === 0) {
-            toast.warn("Vui lÃ²ng chá»n má»¥c Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
-            return;
+            return toast.warn("Vui lÃ²ng chá»n má»¥c Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
         }
         try {
             const batch = writeBatch(db);
@@ -6030,19 +6272,16 @@ const StocktakeSessionPage = () => {
             const sessionRef = doc(db, 'stocktakes', sessionId);
             batch.update(sessionRef, { status: 'adjusted' });
             await batch.commit();
+            setSessionStatus('adjusted');
             toast.success("ÄÃ£ Ä‘iá»u chá»‰nh tá»“n kho thÃ nh cÃ´ng!");
-            fetchSessionData();
         } catch (error) {
             toast.error("ÄÃ£ xáº£y ra lá»—i khi Ä‘iá»u chá»‰nh tá»“n kho.");
         }
     };
-
+    
     const promptForAdjust = () => {
         const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
-        if (itemsToAdjust.length === 0) {
-            toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t máº·t hÃ ng Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
-            return;
-        }
+        if (itemsToAdjust.length === 0) return toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t máº·t hÃ ng Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
         setConfirmModal({
             isOpen: true,
             title: "XÃ¡c nháº­n Ä‘iá»u chá»‰nh tá»“n kho?",
@@ -6052,26 +6291,10 @@ const StocktakeSessionPage = () => {
         });
     };
     
-    const handleCheckboxChange = (itemId) => { setCheckedItems(prev => ({ ...prev, [itemId]: !prev[itemId] })); };
-
-    if (loadingSession) return <Spinner />;
+    if (loading) return <Spinner />;
     if (!sessionData) return <div>KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.</div>;
 
     const isSessionInProgress = sessionData.status === 'in_progress';
-
-    const CountInput = ({ item }) => {
-        const [currentValue, setCurrentValue] = useState(item.countedQty ?? '');
-        const handleKeyDown = (e) => { if (e.key === 'Enter') e.target.blur(); };
-        useEffect(() => { setCurrentValue(item.countedQty ?? ''); }, [item.countedQty]);
-        return (
-            <input type="number" placeholder="Nháº­p sá»‘ Ä‘áº¿m" value={currentValue}
-                onChange={e => setCurrentValue(e.target.value)}
-                onBlur={() => handleCountChange(item.id, item.countedQty, currentValue)}
-                onKeyDown={handleKeyDown} disabled={!isSessionInProgress}
-                style={{ backgroundColor: item.isNew ? '#fff9e6' : ((item.countedQty !== null && item.countedQty !== '') ? '#e6fffa' : '#fff') }}
-            />
-        );
-    };
 
     return (
         <div className="stocktake-session-page-container">
@@ -6097,7 +6320,7 @@ const StocktakeSessionPage = () => {
 
             <div className="controls-container">
                 <div className="search-container">
-                    <input type="text" placeholder="TÃ¬m theo MÃ£ hÃ ng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
+                     <input type="text" placeholder="TÃ¬m theo MÃ£ hÃ ng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
                 </div>
                 {isSessionInProgress && (
                     <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ ThÃªm HÃ ng NgoÃ i DS</button>
@@ -6119,7 +6342,9 @@ const StocktakeSessionPage = () => {
                                     <tr key={item.id}>
                                         <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
                                         <td>{formatDate(item.expiryDate)}</td><td>{item.systemQty}</td>
-                                        <td><CountInput item={item} /></td>
+                                        <td>
+                                            <CountInput item={item} />
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -6127,11 +6352,20 @@ const StocktakeSessionPage = () => {
                     </div>
                     {!searchTerm && (
                         <div className="pagination-controls">
-                            <button onClick={fetchFirstPage} disabled={page <= 1}>
-                                <FiChevronLeft /> Trang TrÆ°á»›c
+                            <button onClick={() => {
+                                const q = buildItemsQuery();
+                                const firstPageQuery = query(q, limit(PAGE_SIZE));
+                                fetchItemsPage(firstPageQuery);
+                            }} disabled={page <= 1}>
+                                <FiChevronLeft /> Trang Äáº§u
                             </button>
                             <span>Trang {page}</span>
-                            <button onClick={fetchNextPage} disabled={isLastPage}>
+                            <button onClick={() => {
+                                const q = buildItemsQuery();
+                                const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+                                fetchItemsPage(nextPageQuery, true);
+                                setPage(p => p + 1);
+                            }} disabled={isLastPage}>
                                 Trang Tiáº¿p <FiChevronRight />
                             </button>
                         </div>
@@ -6147,7 +6381,7 @@ const StocktakeSessionPage = () => {
                             <table className="products-table discrepancy-table">
                                 <thead>
                                     <tr>
-                                        <th><input type="checkbox" onChange={(e) => setCheckedItems(e.target.checked ? Object.fromEntries(discrepancyItems.map(i => [i.id, true])) : {})} disabled={sessionData.status === 'adjusted'} /></th>
+                                        <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
                                         <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
                                         <th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>ChÃªnh lá»‡ch</th>
                                     </tr>
@@ -6155,7 +6389,7 @@ const StocktakeSessionPage = () => {
                                 <tbody>
                                     {discrepancyItems.map(item => (
                                         <tr key={item.id}>
-                                            <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => handleCheckboxChange(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
+                                            <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheckedItem(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
                                             <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
                                             <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
                                             <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>
@@ -6191,7 +6425,8 @@ import {
     doc,
     setDoc,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+    serverTimestamp // <-- THÃŠM IMPORT
 } from 'firebase/firestore';
 
 /**
@@ -6203,7 +6438,8 @@ import {
 export const addPartner = async (partnerId, partnerData) => {
     // LuÃ´n chuyá»ƒn ID thÃ nh chá»¯ hoa Ä‘á»ƒ Ä‘áº£m báº£o tÃ­nh nháº¥t quÃ¡n
     const partnerRef = doc(db, 'partners', partnerId.toUpperCase());
-    await setDoc(partnerRef, partnerData);
+    // <-- THÃŠM Dá»® LIá»†U createdAt VÃ€O ÄÃ‚Y
+    await setDoc(partnerRef, { ...partnerData, createdAt: serverTimestamp() });
 };
 
 /**
@@ -6227,6 +6463,70 @@ export const deletePartner = async (partnerId) => {
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\partnerService.test.js ---
+
+
+// src/services/partnerService.test.js
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Bá»• sung getFirestore vÃ o mock
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn(),
+    setDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    deleteDoc: vi.fn(),
+    getFirestore: vi.fn(), // <-- THÃŠM DÃ’NG NÃ€Y
+}));
+
+import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { addPartner, updatePartner, deletePartner } from './partnerService';
+import { db } from '../firebaseConfig';
+
+describe('Service: partnerService', () => {
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('hÃ m addPartner nÃªn gá»i doc vÃ  setDoc vá»›i ID Ä‘Æ°á»£c viáº¿t hoa', async () => {
+        const partnerId = 'ncc-test';
+        const partnerData = { partnerName: 'Äá»‘i tÃ¡c Test', partnerType: 'supplier' };
+        const mockDocRef = { id: 'mockDocRef' };
+        doc.mockReturnValue(mockDocRef);
+
+        await addPartner(partnerId, partnerData);
+
+        expect(doc).toHaveBeenCalledWith(db, 'partners', 'NCC-TEST');
+        expect(setDoc).toHaveBeenCalledWith(mockDocRef, partnerData);
+    });
+
+    it('hÃ m updatePartner nÃªn gá»i doc vÃ  updateDoc vá»›i cÃ¡c tham sá»‘ chÃ­nh xÃ¡c', async () => {
+        const partnerId = 'KH-01';
+        const partnerData = { partnerName: 'KhÃ¡ch hÃ ng A' };
+        const mockDocRef = { id: 'mockDocRef' };
+        doc.mockReturnValue(mockDocRef);
+
+        await updatePartner(partnerId, partnerData);
+
+        expect(doc).toHaveBeenCalledWith(db, 'partners', partnerId);
+        expect(updateDoc).toHaveBeenCalledWith(mockDocRef, partnerData);
+    });
+
+    it('hÃ m deletePartner nÃªn gá»i doc vÃ  deleteDoc vá»›i tham sá»‘ chÃ­nh xÃ¡c', async () => {
+        const partnerId = 'KH-02';
+        const mockDocRef = { id: 'mockDocRef' };
+        doc.mockReturnValue(mockDocRef);
+
+        await deletePartner(partnerId);
+
+        expect(doc).toHaveBeenCalledWith(db, 'partners', partnerId);
+        expect(deleteDoc).toHaveBeenCalledWith(mockDocRef);
+    });
+});
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\productService.js ---
 
 
@@ -6237,7 +6537,8 @@ import {
     doc,
     setDoc,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+    serverTimestamp // <-- THÃŠM IMPORT
 } from 'firebase/firestore';
 
 /**
@@ -6247,7 +6548,8 @@ import {
  */
 export const addProduct = async (productId, productData) => {
     const productRef = doc(db, 'products', productId);
-    await setDoc(productRef, productData);
+    // <-- THÃŠM Dá»® LIá»†U createdAt VÃ€O ÄÃ‚Y
+    await setDoc(productRef, { ...productData, createdAt: serverTimestamp() });
 };
 
 /**
@@ -6268,6 +6570,71 @@ export const deleteProduct = async (productId) => {
     const productDocRef = doc(db, 'products', productId);
     await deleteDoc(productDocRef);
 };
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\productService.test.js ---
+
+
+// src/services/productService.test.js
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Bá»• sung getFirestore vÃ o mock
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn(),
+    setDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    deleteDoc: vi.fn(),
+    getFirestore: vi.fn(), // <-- THÃŠM DÃ’NG NÃ€Y
+}));
+
+// Import cÃ¡c hÃ m SAU KHI Ä‘Ã£ mock
+import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { addProduct, updateProduct, deleteProduct } from './productService';
+import { db } from '../firebaseConfig';
+
+describe('Service: productService', () => {
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('hÃ m addProduct nÃªn gá»i doc vÃ  setDoc vá»›i cÃ¡c tham sá»‘ chÃ­nh xÃ¡c', async () => {
+        const productId = 'SP001';
+        const productData = { productName: 'Sáº£n pháº©m Test', unit: 'CÃ¡i' };
+        const mockDocRef = { id: 'mockDocRef' };
+        doc.mockReturnValue(mockDocRef);
+
+        await addProduct(productId, productData);
+
+        expect(doc).toHaveBeenCalledWith(db, 'products', productId);
+        expect(setDoc).toHaveBeenCalledWith(mockDocRef, productData);
+    });
+
+    it('hÃ m updateProduct nÃªn gá»i doc vÃ  updateDoc vá»›i cÃ¡c tham sá»‘ chÃ­nh xÃ¡c', async () => {
+        const productId = 'SP002';
+        const productData = { productName: 'Sáº£n pháº©m cáº­p nháº­t' };
+        const mockDocRef = { id: 'mockDocRef' };
+        doc.mockReturnValue(mockDocRef);
+
+        await updateProduct(productId, productData);
+
+        expect(doc).toHaveBeenCalledWith(db, 'products', productId);
+        expect(updateDoc).toHaveBeenCalledWith(mockDocRef, productData);
+    });
+
+    it('hÃ m deleteProduct nÃªn gá»i doc vÃ  deleteDoc vá»›i tham sá»‘ chÃ­nh xÃ¡c', async () => {
+        const productId = 'SP003';
+        const mockDocRef = { id: 'mockDocRef' };
+        doc.mockReturnValue(mockDocRef);
+
+        await deleteProduct(productId);
+
+        expect(doc).toHaveBeenCalledWith(db, 'products', productId);
+        expect(deleteDoc).toHaveBeenCalledWith(mockDocRef);
+    });
+});
 
 
 
@@ -6323,6 +6690,410 @@ export const deleteStocktakeSession = async (sessionId) => {
     // BÆ°á»›c 3: Sau khi Ä‘Ã£ xÃ³a háº¿t cÃ¡c má»¥c con, xÃ³a document cha (phiÃªn kiá»ƒm kÃª)
     await deleteDoc(sessionRef);
 };
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\stocktakeService.test.js ---
+
+
+// src/services/stocktakeService.test.js
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Bá»• sung getFirestore vÃ o mock
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn(),
+    deleteDoc: vi.fn(),
+    collection: vi.fn(),
+    getDocs: vi.fn(),
+    writeBatch: vi.fn(() => ({
+        delete: vi.fn(),
+        commit: vi.fn(),
+    })),
+    getFirestore: vi.fn(), // <-- THÃŠM DÃ’NG NÃ€Y
+}));
+
+import { doc, deleteDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
+import { deleteStocktakeSession } from './stocktakeService';
+import { db } from '../firebaseConfig';
+
+describe('Service: stocktakeService', () => {
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('nÃªn xÃ³a cÃ¡c item con trÆ°á»›c khi xÃ³a document cha', async () => {
+        const sessionId = 'session-with-items';
+        const mockSessionRef = { id: 'sessionRef' };
+        const mockItemsCollectionRef = { id: 'itemsCollectionRef' };
+        
+        const mockItemsSnapshot = {
+            empty: false,
+            docs: [
+                { id: 'item1', ref: { id: 'item1Ref' } },
+                { id: 'item2', ref: { id: 'item2Ref' } },
+            ],
+        };
+        const mockBatch = { delete: vi.fn(), commit: vi.fn() };
+
+        doc.mockReturnValue(mockSessionRef);
+        collection.mockReturnValue(mockItemsCollectionRef);
+        getDocs.mockResolvedValue(mockItemsSnapshot);
+        writeBatch.mockReturnValue(mockBatch);
+
+        await deleteStocktakeSession(sessionId);
+
+        expect(collection).toHaveBeenCalledWith(db, 'stocktakes', sessionId, 'items');
+        expect(getDocs).toHaveBeenCalledWith(mockItemsCollectionRef);
+        expect(writeBatch).toHaveBeenCalledWith(db);
+        expect(mockBatch.delete).toHaveBeenCalledTimes(2);
+        expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+        expect(deleteDoc).toHaveBeenCalledWith(mockSessionRef);
+    });
+
+    it('nÃªn chá»‰ xÃ³a document cha náº¿u khÃ´ng cÃ³ item con', async () => {
+        const sessionId = 'session-no-items';
+        const mockSessionRef = { id: 'sessionRef' };
+        const mockItemsCollectionRef = { id: 'itemsCollectionRef' };
+
+        const mockItemsSnapshot = { empty: true, docs: [] };
+        
+        doc.mockReturnValue(mockSessionRef);
+        collection.mockReturnValue(mockItemsCollectionRef);
+        getDocs.mockResolvedValue(mockItemsSnapshot);
+
+        await deleteStocktakeSession(sessionId);
+
+        expect(getDocs).toHaveBeenCalledWith(mockItemsCollectionRef);
+        expect(writeBatch).not.toHaveBeenCalled();
+        expect(deleteDoc).toHaveBeenCalledWith(mockSessionRef);
+    });
+});
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\stores\exportSlipStore.js ---
+
+
+// src/stores/exportSlipStore.js
+
+import { create } from 'zustand';
+import { toast } from 'react-toastify';
+
+// `create` lÃ  hÃ m chÃ­nh tá»« Zustand Ä‘á»ƒ táº¡o má»™t store.
+// Store nÃ y sáº½ chá»©a state vÃ  cÃ¡c "actions" (hÃ m Ä‘á»ƒ cáº­p nháº­t state).
+const useExportSlipStore = create((set, get) => ({
+    // === STATE ===
+    // Táº¥t cáº£ state trÆ°á»›c Ä‘Ã¢y náº±m trong NewExportPage giá» sáº½ náº±m á»Ÿ Ä‘Ã¢y.
+    customerId: '',
+    customerName: '',
+    description: '',
+    items: [{ 
+        id: Date.now(), 
+        productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
+        availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+        expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' 
+    }],
+
+    // === ACTIONS ===
+    // ÄÃ¢y lÃ  cÃ¡c hÃ m dÃ¹ng Ä‘á»ƒ cáº­p nháº­t state.
+    // `set` lÃ  hÃ m cá»§a Zustand, cho phÃ©p chÃºng ta cáº­p nháº­t state má»™t cÃ¡ch an toÃ n.
+    
+    setCustomer: (id, name) => set({ customerId: id, customerName: name }),
+
+    setDescription: (description) => set({ description }),
+
+    // Action Ä‘á»ƒ thÃªm má»™t dÃ²ng hÃ ng hÃ³a má»›i
+    addNewItemRow: () => set(state => ({
+        items: [
+            ...state.items,
+            { 
+                id: Date.now(), 
+                productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
+                availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+                expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' 
+            }
+        ]
+    })),
+
+    // Action Ä‘á»ƒ xÃ³a má»™t dÃ²ng hÃ ng hÃ³a
+    removeItemRow: (indexToRemove) => set(state => {
+        if (state.items.length <= 1) return {}; // KhÃ´ng lÃ m gÃ¬ náº¿u chá»‰ cÃ²n 1 dÃ²ng
+        return { items: state.items.filter((_, index) => index !== indexToRemove) };
+    }),
+
+    // Action Ä‘á»ƒ cáº­p nháº­t má»™t trÆ°á»ng dá»¯ liá»‡u trong má»™t dÃ²ng hÃ ng hÃ³a
+    updateItem: (index, field, value) => set(state => {
+        const newItems = [...state.items];
+        const currentItem = { ...newItems[index] }; // Táº¡o má»™t báº£n sao cá»§a item Ä‘á»ƒ trÃ¡nh thay Ä‘á»•i trá»±c tiáº¿p
+        
+        // Logic kiá»ƒm tra sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t tá»“n kho
+        if (field === 'quantityToExport') {
+            if (value === '') {
+                currentItem[field] = '';
+            } else {
+                const val = Number(value);
+                if (val < 0) return {}; // KhÃ´ng lÃ m gÃ¬ náº¿u sá»‘ Ã¢m
+                if (val > currentItem.quantityRemaining) {
+                    toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
+                    currentItem[field] = currentItem.quantityRemaining;
+                } else {
+                    currentItem[field] = val;
+                }
+            }
+        } else {
+            currentItem[field] = value;
+        }
+        
+        newItems[index] = currentItem;
+        return { items: newItems };
+    }),
+    
+    // Action Ä‘áº·c biá»‡t Ä‘á»ƒ cáº­p nháº­t toÃ n bá»™ má»™t item, há»¯u Ã­ch sau khi tÃ¬m kiáº¿m sáº£n pháº©m
+    replaceItem: (index, newItemData) => set(state => {
+        const newItems = [...state.items];
+        newItems[index] = { ...newItems[index], ...newItemData };
+        return { items: newItems };
+    }),
+
+    // Action Ä‘á»ƒ reset toÃ n bá»™ phiáº¿u vá» tráº¡ng thÃ¡i ban Ä‘áº§u
+    resetSlip: () => set({
+        customerId: '',
+        customerName: '',
+        description: '',
+        items: [{ 
+            id: Date.now(), 
+            productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
+            availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+            expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '' 
+        }]
+    })
+}));
+
+export default useExportSlipStore;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\stores\importSlipStore.js ---
+
+
+// src/stores/importSlipStore.js
+
+import { create } from 'zustand';
+import { formatDate } from '../utils/dateUtils';
+
+// State khá»Ÿi táº¡o cho má»™t dÃ²ng item má»›i, giÃºp trÃ¡nh láº·p láº¡i code
+const initialItemState = {
+    id: Date.now(),
+    productId: '',
+    productName: '',
+    lotNumber: '',
+    expiryDate: '',
+    unit: '',
+    packaging: '',
+    quantity: '',
+    notes: '',
+    storageTemp: '',
+    team: '',
+    manufacturer: '',
+    productNotFound: false,
+    lotStatus: 'unchecked', // 'unchecked', 'exists', 'new', 'declared'
+    existingLotInfo: null
+};
+
+// State khá»Ÿi táº¡o cho toÃ n bá»™ store
+const initialState = {
+    supplierId: '',
+    supplierName: '',
+    description: '',
+    items: [{ ...initialItemState, id: Date.now() }]
+};
+
+const useImportSlipStore = create((set) => ({
+    // === STATE ===
+    ...initialState,
+
+    // === ACTIONS ===
+    setSupplier: (id, name) => set({ supplierId: id, supplierName: name }),
+    
+    setDescription: (description) => set({ description }),
+
+    addNewItemRow: () => set(state => ({
+        items: [...state.items, { ...initialItemState, id: Date.now() }]
+    })),
+    
+    removeItemRow: (indexToRemove) => set(state => {
+        // KhÃ´ng cho xÃ³a náº¿u chá»‰ cÃ²n 1 dÃ²ng
+        if (state.items.length <= 1) return {};
+        return { items: state.items.filter((_, index) => index !== indexToRemove) };
+    }),
+
+    // Action chung Ä‘á»ƒ cáº­p nháº­t má»™t trÆ°á»ng báº¥t ká»³ cá»§a má»™t item
+    updateItem: (index, field, value) => set(state => {
+        const newItems = [...state.items];
+        // Táº¡o má»™t báº£n sao Ä‘á»ƒ trÃ¡nh thay Ä‘á»•i state gá»‘c trá»±c tiáº¿p
+        const currentItem = { ...newItems[index] };
+        currentItem[field] = value;
+
+        // Náº¿u thay Ä‘á»•i productId hoáº·c lotNumber, reset cÃ¡c tráº¡ng thÃ¡i liÃªn quan
+        if (field === 'productId' || field === 'lotNumber') {
+            currentItem.lotStatus = 'unchecked';
+            currentItem.expiryDate = '';
+            currentItem.existingLotInfo = null;
+        }
+
+        newItems[index] = currentItem;
+        return { items: newItems };
+    }),
+    
+    // Action Ä‘á»ƒ xá»­ lÃ½ káº¿t quáº£ sau khi tÃ¬m kiáº¿m sáº£n pháº©m
+    handleProductSearchResult: (index, productData, found) => set(state => {
+        const newItems = [...state.items];
+        const currentItem = { ...newItems[index] };
+        if (found) {
+            Object.assign(currentItem, {
+                productName: productData.productName || '',
+                unit: productData.unit || '',
+                packaging: productData.packaging || '',
+                storageTemp: productData.storageTemp || '',
+                team: productData.team || '',
+                manufacturer: productData.manufacturer || '',
+                productNotFound: false,
+            });
+        } else {
+            Object.assign(currentItem, {
+                productName: '', unit: '', packaging: '', storageTemp: '',
+                team: '', manufacturer: '', productNotFound: true,
+            });
+        }
+        newItems[index] = currentItem;
+        return { items: newItems };
+    }),
+
+    // Action Ä‘á»ƒ xá»­ lÃ½ káº¿t quáº£ sau khi kiá»ƒm tra sá»‘ lÃ´
+    handleLotCheckResult: (index, lotData, exists) => set(state => {
+        const newItems = [...state.items];
+        const currentItem = { ...newItems[index] };
+        if (exists) {
+            currentItem.lotStatus = 'exists';
+            currentItem.expiryDate = formatDate(lotData.expiryDate);
+            currentItem.existingLotInfo = {
+                quantityRemaining: lotData.quantityRemaining,
+                expiryDate: formatDate(lotData.expiryDate),
+            };
+        } else {
+            currentItem.lotStatus = 'new';
+            currentItem.existingLotInfo = null;
+        }
+        newItems[index] = currentItem;
+        return { items: newItems };
+    }),
+    
+    // Action Ä‘á»ƒ khai bÃ¡o HSD cho lÃ´ má»›i tá»« modal
+    declareNewLot: (index, declaredExpiryDate) => set(state => {
+        const newItems = [...state.items];
+        const currentItem = { ...newItems[index] };
+        currentItem.expiryDate = declaredExpiryDate;
+        currentItem.lotStatus = 'declared';
+        newItems[index] = currentItem;
+        return { items: newItems };
+    }),
+
+    // Action Ä‘á»ƒ Ä‘iá»n dá»¯ liá»‡u tá»« viá»‡c táº¡o sáº£n pháº©m má»›i nhanh
+    fillNewProductData: (index, newData) => set(state => {
+        const newItems = [...state.items];
+        newItems[index] = {
+            ...newItems[index],
+            ...newData,
+            productNotFound: false,
+        };
+        return { items: newItems };
+    }), // <-- ÄÃƒ Sá»¬A Lá»–I: ThÃªm dáº¥u pháº©y
+
+    // Action Ä‘á»ƒ reset toÃ n bá»™ form vá» tráº¡ng thÃ¡i ban Ä‘áº§u
+    resetSlip: () => set({ ...initialState, items: [{ ...initialItemState, id: Date.now() }]})
+}));
+
+export default useImportSlipStore;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\stores\stocktakeStore.js ---
+
+
+// src/stores/stocktakeStore.js
+import { create } from 'zustand';
+
+const initialState = {
+    sessionData: null,
+    items: [],
+    discrepancyItems: [],
+    checkedItems: {},
+    summaryStats: { totalItems: 0, countedItems: 0, discrepancies: 0 },
+    loading: true,
+};
+
+const useStocktakeStore = create((set, get) => ({
+    ...initialState,
+
+    // === ACTIONS ===
+
+    // Khá»Ÿi táº¡o store vá»›i dá»¯ liá»‡u cá»§a phiÃªn
+    initializeSession: (sessionData, summaryStats, discrepancyItems) => set({
+        sessionData,
+        summaryStats,
+        discrepancyItems,
+        loading: false,
+        checkedItems: {}, // Reset cÃ¡c má»¥c Ä‘Ã£ chá»n khi táº£i láº¡i
+    }),
+
+    // Cáº­p nháº­t danh sÃ¡ch váº­t tÆ° (dÃ¹ng cho phÃ¢n trang)
+    setItems: (items) => set({ items }),
+
+    // Cáº­p nháº­t sá»‘ lÆ°á»£ng Ä‘áº¿m cá»§a má»™t váº­t tÆ° trÃªn UI
+    updateItemCountInUI: (itemId, newCount) => set(state => ({
+        items: state.items.map(item =>
+            item.id === itemId ? { ...item, countedQty: newCount } : item
+        ),
+    })),
+
+    // Cáº­p nháº­t tráº¡ng thÃ¡i cá»§a phiÃªn
+    setSessionStatus: (status) => set(state => ({
+        sessionData: state.sessionData ? { ...state.sessionData, status: status } : null,
+    })),
+
+    // Cáº­p nháº­t thá»‘ng kÃª vÃ  danh sÃ¡ch chÃªnh lá»‡ch
+    setSummary: (summaryStats, discrepancyItems) => set({ 
+        summaryStats, 
+        discrepancyItems 
+    }),
+
+    // Xá»­ lÃ½ check/uncheck má»™t má»¥c chÃªnh lá»‡ch
+    toggleCheckedItem: (itemId) => set(state => ({
+        checkedItems: {
+            ...state.checkedItems,
+            [itemId]: !state.checkedItems[itemId],
+        },
+    })),
+    
+    // Xá»­ lÃ½ check/uncheck táº¥t cáº£ cÃ¡c má»¥c chÃªnh lá»‡ch
+    toggleAllCheckedItems: (shouldCheck) => set(state => {
+        if (!shouldCheck) {
+            return { checkedItems: {} };
+        }
+        const allChecked = state.discrepancyItems.reduce((acc, item) => {
+            acc[item.id] = true;
+            return acc;
+        }, {});
+        return { checkedItems: allChecked };
+    }),
+
+    // Reset store vá» tráº¡ng thÃ¡i ban Ä‘áº§u khi rá»i khá»i trang
+    clearStore: () => set({ ...initialState }),
+}));
+
+export default useStocktakeStore;
 
 
 
@@ -6620,6 +7391,11 @@ export const deleteStocktakeSession = async (sessionId) => {
   flex: 1;
 }
 
+/* PhiÃªn báº£n sá»­a lá»—i - Gá»™p chung input, select, vÃ  textarea */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="email"],
+.form-group input[type="password"],
 .form-group select,
 .form-group textarea {
   width: 100%;
@@ -7252,6 +8028,31 @@ tbody tr.selected-row td {
     text-align: left;
 }
 
+/* ThÃªm vÃ o cuá»‘i file src/styles/AdminLayout.css */
+
+.new-data-notification {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  color: #004085;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.new-data-notification p {
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 
 
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\DashboardPage.module.css ---
@@ -7791,7 +8592,6 @@ afterEach(() => {
 export const formatDate = (timestamp) => {
   if (!timestamp) return '';
   const date = timestamp.toDate ? timestamp.toDate() : timestamp;
-  
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
@@ -7809,7 +8609,13 @@ export const parseDateString = (dateString) => {
     const parts = dateString.split('/');
     if (parts.length !== 3) return null;
     const [day, month, year] = parts;
-    return new Date(year, month - 1, day);
+    // ChÃº Ã½: thÃ¡ng trong new Date() báº¯t Ä‘áº§u tá»« 0
+    const dateObj = new Date(year, month - 1, day);
+    // Kiá»ƒm tra xem ngÃ y cÃ³ há»£p lá»‡ khÃ´ng (vÃ­ dá»¥: 31/02/2025)
+    if (dateObj.getFullYear() != year || dateObj.getMonth() != month - 1 || dateObj.getDate() != day) {
+      return null;
+    }
+    return dateObj;
   } catch (error) {
     console.error("Lá»—i Ä‘á»‹nh dáº¡ng ngÃ y thÃ¡ng:", dateString, error);
     return null;
@@ -7817,16 +8623,14 @@ export const parseDateString = (dateString) => {
 };
 
 /**
- * HÃ€M Má»šI: Äá»‹nh dáº¡ng má»™t chuá»—i sá»‘ thÃ nh Ä‘á»‹nh dáº¡ng ngÃ y dd/mm/yyyy khi ngÆ°á»i dÃ¹ng gÃµ.
+ * Äá»‹nh dáº¡ng má»™t chuá»—i sá»‘ thÃ nh Ä‘á»‹nh dáº¡ng ngÃ y dd/mm/yyyy khi ngÆ°á»i dÃ¹ng gÃµ.
  * @param {string} value - GiÃ¡ trá»‹ tá»« Ã´ input.
  * @returns {string} - Chuá»—i Ä‘Ã£ Ä‘Æ°á»£c Ä‘á»‹nh dáº¡ng.
  */
 export const formatExpiryDate = (value) => {
     if (!value) return '';
-
     // 1. Chá»‰ giá»¯ láº¡i cÃ¡c kÃ½ tá»± sá»‘
     const digitsOnly = value.replace(/\D/g, '');
-
     // 2. Giá»›i háº¡n tá»‘i Ä‘a 8 kÃ½ tá»± (ddmmyyyy)
     const truncatedDigits = digitsOnly.slice(0, 8);
     const len = truncatedDigits.length;
@@ -7843,6 +8647,26 @@ export const formatExpiryDate = (value) => {
     return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2, 4)}/${truncatedDigits.slice(4)}`;
 };
 
+/**
+ * === HÃ€M Má»šI ÄÆ¯á»¢C THÃŠM VÃ€O ===
+ * XÃ¡c Ä‘á»‹nh class mÃ u sáº¯c cho má»™t dÃ²ng dá»±a trÃªn ngÃ y háº¿t háº¡n.
+ * @param {object} expiryDate - Äá»‘i tÆ°á»£ng Timestamp cá»§a Firebase.
+ * @returns {string} - TÃªn class CSS tÆ°Æ¡ng á»©ng.
+ */
+export const getRowColorByExpiry = (expiryDate) => {
+    if (!expiryDate || !expiryDate.toDate) return '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDate = expiryDate.toDate();
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'expired-black';
+    if (diffDays <= 60) return 'near-expiry-red';
+    if (diffDays <= 90) return 'near-expiry-orange';
+    if (diffDays <= 120) return 'near-expiry-yellow';
+    return '';
+};
 
 
 

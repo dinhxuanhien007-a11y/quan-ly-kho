@@ -4,20 +4,20 @@ import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
+import { z } from 'zod';
 
-// <-- ĐỊNH NGHĨA SCHEMA -->
+// Định nghĩa Schema với logic .refine() đã được sửa lỗi
 const unlistedItemSchema = z.object({
     productId: z.string().trim().min(1, "Mã hàng là bắt buộc."),
-    productName: z.string(), // Sẽ kiểm tra điều kiện bên dưới
+    productName: z.string(), 
     countedQty: z.preprocess(
         val => Number(val),
         z.number({ required_error: "Số lượng đếm là bắt buộc.", invalid_type_error: "Số lượng đếm phải là một con số." })
          .gt(0, "Số lượng đếm phải lớn hơn 0.")
     )
-}).refine(data => { // Thêm điều kiện refine
+}).refine((data, ctx) => { // <-- SỬA LỖI 1: Thêm (data, ctx) để nhận context
     // Nếu isNewProduct là true (được truyền vào context), thì productName phải có giá trị
-    if (this.isNewProduct) {
+    if (ctx.isNewProduct) { // <-- SỬA LỖI 2: Sử dụng ctx.isNewProduct thay vì this.isNewProduct
         return data.productName.trim().length > 0;
     }
     return true; // Nếu không phải sản phẩm mới thì không cần check
@@ -41,8 +41,9 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
 
     const handleProductSearch = async () => {
         if (!productId) return;
-        const productRef = doc(db, 'products', productId.trim());
+        const productRef = doc(db, 'products', productId.trim().toUpperCase());
         const productSnap = await getDoc(productRef);
+
         if (productSnap.exists()) {
             const data = productSnap.data();
             setProductName(data.productName);
@@ -67,7 +68,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        // <-- SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
+        // Sử dụng schema để xác thực
         const validationResult = unlistedItemSchema.safeParse({
             productId: productId,
             productName: productName,
@@ -83,7 +84,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
         }
         
         onAddItem({
-            productId: validationResult.data.productId.trim(),
+            productId: validationResult.data.productId.trim().toUpperCase(),
             productName: productName,
             lotNumber: lotNumber.trim() || 'N/A',
             expiryDate: expiryDate,
@@ -91,7 +92,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
             packaging: packaging,
             systemQty: 0,
             countedQty: validationResult.data.countedQty,
-            lotId: `new_${validationResult.data.productId.trim()}_${lotNumber.trim() || Date.now()}`,
+            lotId: `new_${validationResult.data.productId.trim().toUpperCase()}_${lotNumber.trim() || Date.now()}`,
             isNew: true,
             storageTemp: storageTemp,
             manufacturer: manufacturer,
@@ -110,7 +111,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>Mã hàng (*)</label>
-                        <input type="text" value={productId} onChange={e => setProductId(e.target.value)} onBlur={handleProductSearch} required />
+                        <input type="text" value={productId} onChange={e => setProductId(e.target.value)} onBlur={handleProductSearch} required autoFocus />
                     </div>
                     <div className="form-group">
                         <label>Tên hàng {isNewProduct && '(*)'}</label>

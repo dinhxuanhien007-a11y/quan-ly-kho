@@ -5,7 +5,8 @@ import {
     doc,
     setDoc,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+    serverTimestamp // <-- THÊM IMPORT
 } from 'firebase/firestore';
 
 /**
@@ -15,7 +16,8 @@ import {
  */
 export const addProduct = async (productId, productData) => {
     const productRef = doc(db, 'products', productId);
-    await setDoc(productRef, productData);
+    // <-- THÊM DỮ LIỆU createdAt VÀO ĐÂY
+    await setDoc(productRef, { ...productData, createdAt: serverTimestamp() });
 };
 
 /**

@@ -8,9 +8,10 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
 import { FiInfo } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
+import { z } from 'zod';
+import useImportSlipStore from '../stores/importSlipStore'; // <-- THAY ĐỔI 1: Import store
 
-// Định nghĩa Schema xác thực
+// Schema validation không thay đổi
 const importItemSchema = z.object({
   productId: z.string().min(1, "Mã hàng không được để trống."),
   lotNumber: z.string().min(1, "Số lô không được để trống."),
@@ -30,24 +31,31 @@ const importSlipSchema = z.object({
     items: z.array(importItemSchema).min(1, "Phiếu nhập phải có ít nhất một mặt hàng hợp lệ.")
 });
 
-
 const NewImportPage = () => {
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    // THAY ĐỔI 2: Lấy state và actions từ Zustand store
+    const {
+        supplierId,
+        supplierName,
+        description,
+        items,
+        setSupplier,
+        setDescription,
+        addNewItemRow,
+        updateItem,
+        handleProductSearchResult,
+        handleLotCheckResult,
+        declareNewLot,
+        fillNewProductData,
+        resetSlip
+    } = useImportSlipStore();
 
-    const [importDate, setImportDate] = useState(formattedDate);
-    const [supplierId, setSupplierId] = useState('');
-    const [supplierName, setSupplierName] = useState('');
-    const [description, setDescription] = useState('');
-    const [items, setItems] = useState([
-        { id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }
-    ]);
+    // Các state cục bộ cho UI vẫn được giữ lại
     const [isSaving, setIsSaving] = useState(false);
     const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const inputRefs = useRef([]);
     const [allSuppliers, setAllSuppliers] = useState([]);
+    const inputRefs = useRef([]);
 
     useEffect(() => {
         const fetchSuppliers = async () => {
@@ -63,13 +71,11 @@ const NewImportPage = () => {
         const validItems = items.filter(item => 
             item.productId && item.lotNumber && item.quantity && item.expiryDate
         );
-        
         const slipToValidate = {
             supplierId: supplierId.trim(),
             supplierName: supplierName.trim(),
             items: validItems
         };
-
         const validationResult = importSlipSchema.safeParse(slipToValidate);
 
         if (!validationResult.success) {
@@ -79,50 +85,37 @@ const NewImportPage = () => {
 
         return {
             ...validationResult.data,
-            importDate: formattedDate,
+            importDate: formatDate(new Date()),
             description,
-            status: '', // Sẽ được gán sau
+            status: '',
             createdAt: serverTimestamp()
         };
     }
 
     const handleSupplierSearch = async () => {
         if (!supplierId) {
-            setSupplierName('');
+            setSupplier(supplierId, '');
             return;
         }
         try {
             const partnerRef = doc(db, 'partners', supplierId.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
+            
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'supplier') {
-                setSupplierName(partnerSnap.data().partnerName);
+                setSupplier(supplierId, partnerSnap.data().partnerName);
             } else {
-                setSupplierName('');
-                toast.error(`Không tìm thấy Nhà cung cấp với mã "${supplierId}" hoặc đối tác không phải là Nhà cung cấp.`);
+                setSupplier(supplierId, '');
+                toast.error(`Không tìm thấy Nhà cung cấp với mã "${supplierId}"`);
             }
         } catch (error) {
             console.error("Lỗi khi tìm nhà cung cấp:", error);
-            setSupplierName('');
+            toast.error("Không thể đọc dữ liệu NCC. Kiểm tra Console (F12)!"); 
+            setSupplier(supplierId, '');
         }
     };
     
     const handleExpiryDateBlur = (index, value) => {
-        const newItems = [...items];
-        newItems[index].expiryDate = formatExpiryDate(value);
-        setItems(newItems);
-    };
-
-    const handleItemChange = (index, field, value) => {
-        const newItems = [...items];
-        newItems[index][field] = value;
-        
-        if (field === 'productId' || field === 'lotNumber') {
-            newItems[index].lotStatus = 'unchecked';
-            newItems[index].expiryDate = '';
-            newItems[index].existingLotInfo = null;
-        }
-        
-        setItems(newItems);
+        updateItem(index, 'expiryDate', formatExpiryDate(value));
     };
 
     const checkExistingLot = async (index) => {
@@ -137,103 +130,39 @@ const NewImportPage = () => {
             );
             const querySnapshot = await getDocs(q);
             
-            const newItems = [...items];
             if (!querySnapshot.empty) {
                 const existingLotData = querySnapshot.docs[0].data();
-                newItems[index].lotStatus = 'exists';
-                newItems[index].expiryDate = formatDate(existingLotData.expiryDate);
-                newItems[index].existingLotInfo = {
-                    quantityRemaining: existingLotData.quantityRemaining,
-                    expiryDate: formatDate(existingLotData.expiryDate)
-                };
+                handleLotCheckResult(index, existingLotData, true); // Cập nhật store
             } else {
-                newItems[index].lotStatus = 'new';
-                newItems[index].existingLotInfo = null;
+                handleLotCheckResult(index, null, false); // Cập nhật store
             }
-            setItems(newItems);
         } catch (error) {
             console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
         }
     };
 
-    const handleNewLotDeclared = (index, declaredExpiryDate) => {
-        const newItems = [...items];
-        newItems[index].expiryDate = declaredExpiryDate;
-        newItems[index].lotStatus = 'declared';
-        setItems(newItems);
-        setNewLotModal({ isOpen: false, index: -1 });
-    };
-
     const handleProductSearch = async (index, productId) => {
         if (!productId) return;
-        const newItems = [...items];
         try {
             const productRef = doc(db, 'products', productId);
             const productSnap = await getDoc(productRef);
             if (productSnap.exists()) {
-                const productData = productSnap.data();
-                newItems[index] = {
-                    ...newItems[index],
-                    productName: productData.productName || '',
-                    unit: productData.unit || '',
-                    packaging: productData.packaging || '',
-                    storageTemp: productData.storageTemp || '',
-                    team: productData.team || '',
-                    manufacturer: productData.manufacturer || '',
-                    productNotFound: false,
-                };
+                handleProductSearchResult(index, productSnap.data(), true); // Cập nhật store
             } else {
-                newItems[index].productName = '';
-                newItems[index].productNotFound = true;
+                handleProductSearchResult(index, null, false); // Cập nhật store
             }
         } catch (error) {
             console.error("Lỗi khi tìm kiếm sản phẩm:", error);
-            newItems[index].productName = 'Lỗi khi tìm kiếm!';
-            newItems[index].productNotFound = false;
-        } finally {
-            setItems(newItems);
+            toast.error("Lỗi khi tìm kiếm sản phẩm!");
         }
     };
     
     const handleNewProductCreated = (newData) => {
-        const newItems = [...items];
         const { index } = newProductModal;
-        newItems[index] = {
-            ...newItems[index], 
-            ...newData,
-            productNotFound: false,
-        };
-        setItems(newItems);
+        fillNewProductData(index, newData); // Cập nhật store
         setNewProductModal({ isOpen: false, productId: '', index: -1 });
-        setTimeout(() => {
-            inputRefs.current[index * 3 + 2]?.focus();
-        }, 100);
+        setTimeout(() => inputRefs.current[index * 3 + 2]?.focus(), 100);
     };
-
-    const handleKeyDown = (e, rowIndex, inputIndex) => {
-        if (e.key === 'Tab' && !e.shiftKey) {
-            e.preventDefault();
-            const nextInputIndex = (rowIndex * 3) + inputIndex + 1;
-            const nextInput = inputRefs.current[nextInputIndex];
-            if (nextInput) {
-                nextInput.focus();
-            }
-        }
-    };
-
-    const addNewRow = () => {
-        setItems([
-            ...items,
-            { id: Date.now(), productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }
-        ]);
-    };
-
-    const resetForm = () => {
-        setSupplierId('');
-        setSupplierName('');
-        setDescription('');
-        setItems([{ id: 1, productId: '', productName: '', lotNumber: '', expiryDate: '', unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '', manufacturer: '', productNotFound: false, lotStatus: 'unchecked', existingLotInfo: null }]);
-    }
 
     const handleSaveSlip = async () => {
         const slipData = getValidSlipData();
@@ -244,7 +173,7 @@ const NewImportPage = () => {
             const finalSlipData = { ...slipData, status: 'pending' };
             const docRef = await addDoc(collection(db, 'import_tickets'), finalSlipData);
             toast.success(`Lưu tạm phiếu nhập thành công! ID phiếu: ${docRef.id}`);
-            resetForm();
+            resetSlip(); // Reset state trong store
         } catch (error) {
             console.error("Lỗi khi lưu phiếu nhập: ", error);
             toast.error('Đã xảy ra lỗi khi lưu phiếu.');
@@ -263,7 +192,6 @@ const NewImportPage = () => {
             for (const item of slipData.items) {
                 const expiryTimestamp = Timestamp.fromDate(parseDateString(item.expiryDate));
                 const fullItemData = items.find(i => i.productId === item.productId && i.lotNumber === item.lotNumber);
-                
                 const newLotData = {
                     importDate: Timestamp.now(),
                     productId: item.productId,
@@ -287,7 +215,7 @@ const NewImportPage = () => {
             await addDoc(collection(db, 'import_tickets'), finalSlipData);
             
             toast.success('Nhập kho trực tiếp thành công!');
-            resetForm();
+            resetSlip(); // Reset state trong store
         } catch (error) {
             console.error("Lỗi khi nhập kho trực tiếp: ", error);
             toast.error('Đã xảy ra lỗi khi nhập kho trực tiếp.');
@@ -306,6 +234,9 @@ const NewImportPage = () => {
             });
         }
     };
+
+    // --- Các hàm và JSX còn lại phần lớn giữ nguyên cấu trúc ---
+    // Chỉ thay đổi cách gọi `setState` thành gọi action của store
 
     return (
         <div>
@@ -330,7 +261,7 @@ const NewImportPage = () => {
                     productName={items[newLotModal.index].productName}
                     lotNumber={items[newLotModal.index].lotNumber}
                     onClose={() => setNewLotModal({ isOpen: false, index: -1 })}
-                    onSave={(expiry) => handleNewLotDeclared(newLotModal.index, expiry)}
+                    onSave={(expiry) => declareNewLot(newLotModal.index, expiry)}
                 />
             )}
 
@@ -339,33 +270,33 @@ const NewImportPage = () => {
                 <div className="form-row">
                     <div className="form-group">
                         <label>Ngày nhập</label>
-                        <input type="text" value={importDate} readOnly style={{backgroundColor: '#f0f0f0'}} />
+                        <input type="text" value={formatDate(new Date())} readOnly style={{backgroundColor: '#f0f0f0'}} />
                     </div>
                     <div className="form-group">
                          <label>Mã Nhà Cung Cấp (*)</label>
                         <input 
-                            list="suppliers-list"
+                             list="suppliers-list"
                             type="text" 
                             placeholder="Nhập hoặc chọn mã NCC..." 
                             value={supplierId} 
-                            onChange={e => setSupplierId(e.target.value)}
+                            onChange={e => setSupplier(e.target.value.toUpperCase(), '')} // <-- Chỉ cập nhật ID
                             onBlur={handleSupplierSearch}
                         />
-                        <datalist id="suppliers-list">
+                         <datalist id="suppliers-list">
                             {allSuppliers.map(sup => (
                                 <option key={sup.id} value={sup.id}>
-                                    {sup.partnerName}
+                                     {sup.partnerName}
                                 </option>
                             ))}
-                        </datalist>
+                         </datalist>
                     </div>
                     <div className="form-group">
                         <label>Tên Nhà Cung Cấp (*)</label>
-                        <input 
+                         <input 
                             type="text" 
                             value={supplierName} 
                             readOnly 
-                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
                      </div>
                 </div>
@@ -392,74 +323,69 @@ const NewImportPage = () => {
                     <React.Fragment key={item.id}>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
-                                ref={el => inputRefs.current[index * 3] = el}
-                                onKeyDown={(e) => handleKeyDown(e, index, 0)}
                                 type="text"
                                 value={item.productId}
-                                onChange={e => handleItemChange(index, 'productId', e.target.value.toUpperCase())}
+                                onChange={e => updateItem(index, 'productId', e.target.value.toUpperCase())}
                                 onBlur={e => handleProductSearch(index, e.target.value)}
                             />
                             {item.productNotFound && (
                                 <button
-                                    onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
+                                     onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
                                     className="btn-link"
-                                    style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
+                                     style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
                                 >
                                     Mã này không tồn tại. Tạo mới...
                                 </button>
                             )}
                         </div>
-                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+                        <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
-                                 ref={el => inputRefs.current[index * 3 + 1] = el}
-                                onKeyDown={(e) => handleKeyDown(e, index, 1)}
                                 type="text"
-                                 value={item.lotNumber}
-                                onChange={e => handleItemChange(index, 'lotNumber', e.target.value)}
+                                value={item.lotNumber}
+                                onChange={e => updateItem(index, 'lotNumber', e.target.value)}
                                 onBlur={() => checkExistingLot(index)}
-                             />
+                            />
                             {item.lotStatus === 'exists' && item.existingLotInfo && (
                                 <div className="existing-lot-info">
-                                     <FiInfo />
+                                    <FiInfo />
                                     <span>Lô đã có | Tồn: {item.existingLotInfo.quantityRemaining} | HSD: {item.existingLotInfo.expiryDate}</span>
                                 </div>
                             )}
                             {item.lotStatus === 'new' && (
-                                 <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
+                                <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
                                     [+] Khai báo lô mới...
-                                 </button>
+                                </button>
                             )}
                         </div>
                         <div className="grid-cell">
-                             <input 
+                            <input 
                                 type="text" 
                                 placeholder="dd/mm/yyyy" 
-                                 value={item.expiryDate} 
-                                onChange={e => handleItemChange(index, 'expiryDate', e.target.value)} 
+                                value={item.expiryDate} 
+                                onChange={e => updateItem(index, 'expiryDate', e.target.value)} 
                                 onBlur={e => handleExpiryDateBlur(index, e.target.value)}
-                                 readOnly={item.lotStatus === 'exists'}
+                                readOnly={item.lotStatus === 'exists'}
                                 style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
                             />
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input
-                                 ref={el => inputRefs.current[index * 3 + 2] = el}
                                 type="number"
                                 value={item.quantity}
-                                 onChange={e => handleItemChange(index, 'quantity', e.target.value)}
+                                onChange={e => updateItem(index, 'quantity', e.target.value)}
                             />
                         </div>
-                        <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
-                         <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
+                        <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
+                        <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
                     </React.Fragment>
                 ))}
-             </div>
+            </div>
             
-            <button onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
+            <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">
                 <button onClick={handleSaveSlip} className="btn-secondary" disabled={isSaving}>
                     {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}

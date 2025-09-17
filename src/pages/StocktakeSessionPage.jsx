@@ -11,90 +11,101 @@ import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import useStocktakeStore from '../stores/stocktakeStore'; // <-- THAY ĐỔI 1: Import store
 
 const PAGE_SIZE = 50;
+
+// Component con để xử lý ô nhập liệu, giúp tối ưu re-render
+const CountInput = ({ item }) => {
+    const { id, countedQty, isNew } = item;
+    const { updateItemCountInUI } = useStocktakeStore();
+    const sessionData = useStocktakeStore(state => state.sessionData);
+    const [currentValue, setCurrentValue] = useState(countedQty ?? '');
+
+    const isSessionInProgress = sessionData?.status === 'in_progress';
+
+    // Hàm gọi lại khi component cha re-render (ví dụ khi chuyển trang)
+    useEffect(() => {
+        setCurrentValue(countedQty ?? '');
+    }, [countedQty]);
+
+    const handleBlur = () => {
+        // Chỉ cập nhật lại state của store nếu giá trị thực sự thay đổi
+        const newCount = currentValue === '' ? null : Number(currentValue);
+        if (newCount !== countedQty) {
+            updateItemCountInUI(id, newCount);
+        }
+    };
+    
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.target.blur();
+        }
+    };
+
+    return (
+        <input 
+            type="number" 
+            placeholder="Nhập số đếm" 
+            value={currentValue}
+            onChange={e => setCurrentValue(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown} 
+            disabled={!isSessionInProgress}
+            style={{ 
+                backgroundColor: isNew ? '#fff9e6' : 
+                    ((countedQty !== null && countedQty !== '') ? '#e6fffa' : '#fff') 
+            }}
+        />
+    );
+};
+
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
     const navigate = useNavigate();
-    const [loadingSession, setLoadingSession] = useState(true);
+
+    // <-- THAY ĐỔI 2: Lấy state và actions từ store
+    const {
+        sessionData,
+        items,
+        discrepancyItems,
+        checkedItems,
+        summaryStats,
+        loading,
+        initializeSession,
+        setItems,
+        setSummary,
+        setSessionStatus,
+        toggleCheckedItem,
+        toggleAllCheckedItems,
+        clearStore
+    } = useStocktakeStore();
+
+    // State cục bộ cho UI (pagination, modals, search)
     const [loadingItems, setLoadingItems] = useState(true);
-    const [sessionData, setSessionData] = useState(null);
-    const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [discrepancyItems, setDiscrepancyItems] = useState([]);
-    const [checkedItems, setCheckedItems] = useState({});
-    const [summaryStats, setSummaryStats] = useState({ totalItems: 0, countedItems: 0, discrepancies: 0 });
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-    const fetchSessionData = useCallback(async () => {
-        setLoadingSession(true);
-        const docRef = doc(db, 'stocktakes', sessionId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            setSessionData({ id: docSnap.id, ...docSnap.data() });
-        } else {
-            toast.error("Không tìm thấy phiên kiểm kê!");
-            navigate('/stocktakes');
-        }
-        setLoadingSession(false);
-    }, [sessionId, navigate]);
-
-    const buildItemsQuery = useCallback(() => {
-        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-        let q = query(itemsCollectionRef, orderBy('productId'));
-        if (searchTerm) {
-            const upperSearchTerm = searchTerm.toUpperCase();
-            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
-        }
-        return q;
-    }, [sessionId, searchTerm]);
-
-    const fetchFirstPage = useCallback(async () => {
-        if (!sessionId) return;
-        setLoadingItems(true);
+    // Hàm lưu số đếm lên Firestore
+    const saveCountToDb = async (itemId, finalCount) => {
+        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
         try {
-            const q = buildItemsQuery();
-            const firstPageQuery = query(q, limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(firstPageQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setItems(itemsList);
-            setPage(1);
+            await updateDoc(itemRef, { countedQty: finalCount });
+            return true;
         } catch (error) {
-            console.error("Lỗi khi tải vật tư kiểm kê: ", error);
-            toast.error("Không thể tải danh sách vật tư. Vui lòng kiểm tra Console (F12) để tạo Index nếu được yêu cầu.");
-        } finally {
-            setLoadingItems(false);
-        }
-    }, [sessionId, buildItemsQuery]);
-
-    const fetchNextPage = async () => {
-        if (!sessionId || !lastVisible) return;
-        setLoadingItems(true);
-        try {
-            const q = buildItemsQuery();
-            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(nextPageQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setItems(itemsList);
-            setPage(p => p + 1);
-        } catch (error) {
-            console.error("Lỗi khi tải vật tư kiểm kê: ", error);
-        } finally {
-            setLoadingItems(false);
+            toast.error("Lỗi: Không thể lưu số lượng.");
+            return false;
         }
     };
 
+    // Hàm tính toán lại thống kê và chênh lệch
     const fetchStatsAndDiscrepancies = useCallback(async () => {
-        if (!sessionId || !sessionData) return;
+        if (!sessionId) return;
         const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
         const totalQuery = query(itemsRef, where('isNew', '==', false));
         const countedQuery = query(itemsRef, where('countedQty', '!=', null));
@@ -112,82 +123,96 @@ const StocktakeSessionPage = () => {
             }
         });
 
-        setSummaryStats({
+        const newSummary = {
             totalItems: totalSnap.data().count,
             countedItems: countedDocsSnap.size,
             discrepancies: discrepancies.length
-        });
-        setDiscrepancyItems(discrepancies.sort((a, b) => a.productId.localeCompare(b.productId)));
-    }, [sessionId, sessionData]);
+        };
+        const sortedDiscrepancies = discrepancies.sort((a, b) => a.productId.localeCompare(b.productId));
+        setSummary(newSummary, sortedDiscrepancies);
+    }, [sessionId, setSummary]);
 
-    useEffect(() => { fetchSessionData(); }, [fetchSessionData]);
-    
+    // Lấy dữ liệu chính của phiên khi tải trang và dọn dẹp khi rời đi
     useEffect(() => {
+        const fetchSessionData = async () => {
+            const docRef = doc(db, 'stocktakes', sessionId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                await fetchStatsAndDiscrepancies();
+                // Lấy lại dữ liệu stats mới nhất trước khi init
+                const storeState = useStocktakeStore.getState();
+                initializeSession(
+                    { id: docSnap.id, ...docSnap.data() }, 
+                    storeState.summaryStats, 
+                    storeState.discrepancyItems
+                );
+            } else {
+                toast.error("Không tìm thấy phiên kiểm kê!");
+                navigate('/stocktakes');
+            }
+        };
+
+        fetchSessionData();
+        
+        // Dọn dẹp store khi component bị unmount
+        return () => {
+            clearStore();
+        }
+    }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
+    
+    const buildItemsQuery = useCallback(() => {
+        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+        let q = query(itemsCollectionRef, orderBy('productId'));
+        if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+        }
+        return q;
+    }, [sessionId, searchTerm]);
+
+    // Fetch dữ liệu vật tư theo trang
+    const fetchItemsPage = useCallback(async (newQuery, isNextPage = false) => {
+        if (!sessionId) return;
+        setLoadingItems(true);
+        try {
+            const docSnapshots = await getDocs(newQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setItems(itemsList);
+            if (!isNextPage) setPage(1);
+        } catch (error) {
+            console.error("Lỗi khi tải vật tư kiểm kê: ", error);
+            toast.error("Không thể tải danh sách vật tư.");
+        } finally {
+            setLoadingItems(false);
+        }
+    }, [sessionId, setItems]);
+
+    useEffect(() => {
+        const q = buildItemsQuery();
+        const firstPageQuery = query(q, limit(PAGE_SIZE));
         const debounce = setTimeout(() => {
-            fetchFirstPage();
+            fetchItemsPage(firstPageQuery);
         }, 500);
         return () => clearTimeout(debounce);
-    }, [searchTerm, fetchFirstPage]);
-
-    useEffect(() => {
-        if (sessionData?.status) {
-            fetchStatsAndDiscrepancies();
-        }
-    }, [sessionData, fetchStatsAndDiscrepancies]);
-
-    const performCountUpdate = async (itemId, finalCount) => {
-        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
-        try {
-            await updateDoc(itemRef, { countedQty: finalCount });
-            setItems(currentItems => 
-                currentItems.map(item => item.id === itemId ? { ...item, countedQty: finalCount } : item)
-            );
-            fetchStatsAndDiscrepancies();
-        } catch (error) {
-            toast.error("Lỗi: Không thể lưu số lượng.");
-        } finally {
-            setConfirmModal({isOpen: false});
-        }
-    };
+    }, [searchTerm, buildItemsQuery, fetchItemsPage]);
     
-    const handleCountChange = (itemId, countedQty, newCountValue) => {
-        const newCount = newCountValue === '' ? null : Number(newCountValue);
-        if ((countedQty || 0) > 0 && newCount !== null) {
-            const cumulativeTotal = (countedQty || 0) + newCount;
-            setConfirmModal({
-                isOpen: true,
-                title: "Cộng Dồn hay Ghi Đè?",
-                message: `Đã đếm ${countedQty}. Bạn muốn cộng dồn thêm ${newCount} (tổng: ${cumulativeTotal}) hay ghi đè bằng giá trị mới là ${newCount}?`,
-                onConfirm: () => performCountUpdate(itemId, cumulativeTotal),
-                onCancel: () => performCountUpdate(itemId, newCount),
-                confirmText: "Cộng Dồn",
-                cancelText: "Ghi Đè"
-            });
-        } else {
-            performCountUpdate(itemId, newCount);
-        }
-    };
-
+    // Các hàm xử lý hành động của người dùng
     const handleFinalizeCount = async () => {
         setConfirmModal({isOpen: false});
-        try {
-            const sessionRef = doc(db, 'stocktakes', sessionId);
-            await updateDoc(sessionRef, { status: 'completed' });
-            toast.success("Đã hoàn tất phiên kiểm kê!");
-            fetchSessionData();
-        } catch (error) {
-            toast.error("Đã có lỗi xảy ra khi hoàn tất.");
-        }
+        const sessionRef = doc(db, 'stocktakes', sessionId);
+        await updateDoc(sessionRef, { status: 'completed' });
+        setSessionStatus('completed');
+        toast.success("Đã hoàn tất phiên kiểm kê!");
     };
-
+    
     const promptForFinalize = () => {
         const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
         let message = "Bạn có chắc chắn muốn hoàn tất và khóa phiên kiểm kê này? Sau khi hoàn tất, bạn có thể xử lý chênh lệch.";
-        
         if (uncountedItems > 0) {
             message = `CẢNH BÁO: Vẫn còn ${uncountedItems} mã hàng chưa được đếm. Nếu bạn hoàn tất, số lượng của chúng sẽ được coi là 0. ` + message;
         }
-
         setConfirmModal({
             isOpen: true,
             title: "Hoàn tất phiên kiểm kê?",
@@ -203,7 +228,10 @@ const StocktakeSessionPage = () => {
             const docRef = doc(itemsRef, newItem.lotId);
             await setDoc(docRef, newItem);
             toast.success("Đã thêm mặt hàng mới vào phiên kiểm kê.");
-            fetchFirstPage();
+            // Tải lại trang đầu
+            const q = buildItemsQuery();
+            const firstPageQuery = query(q, limit(PAGE_SIZE));
+            fetchItemsPage(firstPageQuery);
             setIsAddItemModalOpen(false);
         } catch (error) {
             toast.error("Có lỗi khi lưu mặt hàng mới, vui lòng thử lại.");
@@ -214,8 +242,7 @@ const StocktakeSessionPage = () => {
         setConfirmModal({isOpen: false});
         const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
         if (itemsToAdjust.length === 0) {
-            toast.warn("Vui lòng chọn mục để điều chỉnh.");
-            return;
+            return toast.warn("Vui lòng chọn mục để điều chỉnh.");
         }
         try {
             const batch = writeBatch(db);
@@ -237,19 +264,16 @@ const StocktakeSessionPage = () => {
             const sessionRef = doc(db, 'stocktakes', sessionId);
             batch.update(sessionRef, { status: 'adjusted' });
             await batch.commit();
+            setSessionStatus('adjusted');
             toast.success("Đã điều chỉnh tồn kho thành công!");
-            fetchSessionData();
         } catch (error) {
             toast.error("Đã xảy ra lỗi khi điều chỉnh tồn kho.");
         }
     };
-
+    
     const promptForAdjust = () => {
         const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
-        if (itemsToAdjust.length === 0) {
-            toast.warn("Vui lòng chọn ít nhất một mặt hàng để điều chỉnh.");
-            return;
-        }
+        if (itemsToAdjust.length === 0) return toast.warn("Vui lòng chọn ít nhất một mặt hàng để điều chỉnh.");
         setConfirmModal({
             isOpen: true,
             title: "Xác nhận điều chỉnh tồn kho?",
@@ -259,26 +283,10 @@ const StocktakeSessionPage = () => {
         });
     };
     
-    const handleCheckboxChange = (itemId) => { setCheckedItems(prev => ({ ...prev, [itemId]: !prev[itemId] })); };
-
-    if (loadingSession) return <Spinner />;
+    if (loading) return <Spinner />;
     if (!sessionData) return <div>Không tìm thấy dữ liệu cho phiên kiểm kê này.</div>;
 
     const isSessionInProgress = sessionData.status === 'in_progress';
-
-    const CountInput = ({ item }) => {
-        const [currentValue, setCurrentValue] = useState(item.countedQty ?? '');
-        const handleKeyDown = (e) => { if (e.key === 'Enter') e.target.blur(); };
-        useEffect(() => { setCurrentValue(item.countedQty ?? ''); }, [item.countedQty]);
-        return (
-            <input type="number" placeholder="Nhập số đếm" value={currentValue}
-                onChange={e => setCurrentValue(e.target.value)}
-                onBlur={() => handleCountChange(item.id, item.countedQty, currentValue)}
-                onKeyDown={handleKeyDown} disabled={!isSessionInProgress}
-                style={{ backgroundColor: item.isNew ? '#fff9e6' : ((item.countedQty !== null && item.countedQty !== '') ? '#e6fffa' : '#fff') }}
-            />
-        );
-    };
 
     return (
         <div className="stocktake-session-page-container">
@@ -304,7 +312,7 @@ const StocktakeSessionPage = () => {
 
             <div className="controls-container">
                 <div className="search-container">
-                    <input type="text" placeholder="Tìm theo Mã hàng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
+                     <input type="text" placeholder="Tìm theo Mã hàng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
                 </div>
                 {isSessionInProgress && (
                     <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ Thêm Hàng Ngoài DS</button>
@@ -326,7 +334,9 @@ const StocktakeSessionPage = () => {
                                     <tr key={item.id}>
                                         <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
                                         <td>{formatDate(item.expiryDate)}</td><td>{item.systemQty}</td>
-                                        <td><CountInput item={item} /></td>
+                                        <td>
+                                            <CountInput item={item} />
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -334,11 +344,20 @@ const StocktakeSessionPage = () => {
                     </div>
                     {!searchTerm && (
                         <div className="pagination-controls">
-                            <button onClick={fetchFirstPage} disabled={page <= 1}>
-                                <FiChevronLeft /> Trang Trước
+                            <button onClick={() => {
+                                const q = buildItemsQuery();
+                                const firstPageQuery = query(q, limit(PAGE_SIZE));
+                                fetchItemsPage(firstPageQuery);
+                            }} disabled={page <= 1}>
+                                <FiChevronLeft /> Trang Đầu
                             </button>
                             <span>Trang {page}</span>
-                            <button onClick={fetchNextPage} disabled={isLastPage}>
+                            <button onClick={() => {
+                                const q = buildItemsQuery();
+                                const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+                                fetchItemsPage(nextPageQuery, true);
+                                setPage(p => p + 1);
+                            }} disabled={isLastPage}>
                                 Trang Tiếp <FiChevronRight />
                             </button>
                         </div>
@@ -354,7 +373,7 @@ const StocktakeSessionPage = () => {
                             <table className="products-table discrepancy-table">
                                 <thead>
                                     <tr>
-                                        <th><input type="checkbox" onChange={(e) => setCheckedItems(e.target.checked ? Object.fromEntries(discrepancyItems.map(i => [i.id, true])) : {})} disabled={sessionData.status === 'adjusted'} /></th>
+                                        <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
                                         <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
                                         <th>Tồn hệ thống</th><th>Tồn thực tế</th><th>Chênh lệch</th>
                                     </tr>
@@ -362,7 +381,7 @@ const StocktakeSessionPage = () => {
                                 <tbody>
                                     {discrepancyItems.map(item => (
                                         <tr key={item.id}>
-                                            <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => handleCheckboxChange(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
+                                            <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheckedItem(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
                                             <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
                                             <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
                                             <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>

@@ -1,22 +1,23 @@
 // src/pages/StocktakeListPage.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch, onSnapshot, limit } from 'firebase/firestore';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // <-- NÂNG CẤP: Import component xác nhận
-import { deleteStocktakeSession } from '../services/stocktakeService'; // <-- NÂNG CẤP: Import hàm xóa mới
+import ConfirmationModal from '../components/ConfirmationModal';
+import { deleteStocktakeSession } from '../services/stocktakeService';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi'; // <-- NÂNG CẤP: Import icon thùng rác
+import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
 
 const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null }); // <-- NÂNG CẤP: Thêm state cho modal xác nhận
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
+    const [hasNewData, setHasNewData] = useState(false);
     const navigate = useNavigate();
     
     const baseQuery = useMemo(() => query(collection(db, "stocktakes"), orderBy("createdAt", "desc")), []);
@@ -27,8 +28,26 @@ const StocktakeListPage = () => {
         page,
         nextPage,
         prevPage,
-        reset // <-- NÂNG CẤP: Sử dụng hàm reset từ hook
+        reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+    useEffect(() => {
+        if (page !== 1) return;
+        const newestDocQuery = query(collection(db, 'stocktakes'), orderBy("createdAt", "desc"), limit(1));
+        const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
+            const newestDocId = snapshot.docs[0]?.id;
+            const currentFirstDocId = stocktakeSessions[0]?.id;
+            if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+                setHasNewData(true);
+            }
+        });
+        return () => unsubscribe();
+    }, [stocktakeSessions, page]);
+
+    const handleRefresh = () => {
+        setHasNewData(false);
+        reset();
+    };
 
     const handleCreateStocktake = async (sessionData) => {
         setIsCreating(true);
@@ -74,7 +93,6 @@ const StocktakeListPage = () => {
         }
     };
 
-    // <-- NÂNG CẤP: Hàm để mở hộp thoại xác nhận xóa -->
     const promptForDelete = (session) => {
         setConfirmModal({
             isOpen: true,
@@ -86,7 +104,6 @@ const StocktakeListPage = () => {
         });
     };
 
-    // <-- NÂNG CẤP: Hàm thực hiện việc xóa sau khi xác nhận -->
     const handleDeleteSession = async () => {
         const sessionToDelete = confirmModal.item;
         if (!sessionToDelete) return;
@@ -95,7 +112,7 @@ const StocktakeListPage = () => {
             toast.info(`Đang xóa phiên "${sessionToDelete.name}"...`);
             await deleteStocktakeSession(sessionToDelete.id);
             toast.success(`Đã xóa thành công phiên kiểm kê.`);
-            reset(); // Tải lại danh sách
+            reset();
         } catch (error) {
             console.error("Lỗi khi xóa phiên kiểm kê: ", error);
             toast.error("Đã xảy ra lỗi khi xóa phiên kiểm kê.");
@@ -106,7 +123,6 @@ const StocktakeListPage = () => {
 
     return (
         <div className="stocktake-list-page-container">
-            {/* <-- NÂNG CẤP: Thêm component Modal vào giao diện --> */}
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
@@ -124,6 +140,13 @@ const StocktakeListPage = () => {
                 <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">Tạo Phiên Mới</button>
             </div>
       
+            {hasNewData && (
+                <div className="new-data-notification">
+                    <p>Có phiên kiểm kê mới!</p>
+                    <button onClick={handleRefresh} className="btn-primary">Tải lại danh sách</button>
+                </div>
+            )}
+
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table list-page-table">
@@ -145,7 +168,6 @@ const StocktakeListPage = () => {
                                         <td>{session.scope === 'all' ? 'Toàn bộ kho' : session.scope}</td>
                                         <td><StatusBadge status={session.status} /></td>
                                         <td>
-                                            {/* <-- NÂNG CẤP: Bọc các nút trong div để dễ sắp xếp --> */}
                                             <div className="action-buttons">
                                                 <button 
                                                     className="btn-secondary" 
@@ -155,7 +177,6 @@ const StocktakeListPage = () => {
                                                     Xem/Thực hiện
                                                 </button>
                                                 
-                                                {/* <-- NÂNG CẤP: Hiển thị nút xóa có điều kiện --> */}
                                                 {session.status === 'in_progress' && (
                                                     <button
                                                         className="btn-icon btn-delete"

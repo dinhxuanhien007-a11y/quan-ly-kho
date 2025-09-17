@@ -8,7 +8,6 @@
 export const formatDate = (timestamp) => {
   if (!timestamp) return '';
   const date = timestamp.toDate ? timestamp.toDate() : timestamp;
-  
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
@@ -26,7 +25,13 @@ export const parseDateString = (dateString) => {
     const parts = dateString.split('/');
     if (parts.length !== 3) return null;
     const [day, month, year] = parts;
-    return new Date(year, month - 1, day);
+    // Chú ý: tháng trong new Date() bắt đầu từ 0
+    const dateObj = new Date(year, month - 1, day);
+    // Kiểm tra xem ngày có hợp lệ không (ví dụ: 31/02/2025)
+    if (dateObj.getFullYear() != year || dateObj.getMonth() != month - 1 || dateObj.getDate() != day) {
+      return null;
+    }
+    return dateObj;
   } catch (error) {
     console.error("Lỗi định dạng ngày tháng:", dateString, error);
     return null;
@@ -34,16 +39,14 @@ export const parseDateString = (dateString) => {
 };
 
 /**
- * HÀM MỚI: Định dạng một chuỗi số thành định dạng ngày dd/mm/yyyy khi người dùng gõ.
+ * Định dạng một chuỗi số thành định dạng ngày dd/mm/yyyy khi người dùng gõ.
  * @param {string} value - Giá trị từ ô input.
  * @returns {string} - Chuỗi đã được định dạng.
  */
 export const formatExpiryDate = (value) => {
     if (!value) return '';
-
     // 1. Chỉ giữ lại các ký tự số
     const digitsOnly = value.replace(/\D/g, '');
-
     // 2. Giới hạn tối đa 8 ký tự (ddmmyyyy)
     const truncatedDigits = digitsOnly.slice(0, 8);
     const len = truncatedDigits.length;
@@ -58,4 +61,25 @@ export const formatExpiryDate = (value) => {
     }
     // Gõ tới năm (dd/mm/yyyy)
     return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2, 4)}/${truncatedDigits.slice(4)}`;
+};
+
+/**
+ * === HÀM MỚI ĐƯỢC THÊM VÀO ===
+ * Xác định class màu sắc cho một dòng dựa trên ngày hết hạn.
+ * @param {object} expiryDate - Đối tượng Timestamp của Firebase.
+ * @returns {string} - Tên class CSS tương ứng.
+ */
+export const getRowColorByExpiry = (expiryDate) => {
+    if (!expiryDate || !expiryDate.toDate) return '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDate = expiryDate.toDate();
+    const diffTime = expDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'expired-black';
+    if (diffDays <= 60) return 'near-expiry-red';
+    if (diffDays <= 90) return 'near-expiry-orange';
+    if (diffDays <= 120) return 'near-expiry-yellow';
+    return '';
 };

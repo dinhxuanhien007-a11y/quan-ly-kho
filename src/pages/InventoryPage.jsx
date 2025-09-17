@@ -1,45 +1,29 @@
 // src/pages/InventoryPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where, orderBy, limit, startAfter, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi'; // <-- NÂNG CẤP: Thêm icon FiPrinter
+import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { PAGE_SIZE } from '../constants';
 
-const PAGE_SIZE = 20;
+// <-- THAY ĐỔI 1: Import thêm hàm getRowColorByExpiry
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 
-const getRowColorByExpiry = (expiryDate) => {
-    if (!expiryDate || !expiryDate.toDate) return '';
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expDate = expiryDate.toDate();
-    const diffTime = expDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return 'expired-black';
-    if (diffDays <= 60) return 'near-expiry-red';
-    if (diffDays <= 90) return 'near-expiry-orange';
-    if (diffDays <= 120) return 'near-expiry-yellow';
-    return '';
-};
+// <-- THAY ĐỔI 2: Xóa toàn bộ hàm getRowColorByExpiry ở đây
 
 const InventoryPage = () => {
     const { userRole } = useAuth();
-
-    const [inventory, setInventory] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
-    const [isLastPage, setIsLastPage] = useState(false);
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    const buildQuery = () => {
+    const baseQuery = useMemo(() => {
         let q = query(
             collection(db, "inventory_lots"),
             orderBy("productId", "asc"),
@@ -57,14 +41,11 @@ const InventoryPage = () => {
         }
 
         if (filters.dateStatus === 'expired') {
-            const today = Timestamp.now();
-            q = query(q, where("expiryDate", "<", today));
+            q = query(q, where("expiryDate", "<", Timestamp.now()));
         } else if (filters.dateStatus === 'near_expiry') {
-            const today = Timestamp.now();
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 120);
-            const futureTimestamp = Timestamp.fromDate(futureDate);
-            q = query(q, where("expiryDate", ">=", today), where("expiryDate", "<=", futureTimestamp));
+            q = query(q, where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
         }
         
         if (searchTerm) {
@@ -72,57 +53,17 @@ const InventoryPage = () => {
             q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
         }
         return q;
-    };
-
-    const fetchFirstPage = useCallback(async () => {
-        setLoading(true);
-        try {
-            const q = buildQuery();
-            const firstPageQuery = query(q, limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(firstPageQuery);
-            
-            const inventoryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setInventory(inventoryList);
-
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setPage(1);
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu tồn kho: ", error);
-            toast.error("Không thể tải dữ liệu. Vui lòng kiểm tra Console (F12) để tạo Index nếu được yêu cầu.");
-        } finally {
-            setLoading(false);
-        }
     }, [userRole, filters, searchTerm]);
 
-    const fetchNextPage = useCallback(async () => {
-        if (!lastVisible) return;
-        setLoading(true);
-        try {
-            const q = buildQuery();
-            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(nextPageQuery);
+    const {
+        documents: inventory,
+        loading,
+        isLastPage,
+        page,
+        nextPage,
+        prevPage
+    } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-            const inventoryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setInventory(inventoryList);
-
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setPage(p => p + 1);
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu tồn kho: ", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [lastVisible, userRole, filters, searchTerm]);
-
-    useEffect(() => {
-        const debounce = setTimeout(() => {
-            fetchFirstPage();
-        }, 500);
-        return () => clearTimeout(debounce);
-    }, [fetchFirstPage]);
-    
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
     };
@@ -130,21 +71,18 @@ const InventoryPage = () => {
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
-
-    // <-- NÂNG CẤP: Hàm xử lý việc in -->
+    
     const handlePrint = () => {
         const originalTitle = document.title;
         document.title = `BaoCao_TonKho_ChiTiet_${new Date().toLocaleDateString('vi-VN')}`;
         window.print();
-        document.title = originalTitle; // Khôi phục tiêu đề cũ sau khi in
+        document.title = originalTitle;
     };
-    
+
     return (
-        // <-- NÂNG CẤP: Bọc toàn bộ nội dung trong div để có thể in -->
         <div className="printable-inventory-area">
             <div className="page-header">
                 <h1>Tồn Kho Chi Tiết</h1>
-                {/* <-- NÂNG CẤP: Thêm nút In và kiểm tra quyền --> */}
                 {(userRole === 'owner' || userRole === 'admin') && (
                     <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
                         <FiPrinter style={{marginRight: '5px'}} />
@@ -160,7 +98,7 @@ const InventoryPage = () => {
                     activeFilters={filters}
                 />
                 <div className="search-container">
-                    <input
+                     <input
                         type="text"
                         placeholder="Tìm theo Mã hàng..."
                         value={searchTerm}
@@ -214,18 +152,16 @@ const InventoryPage = () => {
                             </tbody>
                         </table>
                     </div>
-                    
-                    {!searchTerm && (
-                        <div className="pagination-controls">
-                            <button onClick={() => { setLastVisible(null); fetchFirstPage(); }} disabled={page <= 1}>
-                                <FiChevronLeft /> Trang Trước
-                            </button>
-                            <span>Trang {page}</span>
-                            <button onClick={fetchNextPage} disabled={isLastPage}>
-                                Trang Tiếp <FiChevronRight />
-                            </button>
-                        </div>
-                    )}
+             
+                    <div className="pagination-controls">
+                        <button onClick={prevPage} disabled={page <= 1 || loading}>
+                            <FiChevronLeft /> Trang Trước
+                        </button>
+                        <span>Trang {page}</span>
+                        <button onClick={nextPage} disabled={isLastPage || loading}>
+                            Trang Tiếp <FiChevronRight />
+                        </button>
+                    </div>
                 </>
             )}
         </div>

@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { formatDate } from '../utils/dateUtils';
 
-// State khởi tạo cho một dòng item mới
+// State khởi tạo cho một dòng item mới, giúp tránh lặp lại code
 const initialItemState = {
     id: Date.now(),
     productId: '',
@@ -44,6 +44,7 @@ const useImportSlipStore = create((set) => ({
     })),
     
     removeItemRow: (indexToRemove) => set(state => {
+        // Không cho xóa nếu chỉ còn 1 dòng
         if (state.items.length <= 1) return {};
         return { items: state.items.filter((_, index) => index !== indexToRemove) };
     }),
@@ -118,6 +119,17 @@ const useImportSlipStore = create((set) => ({
         newItems[index] = currentItem;
         return { items: newItems };
     }),
+
+    // Action để điền dữ liệu từ việc tạo sản phẩm mới nhanh
+    fillNewProductData: (index, newData) => set(state => {
+        const newItems = [...state.items];
+        newItems[index] = {
+            ...newItems[index],
+            ...newData,
+            productNotFound: false,
+        };
+        return { items: newItems };
+    }), // <-- ĐÃ SỬA LỖI: Thêm dấu phẩy
 
     // Action để reset toàn bộ form về trạng thái ban đầu
     resetSlip: () => set({ ...initialState, items: [{ ...initialItemState, id: Date.now() }]})

@@ -1,7 +1,7 @@
 // src/pages/ExportListPage.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
@@ -18,8 +18,8 @@ const ExportListPage = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'Xác nhận' });
+  const [hasNewData, setHasNewData] = useState(false);
 
-  // <-- THAY ĐỔI: Sử dụng hook phân trang
   const baseQuery = useMemo(() => query(collection(db, 'export_tickets'), orderBy("createdAt", "desc")), []);
   const {
     documents: exportSlips,
@@ -30,6 +30,24 @@ const ExportListPage = () => {
     prevPage,
     reset
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+  useEffect(() => {
+    if (page !== 1) return;
+    const newestDocQuery = query(collection(db, 'export_tickets'), orderBy("createdAt", "desc"), limit(1));
+    const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
+        const newestDocId = snapshot.docs[0]?.id;
+        const currentFirstDocId = exportSlips[0]?.id;
+        if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+            setHasNewData(true);
+        }
+    });
+    return () => unsubscribe();
+  }, [exportSlips, page]);
+
+  const handleRefresh = () => {
+      setHasNewData(false);
+      reset();
+  };
 
   const handleConfirmExport = async (slip) => {
     try {
@@ -147,10 +165,17 @@ const ExportListPage = () => {
       />
       {isEditModalOpen && ( <EditExportSlipModal slip={selectedSlip} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveSlipChanges} /> )}
       {isViewModalOpen && ( <ViewExportSlipModal slip={selectedSlip} onClose={() => setIsViewModalOpen(false)} /> )}
-     
+      
       <div className="page-header">
         <h1>Danh sách Phiếu Xuất Kho</h1>
       </div>
+
+      {hasNewData && (
+          <div className="new-data-notification">
+              <p>Có phiếu xuất mới!</p>
+              <button onClick={handleRefresh} className="btn-primary">Tải lại danh sách</button>
+          </div>
+      )}
 
       {loading ? <Spinner /> : (
         <>
@@ -168,7 +193,7 @@ const ExportListPage = () => {
                 {exportSlips.length > 0 ? (
                     exportSlips.map(slip => (
                     <tr key={slip.id}>
-                        <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
+                        <td>{formatDate(slip.createdAt)}</td>
                         <td>{slip.customer}</td>
                         <td>{slip.description}</td>
                         <td><StatusBadge status={slip.status} /></td>
