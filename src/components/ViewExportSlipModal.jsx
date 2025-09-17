@@ -1,16 +1,14 @@
 // src/components/ViewExportSlipModal.jsx
 import React from 'react';
 import { formatDate } from '../utils/dateUtils';
-import StatusBadge from './StatusBadge'; // <-- ĐÃ THÊM
+import StatusBadge from './StatusBadge';
 
 const ViewExportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
     const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
-    
     const handlePrint = () => {
         window.print();
     };
-    
     return (
         <div className="modal-backdrop">
             <div className="modal-content printable-area export-slip" style={{ width: '90vw', maxWidth: '1200px' }}>
@@ -72,4 +70,4 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
     );
 };
 
-export default ViewExportSlipModal;
+export default React.memo(ViewExportSlipModal);

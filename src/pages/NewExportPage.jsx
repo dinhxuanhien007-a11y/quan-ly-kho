@@ -1,15 +1,14 @@
 // src/pages/NewExportPage.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
-import { FiXCircle, FiChevronDown } from 'react-icons/fi';
+import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useExportSlipStore from '../stores/exportSlipStore';
 
-// Schema validation không thay đổi
 const exportItemSchema = z.object({
     productId: z.string().min(1, { message: "Mã hàng không được để trống." }),
     selectedLotId: z.string().min(1, { message: "Vui lòng chọn một lô hàng." }),
@@ -27,29 +26,34 @@ const exportSlipSchema = z.object({
 });
 
 const NewExportPage = () => {
-    // Lấy toàn bộ state và actions cần thiết từ Zustand store
     const {
-        customerId,
-        customerName,
-        description,
-        items,
-        setCustomer,
-        setDescription,
-        addNewItemRow,
-        removeItemRow,
-        updateItem,
-        replaceItem,
-        resetSlip
+        customerId, customerName, description, items,
+        setCustomer, setDescription, addNewItemRow, removeItemRow, updateItem,
+        replaceItem, resetSlip
     } = useExportSlipStore();
-    
-    // Các state cục bộ cho việc xử lý giao diện (loading, modal) vẫn được giữ lại
+
     const [isProcessing, setIsProcessing] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [allCustomers, setAllCustomers] = useState([]);
+    
     const lotSelectRefs = useRef([]);
     const quantityInputRefs = useRef([]);
+    const lastInputRef = useRef(null);
 
-    // Lấy danh sách khách hàng khi component được mount
+    const isSlipValid = useMemo(() => {
+        const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
+        const hasValidItem = items.some(
+            item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0
+        );
+        return hasCustomer && hasValidItem;
+    }, [customerId, customerName, items]);
+
+    useEffect(() => {
+        if (lastInputRef.current) {
+            lastInputRef.current.focus();
+        }
+    }, [items.length]);
+
     useEffect(() => {
         const fetchCustomers = async () => {
             const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
@@ -62,29 +66,27 @@ const NewExportPage = () => {
 
     const handleCustomerSearch = async () => {
         if (!customerId) {
-            setCustomer(customerId, ''); // Gọi action từ store
+            setCustomer(customerId, '');
             return;
         }
         try {
             const partnerRef = doc(db, 'partners', customerId.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
-                setCustomer(customerId, partnerSnap.data().partnerName); // Gọi action
+                setCustomer(customerId, partnerSnap.data().partnerName);
             } else {
-                setCustomer(customerId, ''); // Gọi action
+                setCustomer(customerId, '');
                 toast.error(`Không tìm thấy Khách hàng với mã "${customerId}"`);
             }
         } catch (error) {
             console.error("Lỗi khi tìm khách hàng:", error);
-            setCustomer(customerId, ''); // Gọi action
+            setCustomer(customerId, '');
         }
     };
 
     const handleProductSearch = async (index, productId) => {
         if (!productId) return;
-        
-        replaceItem(index, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0 });
-        
+        replaceItem(index, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, isOutOfStock: false });
         try {
           const productRef = doc(db, 'products', productId);
           const productSnap = await getDoc(productRef);
@@ -96,22 +98,26 @@ const NewExportPage = () => {
           const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
           const lotsSnapshot = await getDocs(lotsQuery);
           
-          let foundLots = [];
-          if (lotsSnapshot.empty) {
-            toast.warn(`Cảnh báo: Sản phẩm mã '${productId}' đã hết hàng tồn kho.`);
-          } else {
-            foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
-            setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
-          }
-          
-          replaceItem(index, {
+          const productUpdateData = {
               productName: productData.productName,
               unit: productData.unit,
               packaging: productData.packaging,
               storageTemp: productData.storageTemp,
-              availableLots: foundLots
-          });
+              availableLots: [],
+              isOutOfStock: false
+          };
+
+          if (lotsSnapshot.empty) {
+            productUpdateData.isOutOfStock = true;
+          } else {
+            const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
+            productUpdateData.availableLots = foundLots;
+            setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
+          }
+        
+          replaceItem(index, productUpdateData);
+
         } catch (error) {
           console.error("Lỗi khi tìm kiếm:", error);
           toast.error("Đã có lỗi xảy ra khi tìm kiếm.");
@@ -142,7 +148,7 @@ const NewExportPage = () => {
             title: "Xác nhận xóa dòng?",
             message: "Bạn có chắc chắn muốn xóa dòng hàng này khỏi phiếu xuất?",
             onConfirm: () => {
-                removeItemRow(index); // Gọi action
+                removeItemRow(index);
                 setConfirmModal({ isOpen: false });
             }
         });
@@ -193,7 +199,7 @@ const NewExportPage = () => {
         try {
             await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'pending' });
             toast.success('Lưu nháp phiếu xuất thành công!');
-            resetSlip(); // Gọi action
+            resetSlip();
         } catch (error) {
             console.error("Lỗi khi lưu nháp phiếu xuất: ", error);
             toast.error('Đã xảy ra lỗi khi lưu nháp.');
@@ -219,7 +225,7 @@ const NewExportPage = () => {
             }
             await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'completed' });
             toast.success('Xuất kho trực tiếp thành công!');
-            resetSlip(); // Gọi action
+            resetSlip();
         } catch (error) {
             console.error("Lỗi khi xuất kho trực tiếp: ", error);
             toast.error('Đã xảy ra lỗi trong quá trình xuất kho.');
@@ -227,7 +233,7 @@ const NewExportPage = () => {
             setIsProcessing(false);
         }
     };
-
+    
     const promptForDirectExport = () => {
         if (getValidSlipData()) {
              setConfirmModal({
@@ -266,17 +272,17 @@ const NewExportPage = () => {
                             onChange={e => setCustomer(e.target.value.toUpperCase(), customerName)}
                             onBlur={handleCustomerSearch}
                         />
-                        <datalist id="customers-list">
+                         <datalist id="customers-list">
                             {allCustomers.map(cus => (
                                 <option key={cus.id} value={cus.id}>
                                     {cus.partnerName}
                                  </option>
                             ))}
-                        </datalist>
+                         </datalist>
                     </div>
                     <div className="form-group">
                          <label>Tên Khách Hàng / Nơi nhận (*)</label>
-                        <input
+                         <input
                             type="text"
                             value={customerName}
                             readOnly
@@ -299,61 +305,78 @@ const NewExportPage = () => {
                 <div className="grid-header">Quy cách</div>
                 <div className="grid-header">SL Xuất (*)</div>
                 <div className="grid-header">Ghi chú</div>
-                 <div className="grid-header">Xóa</div>
+                <div className="grid-header">Xóa</div>
+
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
                         <div className="grid-cell">
-                            <input type="text" placeholder="Nhập mã hàng..." value={item.productId}
+                            <input 
+                                ref={index === items.length - 1 ? lastInputRef : null}
+                                type="text" 
+                                placeholder="Nhập mã hàng..." 
+                                value={item.productId}
                                 onChange={e => updateItem(index, 'productId', e.target.value.toUpperCase())}
                                 onBlur={e => handleProductSearch(index, e.target.value)} />
-                         </div>
+                        </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-                        <div className="grid-cell">
-                            {item.selectedLotId ?
-                            (
+                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            {item.isOutOfStock ? (
+                                <div className="inline-warning">
+                                    <FiAlertCircle />
+                                    <span>Sản phẩm đã hết hàng!</span>
+                                </div>
+                            ) : item.selectedLotId ? (
                                 <div className="selected-lot-view">
                                     <input type="text" value={item.displayLotText} readOnly className="selected-lot-input" />
-                                     <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn">
+                                    <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn">
                                         <FiChevronDown />
                                     </button>
-                                 </div>
+                                </div>
                             ) : (
                                 <select
-                                     ref={el => lotSelectRefs.current[index] = el}
+                                    ref={el => lotSelectRefs.current[index] = el}
                                     value={item.selectedLotId}
                                     onChange={e => handleLotSelection(index, e.target.value)}
                                     disabled={item.availableLots.length === 0}
                                     style={{width: '100%'}}
-                                 >
+                                >
                                     <option value="">-- Chọn lô tồn kho --</option>
                                     {item.availableLots.map(lot => (
-                                       <option key={lot.id} value={lot.id}>
+                                        <option key={lot.id} value={lot.id}>
                                         {`Lô: ${lot.lotNumber} | HSD: ${formatDate(lot.expiryDate)} | Tồn: ${lot.quantityRemaining}`}
                                         </option>
                                     ))}
-                             </select>
+                                </select>
                             )}
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input type="number" value={item.quantityToExport}
-                         ref={el => quantityInputRefs.current[index] = el}
+                                ref={el => quantityInputRefs.current[index] = el}
                                 onChange={e => updateItem(index, 'quantityToExport', e.target.value)} />
                         </div>
                         <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell">
                             <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRowWithConfirmation(index)}><FiXCircle /></button>
                         </div>
-                     </React.Fragment>
+                    </React.Fragment>
                 ))}
             </div>
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">
-                <button onClick={handleSaveDraft} className="btn-secondary" disabled={isProcessing}>
-                     {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
+                <button 
+                    onClick={handleSaveDraft} 
+                    className="btn-secondary" 
+                    disabled={isProcessing || !isSlipValid}
+                >
+                    {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
                 </button>
-                <button onClick={promptForDirectExport} className="btn-primary" disabled={isProcessing}>
+                <button 
+                    onClick={promptForDirectExport} 
+                    className="btn-primary" 
+                    disabled={isProcessing || !isSlipValid}
+                >
                     {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}
                 </button>
             </div>

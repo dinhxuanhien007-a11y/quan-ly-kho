@@ -1,26 +1,28 @@
 // src/pages/ImportListPage.jsx
-import React, { useState, useMemo, useEffect } from 'react';
-import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react';
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy } from 'firebase/firestore';
 import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
 import EditImportSlipModal from '../components/EditImportSlipModal';
 import ViewImportSlipModal from '../components/ViewImportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
+import NewDataNotification from '../components/NewDataNotification';
 
 const ImportListPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-  const [hasNewData, setHasNewData] = useState(false);
 
   const baseQuery = useMemo(() => query(collection(db, 'import_tickets'), orderBy("createdAt", "desc")), []);
+  
   const { 
     documents: importSlips, 
     loading, 
@@ -31,18 +33,7 @@ const ImportListPage = () => {
     reset
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-  useEffect(() => {
-    if (page !== 1) return;
-    const newestDocQuery = query(collection(db, 'import_tickets'), orderBy("createdAt", "desc"), limit(1));
-    const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
-        const newestDocId = snapshot.docs[0]?.id;
-        const currentFirstDocId = importSlips[0]?.id;
-        if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
-            setHasNewData(true);
-        }
-    });
-    return () => unsubscribe();
-  }, [importSlips, page]);
+  const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, importSlips, page);
 
   const handleRefresh = () => {
     setHasNewData(false);
@@ -133,12 +124,11 @@ const ImportListPage = () => {
         <h1>Danh sách Phiếu Nhập Kho</h1>
       </div>
 
-      {hasNewData && (
-          <div className="new-data-notification">
-              <p>Có phiếu nhập mới!</p>
-              <button onClick={handleRefresh} className="btn-primary">Tải lại danh sách</button>
-          </div>
-      )}
+      <NewDataNotification
+        isVisible={hasNewData}
+        onRefresh={handleRefresh}
+        message="Có phiếu nhập mới!"
+      />
 
       {loading ? <Spinner /> : (
         <>
@@ -161,19 +151,19 @@ const ImportListPage = () => {
                     <td><StatusBadge status={slip.status} /></td>
                     <td>
                         <div className="action-buttons">
-                        <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
-                            <FiEye />
-                        </button>
-                        {slip.status === 'pending' && (
-                            <>
-                            <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
-                                <FiEdit />
+                            <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
+                                <FiEye />
                             </button>
-                            <button className="btn-primary" onClick={() => promptForConfirm(slip)}>
-                                Xác nhận
-                            </button>
-                            </>
-                        )}
+                            {slip.status === 'pending' && (
+                                <>
+                                <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
+                                    <FiEdit />
+                                </button>
+                                <button className="btn-primary" onClick={() => promptForConfirm(slip)}>
+                                    Xác nhận
+                                </button>
+                                </>
+                            )}
                         </div>
                     </td>
                     </tr>

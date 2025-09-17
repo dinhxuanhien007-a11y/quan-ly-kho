@@ -1,16 +1,18 @@
 // src/pages/PartnersPage.jsx
-import React, { useState, useMemo, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
 import { deletePartner } from '../services/partnerService';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
+import NewDataNotification from '../components/NewDataNotification';
 import styles from './PartnersPage.module.css';
 
 const PartnersPage = () => {
@@ -18,9 +20,9 @@ const PartnersPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPartner, setCurrentPartner] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-    const [hasNewData, setHasNewData] = useState(false);
 
     const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy("createdAt", "desc")), []);
+    
     const { 
         documents: partners, 
         loading, 
@@ -31,19 +33,8 @@ const PartnersPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    useEffect(() => {
-        if (page !== 1) return;
-        const newestDocQuery = query(collection(db, 'partners'), orderBy("createdAt", "desc"), limit(1));
-        const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
-            const newestDocId = snapshot.docs[0]?.id;
-            const currentFirstDocId = partners[0]?.id;
-            if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
-                setHasNewData(true);
-            }
-        });
-        return () => unsubscribe();
-    }, [partners, page]);
-    
+    const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, partners, page);
+
     const handleRefresh = () => {
         setHasNewData(false);
         reset();
@@ -53,10 +44,12 @@ const PartnersPage = () => {
         setIsAddModalOpen(false);
         reset();
     };
+
     const handlePartnerUpdated = () => {
         setIsEditModalOpen(false);
         reset();
     };
+
     const promptForDelete = (partner) => {
         setConfirmModal({
             isOpen: true,
@@ -107,12 +100,11 @@ const PartnersPage = () => {
                 </button>
             </div>
             
-            {hasNewData && (
-                <div className="new-data-notification">
-                    <p>Có đối tác mới được thêm!</p>
-                    <button onClick={handleRefresh} className="btn-primary">Tải lại danh sách</button>
-                </div>
-            )}
+            <NewDataNotification
+                isVisible={hasNewData}
+                onRefresh={handleRefresh}
+                message="Có đối tác mới được thêm!"
+            />
 
             {loading ? <Spinner /> : (
                 <>
@@ -147,9 +139,9 @@ const PartnersPage = () => {
                                     </tr>
                                 ))
                             ) : (
-                                <tr>
+                                 <tr>
                                     <td colSpan="4" style={{ textAlign: 'center' }}>
-                                        Chưa có đối tác nào.
+                                         Chưa có đối tác nào.
                                     </td>
                                 </tr>
                             )}

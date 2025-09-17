@@ -1,26 +1,28 @@
 // src/pages/ExportListPage.jsx
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
 import ViewExportSlipModal from '../components/ViewExportSlipModal';
 import EditExportSlipModal from '../components/EditExportSlipModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
+import NewDataNotification from '../components/NewDataNotification';
 
 const ExportListPage = () => {
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'Xác nhận' });
-  const [hasNewData, setHasNewData] = useState(false);
 
   const baseQuery = useMemo(() => query(collection(db, 'export_tickets'), orderBy("createdAt", "desc")), []);
+  
   const {
     documents: exportSlips,
     loading,
@@ -31,18 +33,7 @@ const ExportListPage = () => {
     reset
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-  useEffect(() => {
-    if (page !== 1) return;
-    const newestDocQuery = query(collection(db, 'export_tickets'), orderBy("createdAt", "desc"), limit(1));
-    const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
-        const newestDocId = snapshot.docs[0]?.id;
-        const currentFirstDocId = exportSlips[0]?.id;
-        if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
-            setHasNewData(true);
-        }
-    });
-    return () => unsubscribe();
-  }, [exportSlips, page]);
+  const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, exportSlips, page);
 
   const handleRefresh = () => {
       setHasNewData(false);
@@ -170,12 +161,11 @@ const ExportListPage = () => {
         <h1>Danh sách Phiếu Xuất Kho</h1>
       </div>
 
-      {hasNewData && (
-          <div className="new-data-notification">
-              <p>Có phiếu xuất mới!</p>
-              <button onClick={handleRefresh} className="btn-primary">Tải lại danh sách</button>
-          </div>
-      )}
+      <NewDataNotification
+        isVisible={hasNewData}
+        onRefresh={handleRefresh}
+        message="Có phiếu xuất mới!"
+      />
 
       {loading ? <Spinner /> : (
         <>
@@ -198,30 +188,30 @@ const ExportListPage = () => {
                         <td>{slip.description}</td>
                         <td><StatusBadge status={slip.status} /></td>
                         <td>
-                        <div className="action-buttons">
-                            <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
-                                <FiEye />
-                            </button>
-                            {slip.status === 'pending' && (
-                            <>
-                                <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => promptAction('confirm', slip)}>
-                                    <FiCheckCircle />
+                            <div className="action-buttons">
+                                <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
+                                    <FiEye />
                                 </button>
-                                <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
-                                    <FiEdit />
-                                </button>
-                                <button className="btn-icon btn-delete" title="Hủy phiếu" onClick={() => promptAction('cancel', slip)}>
-                                    <FiXCircle />
-                                </button>
-                            </>
-                            )}
-                        </div>
+                                {slip.status === 'pending' && (
+                                <>
+                                    <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => promptAction('confirm', slip)}>
+                                        <FiCheckCircle />
+                                    </button>
+                                    <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
+                                        <FiEdit />
+                                    </button>
+                                    <button className="btn-icon btn-delete" title="Hủy phiếu" onClick={() => promptAction('cancel', slip)}>
+                                        <FiXCircle />
+                                    </button>
+                                </>
+                                )}
+                            </div>
                         </td>
                     </tr>
                     ))
                 ) : (
                     <tr>
-                    <td colSpan="5" style={{ textAlign: 'center' }}>Chưa có phiếu xuất kho nào.</td>
+                        <td colSpan="5" style={{ textAlign: 'center' }}>Chưa có phiếu xuất kho nào.</td>
                     </tr>
                 )}
                 </tbody>

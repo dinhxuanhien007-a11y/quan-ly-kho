@@ -1,24 +1,23 @@
 // src/pages/NewImportPage.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
 import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
 import AddNewLotModal from '../components/AddNewLotModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
-import { FiInfo } from 'react-icons/fi';
+import { FiInfo, FiXCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
-import useImportSlipStore from '../stores/importSlipStore'; // <-- THAY ĐỔI 1: Import store
+import useImportSlipStore from '../stores/importSlipStore';
 
-// Schema validation không thay đổi
 const importItemSchema = z.object({
   productId: z.string().min(1, "Mã hàng không được để trống."),
   lotNumber: z.string().min(1, "Số lô không được để trống."),
   quantity: z.preprocess(
       val => Number(val),
       z.number({ invalid_type_error: "Số lượng phải là một con số." })
-       .gt(0, "Số lượng phải lớn hơn 0.")
+       .gt(0, { message: "Số lượng phải lớn hơn 0." })
   ),
   expiryDate: z.string().refine(val => parseDateString(val) !== null, {
       message: "Hạn sử dụng không hợp lệ (cần định dạng dd/mm/yyyy)."
@@ -32,30 +31,34 @@ const importSlipSchema = z.object({
 });
 
 const NewImportPage = () => {
-    // THAY ĐỔI 2: Lấy state và actions từ Zustand store
     const {
-        supplierId,
-        supplierName,
-        description,
-        items,
-        setSupplier,
-        setDescription,
-        addNewItemRow,
-        updateItem,
-        handleProductSearchResult,
-        handleLotCheckResult,
-        declareNewLot,
-        fillNewProductData,
-        resetSlip
+        supplierId, supplierName, description, items,
+        setSupplier, setDescription, addNewItemRow, updateItem,
+        handleProductSearchResult, handleLotCheckResult, declareNewLot,
+        fillNewProductData, resetSlip, removeItemRow
     } = useImportSlipStore();
 
-    // Các state cục bộ cho UI vẫn được giữ lại
     const [isSaving, setIsSaving] = useState(false);
     const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [allSuppliers, setAllSuppliers] = useState([]);
-    const inputRefs = useRef([]);
+    
+    const lastInputRef = useRef(null);
+
+    const isSlipValid = useMemo(() => {
+        const hasSupplier = supplierId.trim() !== '' && supplierName.trim() !== '';
+        const hasValidItem = items.some(
+            item => item.productId && item.lotNumber && item.expiryDate && Number(item.quantity) > 0
+        );
+        return hasSupplier && hasValidItem;
+    }, [supplierId, supplierName, items]);
+
+    useEffect(() => {
+        if (lastInputRef.current) {
+            lastInputRef.current.focus();
+        }
+    }, [items.length]);
 
     useEffect(() => {
         const fetchSuppliers = async () => {
@@ -66,6 +69,20 @@ const NewImportPage = () => {
         };
         fetchSuppliers();
     }, []);
+
+    const handleRemoveRow = (index) => {
+        if (items.length <= 1) return;
+
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận xóa dòng?",
+            message: "Bạn có chắc chắn muốn xóa dòng hàng này khỏi phiếu nhập không?",
+            onConfirm: () => {
+                removeItemRow(index);
+                setConfirmModal({ isOpen: false });
+            }
+        });
+    };
 
     const getValidSlipData = () => {
         const validItems = items.filter(item => 
@@ -91,7 +108,6 @@ const NewImportPage = () => {
             createdAt: serverTimestamp()
         };
     }
-
     const handleSupplierSearch = async () => {
         if (!supplierId) {
             setSupplier(supplierId, '');
@@ -113,11 +129,9 @@ const NewImportPage = () => {
             setSupplier(supplierId, '');
         }
     };
-    
     const handleExpiryDateBlur = (index, value) => {
         updateItem(index, 'expiryDate', formatExpiryDate(value));
     };
-
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
         if (!currentItem.productId || !currentItem.lotNumber) return;
@@ -132,38 +146,34 @@ const NewImportPage = () => {
             
             if (!querySnapshot.empty) {
                 const existingLotData = querySnapshot.docs[0].data();
-                handleLotCheckResult(index, existingLotData, true); // Cập nhật store
+                handleLotCheckResult(index, existingLotData, true);
             } else {
-                handleLotCheckResult(index, null, false); // Cập nhật store
+                handleLotCheckResult(index, null, false);
             }
         } catch (error) {
             console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
         }
     };
-
     const handleProductSearch = async (index, productId) => {
         if (!productId) return;
         try {
             const productRef = doc(db, 'products', productId);
             const productSnap = await getDoc(productRef);
             if (productSnap.exists()) {
-                handleProductSearchResult(index, productSnap.data(), true); // Cập nhật store
+                handleProductSearchResult(index, productSnap.data(), true);
             } else {
-                handleProductSearchResult(index, null, false); // Cập nhật store
+                handleProductSearchResult(index, null, false);
             }
         } catch (error) {
             console.error("Lỗi khi tìm kiếm sản phẩm:", error);
             toast.error("Lỗi khi tìm kiếm sản phẩm!");
         }
     };
-    
     const handleNewProductCreated = (newData) => {
         const { index } = newProductModal;
-        fillNewProductData(index, newData); // Cập nhật store
+        fillNewProductData(index, newData);
         setNewProductModal({ isOpen: false, productId: '', index: -1 });
-        setTimeout(() => inputRefs.current[index * 3 + 2]?.focus(), 100);
     };
-
     const handleSaveSlip = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -173,7 +183,7 @@ const NewImportPage = () => {
             const finalSlipData = { ...slipData, status: 'pending' };
             const docRef = await addDoc(collection(db, 'import_tickets'), finalSlipData);
             toast.success(`Lưu tạm phiếu nhập thành công! ID phiếu: ${docRef.id}`);
-            resetSlip(); // Reset state trong store
+            resetSlip();
         } catch (error) {
             console.error("Lỗi khi lưu phiếu nhập: ", error);
             toast.error('Đã xảy ra lỗi khi lưu phiếu.');
@@ -181,7 +191,6 @@ const NewImportPage = () => {
             setIsSaving(false);
         }
     };
-
     const handleDirectImport = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -207,7 +216,7 @@ const NewImportPage = () => {
                     quantityRemaining: Number(item.quantity),
                     notes: fullItemData.notes,
                     supplier: slipData.supplierName,
-                };
+                 };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
             
@@ -215,7 +224,7 @@ const NewImportPage = () => {
             await addDoc(collection(db, 'import_tickets'), finalSlipData);
             
             toast.success('Nhập kho trực tiếp thành công!');
-            resetSlip(); // Reset state trong store
+            resetSlip();
         } catch (error) {
             console.error("Lỗi khi nhập kho trực tiếp: ", error);
             toast.error('Đã xảy ra lỗi khi nhập kho trực tiếp.');
@@ -223,7 +232,6 @@ const NewImportPage = () => {
             setIsSaving(false);
         }
     };
-
     const promptForDirectImport = () => {
         if (getValidSlipData()) {
             setConfirmModal({
@@ -234,9 +242,6 @@ const NewImportPage = () => {
             });
         }
     };
-
-    // --- Các hàm và JSX còn lại phần lớn giữ nguyên cấu trúc ---
-    // Chỉ thay đổi cách gọi `setState` thành gọi action của store
 
     return (
         <div>
@@ -273,13 +278,13 @@ const NewImportPage = () => {
                         <input type="text" value={formatDate(new Date())} readOnly style={{backgroundColor: '#f0f0f0'}} />
                     </div>
                     <div className="form-group">
-                         <label>Mã Nhà Cung Cấp (*)</label>
+                        <label>Mã Nhà Cung Cấp (*)</label>
                         <input 
                              list="suppliers-list"
                             type="text" 
                             placeholder="Nhập hoặc chọn mã NCC..." 
                             value={supplierId} 
-                            onChange={e => setSupplier(e.target.value.toUpperCase(), '')} // <-- Chỉ cập nhật ID
+                            onChange={e => setSupplier(e.target.value.toUpperCase(), '')}
                             onBlur={handleSupplierSearch}
                         />
                          <datalist id="suppliers-list">
@@ -291,14 +296,14 @@ const NewImportPage = () => {
                          </datalist>
                     </div>
                     <div className="form-group">
-                        <label>Tên Nhà Cung Cấp (*)</label>
+                         <label>Tên Nhà Cung Cấp (*)</label>
                          <input 
                             type="text" 
                             value={supplierName} 
                             readOnly 
                              style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
-                     </div>
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Diễn giải</label>
@@ -310,7 +315,7 @@ const NewImportPage = () => {
             <div className="item-details-grid">
                 <div className="grid-header">Mã hàng (*)</div>
                 <div className="grid-header">Tên hàng</div>
-                 <div className="grid-header">Số lô (*)</div>
+                <div className="grid-header">Số lô (*)</div>
                 <div className="grid-header">HSD (*)</div>
                 <div className="grid-header">ĐVT</div>
                 <div className="grid-header">Quy cách</div>
@@ -318,11 +323,13 @@ const NewImportPage = () => {
                 <div className="grid-header">Ghi chú</div>
                 <div className="grid-header">Nhiệt độ BQ</div>
                 <div className="grid-header">Team</div>
+                <div className="grid-header">Xóa</div>
 
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
+                                ref={index === items.length - 1 ? lastInputRef : null}
                                 type="text"
                                 value={item.productId}
                                 onChange={e => updateItem(index, 'productId', e.target.value.toUpperCase())}
@@ -330,9 +337,9 @@ const NewImportPage = () => {
                             />
                             {item.productNotFound && (
                                 <button
-                                     onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
+                                    onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
                                     className="btn-link"
-                                     style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
+                                    style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
                                 >
                                     Mã này không tồn tại. Tạo mới...
                                 </button>
@@ -381,16 +388,34 @@ const NewImportPage = () => {
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
+                        <div className="grid-cell">
+                            <button 
+                                type="button" 
+                                className="btn-icon btn-delete" 
+                                onClick={() => handleRemoveRow(index)}
+                                title="Xóa dòng này"
+                            >
+                                <FiXCircle />
+                            </button>
+                        </div>
                     </React.Fragment>
                 ))}
             </div>
             
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">
-                <button onClick={handleSaveSlip} className="btn-secondary" disabled={isSaving}>
+                <button 
+                    onClick={handleSaveSlip} 
+                    className="btn-secondary" 
+                    disabled={isSaving || !isSlipValid}
+                >
                     {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}
                 </button>
-                <button onClick={promptForDirectImport} className="btn-primary" disabled={isSaving}>
+                <button 
+                    onClick={promptForDirectImport} 
+                    className="btn-primary" 
+                    disabled={isSaving || !isSlipValid}
+                >
                     {isSaving ? 'Đang xử lý...' : 'Nhập Kho Trực Tiếp'}
                 </button>
             </div>

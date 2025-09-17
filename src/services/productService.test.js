@@ -2,17 +2,19 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Bổ sung getFirestore vào mock
+// Bổ sung getFirestore và serverTimestamp vào mock
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
     deleteDoc: vi.fn(),
-    getFirestore: vi.fn(), // <-- THÊM DÒNG NÀY
+    getFirestore: vi.fn(),
+    // Thêm mock cho serverTimestamp để test có thể chạy
+    serverTimestamp: vi.fn(() => 'MOCK_SERVER_TIMESTAMP'),
 }));
 
 // Import các hàm SAU KHI đã mock
-import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { addProduct, updateProduct, deleteProduct } from './productService';
 import { db } from '../firebaseConfig';
 
@@ -22,7 +24,7 @@ describe('Service: productService', () => {
         vi.clearAllMocks();
     });
 
-    it('hàm addProduct nên gọi doc và setDoc với các tham số chính xác', async () => {
+    it('hàm addProduct nên gọi doc và setDoc với createdAt', async () => {
         const productId = 'SP001';
         const productData = { productName: 'Sản phẩm Test', unit: 'Cái' };
         const mockDocRef = { id: 'mockDocRef' };
@@ -31,7 +33,13 @@ describe('Service: productService', () => {
         await addProduct(productId, productData);
 
         expect(doc).toHaveBeenCalledWith(db, 'products', productId);
-        expect(setDoc).toHaveBeenCalledWith(mockDocRef, productData);
+
+        // **PHẦN SỬA LỖI:**
+        // Kiểm tra rằng setDoc được gọi với dữ liệu gốc VÀ trường createdAt
+        expect(setDoc).toHaveBeenCalledWith(mockDocRef, {
+            ...productData,
+            createdAt: serverTimestamp()
+        });
     });
 
     it('hàm updateProduct nên gọi doc và updateDoc với các tham số chính xác', async () => {

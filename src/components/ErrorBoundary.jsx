@@ -1,6 +1,6 @@
 // src/components/ErrorBoundary.jsx
-
 import React from 'react';
+import * as Sentry from "@sentry/react"; // <-- THÊM DÒNG NÀY
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -9,13 +9,13 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
-    // Cập nhật state để lần render tiếp theo sẽ hiển thị UI dự phòng.
     return { hasError: true, error: error };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Bạn cũng có thể log lỗi này tới một dịch vụ báo cáo lỗi
+    // Thay vì chỉ log ra console, chúng ta gửi lỗi đến Sentry
     console.error("Uncaught error:", error, errorInfo);
+    Sentry.captureException(error, { extra: errorInfo }); // <-- THAY ĐỔI Ở ĐÂY
   }
 
   render() {

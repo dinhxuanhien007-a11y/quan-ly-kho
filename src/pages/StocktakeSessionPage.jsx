@@ -11,32 +11,16 @@ import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import useStocktakeStore from '../stores/stocktakeStore'; // <-- THAY ĐỔI 1: Import store
+import useStocktakeStore from '../stores/stocktakeStore';
 
 const PAGE_SIZE = 50;
 
-// Component con để xử lý ô nhập liệu, giúp tối ưu re-render
-const CountInput = ({ item }) => {
+// Component con không thay đổi
+const CountInput = ({ item, onCountSubmit }) => {
     const { id, countedQty, isNew } = item;
-    const { updateItemCountInUI } = useStocktakeStore();
+    const updateItemCountInUI = useStocktakeStore(state => state.updateItemCountInUI);
     const sessionData = useStocktakeStore(state => state.sessionData);
-    const [currentValue, setCurrentValue] = useState(countedQty ?? '');
-
     const isSessionInProgress = sessionData?.status === 'in_progress';
-
-    // Hàm gọi lại khi component cha re-render (ví dụ khi chuyển trang)
-    useEffect(() => {
-        setCurrentValue(countedQty ?? '');
-    }, [countedQty]);
-
-    const handleBlur = () => {
-        // Chỉ cập nhật lại state của store nếu giá trị thực sự thay đổi
-        const newCount = currentValue === '' ? null : Number(currentValue);
-        if (newCount !== countedQty) {
-            updateItemCountInUI(id, newCount);
-        }
-    };
-    
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             e.target.blur();
@@ -45,11 +29,11 @@ const CountInput = ({ item }) => {
 
     return (
         <input 
-            type="number" 
+            type="text"
             placeholder="Nhập số đếm" 
-            value={currentValue}
-            onChange={e => setCurrentValue(e.target.value)}
-            onBlur={handleBlur}
+            value={countedQty ?? ''}
+            onChange={e => updateItemCountInUI(id, e.target.value)}
+            onBlur={e => onCountSubmit(id, e.target.value)}
             onKeyDown={handleKeyDown} 
             disabled={!isSessionInProgress}
             style={{ 
@@ -60,29 +44,43 @@ const CountInput = ({ item }) => {
     );
 };
 
+// =================================================================
+// === BẮT ĐẦU HÀM HELPER MỚI ĐỂ TÍNH TOÁN BIỂU THỨC AN TOÀN ===
+// =================================================================
+/**
+ * Tính toán một biểu thức toán học đơn giản một cách an toàn.
+ * Hỗ trợ các chuỗi như "300+200", "600-100".
+ * @param {string} str - Chuỗi biểu thức đầu vào.
+ * @returns {number|NaN} - Kết quả tính toán hoặc NaN nếu không hợp lệ.
+ */
+const evaluateMathExpression = (str) => {
+    try {
+        // Chỉ cho phép các ký tự số, +, -, và khoảng trắng
+        if (/[^0-9\s+\-]/.test(str)) {
+            return NaN;
+        }
+        // Thay thế nhiều dấu -- thành +
+        const sanitizedStr = str.replace(/--/g, '+');
+        
+        // Sử dụng Function constructor để tránh rủi ro bảo mật của eval()
+        return new Function(`return ${sanitizedStr}`)();
+    } catch (error) {
+        return NaN;
+    }
+};
+// ===============================================================
+// === KẾT THÚC HÀM HELPER MỚI ===
+// ===============================================================
+
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
     const navigate = useNavigate();
-
-    // <-- THAY ĐỔI 2: Lấy state và actions từ store
     const {
-        sessionData,
-        items,
-        discrepancyItems,
-        checkedItems,
-        summaryStats,
-        loading,
-        initializeSession,
-        setItems,
-        setSummary,
-        setSessionStatus,
-        toggleCheckedItem,
-        toggleAllCheckedItems,
-        clearStore
+        sessionData, items, discrepancyItems, checkedItems, summaryStats, loading,
+        initializeSession, setItems, setSummary, setSessionStatus,
+        toggleCheckedItem, toggleAllCheckedItems, clearStore, updateItemCountInUI
     } = useStocktakeStore();
-
-    // State cục bộ cho UI (pagination, modals, search)
     const [loadingItems, setLoadingItems] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [lastVisible, setLastVisible] = useState(null);
@@ -91,11 +89,12 @@ const StocktakeSessionPage = () => {
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-    // Hàm lưu số đếm lên Firestore
-    const saveCountToDb = async (itemId, finalCount) => {
+    const performCountUpdate = async (itemId, finalCount) => {
+        updateItemCountInUI(itemId, finalCount);
         const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
         try {
             await updateDoc(itemRef, { countedQty: finalCount });
+            await fetchStatsAndDiscrepancies();
             return true;
         } catch (error) {
             toast.error("Lỗi: Không thể lưu số lượng.");
@@ -103,7 +102,50 @@ const StocktakeSessionPage = () => {
         }
     };
 
-    // Hàm tính toán lại thống kê và chênh lệch
+    // =================================================================
+    // === BẮT ĐẦU PHẦN LOGIC handleCountSubmit ĐÃ ĐƯỢC VIẾT LẠI HOÀN TOÀN ===
+    // =================================================================
+    const handleCountSubmit = (itemId, value) => {
+        const item = useStocktakeStore.getState().items.find(i => i.id === itemId);
+        if (!item) return;
+
+        const prevCountedQty = item.countedQtyBeforeSubmit ?? 0;
+        const rawValue = String(value).trim();
+        
+        if (rawValue === String(item.countedQtyBeforeSubmit ?? '')) return;
+        
+        if (rawValue === '') {
+            performCountUpdate(itemId, null);
+            return;
+        }
+
+        let finalCount = NaN;
+
+        // Trường hợp 1: Cộng dồn nhanh (bắt đầu bằng '+')
+        if (rawValue.startsWith('+')) {
+            const addedValue = evaluateMathExpression(rawValue.substring(1));
+            if (!isNaN(addedValue) && addedValue > 0) {
+                finalCount = prevCountedQty + addedValue;
+            } else {
+                 toast.warn("Giá trị cộng dồn không hợp lệ.");
+            }
+        } else {
+            // Trường hợp 2: Tính toán biểu thức hoặc ghi đè số
+            finalCount = evaluateMathExpression(rawValue);
+        }
+
+        // Kiểm tra kết quả cuối cùng
+        if (isNaN(finalCount) || finalCount < 0) {
+            toast.warn("Giá trị nhập không hợp lệ.");
+            updateItemCountInUI(itemId, item.countedQtyBeforeSubmit ?? null); // Hoàn lại giá trị cũ
+        } else {
+            performCountUpdate(itemId, finalCount);
+        }
+    };
+    // ===============================================================
+    // === KẾT THÚC PHẦN LOGIC handleCountSubmit MỚI ===
+    // ===============================================================
+
     const fetchStatsAndDiscrepancies = useCallback(async () => {
         if (!sessionId) return;
         const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
@@ -132,14 +174,12 @@ const StocktakeSessionPage = () => {
         setSummary(newSummary, sortedDiscrepancies);
     }, [sessionId, setSummary]);
 
-    // Lấy dữ liệu chính của phiên khi tải trang và dọn dẹp khi rời đi
     useEffect(() => {
         const fetchSessionData = async () => {
             const docRef = doc(db, 'stocktakes', sessionId);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 await fetchStatsAndDiscrepancies();
-                // Lấy lại dữ liệu stats mới nhất trước khi init
                 const storeState = useStocktakeStore.getState();
                 initializeSession(
                     { id: docSnap.id, ...docSnap.data() }, 
@@ -151,15 +191,12 @@ const StocktakeSessionPage = () => {
                 navigate('/stocktakes');
             }
         };
-
         fetchSessionData();
-        
-        // Dọn dẹp store khi component bị unmount
         return () => {
             clearStore();
         }
     }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
-    
+
     const buildItemsQuery = useCallback(() => {
         const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
         let q = query(itemsCollectionRef, orderBy('productId'));
@@ -170,13 +207,15 @@ const StocktakeSessionPage = () => {
         return q;
     }, [sessionId, searchTerm]);
 
-    // Fetch dữ liệu vật tư theo trang
     const fetchItemsPage = useCallback(async (newQuery, isNextPage = false) => {
         if (!sessionId) return;
         setLoadingItems(true);
         try {
             const docSnapshots = await getDocs(newQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const itemsList = docSnapshots.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data()
+            }));
             setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
             setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
             setItems(itemsList);
@@ -197,8 +236,7 @@ const StocktakeSessionPage = () => {
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchTerm, buildItemsQuery, fetchItemsPage]);
-    
-    // Các hàm xử lý hành động của người dùng
+
     const handleFinalizeCount = async () => {
         setConfirmModal({isOpen: false});
         const sessionRef = doc(db, 'stocktakes', sessionId);
@@ -228,7 +266,6 @@ const StocktakeSessionPage = () => {
             const docRef = doc(itemsRef, newItem.lotId);
             await setDoc(docRef, newItem);
             toast.success("Đã thêm mặt hàng mới vào phiên kiểm kê.");
-            // Tải lại trang đầu
             const q = buildItemsQuery();
             const firstPageQuery = query(q, limit(PAGE_SIZE));
             fetchItemsPage(firstPageQuery);
@@ -290,7 +327,15 @@ const StocktakeSessionPage = () => {
 
     return (
         <div className="stocktake-session-page-container">
-            <ConfirmationModal isOpen={confirmModal.isOpen} {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
+            <ConfirmationModal 
+                isOpen={confirmModal.isOpen} 
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={confirmModal.onCancel ?? (() => setConfirmModal({ isOpen: false }))}
+                confirmText={confirmModal.confirmText}
+                cancelText={confirmModal.cancelText}
+            />
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
 
             <div className="page-header">
@@ -324,34 +369,34 @@ const StocktakeSessionPage = () => {
                     <div className="table-container">
                         <table className="products-table">
                             <thead>
-                                <tr>
+                                 <tr>
                                     <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
                                     <th>HSD</th><th>Tồn hệ thống</th><th>Tồn thực tế</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {items.map((item) => (
+                                 {items.map((item) => (
                                     <tr key={item.id}>
                                         <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
                                         <td>{formatDate(item.expiryDate)}</td><td>{item.systemQty}</td>
                                         <td>
-                                            <CountInput item={item} />
+                                             <CountInput item={item} onCountSubmit={handleCountSubmit} />
                                         </td>
-                                    </tr>
+                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                     </div>
                     {!searchTerm && (
                         <div className="pagination-controls">
                             <button onClick={() => {
-                                const q = buildItemsQuery();
-                                const firstPageQuery = query(q, limit(PAGE_SIZE));
+                                     const q = buildItemsQuery();
+                                     const firstPageQuery = query(q, limit(PAGE_SIZE));
                                 fetchItemsPage(firstPageQuery);
                             }} disabled={page <= 1}>
                                 <FiChevronLeft /> Trang Đầu
                             </button>
-                            <span>Trang {page}</span>
+                             <span>Trang {page}</span>
                             <button onClick={() => {
                                 const q = buildItemsQuery();
                                 const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
@@ -361,7 +406,7 @@ const StocktakeSessionPage = () => {
                                 Trang Tiếp <FiChevronRight />
                             </button>
                         </div>
-                    )}
+                     )}
                 </>
             )}
 
@@ -371,33 +416,33 @@ const StocktakeSessionPage = () => {
                     {discrepancyItems.length > 0 ? (
                         <>
                             <table className="products-table discrepancy-table">
-                                <thead>
+                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
-                                        <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
+                                         <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
                                         <th>Tồn hệ thống</th><th>Tồn thực tế</th><th>Chênh lệch</th>
-                                    </tr>
+                                   </tr>
                                 </thead>
                                 <tbody>
-                                    {discrepancyItems.map(item => (
+                                     {discrepancyItems.map(item => (
                                         <tr key={item.id}>
-                                            <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheckedItem(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
+                                             <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheckedItem(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
                                             <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                            <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
+                                             <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
                                             <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>
                                         </tr>
                                     ))}
-                                </tbody>
+                                 </tbody>
                             </table>
                             {sessionData.status !== 'adjusted' && (
-                                <div className="page-actions">
+                                 <div className="page-actions">
                                     <button onClick={promptForAdjust} className="btn-primary">Xác Nhận Điều Chỉnh Tồn Kho</button>
                                 </div>
-                            )}
+                             )}
                         </>
                     ) : <p>Không có chênh lệch nào được ghi nhận.</p>
                     }
-                </div>
+                 </div>
             )}
         </div>
     );

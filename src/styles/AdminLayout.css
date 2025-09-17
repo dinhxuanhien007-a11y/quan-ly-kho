@@ -326,7 +326,7 @@
 }
 
 .item-details-grid {
-  grid-template-columns: 1fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr;
+  grid-template-columns: 1fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 1fr 0.5fr;
 }
 
 .item-details-grid-edit {
@@ -949,4 +949,18 @@ tbody tr.selected-row td {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.inline-warning {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #dc3545; /* Màu đỏ */
+  width: 100%;
+  padding: 8px;
+  background-color: #fbebee;
+  border-radius: 4px;
 }

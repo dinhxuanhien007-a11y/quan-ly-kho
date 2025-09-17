@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import Papa from 'papaparse';
 import { FiUpload, FiDownload, FiInfo } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
-import styles from '../styles/DataImportPage.module.css'; // Cập nhật import
+import styles from '../styles/DataImportPage.module.css';
 
 const DataImportPage = () => {
     const [importType, setImportType] = useState('inventory');
@@ -27,9 +27,7 @@ const DataImportPage = () => {
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
-            complete: (results) => {
-                processData(results.data);
-            },
+            complete: (results) => { processData(results.data); },
             error: (err) => {
                 toast.error("Không thể đọc file CSV.");
                 logMessage(`Lỗi đọc file: ${err.message}`, 'error');
@@ -40,16 +38,13 @@ const DataImportPage = () => {
     
     const handlePasteImport = () => {
         if (!pastedData.trim()) {
-            toast.warn("Vui lòng dán dữ liệu vào ô trống.");
-            return;
+            return toast.warn("Vui lòng dán dữ liệu vào ô trống.");
         }
         logMessage(`Bắt đầu đọc dữ liệu đã dán.`);
         Papa.parse(pastedData, {
             header: true,
             skipEmptyLines: true,
-            complete: (results) => {
-                processData(results.data);
-            },
+            complete: (results) => { processData(results.data); },
              error: (err) => {
                 toast.error("Định dạng dữ liệu đã dán không hợp lệ.");
                 logMessage(`Lỗi đọc dữ liệu: ${err.message}`, 'error');
@@ -67,14 +62,19 @@ const DataImportPage = () => {
         setIsImporting(true);
         setImportLog([]);
         logMessage(`Phát hiện ${data.length} dòng. Bắt đầu xử lý cho loại: ${importType}...`);
+        
         try {
             const MAX_BATCH_SIZE = 499;
             let batch = writeBatch(db);
             let operationCount = 0;
             let totalSuccess = 0;
-            
+
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
+                // Xử lý ngày tạo một cách tập trung
+                const creationDate = parseDateString(row.creationDate);
+                const creationTimestamp = creationDate ? Timestamp.fromDate(creationDate) : Timestamp.now();
+
                 if (importType === 'inventory') {
                     if (!row.productId || !row.productName || !row.lotNumber || !row.quantityRemaining) {
                         logMessage(`Bỏ qua dòng ${i + 2}: Thiếu thông tin bắt buộc (Mã, Tên, Lô, SL Tồn).`, 'warn');
@@ -99,6 +99,7 @@ const DataImportPage = () => {
                             storageTemp: row.storageTemp || '',
                             manufacturer: row.manufacturer || '',
                             team: row.team || 'MED',
+                            createdAt: creationTimestamp // Thêm createdAt cho sản phẩm mới
                         };
                         batch.set(productRef, newProductData);
                         operationCount++;
@@ -134,6 +135,7 @@ const DataImportPage = () => {
                     const docData = {
                         partnerName: row.partnerName || '',
                         partnerType: row.partnerType === 'customer' ? 'customer' : 'supplier',
+                        createdAt: creationTimestamp // Thêm createdAt cho đối tác mới
                     };
                     const docRef = doc(collection(db, 'partners'), docId);
                     batch.set(docRef, docData);
@@ -170,15 +172,14 @@ const DataImportPage = () => {
     const downloadTemplate = () => {
         let headers, filename, sampleData;
         if (importType === 'partners') {
-            headers = "partnerId*,partnerName*,partnerType";
+            headers = "partnerId*,partnerName*,partnerType,creationDate";
             filename = "mau_import_doi_tac.csv";
-            sampleData = "NCC-01,CÔNG TY DƯỢC PHẨM ABC,supplier\nKH-01,BỆNH VIỆN XYZ,customer";
+            sampleData = "NCC-01,CÔNG TY DƯỢC PHẨM ABC,supplier,25/12/2024\nKH-01,BỆNH VIỆN XYZ,customer,";
         } else {
-            headers = "productId*,productName*,lotNumber*,quantityRemaining*,expiryDate,unit,packaging,storageTemp,team,manufacturer";
+            headers = "productId*,productName*,lotNumber*,quantityRemaining*,expiryDate,unit,packaging,storageTemp,team,manufacturer,creationDate";
             filename = "mau_import_san_pham_ton_kho.csv";
-            sampleData = "SP001,BÔNG CỒN ALKOCIDE,L202501,100,31/12/2025,Hộp,100 miếng/hộp,Nhiệt độ phòng,MED,DentaLife\nSP002,GĂNG TAY Y TẾ,GT001,50,,Hộp,50 đôi/hộp,,MED,";
+            sampleData = "SP001,BÔNG CỒN ALKOCIDE,L202501,100,31/12/2025,Hộp,100 miếng/hộp,Nhiệt độ phòng,MED,DentaLife,01/01/2025\nSP002,GĂNG TAY Y TẾ,GT001,50,,Hộp,50 đôi/hộp,,MED,,"
         }
-        
         const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers + "\n" + sampleData;
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -218,6 +219,7 @@ const DataImportPage = () => {
                                 <li>Nếu `productId` chưa có, một sản phẩm mới sẽ được tự động tạo.</li>
                                 <li>Mỗi dòng trong file sẽ tạo ra một lô hàng tồn kho mới.</li>
                                 <li>Nếu `partnerId` đã tồn tại, dữ liệu cũ sẽ bị **ghi đè**.</li>
+                                <li>Cột `creationDate` (định dạng dd/mm/yyyy) nếu bỏ trống sẽ tự lấy ngày hiện tại.</li>
                             </ul>
                          </div>
                     </div>

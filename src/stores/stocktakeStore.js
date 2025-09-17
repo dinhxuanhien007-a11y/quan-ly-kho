@@ -15,37 +15,36 @@ const useStocktakeStore = create((set, get) => ({
 
     // === ACTIONS ===
 
-    // Khởi tạo store với dữ liệu của phiên
     initializeSession: (sessionData, summaryStats, discrepancyItems) => set({
         sessionData,
         summaryStats,
         discrepancyItems,
         loading: false,
-        checkedItems: {}, // Reset các mục đã chọn khi tải lại
+        checkedItems: {},
     }),
 
-    // Cập nhật danh sách vật tư (dùng cho phân trang)
-    setItems: (items) => set({ items }),
+    setItems: (items) => set({
+        items: items.map(item => ({
+            ...item,
+            countedQtyBeforeSubmit: item.countedQty ?? null
+        }))
+    }),
 
-    // Cập nhật số lượng đếm của một vật tư trên UI
     updateItemCountInUI: (itemId, newCount) => set(state => ({
         items: state.items.map(item =>
             item.id === itemId ? { ...item, countedQty: newCount } : item
         ),
     })),
 
-    // Cập nhật trạng thái của phiên
     setSessionStatus: (status) => set(state => ({
         sessionData: state.sessionData ? { ...state.sessionData, status: status } : null,
     })),
 
-    // Cập nhật thống kê và danh sách chênh lệch
     setSummary: (summaryStats, discrepancyItems) => set({ 
         summaryStats, 
         discrepancyItems 
     }),
 
-    // Xử lý check/uncheck một mục chênh lệch
     toggleCheckedItem: (itemId) => set(state => ({
         checkedItems: {
             ...state.checkedItems,
@@ -53,7 +52,6 @@ const useStocktakeStore = create((set, get) => ({
         },
     })),
     
-    // Xử lý check/uncheck tất cả các mục chênh lệch
     toggleAllCheckedItems: (shouldCheck) => set(state => {
         if (!shouldCheck) {
             return { checkedItems: {} };
@@ -67,6 +65,6 @@ const useStocktakeStore = create((set, get) => ({
 
     // Reset store về trạng thái ban đầu khi rời khỏi trang
     clearStore: () => set({ ...initialState }),
-}));
+})); // <-- LỖI ĐÃ ĐƯỢỢC SỬA Ở ĐÂY (bỏ bớt 1 dấu '}')
 
 export default useStocktakeStore;

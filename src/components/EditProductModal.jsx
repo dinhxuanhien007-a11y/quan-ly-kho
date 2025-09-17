@@ -42,10 +42,10 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
       
       toast.success('Cập nhật sản phẩm thành công!');
       onProductUpdated();
-    } catch (error)      {
-      console.error("Lỗi khi cập nhật sản phẩm: ", error);
-      toast.error('Đã xảy ra lỗi khi cập nhật sản phẩm.');
-    } finally {
+    } catch (error) { // <--- Xóa dấu } thừa
+  console.error("Lỗi khi cập nhật sản phẩm: ", error);
+  toast.error('Đã xảy ra lỗi khi cập nhật sản phẩm.');
+} finally {
       setIsSaving(false);
     }
   };

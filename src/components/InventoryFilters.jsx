@@ -38,7 +38,7 @@ const InventoryFilters = ({ userRole, onFilterChange, activeFilters }) => {
                 className={activeFilters.team === 'BIO' ? 'active' : ''}
                 onClick={() => handleTeamFilter('BIO')}
               >
-                Lọc hàng BIO
+                 Lọc hàng BIO
               </button>
             </>
           )}
@@ -72,4 +72,4 @@ const InventoryFilters = ({ userRole, onFilterChange, activeFilters }) => {
   );
 };
 
-export default InventoryFilters;
+export default React.memo(InventoryFilters);
