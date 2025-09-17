@@ -3,7 +3,7 @@
 import React from 'react';
 import Navbar from './Navbar';
 import '../styles/AdminLayout.css';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
 import PartnersPage from '../pages/PartnersPage';
@@ -12,15 +12,23 @@ import ImportListPage from '../pages/ImportListPage';
 import NewExportPage from '../pages/NewExportPage';
 import ExportListPage from '../pages/ExportListPage';
 import StocktakeListPage from '../pages/StocktakeListPage';
-import StocktakeSessionPage from '../pages/StocktakeSessionPage'; // Import trang mới
+import StocktakeSessionPage from '../pages/StocktakeSessionPage';
 import LotTracePage from '../pages/LotTracePage';
 import DataImportPage from '../pages/DataImportPage';
+import ExportSlipCounter from './ExportSlipCounter';
+import ImportSlipCounter from './ImportSlipCounter'; // <-- Import counter mới
 
 const AdminLayout = () => {
+  const location = useLocation();
+
   return (
     <div className="admin-layout-horizontal">
       <Navbar />
       <main className="main-content">
+        {/* Hiển thị counter có điều kiện dựa trên đường dẫn hiện tại */}
+        {location.pathname === '/new-export' && <ExportSlipCounter />}
+        {location.pathname === '/new-import' && <ImportSlipCounter />}
+        
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
@@ -29,9 +37,8 @@ const AdminLayout = () => {
           <Route path="/new-export" element={<NewExportPage />} />
           <Route path="/imports" element={<ImportListPage />} />
           <Route path="/exports" element={<ExportListPage />} />
-          {/* Cập nhật đường dẫn cho Kiểm Kê Kho */}
           <Route path="/stocktakes" element={<StocktakeListPage />} />
-          <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} /> {/* Route mới cho trang chi tiết */}
+          <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} />
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
         </Routes>
