@@ -1,4 +1,4 @@
-// src/pages/ProductsPage.jsx (Phiên bản đã tái cấu trúc)
+// src/pages/ProductsPage.jsx
 
 import React, { useState, useMemo } from 'react';
 import { collection, query, orderBy, where, documentId } from 'firebase/firestore';
@@ -7,10 +7,7 @@ import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
-
-// BƯỚC 3.1: Import các hàm service
-import { deleteProduct } from '../services/productService'; 
-
+import { deleteProduct } from '../services/productService';
 import AddProductModal from '../components/AddProductModal';
 import EditProductModal from '../components/EditProductModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -66,9 +63,7 @@ const ProductsPage = () => {
     const { item } = confirmModal;
     if (!item) return;
     try {
-        // BƯỚC 3.2: Gọi hàm service thay vì logic cũ
         await deleteProduct(item.id);
-
         toast.success('Xóa sản phẩm thành công!');
         if (searchTerm) setSearchTerm('');
         else reset();
@@ -113,10 +108,6 @@ const ProductsPage = () => {
         </div>
       </div>
       
-      {/* BẠN SẼ LÀM TƯƠNG TỰ VỚI CÁC MODAL NÀY:
-        - Trong AddProductModal, gọi `addProduct` từ service.
-        - Trong EditProductModal, gọi `updateProduct` từ service.
-      */}
       {isAddModalOpen && <AddProductModal onClose={() => setIsAddModalOpen(false)} onProductAdded={handleProductAdded} />}
       {isEditModalOpen && <EditProductModal onClose={() => setIsEditModalOpen(false)} onProductUpdated={handleProductUpdated} productToEdit={currentProduct} />}
       

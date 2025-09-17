@@ -7,17 +7,12 @@ import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
-
-// Import service để xử lý logic nghiệp vụ
 import { deletePartner } from '../services/partnerService';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
-
-// ======================= BƯỚC 1: IMPORT CSS MODULE =======================
 import styles from './PartnersPage.module.css';
-// =========================================================================
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -79,65 +74,62 @@ const PartnersPage = () => {
                 title={confirmModal.title}
                 message={confirmModal.message}
                 onConfirm={handleDelete}
-               
-                 onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+                onCancel={() => setConfirmModal({ isOpen: false, item: null })}
                 confirmText="Vẫn xóa"
             />
             {isAddModalOpen && <AddPartnerModal onClose={() => setIsAddModalOpen(false)} onPartnerAdded={handlePartnerAdded} />}
             {isEditModalOpen && <EditPartnerModal onClose={() => setIsEditModalOpen(false)} onPartnerUpdated={handlePartnerUpdated} partnerToEdit={currentPartner} />}
 
             <div className="page-header">
-           
-                 <h1>Quản Lý Đối Tác</h1>
+                <h1>Quản Lý Đối Tác</h1>
                 <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
                     <FiPlus style={{ marginRight: '5px' }} />
                     Thêm Đối Tác
                 </button>
-       
-             </div>
+            </div>
             
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table">
                         <thead>
                             <tr>
-        
-                                 <th>Mã Đối Tác</th>
+                                <th>Mã Đối Tác</th>
                                 <th>Tên Đối Tác</th>
                                 <th>Phân Loại</th>
-     
-                                 <th>Thao tác</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
-                    
-                         <tbody>
-                            {partners.map(partner => (
-                                <tr key={partner.id}>
-                                    {/* ================ BƯỚC 2: SỬ DỤNG CLASS TỪ MODULE ================ */}
-                                    <td className={styles.partnerIdCell}>{partner.id}</td>
-                                    <td>{partner.partnerName}</td>
-                                    <td className={styles.partnerTypeCell}>
-                                        {partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}
+                        <tbody>
+                            {/* === THAY ĐỔI Ở ĐÂY === */}
+                            {partners.length > 0 ? (
+                                partners.map(partner => (
+                                    <tr key={partner.id}>
+                                        <td className={styles.partnerIdCell}>{partner.id}</td>
+                                        <td>{partner.partnerName}</td>
+                                        <td className={styles.partnerTypeCell}>
+                                            {partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
+                                                    <FiEdit />
+                                                </button>
+                                                <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
+                                                    <FiTrash2 />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" style={{ textAlign: 'center' }}>
+                                        Chưa có đối tác nào.
                                     </td>
-                                    {/* ================================================================= */}
-                                     <td>
-                                        <div className="action-buttons">
-                                       
-                                         <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
-                                                <FiEdit />
-                                         
-                                             </button>
-                                            <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
-                                                
-                                                <FiTrash2 />
-                                            </button>
-                                        </div>
-               
-                                     </td>
                                 </tr>
-                            ))}
-                   
-                         </tbody>
+                            )}
+                            {/* === KẾT THÚC THAY ĐỔI === */}
+                        </tbody>
                     </table>
 
                     <div className="pagination-controls">
@@ -145,14 +137,12 @@ const PartnersPage = () => {
                             <FiChevronLeft /> Trang Trước
                         </button>
                         <span>Trang {page}</span>
-                    
-                         <button onClick={nextPage} disabled={isLastPage || loading}>
+                        <button onClick={nextPage} disabled={isLastPage || loading}>
                             Trang Tiếp <FiChevronRight />
                         </button>
                     </div>
                 </>
- 
-                       )}
+            )}
         </div>
     );
 };

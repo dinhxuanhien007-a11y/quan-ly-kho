@@ -1,4 +1,4 @@
-﻿--- FILE: D:\New folder\quan-ly-kho\src\components\AddNewLotModal.jsx ---
+﻿--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddNewLotModal.jsx ---
 
 
 // src/components/AddNewLotModal.jsx
@@ -78,7 +78,7 @@ export default AddNewLotModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
 
 
 // src/components/AddNewProductAndLotModal.jsx
@@ -270,7 +270,7 @@ export default AddNewProductAndLotModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\AddPartnerModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddPartnerModal.jsx ---
 
 
 // src/components/AddPartnerModal.jsx
@@ -361,7 +361,7 @@ export default AddPartnerModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\AddProductModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddProductModal.jsx ---
 
 
 // src/components/AddProductModal.jsx
@@ -514,7 +514,7 @@ export default AddProductModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
 
 
 // src/components/AddUnlistedItemModal.jsx
@@ -670,7 +670,7 @@ export default AddUnlistedItemModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\AdminLayout.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AdminLayout.jsx ---
 
 
 // src/components/AdminLayout.jsx
@@ -719,7 +719,7 @@ export default AdminLayout;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\ConfirmationModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ConfirmationModal.jsx ---
 
 
 // src/components/ConfirmationModal.jsx
@@ -754,7 +754,7 @@ export default ConfirmationModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
 
 
 // src/components/ConfirmationModal.test.jsx
@@ -849,7 +849,7 @@ describe('Component: ConfirmationModal', () => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
 
 
 // src/components/CreateStocktakeModal.jsx
@@ -920,7 +920,7 @@ export default CreateStocktakeModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
 
 
 // src/components/EditExportSlipModal.jsx
@@ -1057,7 +1057,7 @@ export default EditExportSlipModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
 
 
 // src/components/EditImportSlipModal.jsx
@@ -1219,7 +1219,7 @@ export default EditImportSlipModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\EditPartnerModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditPartnerModal.jsx ---
 
 
 // src/components/EditPartnerModal.jsx
@@ -1307,7 +1307,7 @@ export default EditPartnerModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\EditProductModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditProductModal.jsx ---
 
 
 // src/components/EditProductModal.jsx
@@ -1416,7 +1416,7 @@ export default EditProductModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\ErrorBoundary.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ErrorBoundary.jsx ---
 
 
 // src/components/ErrorBoundary.jsx
@@ -1464,7 +1464,7 @@ export default ErrorBoundary;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\HomePage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\HomePage.jsx ---
 
 
 // src/components/HomePage.jsx
@@ -1504,7 +1504,7 @@ export default HomePage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\InventoryFilters.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\InventoryFilters.jsx ---
 
 
 // src/components/InventoryFilters.jsx
@@ -1585,7 +1585,7 @@ export default InventoryFilters;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\LoginPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\LoginPage.jsx ---
 
 
 // src/components/LoginPage.jsx
@@ -1655,7 +1655,7 @@ export default LoginPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\LoginPage.module.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\LoginPage.module.css ---
 
 
 /* src/components/LoginPage.module.css */
@@ -1700,7 +1700,7 @@ export default LoginPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
 
 
 // src/components/LotJourneyExplorer.jsx
@@ -1817,7 +1817,7 @@ export default LotJourneyExplorer;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\Navbar.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Navbar.jsx ---
 
 
 // src/components/Navbar.jsx
@@ -1923,7 +1923,7 @@ export default Navbar;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\Sidebar.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Sidebar.jsx ---
 
 
 // src/components/Sidebar.jsx
@@ -1993,7 +1993,7 @@ export default Sidebar;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Spinner.jsx ---
 
 
 // src/components/Spinner.jsx
@@ -2022,7 +2022,7 @@ export default Spinner;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\Spinner.module.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Spinner.module.css ---
 
 
 /* src/components/Spinner.module.css */
@@ -2057,7 +2057,7 @@ export default Spinner;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\StatusBadge.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\StatusBadge.jsx ---
 
 
 // src/components/StatusBadge.jsx
@@ -2099,7 +2099,7 @@ export default React.memo(StatusBadge);
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\StatusBadge.test.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\StatusBadge.test.jsx ---
 
 
 // src/components/StatusBadge.test.jsx
@@ -2170,7 +2170,7 @@ describe('Component: StatusBadge', () => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\TeamBadge.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\TeamBadge.jsx ---
 
 
 // src/components/TeamBadge.jsx
@@ -2201,7 +2201,7 @@ export default React.memo(TeamBadge);
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\TempBadge.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\TempBadge.jsx ---
 
 
 // src/components/TempBadge.jsx
@@ -2230,7 +2230,7 @@ export default React.memo(TempBadge);
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\ViewerLayout.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ViewerLayout.jsx ---
 
 
 // src/components/ViewerLayout.jsx
@@ -2296,7 +2296,7 @@ export default ViewerLayout;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
 
 
 // src/components/ViewExportSlipModal.jsx
@@ -2377,7 +2377,7 @@ export default ViewExportSlipModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
 
 
 // src/components/ViewImportSlipModal.jsx
@@ -2455,7 +2455,7 @@ export default ViewImportSlipModal;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\context\UserContext.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\context\UserContext.jsx ---
 
 
 // src/context/UserContext.jsx
@@ -2517,7 +2517,7 @@ export const useAuth = () => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\hooks\useFirestorePagination.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useFirestorePagination.js ---
 
 
 // src/hooks/useFirestorePagination.js
@@ -2627,7 +2627,7 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
 
 
 // src/hooks/useFirestorePagination.test.js
@@ -2730,7 +2730,7 @@ describe('Hook: useFirestorePagination', () => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\DashboardPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\DashboardPage.jsx ---
 
 
 // src/pages/DashboardPage.jsx
@@ -2812,7 +2812,7 @@ export default DashboardPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\DataImportPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\DataImportPage.jsx ---
 
 
 // src/pages/DataImportPage.jsx
@@ -3080,7 +3080,7 @@ export default DataImportPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\ExportListPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ExportListPage.jsx ---
 
 
 // src/pages/ExportListPage.jsx
@@ -3306,7 +3306,7 @@ export default ExportListPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\ImportListPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ImportListPage.jsx ---
 
 
 // src/pages/ImportListPage.jsx
@@ -3487,7 +3487,7 @@ export default ImportListPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\InventoryPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\InventoryPage.jsx ---
 
 
 // src/pages/InventoryPage.jsx
@@ -3729,7 +3729,7 @@ export default InventoryPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
 // src/pages/InventorySummaryPage.jsx
@@ -4081,7 +4081,7 @@ export default InventorySummaryPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\LotTracePage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\LotTracePage.jsx ---
 
 
 // src/pages/LotTracePage.jsx
@@ -4314,7 +4314,7 @@ export default LotTracePage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\NewExportPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
 // src/pages/NewExportPage.jsx
@@ -4729,7 +4729,7 @@ export default NewExportPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\NewImportPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\NewImportPage.jsx ---
 
 
 // src/pages/NewImportPage.jsx
@@ -5210,7 +5210,7 @@ export default NewImportPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\PartnersPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\PartnersPage.jsx ---
 
 
 // src/pages/PartnersPage.jsx
@@ -5376,7 +5376,7 @@ export default PartnersPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\PartnersPage.module.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\PartnersPage.module.css ---
 
 
 /* src/pages/PartnersPage.module.css */
@@ -5395,7 +5395,7 @@ export default PartnersPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\ProductsPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductsPage.jsx ---
 
 
 // src/pages/ProductsPage.jsx (PhiÃªn báº£n Ä‘Ã£ tÃ¡i cáº¥u trÃºc)
@@ -5589,7 +5589,7 @@ export default ProductsPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
 // src/pages/StocktakeListPage.jsx
@@ -5788,7 +5788,7 @@ export default StocktakeListPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
 
 
 // src/pages/StocktakeSessionPage.jsx
@@ -6181,7 +6181,7 @@ export default StocktakeSessionPage;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\services\partnerService.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\partnerService.js ---
 
 
 // src/services/partnerService.js
@@ -6227,7 +6227,7 @@ export const deletePartner = async (partnerId) => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\services\productService.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\productService.js ---
 
 
 // src/services/productService.js
@@ -6271,7 +6271,7 @@ export const deleteProduct = async (productId) => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\services\stocktakeService.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\stocktakeService.js ---
 
 
 // src/services/stocktakeService.js
@@ -6326,7 +6326,7 @@ export const deleteStocktakeSession = async (sessionId) => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\styles\AdminLayout.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\AdminLayout.css ---
 
 
 :root {
@@ -7254,7 +7254,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\styles\DashboardPage.module.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\DashboardPage.module.css ---
 
 
 /* src/styles/DashboardPage.module.css */
@@ -7311,7 +7311,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\styles\DataImportPage.module.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\DataImportPage.module.css ---
 
 
 /* src/styles/DataImportPage.module.css */
@@ -7437,7 +7437,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\styles\print.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\print.css ---
 
 
 /* src/styles/print.css (PhiÃªn báº£n cuá»‘i cÃ¹ng) */
@@ -7575,7 +7575,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\styles\StocktakePage.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\StocktakePage.css ---
 
 
 /* src/styles/StocktakePage.css */
@@ -7712,7 +7712,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
 
 
 // src/test/__mocks__/firebaseFirestore.js
@@ -7760,7 +7760,7 @@ export const documentId = vi.fn(() => 'mockDocumentId');
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\test\setup.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\test\setup.js ---
 
 
 // src/test/setup.js
@@ -7778,7 +7778,7 @@ afterEach(() => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\utils\dateUtils.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\utils\dateUtils.js ---
 
 
 // src/utils/dateUtils.js
@@ -7846,7 +7846,7 @@ export const formatExpiryDate = (value) => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\utils\dateUtils.test.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\utils\dateUtils.test.js ---
 
 
 import { describe, it, expect } from 'vitest';
@@ -7885,7 +7885,7 @@ describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\App.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\App.jsx ---
 
 
 // src/App.jsx
@@ -7959,7 +7959,7 @@ export default App;
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\constants.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\constants.js ---
 
 
 /// src/constants.js
@@ -7975,7 +7975,7 @@ export const UNIT_OPTIONS = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»n
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\firebaseConfig.js ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\firebaseConfig.js ---
 
 
 // src/firebaseConfig.js
@@ -8003,7 +8003,7 @@ export const auth = getAuth(app);         // Dá»‹ch vá»¥ xÃ¡c thá»±c
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\index.css ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\index.css ---
 
 
 /* src/index.css */
@@ -8024,7 +8024,7 @@ body {
 
 
 
---- FILE: D:\New folder\quan-ly-kho\src\main.jsx ---
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\main.jsx ---
 
 
 import { StrictMode } from 'react'
