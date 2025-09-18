@@ -662,6 +662,126 @@ export default AddUnlistedItemModal;
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddUserModal.jsx ---
+
+
+// src/components/AddUserModal.jsx
+
+import React, { useState } from 'react';
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { toast } from 'react-toastify';
+import { z } from 'zod';
+
+const inviteSchema = z.object({
+  email: z.string().email({ message: "Äá»‹a chá»‰ email khÃ´ng há»£p lá»‡." }),
+});
+
+const AddUserModal = ({ onClose, onUserAdded }) => {
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('med');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Má»šI: State Ä‘á»ƒ lÆ°u trá»¯ link sau khi táº¡o thÃ nh cÃ´ng
+  const [generatedLink, setGeneratedLink] = useState(null);
+
+  const handleInvite = async () => {
+    const validationResult = inviteSchema.safeParse({ email });
+    if (!validationResult.success) {
+      toast.warn(validationResult.error.issues[0].message);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const functions = getFunctions();
+      const inviteUser = httpsCallable(functions, 'inviteUser');
+      
+      const result = await inviteUser({ 
+        email: email.trim(), 
+        role: role 
+      });
+
+      if (result.data.success) {
+        toast.success("Táº¡o user vÃ  link má»i thÃ nh cÃ´ng!");
+        setGeneratedLink(result.data.link); // LÆ°u link Ä‘á»ƒ hiá»ƒn thá»‹
+      }
+    } catch (error) {
+      console.error("Lá»—i khi gá»i Cloud Function: ", error);
+      toast.error(error.message);
+      setIsSaving(false);
+    }
+    // KhÃ´ng táº¯t isSaving á»Ÿ Ä‘Ã¢y Ä‘á»ƒ giá»¯ modal hiá»ƒn thá»‹ link
+  };
+
+  // Má»šI: HÃ m Ä‘á»ƒ Ä‘Ã³ng modal vÃ  refresh danh sÃ¡ch
+  const handleCloseAndRefresh = () => {
+      onUserAdded();
+      onClose();
+  }
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content" style={{width: '500px'}}>
+
+        {/* --- Giao diá»‡n hiá»ƒn thá»‹ link sau khi thÃ nh cÃ´ng --- */}
+        {generatedLink ? (
+          <div>
+            <h2>Gá»­i lá»i má»i thÃ nh cÃ´ng!</h2>
+            <p>Vui lÃ²ng sao chÃ©p vÃ  gá»­i Ä‘Æ°á»ng link dÆ°á»›i Ä‘Ã¢y cho ngÆ°á»i dÃ¹ng <strong>{email}</strong>. Link nÃ y sáº½ giÃºp há» tá»± Ä‘áº·t máº­t kháº©u Ä‘áº§u tiÃªn.</p>
+            <div className="form-group">
+                <textarea
+                    readOnly
+                    value={generatedLink}
+                    rows={4}
+                    style={{backgroundColor: '#f8f9fa', cursor: 'pointer'}}
+                    onClick={(e) => e.target.select()}
+                />
+            </div>
+            <div className="modal-actions">
+                <button type="button" onClick={handleCloseAndRefresh} className="btn-primary">HoÃ n táº¥t</button>
+            </div>
+          </div>
+        ) : (
+        
+        // --- Giao diá»‡n má»i user ban Ä‘áº§u ---
+          <div>
+            <h2>Má»i User Má»›i</h2>
+            <div className="form-group">
+                <label>Email cá»§a User (*)</label>
+                <input 
+                    type="email"
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="Nháº­p email cá»§a ngÆ°á»i dÃ¹ng má»›i..."
+                    autoFocus
+                />
+            </div>
+            <div className="form-group">
+                <label>Chá»n vai trÃ² (*)</label>
+                <select value={role} onChange={(e) => setRole(e.target.value)}>
+                    <option value="med">med</option>
+                    <option value="bio">bio</option>
+                    <option value="admin">admin</option>
+                </select>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
+              <button type="button" onClick={handleInvite} className="btn-primary" disabled={isSaving}>
+                {isSaving ? 'Äang xá»­ lÃ½...' : 'Táº¡o vÃ  Láº¥y Link Má»i'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AddUserModal;
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AdminLayout.jsx ---
 
 
@@ -684,6 +804,7 @@ import LotTracePage from '../pages/LotTracePage';
 import DataImportPage from '../pages/DataImportPage';
 import ExportSlipCounter from './ExportSlipCounter';
 import ImportSlipCounter from './ImportSlipCounter'; // <-- Import counter má»›i
+import UsersPage from '../pages/UsersPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -708,6 +829,7 @@ const AdminLayout = () => {
           <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} />
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
+          <Route path="/users" element={<UsersPage />} />
         </Routes>
       </main>
     </div>
@@ -1354,10 +1476,10 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
       
       toast.success('Cáº­p nháº­t sáº£n pháº©m thÃ nh cÃ´ng!');
       onProductUpdated();
-    } catch (error)      {
-      console.error("Lá»—i khi cáº­p nháº­t sáº£n pháº©m: ", error);
-      toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t sáº£n pháº©m.');
-    } finally {
+    } catch (error) { // <--- XÃ³a dáº¥u } thá»«a
+  console.error("Lá»—i khi cáº­p nháº­t sáº£n pháº©m: ", error);
+  toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t sáº£n pháº©m.');
+} finally {
       setIsSaving(false);
     }
   };
@@ -1413,6 +1535,78 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
 };
 
 export default EditProductModal;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
+
+
+// src/components/EditUserRoleModal.jsx
+
+import React, { useState } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, updateDoc } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+
+const EditUserRoleModal = ({ user, onClose, onRoleUpdated }) => {
+  // State Ä‘á»ƒ lÆ°u vai trÃ² má»›i Ä‘Æ°á»£c chá»n trong dropdown
+  const [newRole, setNewRole] = useState(user.role);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (newRole === user.role) {
+      onClose(); // Náº¿u khÃ´ng cÃ³ gÃ¬ thay Ä‘á»•i thÃ¬ chá»‰ cáº§n Ä‘Ã³ng láº¡i
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        role: newRole
+      });
+      toast.success(`Cáº­p nháº­t vai trÃ² cho user ${user.uid} thÃ nh cÃ´ng!`);
+      onRoleUpdated(); // Gá»i hÃ m callback Ä‘á»ƒ táº£i láº¡i danh sÃ¡ch vÃ  Ä‘Ã³ng modal
+    } catch (error) {
+      console.error("Lá»—i khi cáº­p nháº­t vai trÃ²: ", error);
+      toast.error("ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t vai trÃ².");
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content" style={{width: '450px'}}>
+        <h2>Thay Ä‘á»•i vai trÃ²</h2>
+        <div className="form-group">
+            <label>User ID (UID)</label>
+            <p><strong>{user.uid}</strong></p>
+        </div>
+        <div className="form-group">
+            <label>Vai trÃ² hiá»‡n táº¡i</label>
+            <p><em>{user.role}</em></p>
+        </div>
+        <div className="form-group">
+            <label>Chá»n vai trÃ² má»›i</label>
+            <select value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+                <option value="admin">admin</option>
+                <option value="med">med</option>
+                <option value="bio">bio</option>
+                {/* KhÃ´ng cho phÃ©p Ä‘á»•i vai trÃ² thÃ nh 'owner' trá»±c tiáº¿p tá»« giao diá»‡n */}
+            </select>
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
+          <button type="button" onClick={handleSave} className="btn-primary" disabled={isSaving}>
+            {isSaving ? 'Äang lÆ°u...' : 'LÆ°u thay Ä‘á»•i'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditUserRoleModal;
 
 
 
@@ -1909,10 +2103,10 @@ import {
     FiFileText, 
     FiShare2, 
     FiCheckSquare,
-    FiTool, 
     FiUsers,
     FiBookOpen,
     FiUpload,
+    FiSettings // Má»šI: ThÃªm icon cho trang quáº£n lÃ½ user
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
@@ -1939,7 +2133,15 @@ const Navbar = () => {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/partners" title="Quáº£n lÃ½ Äá»‘i tÃ¡c"><FiUsers className="nav-icon" /></NavLink>
+          <NavLink to="/partners" title="Quáº£n lÃ½ Äá»‘i tÃ¡c">
+            <FiUsers className="nav-icon" />
+          </NavLink>
+        </li>
+        {/* Má»šI: ThÃªm má»¥c menu Quáº£n lÃ½ User */}
+        <li>
+          <NavLink to="/users" title="Quáº£n lÃ½ User">
+            <FiSettings className="nav-icon" />
+          </NavLink>
         </li>
         <li>
           <NavLink to="/new-import" title="Táº¡o Phiáº¿u Nháº­p">
@@ -6526,6 +6728,197 @@ const StocktakeSessionPage = () => {
 };
 
 export default StocktakeSessionPage;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\UsersPage.jsx ---
+
+
+// src/pages/UsersPage.jsx
+
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, doc, deleteDoc } from 'firebase/firestore'; // Má»šI: ThÃªm doc, deleteDoc
+import Spinner from '../components/Spinner';
+import EditUserRoleModal from '../components/EditUserRoleModal';
+import AddUserModal from '../components/AddUserModal';
+import ConfirmationModal from '../components/ConfirmationModal'; // Má»šI
+import { useAuth } from '../context/UserContext';
+import { FiEdit, FiPlus, FiTrash2 } from 'react-icons/fi'; // Má»šI
+import { toast } from 'react-toastify'; // Má»šI
+
+const UsersPage = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user: currentUser } = useAuth();
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  // Má»šI: State cho modal xÃ¡c nháº­n xÃ³a
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
+
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const usersQuery = query(collection(db, "users"));
+      const querySnapshot = await getDocs(usersQuery);
+      
+      const usersList = querySnapshot.docs.map(doc => ({
+        uid: doc.id,
+        ...doc.data()
+      }));
+
+      setUsers(usersList);
+    } catch (error) {
+      console.error("Lá»—i khi táº£i danh sÃ¡ch user: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Má»šI: HÃ m xá»­ lÃ½ xÃ³a user
+  const handleDeleteUser = async () => {
+    const userToDelete = confirmModal.item;
+    if (!userToDelete) return;
+    
+    try {
+        const userRef = doc(db, 'users', userToDelete.uid);
+        await deleteDoc(userRef);
+        toast.success(`ÄÃ£ xÃ³a user ${userToDelete.uid} thÃ nh cÃ´ng.`);
+        fetchUsers(); // Táº£i láº¡i danh sÃ¡ch
+    } catch (error) {
+        console.error("Lá»—i khi xÃ³a user: ", error);
+        toast.error("ÄÃ£ xáº£y ra lá»—i khi xÃ³a user.");
+    } finally {
+        setConfirmModal({ isOpen: false, item: null }); // ÄÃ³ng modal sau khi xá»­ lÃ½
+    }
+  };
+
+  // Má»šI: HÃ m má»Ÿ modal xÃ¡c nháº­n xÃ³a
+  const promptForDelete = (user) => {
+    setConfirmModal({
+        isOpen: true,
+        item: user,
+        title: "XÃ¡c nháº­n xÃ³a User?",
+        message: `Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a user cÃ³ UID: ${user.uid}? Thao tÃ¡c nÃ y sáº½ thu há»“i má»i quyá»n cá»§a há».`,
+        onConfirm: handleDeleteUser,
+        confirmText: "Váº«n xÃ³a"
+    });
+  };
+
+  const openEditModal = (user) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleRoleUpdated = () => {
+    setIsEditModalOpen(false);
+    fetchUsers();
+  };
+
+  const handleUserAdded = () => {
+    setIsAddModalOpen(false);
+    fetchUsers();
+  }
+
+  if (loading) {
+    return <Spinner />;
+  }
+
+  return (
+    <div>
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+        confirmText={confirmModal.confirmText}
+      />
+
+      {isAddModalOpen && (
+        <AddUserModal 
+            onClose={() => setIsAddModalOpen(false)}
+            onUserAdded={handleUserAdded}
+        />
+      )}
+
+      {isEditModalOpen && (
+        <EditUserRoleModal 
+            user={selectedUser}
+            onClose={() => setIsEditModalOpen(false)}
+            onRoleUpdated={handleRoleUpdated}
+        />
+      )}
+
+      <div className="page-header">
+        <h1>Quáº£n lÃ½ User vÃ  PhÃ¢n quyá»n</h1>
+        <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
+            <FiPlus style={{ marginRight: '5px' }} />
+            ThÃªm User
+        </button>
+      </div>
+      
+      <table className="products-table">
+        <thead>
+          <tr>
+            <th>User ID (UID)</th>
+            <th>Vai trÃ² (Role)</th>
+            <th>Thao tÃ¡c</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.length > 0 ? (
+            users.map(user => (
+              <tr key={user.uid}>
+                <td>{user.uid}</td>
+                <td>
+                  <span className={`status-badge ${user.role === 'owner' ? 'status-completed' : 'status-pending'}`}>
+                    {user.role}
+                  </span>
+                </td>
+                <td>
+                  <div className="action-buttons">
+                    <button 
+                      className="btn-icon btn-edit" 
+                      title="Sá»­a vai trÃ²"
+                      onClick={() => openEditModal(user)}
+                      disabled={user.uid === currentUser.uid}
+                    >
+                      <FiEdit />
+                    </button>
+                    {/* Má»šI: ThÃªm nÃºt xÃ³a */}
+                    <button 
+                      className="btn-icon btn-delete" 
+                      title="XÃ³a User"
+                      onClick={() => promptForDelete(user)}
+                      disabled={user.uid === currentUser.uid}
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="3" style={{ textAlign: 'center' }}>KhÃ´ng tÃ¬m tháº¥y user nÃ o.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default UsersPage;
 
 
 

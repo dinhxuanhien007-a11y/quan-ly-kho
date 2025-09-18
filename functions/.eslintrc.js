@@ -1,28 +1,23 @@
+// functions/.eslintrc.js
+
 module.exports = {
+  root: true,
   env: {
-    es6: true,
+    es2021: true,
     node: true,
-  },
-  parserOptions: {
-    "ecmaVersion": 2018,
   },
   extends: [
     "eslint:recommended",
     "google",
   ],
-  rules: {
-    "no-restricted-globals": ["error", "name", "length"],
-    "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+  parserOptions: {
+    // Quan trọng: Báo cho ESLint biết chúng ta đang dùng CommonJS
+    sourceType: "commonjs",
   },
-  overrides: [
-    {
-      files: ["**/*.spec.*"],
-      env: {
-        mocha: true,
-      },
-      rules: {},
-    },
-  ],
-  globals: {},
+  rules: {
+    quotes: ["error", "double"],
+    // Tạm thời tắt một vài quy tắc không cần thiết để tránh báo lỗi linh tinh
+    "require-jsdoc": 0, 
+    "valid-jsdoc": 0,
+  },
 };

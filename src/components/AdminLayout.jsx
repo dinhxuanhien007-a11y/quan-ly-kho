@@ -17,6 +17,7 @@ import LotTracePage from '../pages/LotTracePage';
 import DataImportPage from '../pages/DataImportPage';
 import ExportSlipCounter from './ExportSlipCounter';
 import ImportSlipCounter from './ImportSlipCounter'; // <-- Import counter mới
+import UsersPage from '../pages/UsersPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -41,6 +42,7 @@ const AdminLayout = () => {
           <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} />
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
+          <Route path="/users" element={<UsersPage />} />
         </Routes>
       </main>
     </div>

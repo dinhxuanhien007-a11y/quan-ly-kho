@@ -10,10 +10,10 @@ import {
     FiFileText, 
     FiShare2, 
     FiCheckSquare,
-    FiTool, 
     FiUsers,
     FiBookOpen,
     FiUpload,
+    FiSettings // MỚI: Thêm icon cho trang quản lý user
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
@@ -40,7 +40,15 @@ const Navbar = () => {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/partners" title="Quản lý Đối tác"><FiUsers className="nav-icon" /></NavLink>
+          <NavLink to="/partners" title="Quản lý Đối tác">
+            <FiUsers className="nav-icon" />
+          </NavLink>
+        </li>
+        {/* MỚI: Thêm mục menu Quản lý User */}
+        <li>
+          <NavLink to="/users" title="Quản lý User">
+            <FiSettings className="nav-icon" />
+          </NavLink>
         </li>
         <li>
           <NavLink to="/new-import" title="Tạo Phiếu Nhập">
