@@ -1,0 +1,83 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- CÁC HÀM HELPER ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Lấy vai trò của người dùng từ custom claims
+    function getRole() {
+      return request.auth.token.role;
+    }
+
+    // Kiểm tra quyền ghi chung (admin hoặc owner)
+    function canWrite() {
+      return isSignedIn() && (getRole() == 'owner' || getRole() == 'admin');
+    }
+
+    // --- QUY TẮC CHO TỪNG COLLECTION ---
+
+    // Collection: users
+    match /users/{userId} {
+      allow read: if getRole() == 'owner' || (isSignedIn() && request.auth.uid == userId);
+      allow write: if getRole() == 'owner';
+    }
+
+    // Collection: products (Hàng hóa)
+    match /products/{productId} {
+      allow read: if isSignedIn();
+      allow write: if canWrite();
+    }
+
+    // Collection: partners (Đối tác)
+    match /partners/{partnerId} {
+      allow read: if isSignedIn();
+      allow write: if canWrite();
+    }
+    
+    // Collection: inventory_lots (Tồn kho chi tiết)
+    match /inventory_lots/{lotId} {
+      allow write: if canWrite();
+      allow read: if (getRole() == 'owner' || getRole() == 'admin') ||
+                      (getRole() == 'med' && resource.data.team == 'MED') ||
+                      (getRole() == 'bio' && resource.data.team in ['BIO', 'Spare Part']);
+    }
+    
+    // Collection: product_summaries (Tồn kho tổng hợp)
+    match /product_summaries/{summaryId} {
+      allow write: if false;
+      allow read: if (getRole() == 'owner' || getRole() == 'admin') ||
+                      (getRole() == 'med' && resource.data.team == 'MED') ||
+                      (getRole() == 'bio' && resource.data.team in ['BIO', 'Spare Part']);
+    }
+    
+    // Collection: import_tickets & export_tickets (Phiếu Nhập/Xuất)
+    match /import_tickets/{ticketId} {
+      allow read: if isSignedIn();
+      allow write: if canWrite();
+    }
+    match /export_tickets/{ticketId} {
+      allow read: if isSignedIn();
+      allow write: if canWrite();
+    }
+
+    // Collection: stocktakes (Kiểm kê)
+    match /stocktakes/{stocktakeId} {
+      allow read: if isSignedIn();
+      allow write: if canWrite();
+      
+      match /items/{itemId} {
+        allow read: if isSignedIn();
+        allow write: if canWrite();
+      }
+    }
+
+    // Collection: inventory_adjustments (Lịch sử điều chỉnh)
+    match /inventory_adjustments/{adjustmentId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

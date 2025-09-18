@@ -50,29 +50,46 @@ const InventorySummaryPage = () => {
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            let q = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
-       
-             if (activeFilter.type === 'team') {
-                q = query(q, where("team", "==", activeFilter.value));
-            } else if (activeFilter.type === 'near_expiry') {
+            // Bước 1: Xây dựng câu truy vấn gốc (baseQuery) một cách linh hoạt
+            let baseQuery;
+
+            if (activeFilter.type === 'near_expiry') {
                 const today = Timestamp.now();
                 const futureDate = new Date();
-                 futureDate.setDate(futureDate.getDate() + 120);
+                futureDate.setDate(futureDate.getDate() + 120);
                 const futureTimestamp = Timestamp.fromDate(futureDate);
-                q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp), orderBy("nearestExpiryDate", "asc"));
+                baseQuery = query(
+                    collection(db, "product_summaries"),
+                    where("nearestExpiryDate", ">=", today),
+                    where("nearestExpiryDate", "<=", futureTimestamp),
+                    orderBy("nearestExpiryDate", "asc")
+                );
             } else if (activeFilter.type === 'expired') {
                 const today = Timestamp.now();
-                q = query(q, where("nearestExpiryDate", "<", today), orderBy("nearestExpiryDate", "asc"));
+                baseQuery = query(
+                    collection(db, "product_summaries"),
+                    where("nearestExpiryDate", "<", today),
+                    orderBy("nearestExpiryDate", "asc")
+                );
+            } else {
+                baseQuery = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
+                if (activeFilter.type === 'team') {
+                    baseQuery = query(baseQuery, where("team", "==", activeFilter.value));
+                }
             }
+            
+            // Bước 2: Áp dụng logic phân trang vào câu truy vấn gốc
+            let paginatedQuery = baseQuery;
 
             if (direction === 'next' && cursor) {
-                q = query(q, startAfter(cursor), limit(PAGE_SIZE));
+                paginatedQuery = query(paginatedQuery, startAfter(cursor), limit(PAGE_SIZE));
             } else {
-                q = query(q, limit(PAGE_SIZE));
+                paginatedQuery = query(paginatedQuery, limit(PAGE_SIZE));
                 if (direction === 'first') setPage(1);
             }
 
-            const docSnapshots = await getDocs(q);
+            // Bước 3: Thực thi câu truy vấn cuối cùng
+            const docSnapshots = await getDocs(paginatedQuery);
             const summaryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
             setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1] || null);
@@ -80,6 +97,7 @@ const InventorySummaryPage = () => {
             setSummaries(summaryList);
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu tổng hợp: ", error);
+            toast.error("Đã xảy ra lỗi khi tải dữ liệu.");
         } finally {
             setLoading(false);
         }

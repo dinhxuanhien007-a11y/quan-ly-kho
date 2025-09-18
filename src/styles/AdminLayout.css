@@ -964,3 +964,31 @@ tbody tr.selected-row td {
   background-color: #fbebee;
   border-radius: 4px;
 }
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Thêm vào cuối tệp src/styles/AdminLayout.css */
+
+.btn-danger {
+  background-color: #dc3545; /* Màu đỏ */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn-danger:hover {
+  opacity: 0.9;
+}

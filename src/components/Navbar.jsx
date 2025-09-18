@@ -1,6 +1,9 @@
 // src/components/Navbar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { toast } from 'react-toastify';
 import { 
     FiGrid, 
     FiArchive, 
@@ -13,11 +16,23 @@ import {
     FiUsers,
     FiBookOpen,
     FiUpload,
-    FiSettings // MỚI: Thêm icon cho trang quản lý user
+    FiSettings, // MỚI: Thêm icon cho trang quản lý user
+    FiLogOut
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
 const Navbar = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast.success('Đăng xuất thành công!');
+      // Trang sẽ tự động chuyển về màn hình login do logic trong App.jsx
+    } catch (error) {
+      toast.error('Đã xảy ra lỗi khi đăng xuất.');
+      console.error("Lỗi đăng xuất:", error);
+    }
+  };
+
   return (
     <nav className="top-navbar">
       <div className="navbar-brand">
@@ -84,6 +99,11 @@ const Navbar = () => {
           <NavLink to="/import-data" title="Import Dữ Liệu">
             <FiUpload className="nav-icon" />
           </NavLink>
+        </li>
+        <li>
+          <a href="#" onClick={handleLogout} title="Đăng xuất">
+            <FiLogOut className="nav-icon" />
+          </a>
         </li>
       </ul>
     </nav>

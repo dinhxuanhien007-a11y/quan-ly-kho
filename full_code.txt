@@ -844,18 +844,32 @@ export default AdminLayout;
 
 
 // src/components/ConfirmationModal.jsx
-import React from 'react'; // <-- ThÃªm import React
+import React from 'react';
 import { FiAlertTriangle } from 'react-icons/fi';
 
-const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = 'XÃ¡c nháº­n', cancelText = 'Há»§y' }) => {
+const ConfirmationModal = ({ 
+    isOpen, 
+    title, 
+    message, 
+    onConfirm, 
+    onCancel, 
+    confirmText = 'XÃ¡c nháº­n', 
+    cancelText = 'Há»§y',
+    confirmButtonType = 'primary'
+}) => {
     if (!isOpen) return null;
+
+    // Ghi log Ä‘á»ƒ kiá»ƒm tra xem hÃ m onConfirm cÃ³ Ä‘Æ°á»£c truyá»n Ä‘Ãºng cÃ¡ch khÃ´ng
+    console.log('ConfirmationModal Ä‘ang render. HÃ m onConfirm lÃ :', onConfirm);
+
+    const confirmClassName = `btn-${confirmButtonType}`;
 
     return (
         <div className="modal-backdrop">
             <div className="modal-content" style={{ width: '450px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ color: '#f59e0b', fontSize: '32px' }}>
-                         <FiAlertTriangle />
+                          <FiAlertTriangle />
                     </div>
                     <div>
                         <h2 style={{ marginTop: 0, marginBottom: '10px' }}>{title}</h2>
@@ -864,14 +878,15 @@ const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confir
                 </div>
                 <div className="modal-actions" style={{ marginTop: '25px' }}>
                     <button type="button" onClick={onCancel} className="btn-secondary">{cancelText}</button>
-                    <button type="button" onClick={onConfirm} className="btn-primary" style={{ backgroundColor: '#dc3545' }}>{confirmText}</button>
+                    <button type="button" onClick={onConfirm} className={confirmClassName}>
+                        {confirmText}
+                    </button>
                 </div>
             </div>
         </div>
     );
 };
 
-// <-- Bá»ŒC COMPONENT TRONG React.memo Äá»‚ Tá»I Æ¯U HIá»†U NÄ‚NG -->
 export default React.memo(ConfirmationModal);
 
 
@@ -1544,33 +1559,21 @@ export default EditProductModal;
 // src/components/EditUserRoleModal.jsx
 
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 const EditUserRoleModal = ({ user, onClose, onRoleUpdated }) => {
-  // State Ä‘á»ƒ lÆ°u vai trÃ² má»›i Ä‘Æ°á»£c chá»n trong dropdown
   const [newRole, setNewRole] = useState(user.role);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (newRole === user.role) {
-      onClose(); // Náº¿u khÃ´ng cÃ³ gÃ¬ thay Ä‘á»•i thÃ¬ chá»‰ cáº§n Ä‘Ã³ng láº¡i
+      onClose();
       return;
     }
     setIsSaving(true);
-    try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        role: newRole
-      });
-      toast.success(`Cáº­p nháº­t vai trÃ² cho user ${user.uid} thÃ nh cÃ´ng!`);
-      onRoleUpdated(); // Gá»i hÃ m callback Ä‘á»ƒ táº£i láº¡i danh sÃ¡ch vÃ  Ä‘Ã³ng modal
-    } catch (error) {
-      console.error("Lá»—i khi cáº­p nháº­t vai trÃ²: ", error);
-      toast.error("ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t vai trÃ².");
-      setIsSaving(false);
-    }
+    // Gá»i hÃ m callback tá»« UsersPage Ä‘á»ƒ xá»­ lÃ½ cáº­p nháº­t role
+    await onRoleUpdated(user.uid, newRole);
+    setIsSaving(false);
   };
 
   return (
@@ -1591,7 +1594,6 @@ const EditUserRoleModal = ({ user, onClose, onRoleUpdated }) => {
                 <option value="admin">admin</option>
                 <option value="med">med</option>
                 <option value="bio">bio</option>
-                {/* KhÃ´ng cho phÃ©p Ä‘á»•i vai trÃ² thÃ nh 'owner' trá»±c tiáº¿p tá»« giao diá»‡n */}
             </select>
         </div>
 
@@ -2094,6 +2096,9 @@ export default LotJourneyExplorer;
 // src/components/Navbar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { toast } from 'react-toastify';
 import { 
     FiGrid, 
     FiArchive, 
@@ -2106,11 +2111,23 @@ import {
     FiUsers,
     FiBookOpen,
     FiUpload,
-    FiSettings // Má»šI: ThÃªm icon cho trang quáº£n lÃ½ user
+    FiSettings, // Má»šI: ThÃªm icon cho trang quáº£n lÃ½ user
+    FiLogOut
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
 const Navbar = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast.success('ÄÄƒng xuáº¥t thÃ nh cÃ´ng!');
+      // Trang sáº½ tá»± Ä‘á»™ng chuyá»ƒn vá» mÃ n hÃ¬nh login do logic trong App.jsx
+    } catch (error) {
+      toast.error('ÄÃ£ xáº£y ra lá»—i khi Ä‘Äƒng xuáº¥t.');
+      console.error("Lá»—i Ä‘Äƒng xuáº¥t:", error);
+    }
+  };
+
   return (
     <nav className="top-navbar">
       <div className="navbar-brand">
@@ -2177,6 +2194,11 @@ const Navbar = () => {
           <NavLink to="/import-data" title="Import Dá»¯ Liá»‡u">
             <FiUpload className="nav-icon" />
           </NavLink>
+        </li>
+        <li>
+          <a href="#" onClick={handleLogout} title="ÄÄƒng xuáº¥t">
+            <FiLogOut className="nav-icon" />
+          </a>
         </li>
       </ul>
     </nav>
@@ -2521,17 +2543,37 @@ export default React.memo(TempBadge);
 
 
 // src/components/ViewerLayout.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
-import { useAuth } from '../context/UserContext'; // <-- THÃŠM IMPORT
+import { useAuth } from '../context/UserContext';
 
-const ViewerLayout = () => { // <-- XÃ“A PROPS
-  const { userRole } = useAuth(); // <-- Láº¤Y Dá»® LIá»†U Tá»ª CONTEXT
-
+const ViewerLayout = () => {
+  const { userRole } = useAuth();
   const canViewDetail = userRole === 'admin' || userRole === 'owner';
   const [viewMode, setViewMode] = useState('summary');
+
+  // TÃ­nh toÃ¡n tiÃªu Ä‘á» Ä‘á»™ng
+  const pageTitle = useMemo(() => {
+    switch (userRole) {
+      case 'med':
+        return 'PT Biomed - Team MED';
+      case 'bio':
+        return 'PT Biomed - Team BIO';
+      case 'admin':
+        return viewMode === 'summary' ? 'PT Biomed - Admin' : 'PT Biomed - Inventory';
+      case 'owner':
+        return 'Kho PT Biomed';
+      default:
+        return 'Xem Tá»“n Kho';
+    }
+  }, [userRole, viewMode]);
+
+  // Cáº­p nháº­t tiÃªu Ä‘á» tab trÃ¬nh duyá»‡t
+  useEffect(() => {
+    document.title = pageTitle;
+  }, [pageTitle]);
   
   useEffect(() => {
     if (!canViewDetail) {
@@ -2549,7 +2591,12 @@ const ViewerLayout = () => { // <-- XÃ“A PROPS
         </div>
       )}
 
-      {(canViewDetail) ? (
+      {/* Hiá»ƒn thá»‹ tiÃªu Ä‘á» trÃªn trang */}
+      <div className="page-header" style={{ marginBottom: '20px' }}>
+        <h1>{pageTitle}</h1>
+      </div>
+
+      {(canViewDetail) && (
         <div className="view-toggle" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
           <button 
             onClick={() => setViewMode('summary')}
@@ -2566,14 +2613,12 @@ const ViewerLayout = () => { // <-- XÃ“A PROPS
             Xem Chi Tiáº¿t
           </button>
         </div>
-      ) : (
-        null 
       )}
 
       {(viewMode === 'detail' && canViewDetail) ? (
-        <InventoryPage /> // <-- XÃ“A PROPS
+        <InventoryPage />
       ) : (
-        <InventorySummaryPage /> // <-- XÃ“A PROPS
+        <InventorySummaryPage />
       )}
     </div>
   );
@@ -4130,29 +4175,46 @@ const InventorySummaryPage = () => {
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            let q = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
-       
-             if (activeFilter.type === 'team') {
-                q = query(q, where("team", "==", activeFilter.value));
-            } else if (activeFilter.type === 'near_expiry') {
+            // BÆ°á»›c 1: XÃ¢y dá»±ng cÃ¢u truy váº¥n gá»‘c (baseQuery) má»™t cÃ¡ch linh hoáº¡t
+            let baseQuery;
+
+            if (activeFilter.type === 'near_expiry') {
                 const today = Timestamp.now();
                 const futureDate = new Date();
-                 futureDate.setDate(futureDate.getDate() + 120);
+                futureDate.setDate(futureDate.getDate() + 120);
                 const futureTimestamp = Timestamp.fromDate(futureDate);
-                q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp), orderBy("nearestExpiryDate", "asc"));
+                baseQuery = query(
+                    collection(db, "product_summaries"),
+                    where("nearestExpiryDate", ">=", today),
+                    where("nearestExpiryDate", "<=", futureTimestamp),
+                    orderBy("nearestExpiryDate", "asc")
+                );
             } else if (activeFilter.type === 'expired') {
                 const today = Timestamp.now();
-                q = query(q, where("nearestExpiryDate", "<", today), orderBy("nearestExpiryDate", "asc"));
+                baseQuery = query(
+                    collection(db, "product_summaries"),
+                    where("nearestExpiryDate", "<", today),
+                    orderBy("nearestExpiryDate", "asc")
+                );
+            } else {
+                baseQuery = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
+                if (activeFilter.type === 'team') {
+                    baseQuery = query(baseQuery, where("team", "==", activeFilter.value));
+                }
             }
+            
+            // BÆ°á»›c 2: Ãp dá»¥ng logic phÃ¢n trang vÃ o cÃ¢u truy váº¥n gá»‘c
+            let paginatedQuery = baseQuery;
 
             if (direction === 'next' && cursor) {
-                q = query(q, startAfter(cursor), limit(PAGE_SIZE));
+                paginatedQuery = query(paginatedQuery, startAfter(cursor), limit(PAGE_SIZE));
             } else {
-                q = query(q, limit(PAGE_SIZE));
+                paginatedQuery = query(paginatedQuery, limit(PAGE_SIZE));
                 if (direction === 'first') setPage(1);
             }
 
-            const docSnapshots = await getDocs(q);
+            // BÆ°á»›c 3: Thá»±c thi cÃ¢u truy váº¥n cuá»‘i cÃ¹ng
+            const docSnapshots = await getDocs(paginatedQuery);
             const summaryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
             setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1] || null);
@@ -4160,6 +4222,7 @@ const InventorySummaryPage = () => {
             setSummaries(summaryList);
         } catch (error) {
             console.error("Lá»—i khi táº£i dá»¯ liá»‡u tá»•ng há»£p: ", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi táº£i dá»¯ liá»‡u.");
         } finally {
             setLoading(false);
         }
@@ -6054,6 +6117,126 @@ describe('Page: ProductsPage', () => {
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\SetupPasswordPage.jsx ---
+
+
+// src/pages/SetupPasswordPage.jsx
+
+import React, { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+// BÆ¯á»šC 1: ThÃªm 'signInWithEmailAndPassword' vÃ o
+import { confirmPasswordReset, verifyPasswordResetCode, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { toast } from 'react-toastify';
+import { z } from 'zod';
+import styles from '../components/LoginPage.module.css';
+
+const passwordSchema = z.object({
+  password: z.string().min(6, { message: "Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±." }),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Máº­t kháº©u xÃ¡c nháº­n khÃ´ng khá»›p.",
+  path: ["confirmPassword"],
+});
+
+const SetupPasswordPage = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const oobCode = searchParams.get('oobCode');
+
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSetting, setIsSetting] = useState(false);
+  const [email, setEmail] = useState('');
+
+  React.useEffect(() => {
+    if (!oobCode) {
+      toast.error("ÄÆ°á»ng dáº«n khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n.");
+      navigate('/');
+      return;
+    }
+    verifyPasswordResetCode(auth, oobCode)
+      .then(userEmail => {
+        setEmail(userEmail);
+      })
+      .catch(() => {
+        toast.error("ÄÆ°á»ng dáº«n khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n.");
+        navigate('/');
+      });
+  }, [oobCode, navigate]);
+
+  // BÆ¯á»šC 2: Cáº­p nháº­t láº¡i toÃ n bá»™ hÃ m handleSubmit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationResult = passwordSchema.safeParse({ password, confirmPassword });
+
+    if (!validationResult.success) {
+      toast.warn(validationResult.error.issues[0].message);
+      return;
+    }
+    
+    setIsSetting(true);
+    try {
+      // TÃ¡c vá»¥ 1: Thiáº¿t láº­p máº­t kháº©u má»›i cho ngÆ°á»i dÃ¹ng
+      await confirmPasswordReset(auth, oobCode, password);
+      toast.info('Máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c thiáº¿t láº­p. Äang tá»± Ä‘á»™ng Ä‘Äƒng nháº­p...');
+
+      // TÃ¡c vá»¥ 2: Tá»± Ä‘á»™ng Ä‘Äƒng nháº­p báº±ng email vÃ  máº­t kháº©u vá»«a táº¡o
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success('ÄÄƒng nháº­p thÃ nh cÃ´ng!');
+      
+      // TÃ¡c vá»¥ 3: Äiá»u hÆ°á»›ng vá» trang chá»§. LÃºc nÃ y ngÆ°á»i dÃ¹ng Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c.
+      navigate('/');
+    } catch (error) {
+      toast.error('ÄÃ£ xáº£y ra lá»—i. Vui lÃ²ng thá»­ láº¡i hoáº·c quay láº¡i trang Ä‘Äƒng nháº­p.');
+      console.error(error);
+    } finally {
+      setIsSetting(false);
+    }
+  };
+
+  if (!email) {
+    return <div>Äang xÃ¡c thá»±c...</div>;
+  }
+
+  return (
+    <div className={styles.loginPageWrapper}>
+        <div className={styles.loginContainer}>
+        <h2>Thiáº¿t Láº­p Máº­t Kháº©u</h2>
+        <p style={{textAlign: 'center', marginBottom: '20px'}}>ChÃ o má»«ng <strong>{email}</strong>!</p>
+        <form onSubmit={handleSubmit}>
+            <div className="form-group">
+                <label>Máº­t kháº©u má»›i</label>
+                <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoFocus
+                />
+            </div>
+            <div className="form-group">
+                <label>XÃ¡c nháº­n máº­t kháº©u má»›i</label>
+                <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                />
+            </div>
+            <button type="submit" disabled={isSetting}>
+                {isSetting ? 'Äang xá»­ lÃ½...' : 'LÆ°u vÃ  ÄÄƒng nháº­p'}
+            </button>
+        </form>
+        </div>
+    </div>
+  );
+};
+
+export default SetupPasswordPage;
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
@@ -6738,14 +6921,15 @@ export default StocktakeSessionPage;
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, doc, deleteDoc } from 'firebase/firestore'; // Má»šI: ThÃªm doc, deleteDoc
+import { collection, getDocs, query } from 'firebase/firestore'; 
 import Spinner from '../components/Spinner';
 import EditUserRoleModal from '../components/EditUserRoleModal';
 import AddUserModal from '../components/AddUserModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // Má»šI
+import ConfirmationModal from '../components/ConfirmationModal'; 
 import { useAuth } from '../context/UserContext';
-import { FiEdit, FiPlus, FiTrash2 } from 'react-icons/fi'; // Má»šI
-import { toast } from 'react-toastify'; // Má»šI
+import { FiEdit, FiPlus, FiTrash2, FiRefreshCw } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -6755,25 +6939,23 @@ const UsersPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isBackfilling, setIsBackfilling] = useState(false);
   
-  // Má»šI: State cho modal xÃ¡c nháº­n xÃ³a
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const usersQuery = query(collection(db, "users"));
       const querySnapshot = await getDocs(usersQuery);
-      
       const usersList = querySnapshot.docs.map(doc => ({
         uid: doc.id,
         ...doc.data()
       }));
-
       setUsers(usersList);
     } catch (error) {
       console.error("Lá»—i khi táº£i danh sÃ¡ch user: ", error);
+      toast.error("KhÃ´ng cÃ³ quyá»n truy cáº­p danh sÃ¡ch ngÆ°á»i dÃ¹ng.");
     } finally {
       setLoading(false);
     }
@@ -6783,33 +6965,64 @@ const UsersPage = () => {
     fetchUsers();
   }, []);
 
-  // Má»šI: HÃ m xá»­ lÃ½ xÃ³a user
-  const handleDeleteUser = async () => {
-    const userToDelete = confirmModal.item;
-    if (!userToDelete) return;
-    
+  const handleBackfillEmails = async () => {
+    setIsBackfilling(true);
+    toast.info("Äang báº¯t Ä‘áº§u quÃ¡ trÃ¬nh Ä‘á»“ng bá»™ email...");
     try {
-        const userRef = doc(db, 'users', userToDelete.uid);
-        await deleteDoc(userRef);
-        toast.success(`ÄÃ£ xÃ³a user ${userToDelete.uid} thÃ nh cÃ´ng.`);
-        fetchUsers(); // Táº£i láº¡i danh sÃ¡ch
+      const backfillCallable = httpsCallable(getFunctions(), 'backfillUserEmails');
+      const result = await backfillCallable();
+      toast.success(result.data.message);
+      fetchUsers();
     } catch (error) {
-        console.error("Lá»—i khi xÃ³a user: ", error);
-        toast.error("ÄÃ£ xáº£y ra lá»—i khi xÃ³a user.");
+      console.error("Lá»—i khi cháº¡y backfill:", error);
+      toast.error(error.message);
     } finally {
-        setConfirmModal({ isOpen: false, item: null }); // ÄÃ³ng modal sau khi xá»­ lÃ½
+      setIsBackfilling(false);
     }
   };
 
-  // Má»šI: HÃ m má»Ÿ modal xÃ¡c nháº­n xÃ³a
+  const updateRoleOnBackend = async (uid, role) => {
+    try {
+      const setRoleCallable = httpsCallable(getFunctions(), 'setRole');
+      const result = await setRoleCallable({ uid, role });
+      toast.success(result.data.message);
+      return true;
+    } catch (error) {
+      console.error("Lá»—i khi cáº­p nháº­t vai trÃ² qua Cloud Function:", error);
+      toast.error(error.message);
+      return false;
+    }
+  };
+
+  const handleDeleteUser = async (userToDelete) => {
+    if (!userToDelete) return;
+
+    setConfirmModal({ isOpen: false });
+    toast.info(`Äang xÃ³a user ${userToDelete.email}...`);
+
+    try {
+        const deleteUserCallable = httpsCallable(getFunctions(), 'deleteUser');
+        await deleteUserCallable({ uid: userToDelete.uid });
+        toast.success("ÄÃ£ xÃ³a user thÃ nh cÃ´ng khá»i toÃ n bá»™ há»‡ thá»‘ng!");
+        fetchUsers(); // Táº£i láº¡i danh sÃ¡ch sau khi xÃ³a
+    } catch (error) {
+        console.error("Lá»—i khi xÃ³a user qua Cloud Function:", error);
+        toast.error(error.message);
+    }
+  };
+
   const promptForDelete = (user) => {
+    if (user.uid === currentUser.uid) {
+        toast.warn("KhÃ´ng thá»ƒ xÃ³a tÃ i khoáº£n cá»§a chÃ­nh báº¡n.");
+        return;
+    }
     setConfirmModal({
         isOpen: true,
-        item: user,
         title: "XÃ¡c nháº­n xÃ³a User?",
-        message: `Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a user cÃ³ UID: ${user.uid}? Thao tÃ¡c nÃ y sáº½ thu há»“i má»i quyá»n cá»§a há».`,
-        onConfirm: handleDeleteUser,
-        confirmText: "Váº«n xÃ³a"
+        message: `HÃ nh Ä‘á»™ng nÃ y sáº½ xÃ³a vÄ©nh viá»…n tÃ i khoáº£n ${user.email} khá»i há»‡ thá»‘ng. Báº¡n cÃ³ cháº¯c cháº¯n khÃ´ng?`,
+        onConfirm: () => handleDeleteUser(user), // Sá»­a á»Ÿ Ä‘Ã¢y: Truyá»n tháº³ng user vÃ o hÃ m
+        confirmText: "Váº«n xÃ³a",
+        confirmButtonType: 'danger'
     });
   };
 
@@ -6818,15 +7031,18 @@ const UsersPage = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleRoleUpdated = () => {
-    setIsEditModalOpen(false);
-    fetchUsers();
+  const handleRoleUpdated = async (uid, newRole) => {
+    const success = await updateRoleOnBackend(uid, newRole);
+    if (success) {
+      setIsEditModalOpen(false);
+      fetchUsers();
+    }
   };
 
   const handleUserAdded = () => {
     setIsAddModalOpen(false);
     fetchUsers();
-  }
+  };
 
   if (loading) {
     return <Spinner />;
@@ -6839,8 +7055,9 @@ const UsersPage = () => {
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal({ isOpen: false, item: null })}
+        onCancel={() => setConfirmModal({ isOpen: false })}
         confirmText={confirmModal.confirmText}
+        confirmButtonType={confirmModal.confirmButtonType}
       />
 
       {isAddModalOpen && (
@@ -6860,15 +7077,22 @@ const UsersPage = () => {
 
       <div className="page-header">
         <h1>Quáº£n lÃ½ User vÃ  PhÃ¢n quyá»n</h1>
-        <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
-            <FiPlus style={{ marginRight: '5px' }} />
-            ThÃªm User
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={handleBackfillEmails} className="btn-secondary" disabled={isBackfilling}>
+                <FiRefreshCw style={{ marginRight: '5px' }} className={isBackfilling ? 'spin-animation' : ''} />
+                {isBackfilling ? 'Äang Ä‘á»“ng bá»™...' : 'Äá»“ng bá»™ Email'}
+            </button>
+            <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
+                <FiPlus style={{ marginRight: '5px' }} />
+                ThÃªm User
+            </button>
+        </div>
       </div>
       
       <table className="products-table">
         <thead>
           <tr>
+            <th>Email</th> 
             <th>User ID (UID)</th>
             <th>Vai trÃ² (Role)</th>
             <th>Thao tÃ¡c</th>
@@ -6878,9 +7102,10 @@ const UsersPage = () => {
           {users.length > 0 ? (
             users.map(user => (
               <tr key={user.uid}>
+                <td><strong>{user.email || '(ChÆ°a cÃ³, hÃ£y Ä‘á»“ng bá»™)'}</strong></td>
                 <td>{user.uid}</td>
                 <td>
-                  <span className={`status-badge ${user.role === 'owner' ? 'status-completed' : 'status-pending'}`}>
+                  <span className={`status-badge ${user.role === 'owner' ? 'status-completed' : (user.role === 'admin' ? 'status-pending' : 'status-cancelled')}`}>
                     {user.role}
                   </span>
                 </td>
@@ -6890,16 +7115,15 @@ const UsersPage = () => {
                       className="btn-icon btn-edit" 
                       title="Sá»­a vai trÃ²"
                       onClick={() => openEditModal(user)}
-                      disabled={user.uid === currentUser.uid}
+                      disabled={user.role === 'owner'}
                     >
                       <FiEdit />
                     </button>
-                    {/* Má»šI: ThÃªm nÃºt xÃ³a */}
                     <button 
                       className="btn-icon btn-delete" 
                       title="XÃ³a User"
                       onClick={() => promptForDelete(user)}
-                      disabled={user.uid === currentUser.uid}
+                      disabled={user.role === 'owner'}
                     >
                       <FiTrash2 />
                     </button>
@@ -6909,7 +7133,7 @@ const UsersPage = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="3" style={{ textAlign: 'center' }}>KhÃ´ng tÃ¬m tháº¥y user nÃ o.</td>
+              <td colSpan="4" style={{ textAlign: 'center' }}>KhÃ´ng tÃ¬m tháº¥y user nÃ o.</td>
             </tr>
           )}
         </tbody>
@@ -8588,6 +8812,34 @@ tbody tr.selected-row td {
   border-radius: 4px;
 }
 
+/* ThÃªm vÃ o cuá»‘i file src/styles/AdminLayout.css */
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ThÃªm vÃ o cuá»‘i tá»‡p src/styles/AdminLayout.css */
+
+.btn-danger {
+  background-color: #dc3545; /* MÃ u Ä‘á» */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn-danger:hover {
+  opacity: 0.9;
+}
+
 
 
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\DashboardPage.module.css ---
@@ -9250,45 +9502,68 @@ describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
 // src/App.jsx
 
 import React from 'react';
-import LoginPage from './components/LoginPage';
-import AdminLayout from './components/AdminLayout';
-import ViewerLayout from './components/ViewerLayout';
-// import './App.css'; // KhÃ´ng cáº§n import App.css ná»¯a
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Import cÃ¡c trang vÃ  component cáº§n thiáº¿t
+import LoginPage from './components/LoginPage';
+import AdminLayout from './components/AdminLayout';
+import ViewerLayout from './components/ViewerLayout';
+import SetupPasswordPage from './pages/SetupPasswordPage';
 import { AuthProvider, useAuth } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
-
-// Import login styles Ä‘á»ƒ dÃ¹ng cho wrapper
 import loginStyles from './components/LoginPage.module.css';
+import Spinner from './components/Spinner';
 
+// Component con Ä‘á»ƒ render trang Login cÃ³ style bao bá»c
+const LoginPageWrapper = () => (
+  <div className={loginStyles.loginPageWrapper}>
+    <LoginPage />
+  </div>
+);
+
+// Component AppRoutes sáº½ quyáº¿t Ä‘á»‹nh hiá»ƒn thá»‹ luá»“ng nÃ o
 const AppRoutes = () => {
   const { user, userRole, loading } = useAuth();
+
+  // Trong khi chá» xÃ¡c thá»±c, hiá»ƒn thá»‹ spinner
   if (loading) {
-    return null; 
+    return <Spinner />;
   }
 
-  return (
-    <>
-      {user ? (
-        <Routes>
-          {userRole === 'owner' ? (
-            <Route path="/*" element={<AdminLayout />} />
-          ) : (
-            <Route path="/*" element={<Navigate to="/view" />} />
-          )}
-          <Route path="/view/*" element={<ViewerLayout />} />
-        </Routes>
-      ) : (
-        <div className={loginStyles.loginPageWrapper}>
-          <LoginPage />
-        </div>
-      )}
-    </>
-  );
+  // === LUá»’NG 1: Náº¾U USER CHÆ¯A ÄÄ‚NG NHáº¬P ===
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/setup-password" element={<SetupPasswordPage />} />
+        {/* Báº¥t ká»³ Ä‘Æ°á»ng dáº«n nÃ o khÃ¡c Ä‘á»u sáº½ hiá»ƒn thá»‹ trang Login */}
+        <Route path="/*" element={<LoginPageWrapper />} />
+      </Routes>
+    );
+  }
+
+  // === LUá»’NG 2: Náº¾U USER ÄÃƒ ÄÄ‚NG NHáº¬P ===
+  // PhÃ¢n quyá»n dá»±a trÃªn vai trÃ²
+  if (userRole === 'owner') {
+    return (
+      <Routes>
+        <Route path="/view/*" element={<ViewerLayout />} />
+        <Route path="/*" element={<AdminLayout />} />
+      </Routes>
+    );
+  } else { // DÃ nh cho cÃ¡c vai trÃ² khÃ¡c nhÆ° admin, med, bio
+    return (
+      <Routes>
+        <Route path="/view/*" element={<ViewerLayout />} />
+        {/* Báº¥t ká»³ Ä‘Æ°á»ng dáº«n nÃ o khÃ¡c Ä‘á»u sáº½ chuyá»ƒn hÆ°á»›ng vá» /view */}
+        <Route path="/*" element={<Navigate to="/view" />} />
+      </Routes>
+    );
+  }
 };
 
+// Component App chÃ­nh
 function App() {
   return (
     <BrowserRouter>

@@ -1,33 +1,21 @@
 // src/components/EditUserRoleModal.jsx
 
 import React, { useState } from 'react';
-import { db } from '../firebaseConfig';
-import { doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 const EditUserRoleModal = ({ user, onClose, onRoleUpdated }) => {
-  // State để lưu vai trò mới được chọn trong dropdown
   const [newRole, setNewRole] = useState(user.role);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (newRole === user.role) {
-      onClose(); // Nếu không có gì thay đổi thì chỉ cần đóng lại
+      onClose();
       return;
     }
     setIsSaving(true);
-    try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        role: newRole
-      });
-      toast.success(`Cập nhật vai trò cho user ${user.uid} thành công!`);
-      onRoleUpdated(); // Gọi hàm callback để tải lại danh sách và đóng modal
-    } catch (error) {
-      console.error("Lỗi khi cập nhật vai trò: ", error);
-      toast.error("Đã xảy ra lỗi khi cập nhật vai trò.");
-      setIsSaving(false);
-    }
+    // Gọi hàm callback từ UsersPage để xử lý cập nhật role
+    await onRoleUpdated(user.uid, newRole);
+    setIsSaving(false);
   };
 
   return (
@@ -48,7 +36,6 @@ const EditUserRoleModal = ({ user, onClose, onRoleUpdated }) => {
                 <option value="admin">admin</option>
                 <option value="med">med</option>
                 <option value="bio">bio</option>
-                {/* Không cho phép đổi vai trò thành 'owner' trực tiếp từ giao diện */}
             </select>
         </div>
 

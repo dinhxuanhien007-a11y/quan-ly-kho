@@ -1,46 +1,214 @@
-// functions/index.js
+// functions/index.js (Phiên bản hoàn chỉnh cho v2 - Đã sửa lỗi)
 
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+// --- Khai báo các thư viện cần thiết ---
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { logger } = require("firebase-functions");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
 
-admin.initializeApp();
+// --- Khởi tạo Firebase Admin SDK ---
+initializeApp();
+const db = getFirestore();
+const auth = getAuth();
 
-exports.inviteUser = functions.https.onCall(async (data, context) => {
-  // --- Bước 1: Kiểm tra bảo mật ---
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Bạn phải đăng nhập.");
-  }
-  const callerDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
-  if (callerDoc.data().role !== "owner") {
-    throw new functions.https.HttpsError("permission-denied", "Bạn không có quyền thực hiện thao tác này.");
-  }
-
-  // --- Bước 2: Kiểm tra dữ liệu đầu vào ---
-  const { email, role } = data;
-  if (!email || !role) {
-    throw new functions.https.HttpsError("invalid-argument", "Vui lòng cung cấp email và vai trò.");
-  }
-
-  // --- Bước 3: Thực hiện tạo User và Link ---
-  try {
-    const userRecord = await admin.auth().createUser({ email: email, emailVerified: false });
-    
-    await admin.firestore().collection("users").doc(userRecord.uid).set({ role: role });
-
-    // MỚI: Tạo link để người dùng tự đặt mật khẩu
-    const link = await admin.auth().generatePasswordResetLink(email);
-
-    // Trả về kết quả thành công KÈM THEO ĐƯỜNG LINK
-    return {
-      success: true,
-      message: `Đã tạo user ${email}. Vui lòng gửi link dưới đây cho họ để đặt mật khẩu.`,
-      link: link, // <-- Trả link về cho giao diện
-    };
-  } catch (error) {
-    console.error("Lỗi khi tạo user:", error);
-    if (error.uid) {
-        await admin.auth().deleteUser(error.uid);
+// ========================================================================
+// HÀM 1: MỜI USER MỚI
+// ========================================================================
+// Thay thế hàm inviteUser cũ bằng hàm này
+exports.inviteUser = onCall(async (request) => {
+    // Force update 19/09/2025
+    if (!request.auth || request.auth.token.owner !== true) {
+        throw new HttpsError('permission-denied', 'Chỉ có owner mới được quyền mời người dùng mới.');
     }
-    throw new functions.https.HttpsError("internal", "Đã có lỗi xảy ra: " + error.message);
+
+    const { email, role } = request.data;
+    if (!email || !role) {
+        throw new HttpsError('invalid-argument', 'Vui lòng cung cấp đủ email và vai trò.');
+    }
+
+    try {
+        const userRecord = await auth.createUser({ email, emailVerified: false });
+        await auth.setCustomUserClaims(userRecord.uid, { [role]: true });
+
+        await db.collection('users').doc(userRecord.uid).set({
+            role: role,
+            email: email 
+        });
+
+        // --- THAY ĐỔI Ở ĐÂY ---
+        // Tạo action link trỏ về trang setup-password của bạn
+        const actionCodeSettings = {
+            url: 'https://kho-ptbiomed.web.app/setup-password', // Sửa lại thành domain của bạn nếu khác
+            handleCodeInApp: true,
+        };
+        const link = await auth.generatePasswordResetLink(email, actionCodeSettings);
+        // --- KẾT THÚC THAY ĐỔI ---
+
+        return { success: true, link: link };
+
+    } catch (error) {
+        logger.error("Lỗi khi tạo user mới:", error);
+        if (error.code === 'auth/email-already-exists') {
+            throw new HttpsError('already-exists', 'Địa chỉ email này đã được sử dụng.');
+        }
+        throw new HttpsError('internal', 'Đã xảy ra lỗi phía server khi tạo user.');
+    }
+});
+
+
+// ========================================================================
+// HÀM 2: ĐẶT VAI TRÒ CHO USER (ĐÃ KÍCH HOẠT BẢO MẬT)
+// ========================================================================
+exports.setRole = onCall(async (request) => {
+    // *** SỬA LỖI BẢO MẬT: Đã kích hoạt lại bước kiểm tra quyền ***
+    if (!request.auth || request.auth.token.owner !== true) {
+        throw new HttpsError('permission-denied', 'Chỉ có owner mới được quyền thực hiện hành động này.');
+    }
+
+    const { uid, role } = request.data;
+    if (!uid || !role) {
+        throw new HttpsError('invalid-argument', 'Vui lòng cung cấp UID và vai trò.');
+    }
+
+    try {
+        await auth.setCustomUserClaims(uid, { [role]: true });
+        await db.collection('users').doc(uid).update({ role: role });
+
+        return { success: true, message: `Vai trò của user ${uid} đã được cập nhật thành ${role}` };
+    } catch (error) {
+        logger.error("Lỗi khi đặt vai trò:", error);
+        throw new HttpsError('internal', 'Đã xảy ra lỗi khi đặt vai trò.');
+    }
+});
+
+
+// ========================================================================
+// HÀM 3: TỰ ĐỘNG LƯU TRỮ DỮ LIỆU HÀNG THÁNG
+// ========================================================================
+exports.archiveMonthlyData = onSchedule("1 1 1 * *", async () => {
+  logger.info("Bắt đầu tác vụ chốt kỳ và lưu trữ hàng tháng.");
+
+  const now = new Date();
+  const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+  try {
+    await archiveCollection("import_tickets", startOfPreviousMonth, endOfPreviousMonth);
+    await archiveCollection("export_tickets", startOfPreviousMonth, endOfPreviousMonth);
+    logger.info("Tác vụ lưu trữ hàng tháng đã hoàn tất thành công!");
+    return null;
+  } catch (error) {
+    logger.error("Đã xảy ra lỗi nghiêm trọng trong quá trình lưu trữ:", error);
+    return null;
   }
 });
+
+// Hàm trợ giúp cho việc lưu trữ
+async function archiveCollection(sourceCollectionName, startDate, endDate) {
+  const archiveCollectionName = `${sourceCollectionName}_archive_${startDate.getFullYear()}_${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+  logger.info(`Bắt đầu lưu trữ collection: ${sourceCollectionName} cho kỳ từ ${startDate.toLocaleDateString()} đến ${endDate.toLocaleDateString()}`);
+  logger.info(`Dữ liệu sẽ được chuyển đến: ${archiveCollectionName}`);
+
+  const query = db.collection(sourceCollectionName)
+      .where("createdAt", ">=", startDate)
+      .where("createdAt", "<=", endDate)
+      .where("status", "in", ["completed", "cancelled"]);
+
+  const snapshot = await query.get();
+
+  if (snapshot.empty) {
+    logger.info(`Không tìm thấy tài liệu nào để lưu trữ trong ${sourceCollectionName}.`);
+    return;
+  }
+
+  logger.info(`Tìm thấy ${snapshot.size} tài liệu để di chuyển.`);
+  
+  const MAX_OPERATIONS_PER_BATCH = 499;
+  let batch = db.batch();
+  let operationCount = 0;
+
+  for (const doc of snapshot.docs) {
+    const docData = doc.data();
+    const archiveRef = db.collection(archiveCollectionName).doc(doc.id);
+    batch.set(archiveRef, docData);
+    batch.delete(doc.ref);
+    operationCount += 2;
+
+    if (operationCount >= MAX_OPERATIONS_PER_BATCH) {
+      await batch.commit();
+      logger.info(`Đã thực thi một lô ${operationCount} thao tác.`);
+      batch = db.batch();
+      operationCount = 0;
+    }
+  }
+
+  if (operationCount > 0) {
+    await batch.commit();
+    logger.info(`Đã thực thi lô cuối cùng với ${operationCount} thao tác.`);
+  }
+
+  logger.info(`Hoàn tất lưu trữ cho ${sourceCollectionName}.`);
+}
+
+
+// ========================================================================
+// HÀM 4: CẬP NHẬT EMAIL CHO CÁC USER ĐÃ CÓ (CHẠY THỦ CÔNG)
+// ========================================================================
+exports.backfillUserEmails = onCall({ enforceAppCheck: false }, async (request) => {
+    logger.info("Bắt đầu backfill email cho user...");
+    
+    try {
+        const listUsersResult = await auth.listUsers(1000);
+        const batch = db.batch();
+        let count = 0;
+
+        for (const userRecord of listUsersResult.users) {
+            const userDocRef = db.collection('users').doc(userRecord.uid);
+            batch.update(userDocRef, { email: userRecord.email });
+            count++;
+        }
+
+        await batch.commit();
+        const message = `Đã cập nhật thành công email cho ${count} user.`;
+        logger.info(message);
+        return { success: true, message: message };
+
+    } catch (error) {
+        logger.error("Lỗi khi backfill email:", error);
+        throw new HttpsError('internal', 'Đã xảy ra lỗi khi cập nhật email cho các user đã có.');
+    }
+});
+
+
+// ========================================================================
+// HÀM 5: XÓA USER TOÀN DIỆN
+// ========================================================================
+exports.deleteUser = onCall(async (request) => {
+    if (!request.auth || request.auth.token.owner !== true) {
+        throw new HttpsError('permission-denied', 'Chỉ có owner mới được quyền xóa người dùng.');
+    }
+
+    const { uid } = request.data;
+    if (!uid) {
+        throw new HttpsError('invalid-argument', 'Vui lòng cung cấp UID của người dùng cần xóa.');
+    }
+
+    try {
+        await auth.deleteUser(uid);
+        await db.collection('users').doc(uid).delete();
+
+        logger.info(`Đã xóa thành công user có UID: ${uid}`);
+        return { success: true, message: "Xóa người dùng thành công!" };
+
+    } catch (error) {
+        logger.error(`Lỗi khi xóa user ${uid}:`, error);
+        if (error.code === 'auth/user-not-found') {
+            throw new HttpsError('not-found', 'Không tìm thấy người dùng trong hệ thống Authentication.');
+        }
+        throw new HttpsError('internal', 'Đã xảy ra lỗi phía server khi xóa user.');
+    }
+});
+
+// *** SỬA LỖI CÚ PHÁP: Đã xóa dòng }); bị thừa ở đây ***
