@@ -669,6 +669,8 @@ export default AddUnlistedItemModal;
 
 import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { sendPasswordResetEmail } from "firebase/auth"; // ThÃªm import nÃ y
+import { auth } from '../firebaseConfig'; // ThÃªm import nÃ y
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
@@ -681,9 +683,6 @@ const AddUserModal = ({ onClose, onUserAdded }) => {
   const [role, setRole] = useState('med');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Má»šI: State Ä‘á»ƒ lÆ°u trá»¯ link sau khi táº¡o thÃ nh cÃ´ng
-  const [generatedLink, setGeneratedLink] = useState(null);
-
   const handleInvite = async () => {
     const validationResult = inviteSchema.safeParse({ email });
     if (!validationResult.success) {
@@ -693,86 +692,54 @@ const AddUserModal = ({ onClose, onUserAdded }) => {
 
     setIsSaving(true);
     try {
+      // TÃ¡c vá»¥ 1: Gá»i Cloud Function Ä‘á»ƒ táº¡o user vÃ  phÃ¢n quyá»n
       const functions = getFunctions();
       const inviteUser = httpsCallable(functions, 'inviteUser');
+      await inviteUser({ email: email.trim(), role: role });
+      toast.info(`ÄÃ£ táº¡o user ${email}. Äang gá»­i email má»i...`);
+
+      // TÃ¡c vá»¥ 2: YÃªu cáº§u Firebase gá»­i email thiáº¿t láº­p máº­t kháº©u
+      await sendPasswordResetEmail(auth, email.trim());
       
-      const result = await inviteUser({ 
-        email: email.trim(), 
-        role: role 
-      });
+      toast.success("ÄÃ£ gá»­i email má»i thÃ nh cÃ´ng!");
+      onUserAdded(); // Tá»± Ä‘á»™ng Ä‘Ã³ng modal vÃ  lÃ m má»›i danh sÃ¡ch
 
-      if (result.data.success) {
-        toast.success("Táº¡o user vÃ  link má»i thÃ nh cÃ´ng!");
-        setGeneratedLink(result.data.link); // LÆ°u link Ä‘á»ƒ hiá»ƒn thá»‹
-      }
     } catch (error) {
-      console.error("Lá»—i khi gá»i Cloud Function: ", error);
+      console.error("Lá»—i trong quÃ¡ trÃ¬nh má»i user: ", error);
       toast.error(error.message);
-      setIsSaving(false);
+    } finally {
+        setIsSaving(false);
     }
-    // KhÃ´ng táº¯t isSaving á»Ÿ Ä‘Ã¢y Ä‘á»ƒ giá»¯ modal hiá»ƒn thá»‹ link
   };
-
-  // Má»šI: HÃ m Ä‘á»ƒ Ä‘Ã³ng modal vÃ  refresh danh sÃ¡ch
-  const handleCloseAndRefresh = () => {
-      onUserAdded();
-      onClose();
-  }
 
   return (
     <div className="modal-backdrop">
       <div className="modal-content" style={{width: '500px'}}>
-
-        {/* --- Giao diá»‡n hiá»ƒn thá»‹ link sau khi thÃ nh cÃ´ng --- */}
-        {generatedLink ? (
-          <div>
-            <h2>Gá»­i lá»i má»i thÃ nh cÃ´ng!</h2>
-            <p>Vui lÃ²ng sao chÃ©p vÃ  gá»­i Ä‘Æ°á»ng link dÆ°á»›i Ä‘Ã¢y cho ngÆ°á»i dÃ¹ng <strong>{email}</strong>. Link nÃ y sáº½ giÃºp há» tá»± Ä‘áº·t máº­t kháº©u Ä‘áº§u tiÃªn.</p>
-            <div className="form-group">
-                <textarea
-                    readOnly
-                    value={generatedLink}
-                    rows={4}
-                    style={{backgroundColor: '#f8f9fa', cursor: 'pointer'}}
-                    onClick={(e) => e.target.select()}
-                />
-            </div>
-            <div className="modal-actions">
-                <button type="button" onClick={handleCloseAndRefresh} className="btn-primary">HoÃ n táº¥t</button>
-            </div>
-          </div>
-        ) : (
-        
-        // --- Giao diá»‡n má»i user ban Ä‘áº§u ---
-          <div>
-            <h2>Má»i User Má»›i</h2>
-            <div className="form-group">
-                <label>Email cá»§a User (*)</label>
-                <input 
-                    type="email"
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    placeholder="Nháº­p email cá»§a ngÆ°á»i dÃ¹ng má»›i..."
-                    autoFocus
-                />
-            </div>
-            <div className="form-group">
-                <label>Chá»n vai trÃ² (*)</label>
-                <select value={role} onChange={(e) => setRole(e.target.value)}>
-                    <option value="med">med</option>
-                    <option value="bio">bio</option>
-                    <option value="admin">admin</option>
-                </select>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
-              <button type="button" onClick={handleInvite} className="btn-primary" disabled={isSaving}>
-                {isSaving ? 'Äang xá»­ lÃ½...' : 'Táº¡o vÃ  Láº¥y Link Má»i'}
-              </button>
-            </div>
-          </div>
-        )}
+        <h2>Má»i User Má»›i</h2>
+        <div className="form-group">
+            <label>Email cá»§a User (*)</label>
+            <input 
+                type="email"
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="Nháº­p email cá»§a ngÆ°á»i dÃ¹ng má»›i..."
+                autoFocus
+            />
+        </div>
+        <div className="form-group">
+            <label>Chá»n vai trÃ² (*)</label>
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+                <option value="med">med</option>
+                <option value="bio">bio</option>
+                <option value="admin">admin</option>
+            </select>
+        </div>
+        <div className="modal-actions">
+          <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Há»§y</button>
+          <button type="button" onClick={handleInvite} className="btn-primary" disabled={isSaving}>
+            {isSaving ? 'Äang xá»­ lÃ½...' : 'Gá»­i Lá»i Má»i'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -6155,6 +6122,7 @@ const SetupPasswordPage = () => {
       navigate('/');
       return;
     }
+    // XÃ¡c thá»±c mÃ£ trong link Ä‘á»ƒ láº¥y email
     verifyPasswordResetCode(auth, oobCode)
       .then(userEmail => {
         setEmail(userEmail);
@@ -6185,8 +6153,10 @@ const SetupPasswordPage = () => {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('ÄÄƒng nháº­p thÃ nh cÃ´ng!');
       
-      // TÃ¡c vá»¥ 3: Äiá»u hÆ°á»›ng vá» trang chá»§. LÃºc nÃ y ngÆ°á»i dÃ¹ng Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c.
+      // TÃ¡c vá»¥ 3: Äiá»u hÆ°á»›ng vá» trang chá»§.
+      // LÃºc nÃ y ngÆ°á»i dÃ¹ng Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c vÃ  Ä‘Äƒng nháº­p.
       navigate('/');
+
     } catch (error) {
       toast.error('ÄÃ£ xáº£y ra lá»—i. Vui lÃ²ng thá»­ láº¡i hoáº·c quay láº¡i trang Ä‘Äƒng nháº­p.');
       console.error(error);

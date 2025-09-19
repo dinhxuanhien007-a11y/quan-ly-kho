@@ -33,6 +33,7 @@ const SetupPasswordPage = () => {
       navigate('/');
       return;
     }
+    // Xác thực mã trong link để lấy email
     verifyPasswordResetCode(auth, oobCode)
       .then(userEmail => {
         setEmail(userEmail);
@@ -63,8 +64,10 @@ const SetupPasswordPage = () => {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('Đăng nhập thành công!');
       
-      // Tác vụ 3: Điều hướng về trang chủ. Lúc này người dùng đã được xác thực.
+      // Tác vụ 3: Điều hướng về trang chủ.
+      // Lúc này người dùng đã được xác thực và đăng nhập.
       navigate('/');
+
     } catch (error) {
       toast.error('Đã xảy ra lỗi. Vui lòng thử lại hoặc quay lại trang đăng nhập.');
       console.error(error);

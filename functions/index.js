@@ -1,11 +1,11 @@
-// functions/index.js (Phiên bản hoàn chỉnh cho v2 - Đã sửa lỗi)
+// functions/index.js
 
 // --- Khai báo các thư viện cần thiết ---
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { logger } = require("firebase-functions");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, Timestamp } = require("firebase-admin/firestore");
+const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 
 // --- Khởi tạo Firebase Admin SDK ---
@@ -14,11 +14,14 @@ const db = getFirestore();
 const auth = getAuth();
 
 // ========================================================================
-// HÀM 1: MỜI USER MỚI
+// HÀM 1: MỜI USER MỚI (ĐÃ NÂNG CẤP)
+// Chức năng: Tạo user, gán vai trò, và báo thành công về client.
+// Client sẽ gọi lệnh để Firebase tự động gửi email mời.
 // ========================================================================
-// Thay thế hàm inviteUser cũ bằng hàm này
 exports.inviteUser = onCall(async (request) => {
-    // Force update 19/09/2025
+    // 1. Kiểm tra quyền: Chỉ owner mới được thực hiện
+    // Lưu ý: Phiên bản SDK mới sử dụng request.auth.token.<claim>
+    // ví dụ: request.auth.token.owner === true
     if (!request.auth || request.auth.token.owner !== true) {
         throw new HttpsError('permission-denied', 'Chỉ có owner mới được quyền mời người dùng mới.');
     }
@@ -29,24 +32,22 @@ exports.inviteUser = onCall(async (request) => {
     }
 
     try {
+        // 2. Tạo user trong Firebase Authentication
         const userRecord = await auth.createUser({ email, emailVerified: false });
+        
+        // 3. Gán vai trò (role) cho user vừa tạo dưới dạng custom claim
+        // Ví dụ: nếu role là 'admin', claim sẽ là { admin: true }
         await auth.setCustomUserClaims(userRecord.uid, { [role]: true });
 
+        // 4. Tạo document tương ứng trong Firestore collection 'users'
+        // để lưu trữ vai trò và email cho dễ truy vấn
         await db.collection('users').doc(userRecord.uid).set({
             role: role,
             email: email 
         });
 
-        // --- THAY ĐỔI Ở ĐÂY ---
-        // Tạo action link trỏ về trang setup-password của bạn
-        const actionCodeSettings = {
-            url: 'https://kho-ptbiomed.web.app/setup-password', // Sửa lại thành domain của bạn nếu khác
-            handleCodeInApp: true,
-        };
-        const link = await auth.generatePasswordResetLink(email, actionCodeSettings);
-        // --- KẾT THÚC THAY ĐỔI ---
-
-        return { success: true, link: link };
+        // 5. Trả về thông báo thành công. KHÔNG trả về link nữa.
+        return { success: true, message: "Tạo user và phân quyền thành công. Client sẽ kích hoạt gửi email." };
 
     } catch (error) {
         logger.error("Lỗi khi tạo user mới:", error);
@@ -62,7 +63,6 @@ exports.inviteUser = onCall(async (request) => {
 // HÀM 2: ĐẶT VAI TRÒ CHO USER (ĐÃ KÍCH HOẠT BẢO MẬT)
 // ========================================================================
 exports.setRole = onCall(async (request) => {
-    // *** SỬA LỖI BẢO MẬT: Đã kích hoạt lại bước kiểm tra quyền ***
     if (!request.auth || request.auth.token.owner !== true) {
         throw new HttpsError('permission-denied', 'Chỉ có owner mới được quyền thực hiện hành động này.');
     }
@@ -210,5 +210,3 @@ exports.deleteUser = onCall(async (request) => {
         throw new HttpsError('internal', 'Đã xảy ra lỗi phía server khi xóa user.');
     }
 });
-
-// *** SỬA LỖI CÚ PHÁP: Đã xóa dòng }); bị thừa ở đây ***
