@@ -1,62 +1,68 @@
 // src/components/LoginPage.jsx
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { toast } from 'react-toastify';
-import { z } from 'zod';
-import styles from './LoginPage.module.css'; // <-- Cập nhật import
-
-const loginSchema = z.object({
-    email: z.string().email({ message: "Địa chỉ email không hợp lệ." }),
-    password: z.string().min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự." })
-});
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import styles from './LoginPage.module.css';
+import { FcGoogle } from 'react-icons/fc';
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const validationResult = loginSchema.safeParse({ email, password });
+  const [isLoading, setIsLoading] = useState(false);
 
-    if (!validationResult.success) {
-        toast.warn(validationResult.error.issues[0].message);
-        return;
-    }
-
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    const provider = new GoogleAuthProvider();
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, validationResult.data.email, validationResult.data.password);
-      toast.success('Đăng nhập thành công!');
+      // 1. Mở cửa sổ popup để đăng nhập bằng Google
+      const result = await signInWithPopup(auth, provider);
+      
+      toast.info("Xác thực Google thành công. Đang khởi tạo vai trò...");
+      
+      // 2. Gọi Cloud Function để xử lý và cấp quyền
+      const functions = getFunctions();
+      const processUser = httpsCallable(functions, 'processNewGoogleUser');
+      await processUser();
+
+      // === THAY ĐỔI QUAN TRỌNG NHẤT NẰM Ở ĐÂY ===
+      // 3. Ép buộc trình duyệt lấy lại token mới nhất (có chứa "con dấu" owner)
+      await result.user.getIdToken(true); 
+      
+      toast.success("Đăng nhập và cấp quyền thành công!");
+
+      // 4. Tải lại trang để đảm bảo toàn bộ ứng dụng sử dụng quyền mới
+      // Thay vì để navigate tự động, chúng ta tải lại một cách triệt để
+      window.location.reload();
+
     } catch (error) {
-      toast.error('Sai email hoặc mật khẩu. Vui lòng thử lại!');
+      let errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+      if (error.code === 'auth/popup-closed-by-user') {
+          errorMessage = "Cửa sổ đăng nhập đã bị đóng.";
+      } else if (error.message.includes("permission-denied")) {
+          errorMessage = "Tài khoản của bạn không được phép truy cập hệ thống này.";
+          await auth.signOut();
+      }
+      
+      console.error("Lỗi đăng nhập Google:", error);
+      toast.error(errorMessage);
+      setIsLoading(false);
     }
   };
 
   return (
-    // Lưu ý: class 'loginPageWrapper' được áp dụng ở file App.jsx
     <div className={styles.loginContainer}>
-      <h2>Đăng Nhập Hệ Thống</h2>
-      <form onSubmit={handleLogin}>
-        <div className="form-group">
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label>Mật khẩu</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Đăng nhập</button>
-      </form>
+      <h2>Hệ thống Quản lý Kho</h2>
+      <p style={{textAlign: 'center', color: '#666', marginTop: '-10px', marginBottom: '30px'}}>
+        Vui lòng đăng nhập bằng tài khoản Google đã được cấp phép.
+      </p>
+      <button 
+        className={styles.googleLoginButton} 
+        onClick={handleGoogleLogin}
+        disabled={isLoading}
+      >
+        <FcGoogle />
+        <span>{isLoading ? "Đang xử lý..." : "Đăng nhập bằng Google"}</span>
+      </button>
     </div>
   );
 }

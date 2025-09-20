@@ -1,8 +1,7 @@
 // src/components/AdminLayout.jsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from './Navbar';
-import '../styles/AdminLayout.css';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
@@ -18,9 +17,12 @@ import DataImportPage from '../pages/DataImportPage';
 import ExportSlipCounter from './ExportSlipCounter';
 import ImportSlipCounter from './ImportSlipCounter'; // <-- Import counter mới
 import UsersPage from '../pages/UsersPage';
+import FloatingCalculator from './FloatingCalculator'; // <-- Thêm import
+import { MdCalculate } from 'react-icons/md';
 
 const AdminLayout = () => {
   const location = useLocation();
+  const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
   return (
     <div className="admin-layout-horizontal">
@@ -45,6 +47,15 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
         </Routes>
       </main>
+      <button 
+        className="floating-toggle-btn" 
+        onClick={() => setIsCalculatorVisible(true)}
+        title="Mở máy tính (Có thể dùng bàn phím)"
+      >
+        <MdCalculate />
+      </button>
+
+      {isCalculatorVisible && <FloatingCalculator onClose={() => setIsCalculatorVisible(false)} />}
     </div>
   );
 };

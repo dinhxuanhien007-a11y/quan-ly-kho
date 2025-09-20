@@ -62,7 +62,7 @@ const DataImportPage = () => {
         setIsImporting(true);
         setImportLog([]);
         logMessage(`Phát hiện ${data.length} dòng. Bắt đầu xử lý cho loại: ${importType}...`);
-        
+
         try {
             const MAX_BATCH_SIZE = 499;
             let batch = writeBatch(db);
@@ -71,7 +71,6 @@ const DataImportPage = () => {
 
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
-                // Xử lý ngày tạo một cách tập trung
                 const creationDate = parseDateString(row.creationDate);
                 const creationTimestamp = creationDate ? Timestamp.fromDate(creationDate) : Timestamp.now();
 
@@ -99,7 +98,7 @@ const DataImportPage = () => {
                             storageTemp: row.storageTemp || '',
                             manufacturer: row.manufacturer || '',
                             team: row.team || 'MED',
-                            createdAt: creationTimestamp // Thêm createdAt cho sản phẩm mới
+                            createdAt: creationTimestamp
                         };
                         batch.set(productRef, newProductData);
                         operationCount++;
@@ -121,6 +120,8 @@ const DataImportPage = () => {
                         team: row.team || 'MED',
                         manufacturer: row.manufacturer || '',
                         supplier: 'Tồn đầu kỳ',
+                        // --- THÊM DÒNG NÀY ---
+                        notes: row.notes || '' // Đọc dữ liệu từ cột 'notes'
                     };
                     batch.set(inventoryRef, inventoryData);
                     operationCount++;
@@ -135,7 +136,7 @@ const DataImportPage = () => {
                     const docData = {
                         partnerName: row.partnerName || '',
                         partnerType: row.partnerType === 'customer' ? 'customer' : 'supplier',
-                        createdAt: creationTimestamp // Thêm createdAt cho đối tác mới
+                        createdAt: creationTimestamp
                     };
                     const docRef = doc(collection(db, 'partners'), docId);
                     batch.set(docRef, docData);
@@ -171,15 +172,19 @@ const DataImportPage = () => {
     
     const downloadTemplate = () => {
         let headers, filename, sampleData;
+
         if (importType === 'partners') {
             headers = "partnerId*,partnerName*,partnerType,creationDate";
             filename = "mau_import_doi_tac.csv";
             sampleData = "NCC-01,CÔNG TY DƯỢC PHẨM ABC,supplier,25/12/2024\nKH-01,BỆNH VIỆN XYZ,customer,";
         } else {
-            headers = "productId*,productName*,lotNumber*,quantityRemaining*,expiryDate,unit,packaging,storageTemp,team,manufacturer,creationDate";
+            // --- THÊM CỘT 'notes' VÀO ĐÂY ---
+            headers = "productId*,productName*,lotNumber*,quantityRemaining*,expiryDate,unit,packaging,storageTemp,team,manufacturer,notes,creationDate";
             filename = "mau_import_san_pham_ton_kho.csv";
-            sampleData = "SP001,BÔNG CỒN ALKOCIDE,L202501,100,31/12/2025,Hộp,100 miếng/hộp,Nhiệt độ phòng,MED,DentaLife,01/01/2025\nSP002,GĂNG TAY Y TẾ,GT001,50,,Hộp,50 đôi/hộp,,MED,,"
+            // --- THÊM DỮ LIỆU MẪU CHO CỘT 'notes' ---
+            sampleData = "SP001,BÔNG CỒN ALKOCIDE,L202501,100,31/12/2025,Hộp,100 miếng/hộp,Nhiệt độ phòng,MED,DentaLife,Hàng ưu tiên,01/01/2025\nSP002,GĂNG TAY Y TẾ,GT001,50,,Hộp,50 đôi/hộp,,MED,,Hàng dễ vỡ,"
         }
+        
         const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers + "\n" + sampleData;
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -230,7 +235,7 @@ const DataImportPage = () => {
                      <div className={styles.importMethod}>
                         <h4>Cách 1: Tải lên file .csv</h4>
                         <input type="file" accept=".csv" onChange={handleFileImport} disabled={isImporting} />
-                    </div>
+                     </div>
                      <div className={styles.importMethod}>
                         <h4>Cách 2: Dán dữ liệu từ Excel/Google Sheets</h4>
                         <textarea 

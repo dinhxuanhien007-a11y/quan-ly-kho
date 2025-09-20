@@ -1,6 +1,9 @@
 // src/components/Navbar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { toast } from 'react-toastify';
 import { 
     FiGrid, 
     FiArchive, 
@@ -13,11 +16,22 @@ import {
     FiUsers,
     FiBookOpen,
     FiUpload,
-    FiSettings // MỚI: Thêm icon cho trang quản lý user
+    FiSettings,
+    FiLogOut // Icon Đăng xuất
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 
 const Navbar = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast.success('Đăng xuất thành công!');
+    } catch (error) {
+      toast.error('Đã xảy ra lỗi khi đăng xuất.');
+      console.error("Lỗi đăng xuất:", error);
+    }
+  };
+
   return (
     <nav className="top-navbar">
       <div className="navbar-brand">
@@ -44,7 +58,6 @@ const Navbar = () => {
             <FiUsers className="nav-icon" />
           </NavLink>
         </li>
-        {/* MỚI: Thêm mục menu Quản lý User */}
         <li>
           <NavLink to="/users" title="Quản lý User">
             <FiSettings className="nav-icon" />
@@ -56,7 +69,7 @@ const Navbar = () => {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/new-export" title="Tạo Phiếu Xuất">
+           <NavLink to="/new-export" title="Tạo Phiếu Xuất">
             <FiFileMinus className="nav-icon" />
           </NavLink>
         </li>
@@ -84,6 +97,13 @@ const Navbar = () => {
           <NavLink to="/import-data" title="Import Dữ Liệu">
             <FiUpload className="nav-icon" />
           </NavLink>
+        </li>
+        
+        {/* --- ĐÂY LÀ NÚT ĐĂNG XUẤT --- */}
+        <li>
+          <a href="#" onClick={handleLogout} title="Đăng xuất">
+            <FiLogOut className="nav-icon" />
+          </a>
         </li>
       </ul>
     </nav>

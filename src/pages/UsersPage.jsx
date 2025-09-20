@@ -1,183 +1,145 @@
 // src/pages/UsersPage.jsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs, query, doc, deleteDoc } from 'firebase/firestore'; // MỚI: Thêm doc, deleteDoc
+import { collection, getDocs, query, orderBy } from 'firebase/firestore'; 
 import Spinner from '../components/Spinner';
-import EditUserRoleModal from '../components/EditUserRoleModal';
-import AddUserModal from '../components/AddUserModal';
-import ConfirmationModal from '../components/ConfirmationModal'; // MỚI
-import { useAuth } from '../context/UserContext';
-import { FiEdit, FiPlus, FiTrash2 } from 'react-icons/fi'; // MỚI
-import { toast } from 'react-toastify'; // MỚI
+import { FiPlus, FiTrash2, FiEdit } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+import { getFunctions, httpsCallable } from "firebase/functions";
+import ConfirmationModal from '../components/ConfirmationModal';
+import AddAllowedUserModal from '../components/AddAllowedUserModal';
+import EditAllowedUserModal from '../components/EditAllowedUserModal'; // <-- 1. Import modal mới
 
 const UsersPage = () => {
-  const [users, setUsers] = useState([]);
+  const [allowedUsers, setAllowedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user: currentUser } = useAuth();
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  
-  // MỚI: State cho modal xác nhận xóa
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
+  // --- 2. Thêm state cho việc chỉnh sửa ---
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
 
-  const fetchUsers = async () => {
+  const fetchAllowedUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const usersQuery = query(collection(db, "users"));
-      const querySnapshot = await getDocs(usersQuery);
-      
-      const usersList = querySnapshot.docs.map(doc => ({
-        uid: doc.id,
-        ...doc.data()
-      }));
-
-      setUsers(usersList);
+      const q = query(collection(db, "allowlist"), orderBy("addedAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllowedUsers(list);
     } catch (error) {
-      console.error("Lỗi khi tải danh sách user: ", error);
+      console.error("Lỗi khi tải danh sách cho phép: ", error);
+      toast.error("Không thể tải danh sách cho phép.");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchUsers();
   }, []);
 
-  // MỚI: Hàm xử lý xóa user
-  const handleDeleteUser = async () => {
-    const userToDelete = confirmModal.item;
-    if (!userToDelete) return;
-    
-    try {
-        const userRef = doc(db, 'users', userToDelete.uid);
-        await deleteDoc(userRef);
-        toast.success(`Đã xóa user ${userToDelete.uid} thành công.`);
-        fetchUsers(); // Tải lại danh sách
-    } catch (error) {
-        console.error("Lỗi khi xóa user: ", error);
-        toast.error("Đã xảy ra lỗi khi xóa user.");
-    } finally {
-        setConfirmModal({ isOpen: false, item: null }); // Đóng modal sau khi xử lý
-    }
-  };
-
-  // MỚI: Hàm mở modal xác nhận xóa
-  const promptForDelete = (user) => {
-    setConfirmModal({
-        isOpen: true,
-        item: user,
-        title: "Xác nhận xóa User?",
-        message: `Bạn có chắc chắn muốn xóa user có UID: ${user.uid}? Thao tác này sẽ thu hồi mọi quyền của họ.`,
-        onConfirm: handleDeleteUser,
-        confirmText: "Vẫn xóa"
-    });
-  };
-
+  useEffect(() => {
+    fetchAllowedUsers();
+  }, [fetchAllowedUsers]);
+  
+  // --- 3. Hàm để mở modal chỉnh sửa ---
   const openEditModal = (user) => {
-    setSelectedUser(user);
+    setUserToEdit(user);
     setIsEditModalOpen(true);
   };
 
-  const handleRoleUpdated = () => {
-    setIsEditModalOpen(false);
-    fetchUsers();
+  const handleDelete = async (user) => {
+    setConfirmModal({ isOpen: false });
+    toast.info(`Đang xóa ${user.email}...`);
+    try {
+        const functions = getFunctions();
+        const deleteFunc = httpsCallable(functions, 'deleteUserAndAllowlist');
+        // Cần tìm UID tương ứng nếu có để xóa triệt để
+        // Logic này có thể được cải thiện thêm, nhưng hiện tại sẽ xóa khỏi allowlist trước
+        await deleteFunc({ email: user.email });
+        toast.success(`Đã xóa ${user.email} khỏi danh sách.`);
+        fetchAllowedUsers();
+    } catch (error) {
+        console.error("Lỗi khi xóa:", error);
+        toast.error(error.message);
+    }
   };
 
-  const handleUserAdded = () => {
-    setIsAddModalOpen(false);
-    fetchUsers();
-  }
-
-  if (loading) {
-    return <Spinner />;
-  }
+  const promptForDelete = (user) => {
+    setConfirmModal({
+        isOpen: true,
+        title: "Xác nhận xóa?",
+        message: `Bạn có chắc muốn xóa ${user.email} khỏi danh sách được phép truy cập không?`,
+        onConfirm: () => handleDelete(user),
+        confirmText: "Vẫn xóa",
+        confirmButtonType: 'danger'
+    });
+  };
 
   return (
     <div>
-      <ConfirmationModal
-        isOpen={confirmModal.isOpen}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal({ isOpen: false, item: null })}
-        confirmText={confirmModal.confirmText}
-      />
-
-      {isAddModalOpen && (
-        <AddUserModal 
-            onClose={() => setIsAddModalOpen(false)}
-            onUserAdded={handleUserAdded}
-        />
-      )}
-
-      {isEditModalOpen && (
-        <EditUserRoleModal 
-            user={selectedUser}
-            onClose={() => setIsEditModalOpen(false)}
-            onRoleUpdated={handleRoleUpdated}
-        />
-      )}
+      <ConfirmationModal {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
+      {isAddModalOpen && <AddAllowedUserModal onClose={() => setIsAddModalOpen(false)} onUserAdded={fetchAllowedUsers} />}
+      {/* --- 4. Render modal chỉnh sửa --- */}
+      {isEditModalOpen && <EditAllowedUserModal onClose={() => setIsEditModalOpen(false)} onUserUpdated={fetchAllowedUsers} userToEdit={userToEdit} />}
 
       <div className="page-header">
-        <h1>Quản lý User và Phân quyền</h1>
+        <h1>Quản lý Quyền Truy cập</h1>
         <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
             <FiPlus style={{ marginRight: '5px' }} />
-            Thêm User
+            Thêm Email
         </button>
       </div>
       
-      <table className="products-table">
-        <thead>
-          <tr>
-            <th>User ID (UID)</th>
-            <th>Vai trò (Role)</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.length > 0 ? (
-            users.map(user => (
-              <tr key={user.uid}>
-                <td>{user.uid}</td>
-                <td>
-                  <span className={`status-badge ${user.role === 'owner' ? 'status-completed' : 'status-pending'}`}>
-                    {user.role}
-                  </span>
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="btn-icon btn-edit" 
-                      title="Sửa vai trò"
-                      onClick={() => openEditModal(user)}
-                      disabled={user.uid === currentUser.uid}
-                    >
-                      <FiEdit />
-                    </button>
-                    {/* MỚI: Thêm nút xóa */}
-                    <button 
-                      className="btn-icon btn-delete" 
-                      title="Xóa User"
-                      onClick={() => promptForDelete(user)}
-                      disabled={user.uid === currentUser.uid}
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          ) : (
+      <p>Đây là danh sách các email được phép đăng nhập vào hệ thống bằng tài khoản Google của họ.</p>
+
+      {loading ? <Spinner /> : (
+        <table className="products-table">
+          <thead>
             <tr>
-              <td colSpan="3" style={{ textAlign: 'center' }}>Không tìm thấy user nào.</td>
+              <th>Email</th> 
+              <th>Vai trò (Role)</th>
+              <th>Thao tác</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {allowedUsers.length > 0 ? (
+              allowedUsers.map(user => (
+                <tr key={user.id}>
+                  <td><strong>{user.email}</strong></td>
+                  <td>
+                    <span className={`status-badge ${user.role === 'owner' ? 'status-completed' : (user.role === 'admin' ? 'status-pending' : 'status-cancelled')}`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                        {/* --- 5. Thêm nút sửa và logic điều kiện --- */}
+                        <button 
+                            className="btn-icon btn-edit" 
+                            title="Chỉnh sửa vai trò"
+                            onClick={() => openEditModal(user)}
+                            disabled={user.role === 'owner'} // Vô hiệu hóa nút sửa cho owner
+                        >
+                            <FiEdit />
+                        </button>
+                        <button 
+                            className="btn-icon btn-delete" 
+                            title="Xóa quyền truy cập" 
+                            onClick={() => promptForDelete(user)}
+                            disabled={user.role === 'owner'} // Vô hiệu hóa nút xóa cho owner
+                        >
+                            <FiTrash2 />
+                        </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="3" style={{ textAlign: 'center' }}>Chưa có email nào trong danh sách được phép.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };

@@ -23,7 +23,7 @@ const ProductsPage = () => {
 
   const baseQuery = useMemo(() => {
     // Sắp xếp theo 'createdAt' để luôn lấy được sản phẩm mới nhất lên đầu
-    let q = query(collection(db, 'products'), orderBy("createdAt", "desc"));
+    let q = query(collection(db, 'products'));
     if (searchTerm) {
         // Tìm kiếm vẫn dùng documentId vì hiệu quả hơn
         const upperSearchTerm = searchTerm.toUpperCase();

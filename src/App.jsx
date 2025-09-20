@@ -1,6 +1,7 @@
 // src/App.jsx
 
 import React from 'react';
+import './styles/AdminLayout.css';
 import LoginPage from './components/LoginPage';
 import AdminLayout from './components/AdminLayout';
 import ViewerLayout from './components/ViewerLayout';
