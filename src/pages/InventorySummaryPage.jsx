@@ -1,4 +1,5 @@
 // src/pages/InventorySummaryPage.jsx
+import { formatNumber } from '../utils/numberUtils';
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, getDocs, where, orderBy, documentId, limit, startAfter, Timestamp } from 'firebase/firestore';
@@ -10,6 +11,7 @@ import Spinner from '../components/Spinner';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
+import '../styles/Responsive.css';
 
 // <-- THAY ĐỔI 1: Import thêm hàm getRowColorByExpiry
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
@@ -242,7 +244,7 @@ const InventorySummaryPage = () => {
 
             {loading ? <Spinner /> : (
                 <>
-                    <div className="table-container">
+                    <div className="table-responsive-wrapper">
                         <table className="products-table">
                             <thead>
                                 <tr>
@@ -269,7 +271,7 @@ const InventorySummaryPage = () => {
                                             <td data-label="Mã hàng"><strong>{product.id}</strong></td>
                                             <td data-label="Tên hàng">{product.productName}</td>
                                             <td data-label="HSD Gần Nhất">{formatDate(product.nearestExpiryDate)}</td>
-                                            <td data-label="Tổng Tồn"><strong>{product.totalRemaining}</strong></td>
+                                            <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
                                             <td data-label="Nhiệt độ BQ"><TempBadge temperature={product.storageTemp} /></td>
                                             <td data-label="Team"><TeamBadge team={product.team} /></td>
@@ -295,7 +297,7 @@ const InventorySummaryPage = () => {
                                                                             <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate)}`}>
                                                                                 <span>Lô: <strong>{lot.lotNumber}</strong></span>
                                                                                 <span>HSD: <strong>{formatDate(lot.expiryDate)}</strong></span>
-                                                                                <span>Tồn: <strong>{lot.quantityRemaining}</strong></span>
+                                                                                <span>Tồn: <strong>{formatNumber(lot.quantityRemaining)}</strong></span>
                                                                             </li>
                                                                         ))}
                                                                     </ul>

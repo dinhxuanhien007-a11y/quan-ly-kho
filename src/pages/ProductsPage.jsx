@@ -45,7 +45,7 @@ const ProductsPage = () => {
   const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, products, page, searchTerm);
 
   const handleRefresh = () => {
-      setHasNewData(false);
+      dismissNewData();
       reset();
   };
 

@@ -1,0 +1,13 @@
+/* src/styles/Responsive.css */
+
+/* Bọc bảng để cho phép cuộn ngang trên màn hình nhỏ */
+.table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Giúp cuộn mượt hơn trên iOS */
+}
+
+/* Đảm bảo bảng không bị co lại một cách không kiểm soát */
+.table-responsive-wrapper .products-table {
+    min-width: 700px; /* Đặt chiều rộng tối thiểu cho bảng */
+}

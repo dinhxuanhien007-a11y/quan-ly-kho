@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, writeBatch, doc, Timestamp, getDoc } from 'firebase/firestore';
+import { collection, writeBatch, doc, Timestamp, getDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import Papa from 'papaparse';
 import { FiUpload, FiDownload, FiInfo } from 'react-icons/fi';
 import { parseDateString } from '../utils/dateUtils';
 import styles from '../styles/DataImportPage.module.css';
+import { normalizeString, generateKeywords } from '../utils/stringUtils';
 
 const DataImportPage = () => {
     const [importType, setImportType] = useState('inventory');
@@ -52,123 +53,142 @@ const DataImportPage = () => {
         });
     };
 
-    const processData = async (data) => {
-        if (!data || data.length === 0) {
-            toast.warn("Không có dữ liệu hợp lệ để import.");
-            logMessage("Không tìm thấy dòng dữ liệu nào.", 'warn');
-            return;
-        }
+    // src/pages/DataImportPage.jsx
 
-        setIsImporting(true);
-        setImportLog([]);
-        logMessage(`Phát hiện ${data.length} dòng. Bắt đầu xử lý cho loại: ${importType}...`);
+const processData = async (data) => {
+    if (!data || data.length === 0) {
+        toast.warn("Không có dữ liệu hợp lệ để import.");
+        logMessage("Không tìm thấy dòng dữ liệu nào.", 'warn');
+        return;
+    }
 
-        try {
-            const MAX_BATCH_SIZE = 499;
-            let batch = writeBatch(db);
-            let operationCount = 0;
-            let totalSuccess = 0;
+    setIsImporting(true);
+    setImportLog([]);
+    logMessage(`Phát hiện ${data.length} dòng. Bắt đầu xử lý cho loại: ${importType}...`);
 
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
+    try {
+        const MAX_BATCH_SIZE = 490; // Ngưỡng an toàn cho mỗi batch
+        let batch = writeBatch(db);
+        let operationCount = 0;
+        let totalSuccess = 0;
+
+        for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+            const rowIndex = i + 2; // Số thứ tự dòng trong file CSV
+
+            if (importType === 'inventory') {
+                // Chỉ yêu cầu Mã hàng và Tên hàng là bắt buộc
+                if (!row.productId || !String(row.productId).trim() || !row.productName || !String(row.productName).trim()) {
+                    logMessage(`Bỏ qua dòng ${rowIndex}: Thiếu thông tin bắt buộc (productId hoặc productName).`, 'warn');
+                    continue;
+                }
+                
+                const productId = String(row.productId).trim().toUpperCase();
+                const productRef = doc(db, 'products', productId);
+                
+                // 1. Luôn tạo hoặc cập nhật thông tin sản phẩm (master data)
+                const productData = {
+                    productName: String(row.productName).trim(),
+                    unit: String(row.unit || '').trim(),
+                    packaging: String(row.packaging || '').trim(),
+                    storageTemp: String(row.storageTemp || '').trim(),
+                    manufacturer: String(row.manufacturer || '').trim(),
+                    team: String(row.team || 'MED').trim(),
+                    createdAt: serverTimestamp()
+                };
+                batch.set(productRef, productData, { merge: true });
+                operationCount++;
+                logMessage(`Đã xử lý thông tin sản phẩm: ${productId}`);
+
+                // 2. Chỉ tạo bản ghi tồn kho nếu có Số lượng (quantityRemaining)
+                const quantityStr = String(row.quantityRemaining || '').replace(/[.,]/g, ''); // Chấp nhận số có dấu . hoặc ,
+
+                if (quantityStr && !isNaN(Number(quantityStr)) && Number(quantityStr) > 0) {
+                    const quantityNum = Number(quantityStr);
+
+                    // Xử lý Số lô: nếu trống thì mặc định là 'N/A'
+                    let lotNumber = String(row.lotNumber || '').trim();
+                    if (!lotNumber) {
+                        lotNumber = 'N/A';
+                    }
+
+                    // Xử lý HSD: nếu trống thì là null, nếu sai định dạng thì báo lỗi
+                    const expiryDate = parseDateString(row.expiryDate);
+                    if (!expiryDate && row.expiryDate && String(row.expiryDate).trim()) {
+                        logMessage(`Bỏ qua lô hàng của dòng ${rowIndex} (Mã: ${productId}): Sai định dạng "expiryDate" (HSD).`, 'warn');
+                        // Không `continue` để vẫn lưu được thông tin sản phẩm
+                    } else {
+                        const inventoryRef = doc(collection(db, 'inventory_lots'));
+                        const inventoryData = {
+                            productId: productId,
+                            productName: productData.productName,
+                            lotNumber: lotNumber,
+                            expiryDate: expiryDate ? Timestamp.fromDate(expiryDate) : null,
+                            importDate: Timestamp.now(),
+                            quantityImported: quantityNum,
+                            quantityRemaining: quantityNum,
+                            unit: productData.unit,
+                            packaging: productData.packaging,
+                            storageTemp: productData.storageTemp,
+                            team: productData.team,
+                            manufacturer: productData.manufacturer,
+                            supplier: 'Tồn đầu kỳ',
+                            notes: String(row.notes || '').trim()
+                        };
+                        batch.set(inventoryRef, inventoryData);
+                        operationCount++;
+                        logMessage(` -> Đã tạo lô hàng tồn kho cho ${productId} với SL: ${quantityNum}`);
+                    }
+                } else {
+                    logMessage(` -> Chỉ khai báo thông tin, không tạo lô tồn kho.`);
+                }
+                
+                totalSuccess++;
+            
+            } else if (importType === 'partners') {
+                if (!row.partnerId || !row.partnerName) {
+                    logMessage(`Bỏ qua dòng ${rowIndex}: Thiếu partnerId hoặc partnerName.`, 'warn');
+                    continue;
+                }
+                const docId = String(row.partnerId).trim().toUpperCase();
+                const partnerName = String(row.partnerName).trim();
                 const creationDate = parseDateString(row.creationDate);
                 const creationTimestamp = creationDate ? Timestamp.fromDate(creationDate) : Timestamp.now();
-
-                if (importType === 'inventory') {
-                    if (!row.productId || !row.productName || !row.lotNumber || !row.quantityRemaining) {
-                        logMessage(`Bỏ qua dòng ${i + 2}: Thiếu thông tin bắt buộc (Mã, Tên, Lô, SL Tồn).`, 'warn');
-                        continue;
-                    }
-                    
-                    const expiryDate = parseDateString(row.expiryDate);
-                    if (!expiryDate && row.expiryDate) {
-                        logMessage(`Bỏ qua dòng ${i + 2}: Sai định dạng HSD (cần là dd/mm/yyyy).`, 'warn');
-                        continue;
-                    }
-
-                    const productId = row.productId.trim().toUpperCase();
-                    const productRef = doc(db, 'products', productId);
-                    const productSnap = await getDoc(productRef);
-
-                    if (!productSnap.exists()) {
-                        const newProductData = {
-                            productName: row.productName,
-                            unit: row.unit || '',
-                            packaging: row.packaging || '',
-                            storageTemp: row.storageTemp || '',
-                            manufacturer: row.manufacturer || '',
-                            team: row.team || 'MED',
-                            createdAt: creationTimestamp
-                        };
-                        batch.set(productRef, newProductData);
-                        operationCount++;
-                        logMessage(`Đã tạo sản phẩm mới: ${productId}`);
-                    }
-                    
-                    const inventoryRef = doc(collection(db, 'inventory_lots'));
-                    const inventoryData = {
-                        productId: productId,
-                        productName: row.productName,
-                        lotNumber: row.lotNumber.trim(),
-                        expiryDate: expiryDate ? Timestamp.fromDate(expiryDate) : null,
-                        importDate: Timestamp.now(),
-                        quantityImported: Number(row.quantityRemaining),
-                        quantityRemaining: Number(row.quantityRemaining),
-                        unit: row.unit || '',
-                        packaging: row.packaging || '',
-                        storageTemp: row.storageTemp || '',
-                        team: row.team || 'MED',
-                        manufacturer: row.manufacturer || '',
-                        supplier: 'Tồn đầu kỳ',
-                        // --- THÊM DÒNG NÀY ---
-                        notes: row.notes || '' // Đọc dữ liệu từ cột 'notes'
-                    };
-                    batch.set(inventoryRef, inventoryData);
-                    operationCount++;
-                    totalSuccess++;
-                
-                } else if (importType === 'partners') {
-                    if (!row.partnerId) {
-                        logMessage(`Bỏ qua dòng ${i + 2}: Thiếu partnerId.`, 'warn');
-                        continue;
-                    }
-                    const docId = row.partnerId.trim().toUpperCase();
-                    const docData = {
-                        partnerName: row.partnerName || '',
-                        partnerType: row.partnerType === 'customer' ? 'customer' : 'supplier',
-                        createdAt: creationTimestamp
-                    };
-                    const docRef = doc(collection(db, 'partners'), docId);
-                    batch.set(docRef, docData);
-                    operationCount++;
-                    totalSuccess++;
-                }
-
-                if (operationCount >= MAX_BATCH_SIZE) {
-                    await batch.commit();
-                    logMessage(`Đã ghi thành công ${operationCount} thao tác...`);
-                    batch = writeBatch(db);
-                    operationCount = 0;
-                }
+        
+                const docData = {
+                    partnerName: partnerName,
+                    partnerType: String(row.partnerType).trim().toLowerCase() === 'customer' ? 'customer' : 'supplier',
+                    createdAt: creationTimestamp,
+                    partnerNameNormalized: normalizeString(partnerName),
+                    searchKeywords: generateKeywords(partnerName)
+                };
+                const docRef = doc(collection(db, 'partners'), docId);
+                batch.set(docRef, docData, { merge: true });
+                operationCount++;
+                totalSuccess++;
             }
 
-            if (operationCount > 0) {
+            // Ghi batch xuống database khi đầy hoặc xử lý xong
+            if (operationCount >= MAX_BATCH_SIZE || i === data.length - 1) {
                 await batch.commit();
-                logMessage(`Đã ghi thành công ${operationCount} thao tác cuối cùng.`);
+                logMessage(`Đã ghi thành công một lô ${operationCount} thao tác...`);
+                batch = writeBatch(db);
+                operationCount = 0;
             }
-
-            toast.success(`Hoàn tất! Import thành công ${totalSuccess}/${data.length} mục.`);
-            logMessage(`Hoàn tất! Import thành công ${totalSuccess}/${data.length} mục.`, 'success');
-
-        } catch (error) {
-            console.error("Lỗi khi import dữ liệu: ", error);
-            toast.error("Đã xảy ra lỗi trong quá trình import.");
-            logMessage(`Lỗi nghiêm trọng: ${error.message}`, 'error');
-        } finally {
-            setIsImporting(false);
-            setPastedData('');
         }
-    };
+
+        toast.success(`Hoàn tất! Xử lý thành công ${totalSuccess}/${data.length} mục.`);
+        logMessage(`Hoàn tất! Xử lý thành công ${totalSuccess}/${data.length} mục.`, 'success');
+
+    } catch (error) {
+        console.error("Lỗi khi import dữ liệu: ", error);
+        toast.error("Đã xảy ra lỗi trong quá trình import.");
+        logMessage(`Lỗi nghiêm trọng: ${error.message}`, 'error');
+    } finally {
+        setIsImporting(false);
+        setPastedData('');
+    }
+};
     
     const downloadTemplate = () => {
         let headers, filename, sampleData;

@@ -1,109 +1,89 @@
-// src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
-// <-- THAY ĐỔI 1: Import thêm 'onSnapshot'
-import { collection, query, where, Timestamp, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import { FiArchive, FiAlertTriangle, FiFileText } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { getPendingImportTickets, getPendingExportTickets } from '../services/dashboardService';
 import Spinner from '../components/Spinner';
-import styles from '../styles/DashboardPage.module.css';
-
-const DashboardCard = ({ icon, tieuDe, giaTri, mauSac }) => (
-  <div className={styles.dashboardCard} style={{ borderLeftColor: mauSac }}>
-    <div className={styles.cardIcon} style={{ backgroundColor: mauSac }}>{icon}</div>
-    <div className={styles.cardInfo}>
-      <div className={styles.cardTitle}>{tieuDe}</div>
-      <div className={styles.cardValue}>{giaTri}</div>
-    </div>
-  </div>
-);
+import { formatDate } from '../utils/dateUtils';
+import '../styles/Dashboard.css'; // Sử dụng lại file CSS cũ
 
 const DashboardPage = () => {
-  const [thongKe, setThongKe] = useState({
-    tongSanPham: 0,
-    sapHetHan: 0,
-    phieuChoDuyet: 0,
-  });
-  const [loading, setLoading] = useState(true);
+    const [pendingImports, setPendingImports] = useState([]);
+    const [pendingExports, setPendingExports] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  // <-- THAY ĐỔI 2: Toàn bộ logic trong useEffect đã được viết lại
-  useEffect(() => {
-    setLoading(true);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                // Gọi song song hai hàm để tăng tốc độ tải
+                const [imports, exports] = await Promise.all([
+                    getPendingImportTickets(),
+                    getPendingExportTickets()
+                ]);
+                setPendingImports(imports);
+                setPendingExports(exports);
+            } catch (error) {
+                console.error("Lỗi khi tải danh sách phiếu chờ xử lý:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Mảng để lưu các hàm unsubscribe
-    const unsubscribers = [];
-    let initialLoads = 0;
-    const totalListeners = 3;
+        fetchData();
+    }, []);
 
-    // Hàm kiểm tra để tắt spinner sau khi tất cả listener đã tải lần đầu
-    const checkInitialLoad = () => {
-        initialLoads++;
-        if (initialLoads === totalListeners) {
-            setLoading(false);
-        }
-    };
+    if (loading) {
+        return <Spinner />;
+    }
 
-    // --- Listener 1: Lắng nghe tổng số sản phẩm ---
-    const productsQuery = query(collection(db, 'products'));
-    const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
-      setThongKe(prev => ({ ...prev, tongSanPham: snapshot.size }));
-      checkInitialLoad();
-    }, (error) => {
-        console.error("Lỗi listener sản phẩm:", error);
-        checkInitialLoad();
-    });
-    unsubscribers.push(unsubscribeProducts);
-
-    // --- Listener 2: Lắng nghe số lô sắp hết hạn ---
-    const baMuoiNgayToi = new Date();
-    baMuoiNgayToi.setDate(baMuoiNgayToi.getDate() + 30);
-    const qSapHetHan = query(
-      collection(db, 'inventory_lots'),
-      where('expiryDate', '<=', Timestamp.fromDate(baMuoiNgayToi)),
-      where('expiryDate', '>=', Timestamp.now())
+    // Component để render một danh sách phiếu
+    const TicketList = ({ title, tickets, type }) => (
+        <div className="card">
+            <h3>{title} ({tickets.length})</h3>
+            {tickets.length > 0 ? (
+                <div className="table-container">
+                    <table className="products-table minimal">
+                        <thead>
+                            <tr>
+                                <th>ID Phiếu</th>
+                                <th>{type === 'import' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</th>
+                                <th>Ngày tạo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tickets.map(ticket => (
+                                <tr key={ticket.id}>
+                                    <td>
+                                        {/* Link dẫn đến trang danh sách phiếu tương ứng */}
+                                        <Link to={`/${type}s`} className="table-link">{ticket.id}</Link>
+                                    </td>
+                                    <td>{type === 'import' ? ticket.supplier : ticket.customer}</td>
+                                    <td>{formatDate(ticket.createdAt)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <p className="empty-message">Không có phiếu nào đang chờ xử lý.</p>
+            )}
+        </div>
     );
-    const unsubscribeNearExpiry = onSnapshot(qSapHetHan, (snapshot) => {
-      setThongKe(prev => ({ ...prev, sapHetHan: snapshot.size }));
-      checkInitialLoad();
-    }, (error) => {
-        console.error("Lỗi listener sắp hết hạn:", error);
-        checkInitialLoad();
-    });
-    unsubscribers.push(unsubscribeNearExpiry);
 
-    // --- Listener 3: Lắng nghe số phiếu nhập đang chờ ---
-    const qPhieuCho = query(collection(db, 'import_tickets'), where('status', '==', 'pending'));
-    const unsubscribePending = onSnapshot(qPhieuCho, (snapshot) => {
-      setThongKe(prev => ({ ...prev, phieuChoDuyet: snapshot.size }));
-      checkInitialLoad();
-    }, (error) => {
-        console.error("Lỗi listener phiếu chờ:", error);
-        checkInitialLoad();
-    });
-    unsubscribers.push(unsubscribePending);
+    return (
+        <div className="dashboard-container">
+            <div className="dashboard-header">
+                <h1>Cần xử lý</h1>
+            </div>
 
-    // --- Hàm dọn dẹp ---
-    // Khi component bị unmount (rời khỏi trang), hàm này sẽ được gọi
-    // để đóng tất cả các kết nối thời gian thực, tránh rò rỉ bộ nhớ.
-    return () => {
-      unsubscribers.forEach(unsub => unsub());
-    };
-  }, []); // Mảng phụ thuộc rỗng, chỉ chạy một lần khi component được mount
+            <div className="dashboard-grid single-column-grid">
+                {/* Danh sách phiếu nhập */}
+                <TicketList title="Phiếu Nhập Chờ Xử Lý" tickets={pendingImports} type="import" />
 
-  // Phần JSX không có gì thay đổi
-  if (loading) {
-    return <Spinner />;
-  }
-
-  return (
-    <div className={styles.dashboardContainer}>
-      <h1>Bảng điều khiển</h1>
-      <div className={styles.cardsGrid}>
-        <DashboardCard icon={<FiArchive />} tieuDe="Tổng số mã hàng" giaTri={thongKe.tongSanPham} mauSac="#007bff" />
-        <DashboardCard icon={<FiAlertTriangle />} tieuDe="Sắp hết hạn (30 ngày)" giaTri={thongKe.sapHetHan} mauSac="#ffc107" />
-        <DashboardCard icon={<FiFileText />} tieuDe="Phiếu chờ duyệt" giaTri={thongKe.phieuChoDuyet} mauSac="#6c757d" />
-      </div>
-    </div>
-  );
+                {/* Danh sách phiếu xuất */}
+                <TicketList title="Phiếu Xuất Chờ Xử Lý" tickets={pendingExports} type="export" />
+            </div>
+        </div>
+    );
 };
 
 export default DashboardPage;

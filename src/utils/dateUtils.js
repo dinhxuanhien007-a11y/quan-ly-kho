@@ -6,8 +6,8 @@
  * @returns {string} - Chuỗi ngày tháng đã định dạng hoặc chuỗi rỗng.
  */
 export const formatDate = (timestamp) => {
-  if (!timestamp) return '';
-  const date = timestamp.toDate ? timestamp.toDate() : timestamp;
+  if (!timestamp || !timestamp.toDate) return 'N/A'; // <-- Sửa thành 'N/A'
+  const date = timestamp.toDate();
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();

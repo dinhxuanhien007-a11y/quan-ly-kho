@@ -126,6 +126,8 @@
   border-right: 1px solid var(--border-color);
   white-space: nowrap; /* Giữ nội dung trên một dòng theo mặc định */
   vertical-align: middle;
+  background-color: #ffffff;
+  box-sizing: border-box;
 }
 
 /* THAY ĐỔI: Thêm quy tắc mới để cho phép tiêu đề cột 1 xuống dòng */
@@ -134,13 +136,13 @@
 }
 
 .inventory-table th {
-  background-color: #f8f9fa;
+  background-color: #f8f9fa !important;
   position: sticky;
   top: 0;
   z-index: 2;
 }
 
-.inventory-table td {
+.inventory-table th, .inventory-table td {
   background-color: #ffffff;
 }
 .inventory-table tbody tr:hover td {
@@ -150,10 +152,10 @@
   background-color: #d6eaff !important;
 }
 
-/* Các cột được ghim (sticky) */
+/* Các cột được ghim (sticky) - PHIÊN BẢN SỬA LỖI CUỐI CÙNG */
 .inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { position: sticky; left: 0; z-index: 1; }
-.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 90px; z-index: 1; } /* THAY ĐỔI: Cập nhật vị trí left */
-.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 240px; z-index: 1; } /* THAY ĐỔI: Cập nhật vị trí left */
+.inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { position: sticky; left: 90px; z-index: 1; }
+.inventory-table th:nth-child(3), .inventory-table td:nth-child(3) { position: sticky; left: 229px; z-index: 1; } /* <-- GIẢI PHÁP CHỒNG LÊN 1px */
 
 .inventory-table th:nth-child(1), .inventory-table th:nth-child(2), .inventory-table th:nth-child(3) { z-index: 3; }
 
@@ -913,6 +915,12 @@ tbody tr.selected-row td {
 
 .floating-toggle-btn:hover {
   transform: scale(1.1);
+}
+
+/* BỔ SUNG ĐOẠN NÀY VÀO CUỐI FILE */
+/* Fix cho input autocomplete nằm trong grid */
+.grid-cell > div {
+    overflow: visible;
 }
 
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */

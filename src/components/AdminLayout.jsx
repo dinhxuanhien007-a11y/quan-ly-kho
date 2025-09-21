@@ -14,25 +14,33 @@ import StocktakeListPage from '../pages/StocktakeListPage';
 import StocktakeSessionPage from '../pages/StocktakeSessionPage';
 import LotTracePage from '../pages/LotTracePage';
 import DataImportPage from '../pages/DataImportPage';
-import ExportSlipCounter from './ExportSlipCounter';
-import ImportSlipCounter from './ImportSlipCounter'; // <-- Import counter mới
 import UsersPage from '../pages/UsersPage';
-import FloatingCalculator from './FloatingCalculator'; // <-- Thêm import
+import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
+import ExpiryNotificationBanner from './ExpiryNotificationBanner';
+import ImportSlipCounter from './ImportSlipCounter';
+import ExportSlipCounter from './ExportSlipCounter';
+import ViewerLayout from './ViewerLayout';
+import { useAuth } from '../hooks/useAuth'; // <-- THÊM DÒNG NÀY
 
 const AdminLayout = () => {
   const location = useLocation();
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
+  const { role } = useAuth(); // <-- LẤY VAI TRÒ CỦA USER
 
   return (
     <div className="admin-layout-horizontal">
       <Navbar />
       <main className="main-content">
-        {/* Hiển thị counter có điều kiện dựa trên đường dẫn hiện tại */}
+        
+        {/* NÂNG CẤP: Chỉ hiển thị banner cho owner */}
+        {role === 'owner' && <ExpiryNotificationBanner />}
+        
         {location.pathname === '/new-export' && <ExportSlipCounter />}
         {location.pathname === '/new-import' && <ImportSlipCounter />}
-        
+
         <Routes>
+          <Route path="/view" element={<ViewerLayout />} />
           <Route path="/" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/partners" element={<PartnersPage />} />
@@ -47,6 +55,7 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
         </Routes>
       </main>
+
       <button 
         className="floating-toggle-btn" 
         onClick={() => setIsCalculatorVisible(true)}

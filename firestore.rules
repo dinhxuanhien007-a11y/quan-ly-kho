@@ -1,0 +1,91 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- CÁC HÀM HELPER ---
+    function isOwner() {
+      return request.auth.token.role == 'owner';
+    }
+    function isManager() {
+      return request.auth.token.role == 'manager';
+    }
+    function isOwnerOrManager() {
+      return isOwner() || isManager();
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // --- QUẢN LÝ USER ---
+    match /allowlist/{email} {
+      allow read, write: if isOwner();
+    }
+
+    match /users/{userId} {
+      allow list: if isOwnerOrManager();
+      allow read: if isSignedIn() && (request.auth.uid == userId || isOwner());
+      allow write: if isOwner();
+    }
+
+    // --- DỮ LIỆU CỐT LÕI ---
+    // (Đã tách thành các match riêng biệt)
+    match /products/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner();
+    }
+    match /partners/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner();
+    }
+    match /inventory_lots/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner();
+    }
+    match /product_summaries/{docId} {
+  allow read: if isSignedIn();
+  allow write: if false; // Chặn ghi từ client, kể cả owner
+}
+
+    // --- PHIẾU NHẬP/XUẤT ---
+    // (Đã tách thành các match riêng biệt)
+    match /import_tickets/{ticketId} {
+      allow read: if isOwnerOrManager();
+      allow write: if isOwner();
+    }
+    match /export_tickets/{ticketId} {
+      allow read: if isOwnerOrManager();
+      allow write: if isOwner();
+    }
+    
+    // --- DỮ LIỆU DASHBOARD ---
+    // (Đã tách thành các match riêng biệt)
+    match /dailyActivity/{docId} {
+        allow read: if isOwnerOrManager();
+        allow write: if false;
+    }
+    match /dashboardStats/{docId} {
+        allow read: if isOwnerOrManager();
+        allow write: if false;
+    }
+
+    // --- CẢNH BÁO & KIỂM KÊ ---
+    match /notifications/{notificationId} {
+      allow read, write: if isOwner();
+    }
+    
+    match /stocktakes/{sessionId} {
+      allow read, write: if isOwner();
+      // Áp dụng cho sub-collection items bên trong
+      match /items/{itemId} {
+        allow read, write: if isOwner();
+      }
+    }
+    
+    // --- ĐIỀU CHỈNH KHO ---
+    match /inventory_adjustments/{adjustmentId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner();
+    }
+  }
+}

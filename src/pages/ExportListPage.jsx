@@ -36,8 +36,8 @@ const ExportListPage = () => {
   const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, exportSlips, page);
 
   const handleRefresh = () => {
-      setHasNewData(false);
-      reset();
+    dismissNewData(); // <-- Đặt lại trạng thái của notification
+    reset();          // <-- Tải lại dữ liệu từ trang đầu
   };
 
   const handleConfirmExport = async (slip) => {

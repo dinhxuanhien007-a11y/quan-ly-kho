@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { z } from 'zod'; // <-- BƯỚC 1: IMPORT ZOD
 import { addPartner } from '../services/partnerService';
+import { normalizeString } from '../utils/stringUtils'; // <-- THÊM DÒNG NÀY
 
 // <-- BƯỚC 2: ĐỊNH NGHĨA SCHEMA -->
 const partnerSchema = z.object({
@@ -37,7 +38,9 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
         setIsSaving(true);
         try {
             const { partnerId: validatedId, ...newPartnerData } = validationResult.data;
-            // Gửi ID đã được validate và viết hoa lên service
+            // THÊM DÒNG NÀY ĐỂ TẠO TRƯỜNG CHUẨN HÓA
+        newPartnerData.partnerNameNormalized = normalizeString(newPartnerData.partnerName);
+        newPartnerData.searchKeywords = generateKeywords(newPartnerData.partnerName);
             await addPartner(validatedId.toUpperCase(), newPartnerData);
             
             toast.success('Thêm đối tác mới thành công!');

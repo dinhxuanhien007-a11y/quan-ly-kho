@@ -1,137 +1,195 @@
 // src/pages/PartnersPage.jsx
-import React, { useState, useMemo } from 'react';
-import { collection, query, orderBy } from 'firebase/firestore';
-import { FiEdit, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { toast } from 'react-toastify';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { PAGE_SIZE } from '../constants';
-import { useFirestorePagination } from '../hooks/useFirestorePagination';
-import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
-import { deletePartner } from '../services/partnerService';
+import { collection, query, orderBy, doc, deleteDoc, getDocs, where, documentId } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+import { FiPlus, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import AddPartnerModal from '../components/AddPartnerModal';
 import EditPartnerModal from '../components/EditPartnerModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
-import NewDataNotification from '../components/NewDataNotification';
-import styles from './PartnersPage.module.css';
+import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { PAGE_SIZE } from '../constants';
+import { normalizeString } from '../utils/stringUtils'; // <-- THÊM DÒNG NÀY
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [currentPartner, setCurrentPartner] = useState(null);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
+    const [partnerToEdit, setPartnerToEdit] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+    const [forceRerender, setForceRerender] = useState(0); // State để trigger re-fetch
 
-    const baseQuery = useMemo(() => query(collection(db, 'partners'), orderBy("createdAt", "desc")), []);
-    
-    const { 
-        documents: partners, 
-        loading, 
-        isLastPage, 
-        page, 
-        nextPage, 
-        prevPage,
-        reset
+    // MỚI: State cho chức năng tìm kiếm
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState(null); // null: không tìm kiếm, []: tìm không thấy, [...]: kết quả
+    const [isSearching, setIsSearching] = useState(false);
+
+    const baseQuery = useMemo(() => {
+        return query(collection(db, "partners"), orderBy(documentId()));
+    }, [forceRerender]); // Phụ thuộc vào forceRerender
+
+    const {
+        documents: partners,
+        loading,
+        isLastPage,
+        page,
+        nextPage,
+        prevPage
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, partners, page);
+    // THAY THẾ TOÀN BỘ HÀM CŨ BẰNG HÀM MỚI NÀY
+const performSearch = useCallback(async (term) => {
+    if (!term.trim()) {
+        setSearchResults(null);
+        return;
+    }
+    setIsSearching(true);
+    try {
+        // Bước 1: Chuẩn hóa và tách tất cả các từ người dùng gõ
+        const searchTerms = normalizeString(term).split(' ').filter(t => t);
 
-    const handleRefresh = () => {
-        setHasNewData(false);
-        reset();
-    };
+        if (searchTerms.length === 0) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
+        // Bước 2: Dùng từ đầu tiên để truy vấn Firestore (lấy về các kết quả tiềm năng)
+        const firstTerm = searchTerms[0];
+        const q = query(
+            collection(db, "partners"),
+            where("searchKeywords", "array-contains", firstTerm)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const initialResults = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Bước 3: Lọc kết quả trên client để khớp với TẤT CẢ các từ còn lại
+        if (searchTerms.length > 1) {
+            const remainingTerms = searchTerms.slice(1);
+            const finalResults = initialResults.filter(partner => 
+                // Kiểm tra xem 'searchKeywords' của đối tác có chứa MỌI từ còn lại không
+                remainingTerms.every(t => partner.searchKeywords.includes(t))
+            );
+            setSearchResults(finalResults);
+        } else {
+            // Nếu chỉ gõ 1 từ thì không cần lọc thêm
+            setSearchResults(initialResults);
+        }
+
+    } catch (error) {
+        console.error("Lỗi khi tìm kiếm đối tác:", error);
+        toast.error("Không thể thực hiện tìm kiếm.");
+    } finally {
+        setIsSearching(false);
+    }
+}, []);
+
+    // MỚI: useEffect để trigger tìm kiếm sau khi người dùng ngừng gõ
+    useEffect(() => {
+        const debounce = setTimeout(() => {
+            performSearch(searchTerm);
+        }, 500); // Đợi 500ms sau khi ngừng gõ
+        return () => clearTimeout(debounce);
+    }, [searchTerm, performSearch]);
 
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
-        reset();
+        setForceRerender(prev => prev + 1); // Trigger re-fetch
     };
 
     const handlePartnerUpdated = () => {
         setIsEditModalOpen(false);
-        reset();
-    };
-
-    const promptForDelete = (partner) => {
-        setConfirmModal({
-            isOpen: true,
-            item: partner,
-            title: "Xác nhận xóa đối tác?",
-            message: `Bạn có chắc chắn muốn xóa "${partner.partnerName}" (ID: ${partner.id}) không?`
-        });
-    };
-
-    const handleDelete = async () => {
-        const { item } = confirmModal;
-        if (!item) return;
-        try {
-            await deletePartner(item.id);
-            toast.success('Xóa đối tác thành công!');
-            reset();
-        } catch (error) {
-            console.error("Lỗi khi xóa đối tác: ", error);
-            toast.error('Đã xảy ra lỗi khi xóa đối tác.');
-        } finally {
-            setConfirmModal({ isOpen: false, item: null });
+        setPartnerToEdit(null);
+        if (searchResults) {
+            performSearch(searchTerm); // Cập nhật lại kết quả tìm kiếm
+        } else {
+            setForceRerender(prev => prev + 1); // Trigger re-fetch
         }
     };
 
-    const openEditModal = (partner) => {
-        setCurrentPartner(partner);
-        setIsEditModalOpen(true);
+    const handleDelete = (partnerId, partnerName) => {
+        setConfirmModal({
+            isOpen: true,
+            title: `Xác nhận xóa Đối tác?`,
+            message: `Bạn có chắc chắn muốn xóa "${partnerName}" (Mã: ${partnerId})? Hành động này không thể hoàn tác.`,
+            onConfirm: async () => {
+                try {
+                    await deleteDoc(doc(db, 'partners', partnerId));
+                    toast.success(`Đã xóa đối tác "${partnerName}" thành công.`);
+                    setConfirmModal({ isOpen: false });
+                    if (searchResults) {
+                        performSearch(searchTerm);
+                    } else {
+                        setForceRerender(prev => prev + 1);
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi xóa đối tác:", error);
+                    toast.error("Đã xảy ra lỗi khi xóa đối tác.");
+                }
+            }
+        });
     };
+
+    const dataToShow = searchResults !== null ? searchResults : partners;
+    const isLoadingData = loading || isSearching;
 
     return (
         <div>
-            <ConfirmationModal
+            {isAddModalOpen && <AddPartnerModal onClose={() => setIsAddModalOpen(false)} onPartnerAdded={handlePartnerAdded} />}
+            {isEditModalOpen && <EditPartnerModal onClose={() => setIsEditModalOpen(false)} onPartnerUpdated={handlePartnerUpdated} partnerToEdit={partnerToEdit} />}
+            <ConfirmationModal 
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
                 message={confirmModal.message}
-                onConfirm={handleDelete}
-                onCancel={() => setConfirmModal({ isOpen: false, item: null })}
-                confirmText="Vẫn xóa"
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal({ isOpen: false })}
             />
-            {isAddModalOpen && <AddPartnerModal onClose={() => setIsAddModalOpen(false)} onPartnerAdded={handlePartnerAdded} />}
-            {isEditModalOpen && <EditPartnerModal onClose={() => setIsEditModalOpen(false)} onPartnerUpdated={handlePartnerUpdated} partnerToEdit={currentPartner} />}
 
             <div className="page-header">
                 <h1>Quản Lý Đối Tác</h1>
                 <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
-                    <FiPlus style={{ marginRight: '5px' }} />
-                    Thêm Đối Tác
+                    <FiPlus /> Thêm đối tác
                 </button>
             </div>
-            
-            <NewDataNotification
-                isVisible={hasNewData}
-                onRefresh={handleRefresh}
-                message="Có đối tác mới được thêm!"
-            />
 
-            {loading ? <Spinner /> : (
+            {/* MỚI: Ô tìm kiếm */}
+            <div className="controls-container">
+                <div className="search-container" style={{ maxWidth: '100%', flexGrow: 1 }}>
+                    <input
+                        type="text"
+                        placeholder="Tìm theo Tên đối tác..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                    />
+                </div>
+            </div>
+
+            {isLoadingData ? <Spinner /> : (
                 <>
-                    <table className="products-table">
+                    <table className="products-table list-page-table">
                         <thead>
                             <tr>
                                 <th>Mã Đối Tác</th>
                                 <th>Tên Đối Tác</th>
                                 <th>Phân Loại</th>
-                                <th>Thao tác</th>
+                                <th>Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {partners.length > 0 ? (
-                                partners.map(partner => (
+                            {dataToShow.length > 0 ? (
+                                dataToShow.map(partner => (
                                     <tr key={partner.id}>
-                                        <td className={styles.partnerIdCell}>{partner.id}</td>
-                                        <td>{partner.partnerName}</td>
-                                        <td className={styles.partnerTypeCell}>
-                                            {partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}
-                                        </td>
+                                        <td>{partner.id}</td>
+                                        <td style={{textAlign: 'left'}}>{partner.partnerName}</td>
+                                        <td>{partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</td>
                                         <td>
                                             <div className="action-buttons">
-                                                <button className="btn-icon btn-edit" onClick={() => openEditModal(partner)}>
+                                                <button className="btn-icon btn-edit" onClick={() => { setPartnerToEdit(partner); setIsEditModalOpen(true); }}>
                                                     <FiEdit />
                                                 </button>
-                                                <button className="btn-icon btn-delete" onClick={() => promptForDelete(partner)}>
+                                                <button className="btn-icon btn-delete" onClick={() => handleDelete(partner.id, partner.partnerName)}>
                                                     <FiTrash2 />
                                                 </button>
                                             </div>
@@ -139,24 +197,25 @@ const PartnersPage = () => {
                                     </tr>
                                 ))
                             ) : (
-                                 <tr>
-                                    <td colSpan="4" style={{ textAlign: 'center' }}>
-                                         Chưa có đối tác nào.
-                                    </td>
+                                <tr>
+                                    <td colSpan="4">Không tìm thấy đối tác nào.</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
 
-                    <div className="pagination-controls">
-                        <button onClick={prevPage} disabled={page <= 1 || loading}>
-                            <FiChevronLeft /> Trang Trước
-                        </button>
-                        <span>Trang {page}</span>
-                        <button onClick={nextPage} disabled={isLastPage || loading}>
-                            Trang Tiếp <FiChevronRight />
-                        </button>
-                    </div>
+                    {/* Chỉ hiển thị phân trang khi không có tìm kiếm */}
+                    {searchResults === null && (
+                         <div className="pagination-controls">
+                            <button onClick={prevPage} disabled={page <= 1}>
+                                <FiChevronLeft /> Trang Trước
+                            </button>
+                            <span>Trang {page}</span>
+                            <button onClick={nextPage} disabled={isLastPage}>
+                                Trang Tiếp <FiChevronRight />
+                            </button>
+                        </div>
+                    )}
                 </>
             )}
         </div>

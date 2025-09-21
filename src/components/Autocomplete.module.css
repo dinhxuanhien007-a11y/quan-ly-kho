@@ -1,0 +1,63 @@
+/* src/components/Autocomplete.module.css */
+.autocompleteContainer {
+    position: relative;
+    width: 100%;
+}
+
+/* MỚI: Style cho icon mũi tên */
+.arrowIcon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    pointer-events: none; /* Để có thể click xuyên qua icon */
+}
+
+.suggestionsList {
+    position: fixed; 
+    background-color: white;
+    border: 1px solid #ccc;
+    list-style: none;
+    margin: 2px 0 0 0;
+    padding: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 9999;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+.suggestionsList li {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.suggestionsList li:hover {
+    background-color: #f0f0f0;
+}
+
+.suggestionsList li span {
+    color: #666;
+    margin-left: 8px;
+}
+
+/* MỚI: Style cho các dòng thông báo (tải, lỗi...) */
+.feedback {
+    padding: 10px 12px;
+    color: #888;
+    font-style: italic;
+    cursor: default !important;
+    background-color: #fff !important;
+}
+
+/* Thêm vào cuối file Autocomplete.module.css */
+.activeSuggestion {
+    background-color: #007bff !important;
+    color: white;
+}
+
+.activeSuggestion span {
+    color: #f0f0f0;
+}

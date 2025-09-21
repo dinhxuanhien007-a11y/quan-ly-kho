@@ -1,54 +1,57 @@
-// src/hooks/useRealtimeNotification.js
-import { useState, useEffect } from 'react';
-import { onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
+import { onSnapshot, query, limit, getDocs } from 'firebase/firestore';
 
-/**
- * Một custom hook để lắng nghe bản ghi mới nhất trong một collection trên Firestore.
- * @param {object} baseQuery - Query gốc của collection cần lắng nghe.
- * @param {Array} documents - Mảng documents hiện tại từ useFirestorePagination.
- * @param {number} page - Số trang hiện tại.
- * @param {string} searchTerm - Chuỗi tìm kiếm hiện tại (nếu có).
- * @returns {{hasNewData: boolean, setHasNewData: function}} - Trạng thái báo có dữ liệu mới và hàm để cập nhật nó.
- */
-export const useRealtimeNotification = (baseQuery, documents, page, searchTerm = '') => {
+export const useRealtimeNotification = (baseQuery) => {
     const [hasNewData, setHasNewData] = useState(false);
+    // Dùng Ref để lưu timestamp, sẽ không bị reset khi re-render
+    const lastSeenTimestampRef = useRef(null);
+    const isInitialLoadRef = useRef(true); // Cờ để đánh dấu lần tải đầu tiên
 
     useEffect(() => {
-        // Chỉ lắng nghe ở trang đầu tiên và khi không có tìm kiếm
-        if (page !== 1 || searchTerm) {
-            // Nếu không thỏa điều kiện, đảm bảo thông báo không hiển thị
-            if (hasNewData) setHasNewData(false);
-            return;
+        if (!baseQuery) return;
+        
+        // Luôn chỉ lấy 1 document mới nhất dựa trên baseQuery
+        const newestDocQuery = query(baseQuery, limit(1));
+
+        // Thiết lập timestamp ban đầu
+        if (isInitialLoadRef.current) {
+            getDocs(newestDocQuery).then(snapshot => {
+                if (!snapshot.empty) {
+                    lastSeenTimestampRef.current = snapshot.docs[0].data().createdAt;
+                }
+                isInitialLoadRef.current = false; // Đánh dấu đã qua lần tải đầu
+            });
         }
 
-        // Tạo một query mới chỉ để lắng nghe document mới nhất dựa trên createdAt
-        const newestDocQuery = query(
-            baseQuery,
-            orderBy("createdAt", "desc"),
-            limit(1)
-        );
-
         const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
-            if (snapshot.empty || documents.length === 0) {
+            // Không chạy logic nếu đang ở lần tải đầu tiên
+            if (isInitialLoadRef.current || snapshot.empty) {
                 return;
             }
 
-            const newestDocId = snapshot.docs[0]?.id;
-            const currentFirstDocId = documents[0]?.id;
+            const newestDoc = snapshot.docs[0].data();
+            const newestTimestamp = newestDoc.createdAt;
 
-            // Nếu ID của document mới nhất khác với ID của document đầu tiên đang hiển thị
-            // -> Có dữ liệu mới
-            if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
+            // Chỉ hiển thị thông báo nếu có document mới thật sự
+            if (lastSeenTimestampRef.current && newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis()) {
                 setHasNewData(true);
             }
         }, (error) => {
             console.error("Lỗi khi lắng nghe dữ liệu real-time:", error);
         });
 
-        // Dọn dẹp listener khi component unmount hoặc dependency thay đổi
-        return () => unsubscribe();
+        return () => {
+            unsubscribe();
+            isInitialLoadRef.current = true; // Reset lại khi query thay đổi
+        };
 
-    }, [documents, page, baseQuery, searchTerm, hasNewData]); // Thêm hasNewData để có thể reset từ bên ngoài
+    }, [baseQuery]);
 
-    return { hasNewData, setHasNewData };
+    // Hàm để người dùng bấm vào nút "Tải lại"
+    const dismissNewData = () => {
+        setHasNewData(false);
+        isInitialLoadRef.current = true; // Reset lại để nó lấy timestamp mới nhất
+    };
+
+    return { hasNewData, dismissNewData }; // Trả về dismissNewData
 };

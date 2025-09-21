@@ -1,4 +1,6 @@
 // src/pages/NewImportPage.jsx
+import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
+import ProductAutocomplete from '../components/ProductAutocomplete';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
@@ -154,21 +156,36 @@ const NewImportPage = () => {
             console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
         }
     };
-    const handleProductSearch = async (index, productId) => {
-        if (!productId) return;
-        try {
-            const productRef = doc(db, 'products', productId);
-            const productSnap = await getDoc(productRef);
-            if (productSnap.exists()) {
-                handleProductSearchResult(index, productSnap.data(), true);
-            } else {
-                handleProductSearchResult(index, null, false);
-            }
-        } catch (error) {
-            console.error("Lỗi khi tìm kiếm sản phẩm:", error);
-            toast.error("Lỗi khi tìm kiếm sản phẩm!");
+    const handleProductSearch = async (index, productOrId) => {
+    if (!productOrId) return;
+
+    // Trường hợp người dùng chọn từ danh sách gợi ý
+    if (typeof productOrId === 'object' && productOrId !== null) {
+        // GỌI HÀM CỦA ZUSTAND STORE ĐỂ CẬP NHẬT DỮ LIỆU
+        handleProductSearchResult(index, productOrId, true);
+        // CẬP NHẬT LẠI ID VÀO Ô INPUT
+        updateItem(index, 'productId', productOrId.id); // <-- DÒNG QUAN TRỌNG BỊ THIẾU
+        return; 
+    }
+
+    // Trường hợp người dùng gõ tay và rời khỏi ô input
+    const productId = String(productOrId).trim().toUpperCase();
+    if (!productId) return;
+
+    try {
+        const productRef = doc(db, 'products', productId);
+        const productSnap = await getDoc(productRef);
+
+        if (productSnap.exists()) {
+            handleProductSearchResult(index, productSnap.data(), true);
+        } else {
+            handleProductSearchResult(index, null, false);
         }
-    };
+    } catch (error) {
+        console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+        toast.error("Lỗi khi tìm kiếm sản phẩm!");
+    }
+};
     const handleNewProductCreated = (newData) => {
         const { index } = newProductModal;
         fillNewProductData(index, newData);
@@ -312,95 +329,101 @@ const NewImportPage = () => {
             </div>
 
             <h2>Chi tiết hàng hóa</h2>
-            <div className="item-details-grid">
-                <div className="grid-header">Mã hàng (*)</div>
-                <div className="grid-header">Tên hàng</div>
-                <div className="grid-header">Số lô (*)</div>
-                <div className="grid-header">HSD (*)</div>
-                <div className="grid-header">ĐVT</div>
-                <div className="grid-header">Quy cách</div>
-                <div className="grid-header">Số lượng (*)</div>
-                <div className="grid-header">Ghi chú</div>
-                <div className="grid-header">Nhiệt độ BQ</div>
-                <div className="grid-header">Team</div>
-                <div className="grid-header">Xóa</div>
+            <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 0.5fr' }}>
+    <div className="grid-header">Mã hàng (*)</div>
+    <div className="grid-header">Tên hàng</div>
+    <div className="grid-header">Số lô (*)</div>
+    <div className="grid-header">HSD (*)</div>
+    <div className="grid-header">ĐVT</div>
+    <div className="grid-header">Quy cách</div>
+    <div className="grid-header">Số lượng (*)</div>
+    <div className="grid-header">Ghi chú</div>
+    <div className="grid-header">Team</div>
+    <div className="grid-header">Xóa</div>
 
-                {items.map((item, index) => (
-                    <React.Fragment key={item.id}>
-                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <input
-                                ref={index === items.length - 1 ? lastInputRef : null}
-                                type="text"
-                                value={item.productId}
-                                onChange={e => updateItem(index, 'productId', e.target.value.toUpperCase())}
-                                onBlur={e => handleProductSearch(index, e.target.value)}
-                            />
-                            {item.productNotFound && (
-                                <button
-                                    onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
-                                    className="btn-link"
-                                    style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
-                                >
-                                    Mã này không tồn tại. Tạo mới...
-                                </button>
-                            )}
-                        </div>
-                        <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <input
-                                type="text"
-                                value={item.lotNumber}
-                                onChange={e => updateItem(index, 'lotNumber', e.target.value)}
-                                onBlur={() => checkExistingLot(index)}
-                            />
-                            {item.lotStatus === 'exists' && item.existingLotInfo && (
-                                <div className="existing-lot-info">
-                                    <FiInfo />
-                                    <span>Lô đã có | Tồn: {item.existingLotInfo.quantityRemaining} | HSD: {item.existingLotInfo.expiryDate}</span>
-                                </div>
-                            )}
-                            {item.lotStatus === 'new' && (
-                                <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
-                                    [+] Khai báo lô mới...
-                                </button>
-                            )}
-                        </div>
-                        <div className="grid-cell">
-                            <input 
-                                type="text" 
-                                placeholder="dd/mm/yyyy" 
-                                value={item.expiryDate} 
-                                onChange={e => updateItem(index, 'expiryDate', e.target.value)} 
-                                onBlur={e => handleExpiryDateBlur(index, e.target.value)}
-                                readOnly={item.lotStatus === 'exists'}
-                                style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
-                            />
-                        </div>
-                        <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-                        <div className="grid-cell">
-                            <input
-                                type="number"
-                                value={item.quantity}
-                                onChange={e => updateItem(index, 'quantity', e.target.value)}
-                            />
-                        </div>
-                        <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
-                        <div className="grid-cell"><textarea value={item.storageTemp} readOnly /></div>
-                        <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
-                        <div className="grid-cell">
-                            <button 
-                                type="button" 
-                                className="btn-icon btn-delete" 
-                                onClick={() => handleRemoveRow(index)}
-                                title="Xóa dòng này"
-                            >
-                                <FiXCircle />
-                            </button>
-                        </div>
-                    </React.Fragment>
-                ))}
+    {items.map((item, index) => (
+        <React.Fragment key={item.id}>
+            <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <ProductAutocomplete
+                    value={item.productId}
+                    onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
+                    onSelect={(product) => handleProductSearch(index, product)}
+                    onBlur={() => handleProductSearch(index, item.productId)}
+                />
+                {item.productNotFound && (
+                    <button
+                        onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
+                        className="btn-link"
+                        style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
+                    >
+                        Mã này không tồn tại. Tạo mới...
+                    </button>
+                )}
             </div>
+            <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+            <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <input
+                    type="text"
+                    value={item.lotNumber}
+                    onChange={e => updateItem(index, 'lotNumber', e.target.value)}
+                    onBlur={() => checkExistingLot(index)}
+                />
+                {item.lotStatus === 'exists' && item.existingLotInfo && (
+                    <div className="existing-lot-info">
+                        <FiInfo />
+                        <span>Lô đã có | Tồn: {formatNumber(item.existingLotInfo.quantityRemaining)} | HSD: {item.existingLotInfo.expiryDate}</span>
+                    </div>
+                )}
+                {item.lotStatus === 'new' && (
+                    <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
+                        [+] Khai báo lô mới...
+                    </button>
+                )}
+            </div>
+            <div className="grid-cell">
+                <input 
+                    type="text" 
+                    placeholder="dd/mm/yyyy" 
+                    value={item.expiryDate} 
+                    onChange={e => updateItem(index, 'expiryDate', e.target.value)} 
+                    onBlur={e => handleExpiryDateBlur(index, e.target.value)}
+                    readOnly={item.lotStatus === 'exists'}
+                    style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
+                />
+            </div>
+            <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+            <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+            <div className="grid-cell">
+    <input
+        type="text" // Đổi sang "text" để cho phép dấu chấm
+        inputMode="numeric" // Gợi ý bàn phím số trên di động
+        value={formatNumber(item.quantity)}
+        onChange={e => {
+            // Chuyển "1.000" về "1000"
+            const numericValue = parseFormattedNumber(e.target.value);
+            // Chỉ cho phép nhập số
+            if (/^\d*$/.test(numericValue)) {
+                updateItem(index, 'quantity', numericValue);
+            }
+        }}
+    />
+</div>
+            <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
+            {/* Cột Team được giữ lại */}
+            <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
+            <div className="grid-cell">
+                <button 
+                    type="button" 
+                    className="btn-icon btn-delete" 
+                    onClick={() => handleRemoveRow(index)}
+                    title="Xóa dòng này"
+                >
+                    <FiXCircle />
+                </button>
+            </div>
+        </React.Fragment>
+    ))}
+</div>
             
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">

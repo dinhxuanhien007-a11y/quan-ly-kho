@@ -1,4 +1,5 @@
 // src/pages/InventoryPage.jsx
+import { formatNumber } from '../utils/numberUtils';
 import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
@@ -142,8 +143,8 @@ const InventoryPage = () => {
                                         <td data-label="HSD">{formatDate(lot.expiryDate)}</td>
                                         <td data-label="ĐVT">{lot.unit}</td>
                                         <td data-label="Quy cách">{lot.packaging}</td>
-                                        <td data-label="SL Nhập">{lot.quantityImported}</td>
-                                        <td data-label="SL Còn lại">{lot.quantityRemaining}</td>
+                                        <td data-label="SL Nhập">{formatNumber(lot.quantityImported)}</td>
+                                        <td data-label="SL Còn lại">{formatNumber(lot.quantityRemaining)}</td>
                                         <td data-label="Ghi chú">{lot.notes}</td>
                                         <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
                                         <td data-label="Team"><TeamBadge team={lot.team} /></td>

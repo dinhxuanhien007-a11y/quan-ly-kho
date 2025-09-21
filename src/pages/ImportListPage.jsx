@@ -36,8 +36,8 @@ const ImportListPage = () => {
   const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, importSlips, page);
 
   const handleRefresh = () => {
-    setHasNewData(false);
-    reset();
+    dismissNewData(); // <-- Đặt lại trạng thái của notification
+    reset();          // <-- Tải lại dữ liệu từ trang đầu
   };
 
   const handleConfirmImport = async () => {

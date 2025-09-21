@@ -1,4 +1,6 @@
 // src/pages/NewExportPage.jsx
+import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
+import ProductAutocomplete from '../components/ProductAutocomplete';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -84,45 +86,64 @@ const NewExportPage = () => {
         }
     };
 
-    const handleProductSearch = async (index, productId) => {
-        if (!productId) return;
-        replaceItem(index, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, isOutOfStock: false });
-        try {
-          const productRef = doc(db, 'products', productId);
-          const productSnap = await getDoc(productRef);
-          if (!productSnap.exists()) {
-            toast.warn(`Không tìm thấy sản phẩm với mã: ${productId}`);
-            return;
-          }
-          const productData = productSnap.data();
-          const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
-          const lotsSnapshot = await getDocs(lotsQuery);
-          
-          const productUpdateData = {
-              productName: productData.productName,
-              unit: productData.unit,
-              packaging: productData.packaging,
-              storageTemp: productData.storageTemp,
-              availableLots: [],
-              isOutOfStock: false
-          };
+    const handleProductSearch = async (index, productOrId) => {
+    if (!productOrId) return;
 
-          if (lotsSnapshot.empty) {
-            productUpdateData.isOutOfStock = true;
-          } else {
-            const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            foundLots.sort((a, b) => (a.expiryDate.toDate()) - (b.expiryDate.toDate()));
-            productUpdateData.availableLots = foundLots;
-            setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
-          }
+    // Reset thông tin dòng hiện tại trước khi tìm kiếm
+    replaceItem(index, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, isOutOfStock: false });
+    
+    let productData;
+    let productIdToSearch;
+
+    if (typeof productOrId === 'object' && productOrId !== null) {
+        // Trường hợp 1: Người dùng chọn từ autocomplete
+        productData = productOrId;
+        productIdToSearch = productOrId.id;
+        updateItem(index, 'productId', productIdToSearch); // Cập nhật mã hàng vào state
+    } else {
+        // Trường hợp 2: Người dùng gõ tay
+        productIdToSearch = String(productOrId).trim().toUpperCase();
+        if (!productIdToSearch) return;
         
-          replaceItem(index, productUpdateData);
-
-        } catch (error) {
-          console.error("Lỗi khi tìm kiếm:", error);
-          toast.error("Đã có lỗi xảy ra khi tìm kiếm.");
+        const productRef = doc(db, 'products', productIdToSearch);
+        const productSnap = await getDoc(productRef);
+        if (!productSnap.exists()) {
+            toast.warn(`Không tìm thấy sản phẩm với mã: ${productIdToSearch}`);
+            return;
         }
-    };
+        productData = { id: productSnap.id, ...productSnap.data() };
+    }
+
+    // Cập nhật thông tin sản phẩm vào dòng
+    replaceItem(index, {
+        productName: productData.productName,
+        unit: productData.unit,
+        packaging: productData.packaging,
+        storageTemp: productData.storageTemp,
+    });
+
+    try {
+        // Tìm các lô hàng có sẵn
+        const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productIdToSearch), where("quantityRemaining", ">", 0));
+        const lotsSnapshot = await getDocs(lotsQuery);
+
+        if (lotsSnapshot.empty) {
+            updateItem(index, 'isOutOfStock', true);
+        } else {
+            const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            foundLots.sort((a, b) => a.expiryDate.toDate() - b.expiryDate.toDate());
+            
+            replaceItem(index, {
+                availableLots: foundLots,
+                isOutOfStock: false,
+            });
+            setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
+        }
+    } catch (error) {
+        console.error("Lỗi khi tìm kiếm lô hàng:", error);
+        toast.error("Đã có lỗi xảy ra khi tìm kiếm lô hàng.");
+    }
+};
     
     const handleLotSelection = (index, selectedLotId) => {
         const currentItem = items[index];
@@ -297,70 +318,79 @@ const NewExportPage = () => {
             </div>
 
             <h2>Chi Tiết Hàng Hóa Xuất Kho</h2>
-            <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+            <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 0.5fr' }}>
                 <div className="grid-header">Mã hàng (*)</div>
                 <div className="grid-header">Tên hàng</div>
                 <div className="grid-header">Số lô (*)</div>
+                <div className="grid-header">HSD (*)</div>
                 <div className="grid-header">ĐVT</div>
                 <div className="grid-header">Quy cách</div>
                 <div className="grid-header">SL Xuất (*)</div>
                 <div className="grid-header">Ghi chú</div>
+                <div className="grid-header">Nhiệt độ BQ</div>
                 <div className="grid-header">Xóa</div>
 
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
-                        <div className="grid-cell">
-                            <input 
-                                ref={index === items.length - 1 ? lastInputRef : null}
-                                type="text" 
-                                placeholder="Nhập mã hàng..." 
-                                value={item.productId}
-                                onChange={e => updateItem(index, 'productId', e.target.value.toUpperCase())}
-                                onBlur={e => handleProductSearch(index, e.target.value)} />
-                        </div>
-                        <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            {item.isOutOfStock ? (
-                                <div className="inline-warning">
-                                    <FiAlertCircle />
-                                    <span>Sản phẩm đã hết hàng!</span>
-                                </div>
-                            ) : item.selectedLotId ? (
-                                <div className="selected-lot-view">
-                                    <input type="text" value={item.displayLotText} readOnly className="selected-lot-input" />
-                                    <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn">
-                                        <FiChevronDown />
-                                    </button>
-                                </div>
-                            ) : (
-                                <select
-                                    ref={el => lotSelectRefs.current[index] = el}
-                                    value={item.selectedLotId}
-                                    onChange={e => handleLotSelection(index, e.target.value)}
-                                    disabled={item.availableLots.length === 0}
-                                    style={{width: '100%'}}
-                                >
-                                    <option value="">-- Chọn lô tồn kho --</option>
-                                    {item.availableLots.map(lot => (
-                                        <option key={lot.id} value={lot.id}>
-                                        {`Lô: ${lot.lotNumber} | HSD: ${formatDate(lot.expiryDate)} | Tồn: ${lot.quantityRemaining}`}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                        </div>
-                        <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-                        <div className="grid-cell">
-                            <input type="number" value={item.quantityToExport}
-                                ref={el => quantityInputRefs.current[index] = el}
-                                onChange={e => updateItem(index, 'quantityToExport', e.target.value)} />
-                        </div>
-                        <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
-                        <div className="grid-cell">
-                            <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRowWithConfirmation(index)}><FiXCircle /></button>
-                        </div>
-                    </React.Fragment>
+    {/* THAY THẾ TOÀN BỘ CÁC Ô DỮ LIỆU CŨ BẰNG KHỐI NÀY */}
+    <div className="grid-cell">
+        <ProductAutocomplete
+            value={item.productId}
+            onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
+            onSelect={(product) => handleProductSearch(index, product)}
+            onBlur={() => handleProductSearch(index, item.productId)}
+        />
+    </div>
+    <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+    <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+        {item.isOutOfStock ? (
+            <div className="inline-warning"><FiAlertCircle /><span>Sản phẩm đã hết hàng!</span></div>
+        ) : item.selectedLotId ? (
+            <div className="selected-lot-view">
+                <input type="text" value={item.displayLotText} readOnly className="selected-lot-input" />
+                <button type="button" onClick={() => handleLotSelection(index, '')} className="change-lot-btn"><FiChevronDown /></button>
+            </div>
+        ) : (
+            <select
+                ref={el => lotSelectRefs.current[index] = el}
+                value={item.selectedLotId}
+                onChange={e => handleLotSelection(index, e.target.value)}
+                disabled={item.availableLots.length === 0}
+                style={{width: '100%'}}
+            >
+                <option value="">-- Chọn lô tồn kho --</option>
+                {item.availableLots.map(lot => (
+    <option key={lot.id} value={lot.id}>
+        {`Lô: ${lot.lotNumber} | HSD: ${formatDate(lot.expiryDate)} | Tồn: ${formatNumber(lot.quantityRemaining)}`}
+    </option>
+))}
+            </select>
+        )}
+    </div>
+    {/* Ô HSD ĐÃ ĐƯỢC THÊM LẠI */}
+    <div className="grid-cell"><input type="text" value={item.expiryDate} readOnly /></div>
+    <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+    <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+    <div className="grid-cell">
+    <input 
+        type="text" // Đổi sang "text"
+        inputMode="numeric" // Gợi ý bàn phím số trên di động
+        value={formatNumber(item.quantityToExport)}
+        ref={el => quantityInputRefs.current[index] = el}
+        onChange={e => {
+            const numericValue = parseFormattedNumber(e.target.value);
+            if (/^\d*$/.test(numericValue)) {
+                updateItem(index, 'quantityToExport', numericValue);
+            }
+        }} 
+    />
+</div>
+    <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
+    <div className="grid-cell"><input type="text" value={item.storageTemp} readOnly /></div>
+    <div className="grid-cell">
+        <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRowWithConfirmation(index)}><FiXCircle /></button>
+    </div>
+</React.Fragment>
                 ))}
             </div>
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
