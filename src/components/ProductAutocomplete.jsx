@@ -42,17 +42,6 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
     }, []);
 
     useEffect(() => {
-        if (showSuggestions && inputRef.current) {
-            const rect = inputRef.current.getBoundingClientRect();
-            setDropdownPosition({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: rect.width,
-            });
-        }
-    }, [showSuggestions, suggestions]);
-
-    useEffect(() => {
         const handleClickOutside = (event) => {
             if (containerRef.current && !containerRef.current.contains(event.target)) {
                 setShowSuggestions(false);
@@ -121,31 +110,32 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
     };
     
     const SuggestionsPortal = () => createPortal(
-        <ul
-            ref={suggestionsRef}
-            className={styles.suggestionsList}
-            style={{
-                top: `${dropdownPosition.top}px`,
-                left: `${dropdownPosition.left}px`,
-                width: `${dropdownPosition.width}px`,
-            }}
-        >
-            {isLoading && <li className={styles.feedback}>Đang tải...</li>}
-            {error && <li className={styles.feedback}>{error}</li>}
-            {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>Không tìm thấy kết quả</li>}
-            
-            {!isLoading && !error && suggestions.map((product, index) => (
-                <li 
-                    key={product.id} 
-                    className={index === activeIndex ? styles.activeSuggestion : ''}
-                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }} // Dùng onMouseDown để tránh xung đột với onBlur
-                >
-                    <strong>{product.id}</strong> - <span>{product.productName}</span>
-                </li>
-            ))}
-        </ul>,
-        document.body
-    );
+    <ul
+        ref={suggestionsRef}
+        className={styles.suggestionsList}
+        style={{
+            // Chúng ta không cần định vị bằng top, left nữa
+            // chỉ cần width để đảm bảo nó khớp với input
+            width: `${inputRef.current.offsetWidth}px`,
+        }}
+    >
+        {isLoading && <li className={styles.feedback}>Đang tải...</li>}
+        {error && <li className={styles.feedback}>{error}</li>}
+        {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>Không tìm thấy kết quả</li>}
+        
+        {!isLoading && !error && suggestions.map((product, index) => (
+            <li 
+                key={product.id} 
+                className={index === activeIndex ? styles.activeSuggestion : ''}
+                onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }}
+            >
+                <strong>{product.id}</strong> - <span>{product.productName}</span>
+            </li>
+        ))}
+    </ul>,
+    // Đặt portal vào container Autocomplete
+    containerRef.current
+);
 
     return (
         <div className={styles.autocompleteContainer} ref={containerRef}>

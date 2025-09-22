@@ -15,7 +15,10 @@
 }
 
 .suggestionsList {
-    position: fixed; 
+    position: absolute; /* Sửa từ fixed thành absolute */
+    top: 100%; /* Đặt ngay dưới input */
+    left: 0;
+    width: 100%;
     background-color: white;
     border: 1px solid #ccc;
     list-style: none;

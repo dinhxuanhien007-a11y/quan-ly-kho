@@ -49,9 +49,15 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
-    updatedItems[index][field] = value;
+    // Đảm bảo giá trị là một số hợp lệ trước khi gán
+    if (field === 'quantity') {
+        const numericValue = Number(value);
+        updatedItems[index][field] = isNaN(numericValue) ? '' : value;
+    } else {
+        updatedItems[index][field] = value;
+    }
     setSlipData({ ...slipData, items: updatedItems });
-  };
+};
 
   const addNewRow = () => {
     const newItems = [
@@ -128,7 +134,20 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
               </div>
               <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
               <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-              <div className="grid-cell"><input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} /></div>
+              <div className="grid-cell">
+    <input
+        type="text" // THAY ĐỔI: Sử dụng type="text"
+        inputMode="numeric" // THÊM: Gợi ý bàn phím số trên di động
+        value={item.quantity}
+        onChange={e => {
+            const value = e.target.value;
+            // THAY ĐỔI: Kiểm tra để cho phép cả số nguyên và số thập phân
+            if (/^\d*\.?\d*$/.test(value) || value === '') {
+                handleItemChange(index, 'quantity', value);
+            }
+        }}
+    />
+</div>
               <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
               <div className="grid-cell">
                 <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>

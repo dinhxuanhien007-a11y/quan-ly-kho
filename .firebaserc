@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "kho-ptbiomed"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

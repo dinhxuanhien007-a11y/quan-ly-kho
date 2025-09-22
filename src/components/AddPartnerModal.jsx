@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { z } from 'zod'; // <-- BƯỚC 1: IMPORT ZOD
 import { addPartner } from '../services/partnerService';
-import { normalizeString } from '../utils/stringUtils'; // <-- THÊM DÒNG NÀY
+import { normalizeString, generateKeywords } from '../utils/stringUtils';
 
 // <-- BƯỚC 2: ĐỊNH NGHĨA SCHEMA -->
 const partnerSchema = z.object({

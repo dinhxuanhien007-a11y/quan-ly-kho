@@ -83,6 +83,7 @@ const FloatingCalculator = ({ onClose }) => {
         setOperator(nextOperator);
     };
 
+    // FIX: TÁCH RIÊNG useEffect CHO CÁC PHÍM BẤM
     useEffect(() => {
         const handleKeyDown = (event) => {
             const { key } = event;
@@ -92,23 +93,30 @@ const FloatingCalculator = ({ onClose }) => {
             else if (key === 'Enter' || key === '=') { event.preventDefault(); performOperation('='); }
             else if (key === 'Delete' || key.toLowerCase() === 'c') { event.preventDefault(); clearAll(); }
             else if (key === 'Backspace') { event.preventDefault(); inputBackspace(); }
-            else if (key === 'Escape') { event.preventDefault(); onClose(); }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [displayValue, prevValue, operator, waitingForOperand, clearAll, onClose, inputBackspace]);
+    }, [displayValue, prevValue, operator, waitingForOperand, clearAll, inputBackspace]);
+
+    // Thêm một useEffect riêng để xử lý phím Escape
+    useEffect(() => {
+      const handleEscape = (event) => {
+        if (event.key === 'Escape') {
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleEscape);
+      return () => window.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
+
 
     return (
         <div className={styles.calculatorContainer}>
             <div className={styles.calculator}>
-                <button className={styles.closeButton} onClick={onClose}><FiX /></button>
-                
-                {/* THAY ĐỔI: Gộp 2 màn hình vào trong 1 div 'screen' */}
                 <div className={styles.screen}>
                     <div className={styles.calculationDisplay}>{calculationString}</div>
                     <div className={styles.display}>{displayValue}</div>
                 </div>
-
                 <div className={styles.keypad}>
                     <button onClick={() => clearAll()}>C</button>
                     <button disabled>%</button>

@@ -386,17 +386,18 @@ const NewExportPage = () => {
     <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
     <div className="grid-cell">
     <input 
-        type="text" // Đổi sang "text"
-        inputMode="numeric" // Gợi ý bàn phím số trên di động
-        value={formatNumber(item.quantityToExport)}
-        ref={el => quantityInputRefs.current[index] = el}
-        onChange={e => {
-            const numericValue = parseFormattedNumber(e.target.value);
-            if (/^\d*$/.test(numericValue)) {
-                updateItem(index, 'quantityToExport', numericValue);
-            }
-        }} 
-    />
+        type="text"
+    inputMode="numeric"
+    value={item.quantityToExport}
+    ref={el => quantityInputRefs.current[index] = el}
+    onChange={e => {
+        // Pass the raw string value directly to the store
+        const { value } = e.target;
+        if (/^\d*\.?\d*$/.test(value) || value === '') {
+            updateItem(index, 'quantityToExport', value);
+        }
+    }} 
+/>
 </div>
     <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
     <div className="grid-cell"><input type="text" value={item.storageTemp} readOnly /></div>

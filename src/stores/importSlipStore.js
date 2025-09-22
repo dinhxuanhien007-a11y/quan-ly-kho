@@ -51,10 +51,9 @@ const useImportSlipStore = create((set) => ({
 
     // Action chung để cập nhật một trường bất kỳ của một item
     updateItem: (index, field, value) => set(state => {
-        const newItems = [...state.items];
-        // Tạo một bản sao để tránh thay đổi state gốc trực tiếp
-        const currentItem = { ...newItems[index] };
-        currentItem[field] = value;
+    const newItems = [...state.items];
+    const currentItem = { ...newItems[index] };
+    currentItem[field] = value;
 
         // Nếu thay đổi productId hoặc lotNumber, reset các trạng thái liên quan
         if (field === 'productId' || field === 'lotNumber') {

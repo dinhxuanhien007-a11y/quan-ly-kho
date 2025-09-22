@@ -345,7 +345,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { z } from 'zod'; // <-- BÆ¯á»šC 1: IMPORT ZOD
 import { addPartner } from '../services/partnerService';
-import { normalizeString } from '../utils/stringUtils'; // <-- THÃŠM DÃ’NG NÃ€Y
+import { normalizeString, generateKeywords } from '../utils/stringUtils';
 
 // <-- BÆ¯á»šC 2: Äá»ŠNH NGHÄ¨A SCHEMA -->
 const partnerSchema = z.object({
@@ -886,21 +886,30 @@ import ExpiryNotificationBanner from './ExpiryNotificationBanner';
 import ImportSlipCounter from './ImportSlipCounter';
 import ExportSlipCounter from './ExportSlipCounter';
 import ViewerLayout from './ViewerLayout';
-import { useAuth } from '../hooks/useAuth'; // <-- THÃŠM DÃ’NG NÃ€Y
+import { useAuth } from '../hooks/useAuth';
+import FloatingToolsModal from './FloatingToolsModal'; 
+import { FiGrid } from 'react-icons/fi';
 
 const AdminLayout = () => {
   const location = useLocation();
+  const { role } = useAuth();
+  
+  const [isToolsModalVisible, setIsToolsModalVisible] = useState(false);
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
-  const { role } = useAuth(); // <-- Láº¤Y VAI TRÃ’ Cá»¦A USER
+
+  // HÃ€M Má»šI: Táº O CHá»¨C NÄ‚NG CHUYá»‚N Äá»”I (TOGGLE)
+  const toggleToolsModal = () => {
+    setIsToolsModalVisible(prev => !prev);
+  };
+  const toggleCalculator = () => {
+    setIsCalculatorVisible(prev => !prev);
+  };
 
   return (
     <div className="admin-layout-horizontal">
       <Navbar />
       <main className="main-content">
-        
-        {/* NÃ‚NG Cáº¤P: Chá»‰ hiá»ƒn thá»‹ banner cho owner */}
         {role === 'owner' && <ExpiryNotificationBanner />}
-        
         {location.pathname === '/new-export' && <ExportSlipCounter />}
         {location.pathname === '/new-import' && <ImportSlipCounter />}
 
@@ -920,22 +929,37 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
         </Routes>
       </main>
+      
+      {role === 'owner' ? (
+        <button 
+          className="floating-toggle-btn" 
+          onClick={toggleToolsModal} // Sá»¬ Dá»¤NG HÃ€M Má»šI
+          title="Má»Ÿ cÃ´ng cá»¥ nhanh"
+        >
+          <FiGrid />
+        </button>
+      ) : (
+        <button 
+          className="floating-toggle-btn" 
+          onClick={toggleCalculator} // Sá»¬ Dá»¤NG HÃ€M Má»šI
+          title="Má»Ÿ mÃ¡y tÃ­nh (CÃ³ thá»ƒ dÃ¹ng bÃ n phÃ­m)"
+        >
+          <MdCalculate />
+        </button>
+      )}
 
-      <button 
-        className="floating-toggle-btn" 
-        onClick={() => setIsCalculatorVisible(true)}
-        title="Má»Ÿ mÃ¡y tÃ­nh (CÃ³ thá»ƒ dÃ¹ng bÃ n phÃ­m)"
-      >
-        <MdCalculate />
-      </button>
-
-      {isCalculatorVisible && <FloatingCalculator onClose={() => setIsCalculatorVisible(false)} />}
+      {isToolsModalVisible && role === 'owner' && (
+        <FloatingToolsModal onClose={toggleToolsModal} />
+      )}
+      
+      {isCalculatorVisible && role !== 'owner' && (
+        <FloatingCalculator onClose={toggleCalculator} />
+      )}
     </div>
   );
 };
 
 export default AdminLayout;
-
 
 
 
@@ -959,7 +983,10 @@ export default AdminLayout;
 }
 
 .suggestionsList {
-    position: fixed; 
+    position: absolute; /* Sá»­a tá»« fixed thÃ nh absolute */
+    top: 100%; /* Äáº·t ngay dÆ°á»›i input */
+    left: 0;
+    width: 100%;
     background-color: white;
     border: 1px solid #ccc;
     list-style: none;
@@ -1005,6 +1032,7 @@ export default AdminLayout;
 .activeSuggestion span {
     color: #f0f0f0;
 }
+
 
 
 
@@ -1465,9 +1493,15 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...slipData.items];
-    updatedItems[index][field] = value;
+    // Äáº£m báº£o giÃ¡ trá»‹ lÃ  má»™t sá»‘ há»£p lá»‡ trÆ°á»›c khi gÃ¡n
+    if (field === 'quantity') {
+        const numericValue = Number(value);
+        updatedItems[index][field] = isNaN(numericValue) ? '' : value;
+    } else {
+        updatedItems[index][field] = value;
+    }
     setSlipData({ ...slipData, items: updatedItems });
-  };
+};
 
   const addNewRow = () => {
     const newItems = [
@@ -1544,7 +1578,20 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
               </div>
               <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
               <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-              <div className="grid-cell"><input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} /></div>
+              <div className="grid-cell">
+    <input
+        type="text" // THAY Äá»”I: Sá»­ dá»¥ng type="text"
+        inputMode="numeric" // THÃŠM: Gá»£i Ã½ bÃ n phÃ­m sá»‘ trÃªn di Ä‘á»™ng
+        value={item.quantity}
+        onChange={e => {
+            const value = e.target.value;
+            // THAY Äá»”I: Kiá»ƒm tra Ä‘á»ƒ cho phÃ©p cáº£ sá»‘ nguyÃªn vÃ  sá»‘ tháº­p phÃ¢n
+            if (/^\d*\.?\d*$/.test(value) || value === '') {
+                handleItemChange(index, 'quantity', value);
+            }
+        }}
+    />
+</div>
               <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
               <div className="grid-cell">
                 <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
@@ -2158,6 +2205,7 @@ const FloatingCalculator = ({ onClose }) => {
         setOperator(nextOperator);
     };
 
+    // FIX: TÃCH RIÃŠNG useEffect CHO CÃC PHÃM Báº¤M
     useEffect(() => {
         const handleKeyDown = (event) => {
             const { key } = event;
@@ -2167,23 +2215,30 @@ const FloatingCalculator = ({ onClose }) => {
             else if (key === 'Enter' || key === '=') { event.preventDefault(); performOperation('='); }
             else if (key === 'Delete' || key.toLowerCase() === 'c') { event.preventDefault(); clearAll(); }
             else if (key === 'Backspace') { event.preventDefault(); inputBackspace(); }
-            else if (key === 'Escape') { event.preventDefault(); onClose(); }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [displayValue, prevValue, operator, waitingForOperand, clearAll, onClose, inputBackspace]);
+    }, [displayValue, prevValue, operator, waitingForOperand, clearAll, inputBackspace]);
+
+    // ThÃªm má»™t useEffect riÃªng Ä‘á»ƒ xá»­ lÃ½ phÃ­m Escape
+    useEffect(() => {
+      const handleEscape = (event) => {
+        if (event.key === 'Escape') {
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleEscape);
+      return () => window.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
+
 
     return (
         <div className={styles.calculatorContainer}>
             <div className={styles.calculator}>
-                <button className={styles.closeButton} onClick={onClose}><FiX /></button>
-                
-                {/* THAY Äá»”I: Gá»™p 2 mÃ n hÃ¬nh vÃ o trong 1 div 'screen' */}
                 <div className={styles.screen}>
                     <div className={styles.calculationDisplay}>{calculationString}</div>
                     <div className={styles.display}>{displayValue}</div>
                 </div>
-
                 <div className={styles.keypad}>
                     <button onClick={() => clearAll()}>C</button>
                     <button disabled>%</button>
@@ -2351,6 +2406,149 @@ export default FloatingCalculator;
 
 .keypad .zero {
   grid-column: span 2;
+}
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
+
+
+// src/components/FloatingToolsModal.jsx
+import React, { useState } from 'react';
+import FloatingCalculator from './FloatingCalculator'; // Component mÃ¡y tÃ­nh cÅ©
+import QuickStockLookup from './QuickStockLookup'; // Component tra cá»©u má»›i
+import { FiTool, FiSearch, FiX } from 'react-icons/fi';
+import styles from './FloatingToolsModal.module.css';
+
+const FloatingToolsModal = ({ onClose }) => {
+  const [activeTab, setActiveTab] = useState('lookup');
+
+  return (
+    <div className={styles.modalBackdrop}>
+      <div className={styles.modalContent}>
+        <div className={styles.modalHeader}>
+          <h3>CÃ´ng cá»¥ nhanh</h3>
+          <button className={styles.closeBtn} onClick={onClose}><FiX /></button>
+        </div>
+        
+        <div className={styles.tabsContainer}>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'lookup' ? styles.active : ''}`}
+            onClick={() => setActiveTab('lookup')}
+          >
+            <FiSearch /> Tra cá»©u
+          </button>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'calculator' ? styles.active : ''}`}
+            onClick={() => setActiveTab('calculator')}
+          >
+            <FiTool /> MÃ¡y tÃ­nh
+          </button>
+        </div>
+        
+        <div className={styles.modalBody}>
+          {activeTab === 'lookup' && <QuickStockLookup />}
+          {/* THAY Äá»”I: Gá»i FloatingCalculator nhÆ°ng khÃ´ng truyá»n prop onClose Ä‘á»ƒ trÃ¡nh render ra 2 nÃºt Ä‘Ã³ng */}
+          {activeTab === 'calculator' && <FloatingCalculator />}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FloatingToolsModal;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\FloatingToolsModal.module.css ---
+
+
+/* src/components/FloatingToolsModal.module.css */
+
+.modalBackdrop {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+
+.modalContent {
+    width: 500px;
+    background-color: #f0f3f7;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 15px;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3e50;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: #8899a6;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.closeBtn:hover {
+    color: #333;
+}
+
+.tabsContainer {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tabButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tabButton:hover {
+    background-color: #f0f0f0;
+}
+
+.tabButton.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.modalBody {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 
@@ -2828,7 +3026,7 @@ const Navbar = () => {
                     <FiBookOpen className="nav-icon" />
                   </NavLink>
                 </li>
-                
+          
                 {/* === Báº®T Äáº¦U THAY Äá»”I: Chá»‰ Owner má»›i tháº¥y cÃ¡c nÃºt quáº£n trá»‹ === */}
                 
                 {/* NÃºt Dashboard (vá»‹ trÃ­ thá»© 2) */}
@@ -2982,17 +3180,6 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
     }, []);
 
     useEffect(() => {
-        if (showSuggestions && inputRef.current) {
-            const rect = inputRef.current.getBoundingClientRect();
-            setDropdownPosition({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: rect.width,
-            });
-        }
-    }, [showSuggestions, suggestions]);
-
-    useEffect(() => {
         const handleClickOutside = (event) => {
             if (containerRef.current && !containerRef.current.contains(event.target)) {
                 setShowSuggestions(false);
@@ -3061,31 +3248,32 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
     };
     
     const SuggestionsPortal = () => createPortal(
-        <ul
-            ref={suggestionsRef}
-            className={styles.suggestionsList}
-            style={{
-                top: `${dropdownPosition.top}px`,
-                left: `${dropdownPosition.left}px`,
-                width: `${dropdownPosition.width}px`,
-            }}
-        >
-            {isLoading && <li className={styles.feedback}>Äang táº£i...</li>}
-            {error && <li className={styles.feedback}>{error}</li>}
-            {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£</li>}
-            
-            {!isLoading && !error && suggestions.map((product, index) => (
-                <li 
-                    key={product.id} 
-                    className={index === activeIndex ? styles.activeSuggestion : ''}
-                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }} // DÃ¹ng onMouseDown Ä‘á»ƒ trÃ¡nh xung Ä‘á»™t vá»›i onBlur
-                >
-                    <strong>{product.id}</strong> - <span>{product.productName}</span>
-                </li>
-            ))}
-        </ul>,
-        document.body
-    );
+    <ul
+        ref={suggestionsRef}
+        className={styles.suggestionsList}
+        style={{
+            // ChÃºng ta khÃ´ng cáº§n Ä‘á»‹nh vá»‹ báº±ng top, left ná»¯a
+            // chá»‰ cáº§n width Ä‘á»ƒ Ä‘áº£m báº£o nÃ³ khá»›p vá»›i input
+            width: `${inputRef.current.offsetWidth}px`,
+        }}
+    >
+        {isLoading && <li className={styles.feedback}>Äang táº£i...</li>}
+        {error && <li className={styles.feedback}>{error}</li>}
+        {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£</li>}
+        
+        {!isLoading && !error && suggestions.map((product, index) => (
+            <li 
+                key={product.id} 
+                className={index === activeIndex ? styles.activeSuggestion : ''}
+                onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }}
+            >
+                <strong>{product.id}</strong> - <span>{product.productName}</span>
+            </li>
+        ))}
+    </ul>,
+    // Äáº·t portal vÃ o container Autocomplete
+    containerRef.current
+);
 
     return (
         <div className={styles.autocompleteContainer} ref={containerRef}>
@@ -3106,6 +3294,323 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
 };
 
 export default ProductAutocomplete;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\QuickStockLookup.jsx ---
+
+
+// src/components/QuickStockLookup.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { FiSearch, FiAlertCircle } from 'react-icons/fi';
+import Spinner from './Spinner';
+import styles from './QuickStockLookup.module.css';
+import { formatDate } from '../utils/dateUtils';
+import { formatNumber } from '../utils/numberUtils';
+
+const QuickStockLookup = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [productData, setProductData] = useState(null); 
+  const [loading, setLoading] = useState(false);
+
+  const performSearch = useCallback(async (term) => {
+    if (!term) {
+      setProductData(null);
+      return;
+    }
+    setLoading(true);
+    try {
+      const trimmedTerm = term.trim().toUpperCase();
+
+      // Truy váº¥n 1: Láº¥y danh sÃ¡ch cÃ¡c lÃ´ hÃ ng khá»›p vá»›i MÃ£ hÃ ng
+      const lotsByProductIdQuery = query(
+        collection(db, 'inventory_lots'),
+        where('productId', '==', trimmedTerm)
+      );
+
+      // Truy váº¥n 2: Láº¥y danh sÃ¡ch cÃ¡c lÃ´ hÃ ng khá»›p vá»›i Sá»‘ lÃ´
+      const lotsByLotNumberQuery = query(
+        collection(db, 'inventory_lots'),
+        where('lotNumber', '==', trimmedTerm)
+      );
+
+      // Cháº¡y cáº£ hai truy váº¥n song song
+      const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
+        getDocs(lotsByProductIdQuery),
+        getDocs(lotsByLotNumberQuery)
+      ]);
+
+      let lots = [
+        ...byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      ];
+
+      const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
+      
+      if (uniqueLots.length > 0) {
+        const productId = uniqueLots[0].productId;
+        const productDocRef = doc(db, 'products', productId);
+        const productSnap = await getDoc(productDocRef);
+        const productInfo = productSnap.exists() ? productSnap.data() : null;
+        
+        const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+        if (productInfo) {
+          setProductData({
+            generalInfo: { ...productInfo, productId: productId },
+            lots: uniqueLots.sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
+            totalRemaining: totalRemaining
+          });
+        } else {
+          setProductData(null);
+        }
+      } else {
+        const productDocRef = doc(db, 'products', trimmedTerm);
+        const productSnap = await getDoc(productDocRef);
+
+        if (productSnap.exists()) {
+          setProductData({
+            generalInfo: { ...productSnap.data(), productId: trimmedTerm },
+            lots: [],
+            totalRemaining: 0
+          });
+        } else {
+          setProductData(null);
+        }
+      }
+
+    } catch (error) {
+      console.error("Lá»—i tra cá»©u tá»“n kho:", error);
+      setProductData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      performSearch(searchTerm);
+    }, 500); 
+    return () => clearTimeout(debounce);
+  }, [searchTerm, performSearch]);
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.searchBox}>
+        <input 
+          type="text" 
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          placeholder="Nháº­p MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..." // Cáº­p nháº­t placeholder
+          autoFocus
+        />
+        <FiSearch />
+      </div>
+      
+      <div className={styles.resultsContainer}>
+        {loading ? (
+          <Spinner />
+        ) : productData ? (
+          <>
+            <div className={styles.generalInfoGrid}>
+              <div className={styles.gridItem}>
+                <strong>MÃ£ hÃ ng:</strong>
+                <p>{productData.generalInfo.productId}</p>
+              </div>
+              <div className={styles.gridItem}>
+                <strong>TÃªn hÃ ng:</strong>
+                <p>{productData.generalInfo.productName}</p>
+              </div>
+              <div className={styles.gridItem}>
+                <strong>ÄVT:</strong>
+                <p>{productData.generalInfo.unit}</p>
+              </div>
+              <div className={styles.gridItem}>
+                <strong>Quy cÃ¡ch:</strong>
+                <p>{productData.generalInfo.packaging}</p>
+              </div>
+              <div className={styles.gridItem}>
+                <strong>Nhiá»‡t Ä‘á»™ BQ:</strong>
+                <p>{productData.generalInfo.storageTemp}</p>
+              </div>
+              <div className={styles.gridItem}>
+                <strong>HÃ£ng SX:</strong>
+                <p>{productData.generalInfo.manufacturer}</p>
+              </div>
+              <div className={styles.gridItem}>
+                <strong>Team:</strong>
+                <p>{productData.generalInfo.team}</p>
+              </div>
+              <div className={styles.gridItem} style={{gridColumn: '1 / -1'}}>
+                <strong>Tá»•ng tá»“n:</strong>
+                <p style={{color: 'green', fontSize: '1.2rem', fontWeight: 'bold'}}>{formatNumber(productData.totalRemaining)} {productData.generalInfo.unit}</p>
+              </div>
+            </div>
+
+            <div className={styles.lotList}>
+              <h4>Tá»“n kho theo lÃ´:</h4>
+              {productData.lots.length > 0 ? (
+                productData.lots.map(lot => (
+                  <div key={lot.id} className={styles.lotItem}>
+                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber}</span></div>
+                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                    <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
+                    {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
+                  </div>
+                ))
+              ) : (
+                <div className={styles.noResults}>
+                  <p>KhÃ´ng cÃ³ lÃ´ hÃ ng nÃ o cÃ²n tá»“n kho.</p>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className={styles.noResults}>
+            <FiAlertCircle />
+            <p>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£ nÃ o.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default QuickStockLookup;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\QuickStockLookup.module.css ---
+
+
+/* src/components/QuickStockLookup.module.css */
+
+.container {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.searchBox {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    background-color: #fff;
+    border-radius: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.searchBox input {
+    width: 100%;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    outline: none;
+    padding-right: 50px;
+}
+
+.searchIcon {
+    position: absolute;
+    right: 20px;
+    color: #888;
+    font-size: 20px;
+}
+
+.resultsContainer {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.generalInfoGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.generalInfoGrid strong {
+    font-weight: bold;
+    color: #6c757d;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.generalInfoGrid p {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+    word-break: break-word;
+}
+
+.lotList {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.lotList h4 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.lotItem {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.lotItem:last-child {
+    border-bottom: none;
+}
+
+.lotItem div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.lotItem strong {
+    font-weight: bold;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.lotItem span {
+    font-size: 14px;
+    color: #333;
+    text-align: right;
+}
+
+.noResults {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.noResults svg {
+    font-size: 24px;
+}
 
 
 
@@ -3529,16 +4034,18 @@ import { useAuth } from '../hooks/useAuth';
 import { useResponsive } from '../hooks/useResponsive';
 import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
+// THÃŠM: Import component má»›i cho mobile
+import MobileInventoryPage from '../pages/MobileInventoryPage'; 
 
 const ViewerLayout = () => {
   const { role: userRole } = useAuth();
-  const isMobile = useResponsive();
-  
+  const isMobile = useResponsive(); // DÃ¹ng hook Ä‘á»ƒ kiá»ƒm tra mÃ n hÃ¬nh
   const canViewDetail = userRole === 'admin' || userRole === 'owner';
   const [viewMode, setViewMode] = useState('summary');
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
-
-  // Táº¡o tiÃªu Ä‘á» Ä‘á»™ng dá»±a trÃªn vai trÃ² cá»§a user
+  const toggleCalculator = () => {
+    setIsCalculatorVisible(prev => !prev);
+  };
   const dynamicTitle = useMemo(() => {
     switch (userRole) {
       case 'owner':
@@ -3549,36 +4056,27 @@ const ViewerLayout = () => {
       case 'bio':
         return 'PT Biomed - Team Bio';
       default:
-        return 'Kho PT Biomed'; // TiÃªu Ä‘á» máº·c Ä‘á»‹nh
+        return 'Kho PT Biomed';
     }
   }, [userRole]);
-
-  // Cáº­p nháº­t tiÃªu Ä‘á» tab cá»§a trÃ¬nh duyá»‡t
   useEffect(() => {
     document.title = dynamicTitle;
   }, [dynamicTitle]);
-  
-  // Tá»± Ä‘á»™ng chuyá»ƒn vá» 'summary' náº¿u user khÃ´ng cÃ³ quyá»n
   useEffect(() => {
     if (!canViewDetail) {
       setViewMode('summary');
     }
   }, [canViewDetail]);
 
-  // Giao diá»‡n cho di Ä‘á»™ng
+  // THAY Äá»”I: Sá»­ dá»¥ng component riÃªng cho di Ä‘á»™ng
   if (isMobile) {
     return (
       <div style={{ padding: '10px' }}>
-        {/*
-          - XÃ³a tiÃªu Ä‘á» "Sá»• CÃ¡i Tá»“n Kho"
-          - Truyá»n tiÃªu Ä‘á» Ä‘á»™ng vÃ o component con
-        */}
-        <InventorySummaryPage pageTitle={dynamicTitle} />
+        <MobileInventoryPage />
       </div>
     );
   }
 
-  // Giao diá»‡n cho mÃ¡y tÃ­nh
   return (
     <div style={{ padding: '20px' }}>
       {userRole === 'owner' && (
@@ -3589,9 +4087,6 @@ const ViewerLayout = () => {
         </div>
       )}
 
-      {/* TiÃªu Ä‘á» "Sá»• CÃ¡i Tá»“n Kho" Ä‘Ã£ Ä‘Æ°á»£c xÃ³a khá»i Ä‘Ã¢y */}
-
-      {/* NÃºt chuyá»ƒn Ä‘á»•i cháº¿ Ä‘á»™ xem */}
       {canViewDetail && (
         <div className="view-toggle" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
           <button onClick={() => setViewMode('summary')} className={viewMode === 'summary' ? 'btn-primary' : 'btn-secondary'} style={{width: 'auto'}}>
@@ -3603,7 +4098,6 @@ const ViewerLayout = () => {
         </div>
       )}
 
-      {/* Hiá»ƒn thá»‹ component tÆ°Æ¡ng á»©ng vÃ  truyá»n tiÃªu Ä‘á» Ä‘á»™ng vÃ o */}
       {(viewMode === 'detail' && canViewDetail) 
         ? <InventoryPage pageTitle={dynamicTitle} /> 
         : <InventorySummaryPage pageTitle={dynamicTitle} />
@@ -3611,13 +4105,13 @@ const ViewerLayout = () => {
 
       <button 
         className="floating-toggle-btn" 
-        onClick={() => setIsCalculatorVisible(true)}
+        onClick={toggleCalculator}
         title="Má»Ÿ mÃ¡y tÃ­nh (CÃ³ thá»ƒ dÃ¹ng bÃ n phÃ­m)"
       >
         <MdCalculate />
       </button>
 
-      {isCalculatorVisible && <FloatingCalculator onClose={() => setIsCalculatorVisible(false)} />}
+      {isCalculatorVisible && <FloatingCalculator onClose={toggleCalculator} />}
     </div>
   );
 };
@@ -5976,6 +6470,172 @@ export default LotTracePage;
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
+
+
+// src/pages/MobileInventoryPage.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '../hooks/useAuth';
+import Spinner from '../components/Spinner';
+import { FiSearch, FiAlertCircle } from 'react-icons/fi';
+import styles from '../styles/MobileInventoryPage.module.css';
+import { formatDate } from '../utils/dateUtils';
+import { formatNumber } from '../utils/numberUtils';
+
+const MobileInventoryPage = () => {
+    const { role: userRole } = useAuth();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [productData, setProductData] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const performSearch = useCallback(async (term) => {
+        if (!term) {
+            setProductData(null);
+            return;
+        }
+        setLoading(true);
+        try {
+            const trimmedTerm = term.trim().toUpperCase();
+
+            // Ãp dá»¥ng bá»™ lá»c team dá»±a trÃªn vai trÃ²
+            let baseQuery = collection(db, 'inventory_lots');
+            if (userRole === 'med') {
+                baseQuery = query(baseQuery, where('team', '==', 'MED'));
+            } else if (userRole === 'bio') {
+                baseQuery = query(baseQuery, where('team', 'in', ['BIO', 'Spare Part']));
+            }
+            
+            // TÃ¬m kiáº¿m theo nhiá»u trÆ°á»ng: productId vÃ  lotNumber
+            const lotsByProductIdQuery = query(baseQuery, where('productId', '==', trimmedTerm));
+            const lotsByLotNumberQuery = query(baseQuery, where('lotNumber', '==', trimmedTerm));
+
+            const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
+                getDocs(lotsByProductIdQuery),
+                getDocs(lotsByLotNumberQuery)
+            ]);
+
+            let lots = [
+                ...byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            ];
+
+            const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
+            
+            if (uniqueLots.length > 0) {
+                const productId = uniqueLots[0].productId;
+                const productDocRef = doc(db, 'products', productId);
+                const productSnap = await getDoc(productDocRef);
+                const productInfo = productSnap.exists() ? productSnap.data() : null;
+
+                if (productInfo) {
+                    const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+                    setProductData({
+                        generalInfo: { ...productInfo, productId: productId },
+                        lots: uniqueLots.sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
+                        totalRemaining: totalRemaining
+                    });
+                } else {
+                    setProductData(null);
+                }
+            } else {
+                // Náº¿u khÃ´ng tÃ¬m tháº¥y lÃ´ hÃ ng, thá»­ tÃ¬m tháº³ng sáº£n pháº©m theo ID Ä‘á»ƒ hiá»ƒn thá»‹ thÃ´ng tin chung
+                const productDocRef = doc(db, 'products', trimmedTerm);
+                const productSnap = await getDoc(productDocRef);
+
+                if (productSnap.exists()) {
+                    setProductData({
+                        generalInfo: { ...productSnap.data(), productId: trimmedTerm },
+                        lots: [],
+                        totalRemaining: 0
+                    });
+                } else {
+                    setProductData(null);
+                }
+            }
+        } catch (error) {
+            console.error("Lá»—i tra cá»©u tá»“n kho:", error);
+            setProductData(null);
+        } finally {
+            setLoading(false);
+        }
+    }, [userRole]);
+
+    useEffect(() => {
+        const debounce = setTimeout(() => {
+            performSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(debounce);
+    }, [searchTerm, performSearch]);
+
+    return (
+        <div className={styles.container}>
+            <div className={styles.searchBox}>
+                <input 
+                    type="text" 
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="TÃ¬m MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..."
+                    autoFocus
+                />
+                <FiSearch className={styles.searchIcon} />
+            </div>
+
+            {loading ? (
+                <Spinner />
+            ) : productData ? (
+                <div className={styles.resultsContainer}>
+                    {/* Pháº§n thÃ´ng tin chung */}
+                    <div className={styles.generalInfoCard}>
+                        <h3>ThÃ´ng tin chung</h3>
+                        <div className={styles.infoGrid}>
+                            <div><strong>MÃ£ hÃ ng:</strong><span>{productData.generalInfo.productId}</span></div>
+                            <div><strong>TÃªn hÃ ng:</strong><span>{productData.generalInfo.productName}</span></div>
+                            <div><strong>ÄVT:</strong><span>{productData.generalInfo.unit}</span></div>
+                            <div><strong>Quy cÃ¡ch:</strong><span>{productData.generalInfo.packaging}</span></div>
+                            <div><strong>Nhiá»‡t Ä‘á»™ BQ:</strong><span>{productData.generalInfo.storageTemp}</span></div>
+                            <div><strong>HÃ£ng SX:</strong><span>{productData.generalInfo.manufacturer}</span></div>
+                            <div><strong>Team:</strong><span>{productData.generalInfo.team}</span></div>
+                        </div>
+                        <div className={styles.totalInfo}>
+                            <strong>Tá»•ng tá»“n:</strong>
+                            <span>{formatNumber(productData.totalRemaining)} {productData.generalInfo.unit}</span>
+                        </div>
+                    </div>
+                    {/* Pháº§n danh sÃ¡ch lÃ´ hÃ ng */}
+                    <div className={styles.lotListCard}>
+                        <h3>Tá»“n kho theo lÃ´</h3>
+                        {productData.lots.length > 0 ? (
+                            productData.lots.map(lot => (
+                                <div key={lot.id} className={styles.lotItem}>
+                                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber}</span></div>
+                                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                                    <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
+                                    {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
+                                </div>
+                            ))
+                        ) : (
+                            <p className={styles.emptyMessage}>KhÃ´ng cÃ³ lÃ´ hÃ ng nÃ o cÃ²n tá»“n kho.</p>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div className={styles.noResults}>
+                    <FiAlertCircle />
+                    <p>Vui lÃ²ng nháº­p tá»« khÃ³a Ä‘á»ƒ tÃ¬m kiáº¿m.</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default MobileInventoryPage;
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
@@ -6367,17 +7027,18 @@ const NewExportPage = () => {
     <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
     <div className="grid-cell">
     <input 
-        type="text" // Äá»•i sang "text"
-        inputMode="numeric" // Gá»£i Ã½ bÃ n phÃ­m sá»‘ trÃªn di Ä‘á»™ng
-        value={formatNumber(item.quantityToExport)}
-        ref={el => quantityInputRefs.current[index] = el}
-        onChange={e => {
-            const numericValue = parseFormattedNumber(e.target.value);
-            if (/^\d*$/.test(numericValue)) {
-                updateItem(index, 'quantityToExport', numericValue);
-            }
-        }} 
-    />
+        type="text"
+    inputMode="numeric"
+    value={item.quantityToExport}
+    ref={el => quantityInputRefs.current[index] = el}
+    onChange={e => {
+        // Pass the raw string value directly to the store
+        const { value } = e.target;
+        if (/^\d*\.?\d*$/.test(value) || value === '') {
+            updateItem(index, 'quantityToExport', value);
+        }
+    }} 
+/>
 </div>
     <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
     <div className="grid-cell"><input type="text" value={item.storageTemp} readOnly /></div>
@@ -6839,16 +7500,17 @@ const NewImportPage = () => {
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input
-                                type="text"
-                                inputMode="numeric"
-                                value={formatNumber(item.quantity)}
-                                onChange={e => {
-                                    const numericValue = parseFormattedNumber(e.target.value);
-                                    if (/^\d*$/.test(numericValue)) {
-                                        updateItem(index, 'quantity', numericValue);
-                                    }
-                                }}
-                            />
+    type="text"
+    inputMode="numeric"
+    value={item.quantity} // THAY Äá»”I: Láº¥y giÃ¡ trá»‹ trá»±c tiáº¿p tá»« state
+    onChange={e => {
+        const value = e.target.value;
+        // THAY Äá»”I: Kiá»ƒm tra Ä‘á»ƒ cho phÃ©p cáº£ sá»‘ nguyÃªn vÃ  sá»‘ tháº­p phÃ¢n
+        if (/^\d*\.?\d*$/.test(value) || value === '') {
+            updateItem(index, 'quantity', value);
+        }
+    }}
+/>
                         </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
@@ -8936,34 +9598,34 @@ const useExportSlipStore = create((set, get) => ({
     }),
 
     updateItem: (index, field, value) => set(state => {
-        const newItems = [...state.items];
-        const currentItem = { ...newItems[index] };
-        
-        if (field === 'quantityToExport') {
-            if (value === '') {
-                currentItem[field] = '';
-            } else {
-                const val = Number(value);
-                if (val < 0) return {};
-                if (val > currentItem.quantityRemaining) {
-                    toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
-                    currentItem[field] = currentItem.quantityRemaining;
-                } else {
-                    currentItem[field] = val;
-                }
-            }
-        } else {
-            currentItem[field] = value;
-        }
-        
-        // <-- THÃŠM LOGIC: Náº¿u ngÆ°á»i dÃ¹ng thay Ä‘á»•i mÃ£ hÃ ng, reset láº¡i tráº¡ng thÃ¡i háº¿t hÃ ng
-        if (field === 'productId') {
-            currentItem.isOutOfStock = false;
-        }
+    const newItems = [...state.items];
+    const currentItem = { ...newItems[index] };
 
-        newItems[index] = currentItem;
-        return { items: newItems };
-    }),
+    if (field === 'quantityToExport') {
+        if (value === '') {
+            currentItem[field] = '';
+        } else {
+            // Keep the value as a string for input, perform checks with Number()
+            const val = Number(value);
+            if (val < 0) return {};
+            if (val > currentItem.quantityRemaining) {
+                toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
+                currentItem[field] = currentItem.quantityRemaining;
+            } else {
+                currentItem[field] = value;
+            }
+        }
+    } else {
+        currentItem[field] = value;
+    }
+
+    if (field === 'productId') {
+        currentItem.isOutOfStock = false;
+    }
+
+    newItems[index] = currentItem;
+    return { items: newItems };
+}),
     
     replaceItem: (index, newItemData) => set(state => {
         const newItems = [...state.items];
@@ -9045,10 +9707,9 @@ const useImportSlipStore = create((set) => ({
 
     // Action chung Ä‘á»ƒ cáº­p nháº­t má»™t trÆ°á»ng báº¥t ká»³ cá»§a má»™t item
     updateItem: (index, field, value) => set(state => {
-        const newItems = [...state.items];
-        // Táº¡o má»™t báº£n sao Ä‘á»ƒ trÃ¡nh thay Ä‘á»•i state gá»‘c trá»±c tiáº¿p
-        const currentItem = { ...newItems[index] };
-        currentItem[field] = value;
+    const newItems = [...state.items];
+    const currentItem = { ...newItems[index] };
+    currentItem[field] = value;
 
         // Náº¿u thay Ä‘á»•i productId hoáº·c lotNumber, reset cÃ¡c tráº¡ng thÃ¡i liÃªn quan
         if (field === 'productId' || field === 'lotNumber') {
@@ -9311,6 +9972,7 @@ export default useStocktakeStore;
   padding: 12px 15px;
   text-align: center;
   vertical-align: middle; /* ThÃªm dÃ²ng nÃ y */
+  white-space: normal;
 }
 
 .products-table th {
@@ -9464,6 +10126,7 @@ export default useStocktakeStore;
 .action-buttons {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap; /* ThÃªm dÃ²ng nÃ y */
 }
 
 .btn-icon {
@@ -9588,6 +10251,10 @@ export default useStocktakeStore;
   font-size: 12px;
   color: white;
   font-weight: bold;
+  line-height: 1.2;
+  min-width: 80px; /* ThÃªm dÃ²ng nÃ y Ä‘á»ƒ Ä‘áº·t chiá»u rá»™ng tá»‘i thiá»ƒu */
+  text-align: center; /* CÄƒn giá»¯a ná»™i dung */
+  display: inline-block; /* Äáº£m báº£o nÃ³ hoáº¡t Ä‘á»™ng vá»›i min-width */
 }
 
 .status-pending {
@@ -10139,133 +10806,140 @@ tbody tr.selected-row td {
 /* Bá»” SUNG ÄOáº N NÃ€Y VÃ€O CUá»I FILE */
 /* Fix cho input autocomplete náº±m trong grid */
 .grid-cell > div {
+    position: relative;
+    z-index: 10;
+}
+
+  /* ThÃªm vÃ o cuá»‘i file src/styles/AdminLayout.css */
+
+.new-data-notification {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  color: #004085;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.new-data-notification p {
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+  /* ThÃªm vÃ o cuá»‘i file src/styles/AdminLayout.css */
+
+.new-data-notification {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  color: #004085;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.new-data-notification p {
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ThÃªm Ä‘oáº¡n mÃ£ nÃ y vÃ o cuá»‘i file */
+.item-details-grid {
     overflow: visible;
-}
-
-  /* ThÃªm vÃ o cuá»‘i file src/styles/AdminLayout.css */
-
-.new-data-notification {
-  background-color: #e7f3ff;
-  border: 1px solid #b3d7ff;
-  color: #004085;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  animation: fadeIn 0.5s ease;
-}
-
-.new-data-notification p {
-  margin: 0;
-  font-weight: 500;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-  /* ThÃªm vÃ o cuá»‘i file src/styles/AdminLayout.css */
-
-.new-data-notification {
-  background-color: #e7f3ff;
-  border: 1px solid #b3d7ff;
-  color: #004085;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  animation: fadeIn 0.5s ease;
-}
-
-.new-data-notification p {
-  margin: 0;
-  font-weight: 500;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 /* --- CSS CHO GIAO DIá»†N RESPONSIVE TRÃŠN DI Äá»˜NG --- */
 @media (max-width: 768px) {
-    /* Pháº§n nÃ y Ã¡p dá»¥ng cho cáº£ 2 báº£ng:
-      - Báº£ng tá»“n kho chi tiáº¿t (inventory-table)
-      - Báº£ng tá»“n kho tá»•ng há»£p (products-table)
-    */
+  /* Pháº§n nÃ y Ã¡p dá»¥ng cho cáº£ 2 báº£ng:
+   - Báº£ng tá»“n kho chi tiáº¿t (inventory-table)
+   - Báº£ng tá»“n kho tá»•ng há»£p (products-table)
+  */
 
-    /* BÆ°á»›c 1: áº¨n Ä‘i pháº§n tiÃªu Ä‘á» (thead) cá»§a báº£ng gá»‘c */
-    .inventory-table thead,
-    .products-table thead {
-        display: none;
-    }
+  /* BÆ°á»›c 1: áº¨n Ä‘i pháº§n tiÃªu Ä‘á» (thead) cá»§a báº£ng gá»‘c */
+  .inventory-table thead,
+  .products-table thead {
+    display: none;
+  }
 
-    /* BÆ°á»›c 2: Biáº¿n báº£ng vÃ  cÃ¡c dÃ²ng thÃ nh cÃ¡c khá»‘i card riÃªng biá»‡t */
-    .inventory-table, 
-    .inventory-table tbody, 
-    .inventory-table tr,
-    .products-table,
-    .products-table tbody,
-    .products-table tr {
-        display: block;
-        width: 100%;
-    }
+  /* BÆ°á»›c 2: Biáº¿n báº£ng vÃ  cÃ¡c dÃ²ng thÃ nh cÃ¡c khá»‘i card riÃªng biá»‡t */
+  .inventory-table, 
+  .inventory-table tbody, 
+  .inventory-table tr,
+  .products-table,
+  .products-table tbody,
+  .products-table tr {
+    display: block;
+    width: 100%;
+  }
 
-    .inventory-table tr,
-    .products-table tr {
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background-color: #fff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        padding: 10px;
-    }
+  .inventory-table tr,
+  .products-table tr {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 10px;
+  }
 
-    /* BÆ°á»›c 3: Biáº¿n cÃ¡c Ã´ (td) thÃ nh cÃ¡c hÃ ng dá»c vÃ  thÃªm nhÃ£n cho chÃºng */
-    .inventory-table td,
-    .products-table td {
-        display: flex;
-        justify-content: space-between; /* Äáº©y nhÃ£n vÃ  giÃ¡ trá»‹ vá» 2 phÃ­a */
-        align-items: center;
-        padding: 8px 5px;
-        border: none;
-        border-bottom: 1px solid #eee;
-        text-align: right; /* CÄƒn pháº£i cho giÃ¡ trá»‹ */
-        white-space: normal; /* Cho phÃ©p giÃ¡ trá»‹ dÃ i tá»± xuá»‘ng dÃ²ng */
-    }
+  /* BÆ°á»›c 3: Biáº¿n cÃ¡c Ã´ (td) thÃ nh cÃ¡c hÃ ng dá»c vÃ  thÃªm nhÃ£n cho chÃºng */
+  .inventory-table td,
+  .products-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 5px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    text-align: right;
+    white-space: normal;
+  }
 
-    .inventory-table td:last-child,
-    .products-table td:last-child {
-        border-bottom: none;
-    }
-    
-    /* ÄÃ¢y lÃ  pháº§n quan trá»ng nháº¥t: Láº¥y ná»™i dung tá»« attribute 'data-label' lÃ m nhÃ£n */
-    .inventory-table td::before,
-    .products-table td::before {
-        content: attr(data-label);
-        font-weight: bold;
-        text-align: left; /* CÄƒn trÃ¡i cho nhÃ£n */
-        padding-right: 10px;
-        color: #333;
-    }
-    
-    /* Loáº¡i bá» cÃ¡c style khÃ´ng cáº§n thiáº¿t trÃªn di Ä‘á»™ng */
-    .inventory-table td,
-    .inventory-table th {
-        position: static !important; /* Bá» Ä‘Ã³ng bÄƒng cá»™t */
-        min-width: auto !important;
-    }
+  .inventory-table td:last-child,
+  .products-table td:last-child {
+    border-bottom: none;
+  }
+  
+  /* ÄÃ¢y lÃ  pháº§n quan trá»ng nháº¥t: Láº¥y ná»™i dung tá»« attribute 'data-label' lÃ m nhÃ£n */
+  .inventory-table td::before,
+  .products-table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    text-align: left;
+    padding-right: 10px;
+    color: #333;
+  }
+  
+  /* Loáº¡i bá» cÃ¡c style khÃ´ng cáº§n thiáº¿t trÃªn di Ä‘á»™ng */
+  .inventory-table td,
+  .inventory-table th {
+    position: static !important;
+    min-width: auto !important;
+  }
 
-    /* Äiá»u chá»‰nh láº¡i cho cÃ¡c Ã´ chá»©a badge Ä‘á»ƒ hiá»ƒn thá»‹ Ä‘áº¹p hÆ¡n */
-    .inventory-table td .team-badge,
-    .inventory-table td .temp-badge {
-       font-size: 13px;
-    }
+  /* Äiá»u chá»‰nh láº¡i cho cÃ¡c Ã´ chá»©a badge Ä‘á»ƒ hiá»ƒn thá»‹ Ä‘áº¹p hÆ¡n */
+  .inventory-table td .team-badge,
+  .inventory-table td .temp-badge {
+    font-size: 13px;
+  }
+}
 
 
 
@@ -10707,6 +11381,154 @@ tbody tr.selected-row td {
 .confirm-button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
+}
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\MobileInventoryPage.module.css ---
+
+
+/* src/styles/MobileInventoryPage.module.css */
+
+.container {
+    padding: 10px;
+}
+
+.searchBox {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    background-color: #fff;
+    border-radius: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.searchBox input {
+    width: 100%;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    outline: none;
+    padding-right: 50px;
+}
+
+.searchIcon {
+    position: absolute;
+    right: 20px;
+    color: #888;
+    font-size: 20px;
+}
+
+.resultsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.generalInfoCard, .lotListCard {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.generalInfoCard h3, .lotListCard h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.infoGrid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.infoGrid strong {
+    font-weight: bold;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.infoGrid span {
+    font-size: 14px;
+    color: #333;
+}
+
+.totalInfo {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.totalInfo strong {
+    font-weight: bold;
+    color: #495057;
+    font-size: 15px;
+}
+
+.totalInfo span {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: green;
+}
+
+.lotItem {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.lotItem:last-child {
+    border-bottom: none;
+}
+
+.lotItem div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.lotItem strong {
+    font-weight: bold;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.lotItem span {
+    font-size: 14px;
+    color: #333;
+    text-align: right;
+}
+
+.noResults, .emptyMessage {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.noResults svg {
+    font-size: 24px;
 }
 
 

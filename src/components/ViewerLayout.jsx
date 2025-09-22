@@ -8,16 +8,18 @@ import { useAuth } from '../hooks/useAuth';
 import { useResponsive } from '../hooks/useResponsive';
 import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
+// THÊM: Import component mới cho mobile
+import MobileInventoryPage from '../pages/MobileInventoryPage'; 
 
 const ViewerLayout = () => {
   const { role: userRole } = useAuth();
-  const isMobile = useResponsive();
-  
+  const isMobile = useResponsive(); // Dùng hook để kiểm tra màn hình
   const canViewDetail = userRole === 'admin' || userRole === 'owner';
   const [viewMode, setViewMode] = useState('summary');
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
-
-  // Tạo tiêu đề động dựa trên vai trò của user
+  const toggleCalculator = () => {
+    setIsCalculatorVisible(prev => !prev);
+  };
   const dynamicTitle = useMemo(() => {
     switch (userRole) {
       case 'owner':
@@ -28,36 +30,27 @@ const ViewerLayout = () => {
       case 'bio':
         return 'PT Biomed - Team Bio';
       default:
-        return 'Kho PT Biomed'; // Tiêu đề mặc định
+        return 'Kho PT Biomed';
     }
   }, [userRole]);
-
-  // Cập nhật tiêu đề tab của trình duyệt
   useEffect(() => {
     document.title = dynamicTitle;
   }, [dynamicTitle]);
-  
-  // Tự động chuyển về 'summary' nếu user không có quyền
   useEffect(() => {
     if (!canViewDetail) {
       setViewMode('summary');
     }
   }, [canViewDetail]);
 
-  // Giao diện cho di động
+  // THAY ĐỔI: Sử dụng component riêng cho di động
   if (isMobile) {
     return (
       <div style={{ padding: '10px' }}>
-        {/*
-          - Xóa tiêu đề "Sổ Cái Tồn Kho"
-          - Truyền tiêu đề động vào component con
-        */}
-        <InventorySummaryPage pageTitle={dynamicTitle} />
+        <MobileInventoryPage />
       </div>
     );
   }
 
-  // Giao diện cho máy tính
   return (
     <div style={{ padding: '20px' }}>
       {userRole === 'owner' && (
@@ -68,9 +61,6 @@ const ViewerLayout = () => {
         </div>
       )}
 
-      {/* Tiêu đề "Sổ Cái Tồn Kho" đã được xóa khỏi đây */}
-
-      {/* Nút chuyển đổi chế độ xem */}
       {canViewDetail && (
         <div className="view-toggle" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
           <button onClick={() => setViewMode('summary')} className={viewMode === 'summary' ? 'btn-primary' : 'btn-secondary'} style={{width: 'auto'}}>
@@ -82,7 +72,6 @@ const ViewerLayout = () => {
         </div>
       )}
 
-      {/* Hiển thị component tương ứng và truyền tiêu đề động vào */}
       {(viewMode === 'detail' && canViewDetail) 
         ? <InventoryPage pageTitle={dynamicTitle} /> 
         : <InventorySummaryPage pageTitle={dynamicTitle} />
@@ -90,13 +79,13 @@ const ViewerLayout = () => {
 
       <button 
         className="floating-toggle-btn" 
-        onClick={() => setIsCalculatorVisible(true)}
+        onClick={toggleCalculator}
         title="Mở máy tính (Có thể dùng bàn phím)"
       >
         <MdCalculate />
       </button>
 
-      {isCalculatorVisible && <FloatingCalculator onClose={() => setIsCalculatorVisible(false)} />}
+      {isCalculatorVisible && <FloatingCalculator onClose={toggleCalculator} />}
     </div>
   );
 };

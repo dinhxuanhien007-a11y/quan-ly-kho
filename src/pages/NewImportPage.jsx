@@ -422,16 +422,17 @@ const NewImportPage = () => {
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
                             <input
-                                type="text"
-                                inputMode="numeric"
-                                value={formatNumber(item.quantity)}
-                                onChange={e => {
-                                    const numericValue = parseFormattedNumber(e.target.value);
-                                    if (/^\d*$/.test(numericValue)) {
-                                        updateItem(index, 'quantity', numericValue);
-                                    }
-                                }}
-                            />
+    type="text"
+    inputMode="numeric"
+    value={item.quantity} // THAY ĐỔI: Lấy giá trị trực tiếp từ state
+    onChange={e => {
+        const value = e.target.value;
+        // THAY ĐỔI: Kiểm tra để cho phép cả số nguyên và số thập phân
+        if (/^\d*\.?\d*$/.test(value) || value === '') {
+            updateItem(index, 'quantity', value);
+        }
+    }}
+/>
                         </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>

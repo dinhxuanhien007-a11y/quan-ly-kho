@@ -97,6 +97,7 @@
   padding: 12px 15px;
   text-align: center;
   vertical-align: middle; /* Thêm dòng này */
+  white-space: normal;
 }
 
 .products-table th {
@@ -250,6 +251,7 @@
 .action-buttons {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap; /* Thêm dòng này */
 }
 
 .btn-icon {
@@ -374,6 +376,10 @@
   font-size: 12px;
   color: white;
   font-weight: bold;
+  line-height: 1.2;
+  min-width: 80px; /* Thêm dòng này để đặt chiều rộng tối thiểu */
+  text-align: center; /* Căn giữa nội dung */
+  display: inline-block; /* Đảm bảo nó hoạt động với min-width */
 }
 
 .status-pending {
@@ -925,130 +931,137 @@ tbody tr.selected-row td {
 /* BỔ SUNG ĐOẠN NÀY VÀO CUỐI FILE */
 /* Fix cho input autocomplete nằm trong grid */
 .grid-cell > div {
+    position: relative;
+    z-index: 10;
+}
+
+  /* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.new-data-notification {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  color: #004085;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.new-data-notification p {
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+  /* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.new-data-notification {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  color: #004085;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.new-data-notification p {
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Thêm đoạn mã này vào cuối file */
+.item-details-grid {
     overflow: visible;
-}
-
-  /* Thêm vào cuối file src/styles/AdminLayout.css */
-
-.new-data-notification {
-  background-color: #e7f3ff;
-  border: 1px solid #b3d7ff;
-  color: #004085;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  animation: fadeIn 0.5s ease;
-}
-
-.new-data-notification p {
-  margin: 0;
-  font-weight: 500;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-  /* Thêm vào cuối file src/styles/AdminLayout.css */
-
-.new-data-notification {
-  background-color: #e7f3ff;
-  border: 1px solid #b3d7ff;
-  color: #004085;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  animation: fadeIn 0.5s ease;
-}
-
-.new-data-notification p {
-  margin: 0;
-  font-weight: 500;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */
 @media (max-width: 768px) {
-    /* Phần này áp dụng cho cả 2 bảng:
-      - Bảng tồn kho chi tiết (inventory-table)
-      - Bảng tồn kho tổng hợp (products-table)
-    */
+  /* Phần này áp dụng cho cả 2 bảng:
+   - Bảng tồn kho chi tiết (inventory-table)
+   - Bảng tồn kho tổng hợp (products-table)
+  */
 
-    /* Bước 1: Ẩn đi phần tiêu đề (thead) của bảng gốc */
-    .inventory-table thead,
-    .products-table thead {
-        display: none;
-    }
+  /* Bước 1: Ẩn đi phần tiêu đề (thead) của bảng gốc */
+  .inventory-table thead,
+  .products-table thead {
+    display: none;
+  }
 
-    /* Bước 2: Biến bảng và các dòng thành các khối card riêng biệt */
-    .inventory-table, 
-    .inventory-table tbody, 
-    .inventory-table tr,
-    .products-table,
-    .products-table tbody,
-    .products-table tr {
-        display: block;
-        width: 100%;
-    }
+  /* Bước 2: Biến bảng và các dòng thành các khối card riêng biệt */
+  .inventory-table, 
+  .inventory-table tbody, 
+  .inventory-table tr,
+  .products-table,
+  .products-table tbody,
+  .products-table tr {
+    display: block;
+    width: 100%;
+  }
 
-    .inventory-table tr,
-    .products-table tr {
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background-color: #fff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        padding: 10px;
-    }
+  .inventory-table tr,
+  .products-table tr {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 10px;
+  }
 
-    /* Bước 3: Biến các ô (td) thành các hàng dọc và thêm nhãn cho chúng */
-    .inventory-table td,
-    .products-table td {
-        display: flex;
-        justify-content: space-between; /* Đẩy nhãn và giá trị về 2 phía */
-        align-items: center;
-        padding: 8px 5px;
-        border: none;
-        border-bottom: 1px solid #eee;
-        text-align: right; /* Căn phải cho giá trị */
-        white-space: normal; /* Cho phép giá trị dài tự xuống dòng */
-    }
+  /* Bước 3: Biến các ô (td) thành các hàng dọc và thêm nhãn cho chúng */
+  .inventory-table td,
+  .products-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 5px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    text-align: right;
+    white-space: normal;
+  }
 
-    .inventory-table td:last-child,
-    .products-table td:last-child {
-        border-bottom: none;
-    }
-    
-    /* Đây là phần quan trọng nhất: Lấy nội dung từ attribute 'data-label' làm nhãn */
-    .inventory-table td::before,
-    .products-table td::before {
-        content: attr(data-label);
-        font-weight: bold;
-        text-align: left; /* Căn trái cho nhãn */
-        padding-right: 10px;
-        color: #333;
-    }
-    
-    /* Loại bỏ các style không cần thiết trên di động */
-    .inventory-table td,
-    .inventory-table th {
-        position: static !important; /* Bỏ đóng băng cột */
-        min-width: auto !important;
-    }
+  .inventory-table td:last-child,
+  .products-table td:last-child {
+    border-bottom: none;
+  }
+  
+  /* Đây là phần quan trọng nhất: Lấy nội dung từ attribute 'data-label' làm nhãn */
+  .inventory-table td::before,
+  .products-table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    text-align: left;
+    padding-right: 10px;
+    color: #333;
+  }
+  
+  /* Loại bỏ các style không cần thiết trên di động */
+  .inventory-table td,
+  .inventory-table th {
+    position: static !important;
+    min-width: auto !important;
+  }
 
-    /* Điều chỉnh lại cho các ô chứa badge để hiển thị đẹp hơn */
-    .inventory-table td .team-badge,
-    .inventory-table td .temp-badge {
-       font-size: 13px;
-    }
+  /* Điều chỉnh lại cho các ô chứa badge để hiển thị đẹp hơn */
+  .inventory-table td .team-badge,
+  .inventory-table td .temp-badge {
+    font-size: 13px;
+  }
+}

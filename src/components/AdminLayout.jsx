@@ -21,21 +21,30 @@ import ExpiryNotificationBanner from './ExpiryNotificationBanner';
 import ImportSlipCounter from './ImportSlipCounter';
 import ExportSlipCounter from './ExportSlipCounter';
 import ViewerLayout from './ViewerLayout';
-import { useAuth } from '../hooks/useAuth'; // <-- THÊM DÒNG NÀY
+import { useAuth } from '../hooks/useAuth';
+import FloatingToolsModal from './FloatingToolsModal'; 
+import { FiGrid } from 'react-icons/fi';
 
 const AdminLayout = () => {
   const location = useLocation();
+  const { role } = useAuth();
+  
+  const [isToolsModalVisible, setIsToolsModalVisible] = useState(false);
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
-  const { role } = useAuth(); // <-- LẤY VAI TRÒ CỦA USER
+
+  // HÀM MỚI: TẠO CHỨC NĂNG CHUYỂN ĐỔI (TOGGLE)
+  const toggleToolsModal = () => {
+    setIsToolsModalVisible(prev => !prev);
+  };
+  const toggleCalculator = () => {
+    setIsCalculatorVisible(prev => !prev);
+  };
 
   return (
     <div className="admin-layout-horizontal">
       <Navbar />
       <main className="main-content">
-        
-        {/* NÂNG CẤP: Chỉ hiển thị banner cho owner */}
         {role === 'owner' && <ExpiryNotificationBanner />}
-        
         {location.pathname === '/new-export' && <ExportSlipCounter />}
         {location.pathname === '/new-import' && <ImportSlipCounter />}
 
@@ -55,16 +64,32 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
         </Routes>
       </main>
+      
+      {role === 'owner' ? (
+        <button 
+          className="floating-toggle-btn" 
+          onClick={toggleToolsModal} // SỬ DỤNG HÀM MỚI
+          title="Mở công cụ nhanh"
+        >
+          <FiGrid />
+        </button>
+      ) : (
+        <button 
+          className="floating-toggle-btn" 
+          onClick={toggleCalculator} // SỬ DỤNG HÀM MỚI
+          title="Mở máy tính (Có thể dùng bàn phím)"
+        >
+          <MdCalculate />
+        </button>
+      )}
 
-      <button 
-        className="floating-toggle-btn" 
-        onClick={() => setIsCalculatorVisible(true)}
-        title="Mở máy tính (Có thể dùng bàn phím)"
-      >
-        <MdCalculate />
-      </button>
-
-      {isCalculatorVisible && <FloatingCalculator onClose={() => setIsCalculatorVisible(false)} />}
+      {isToolsModalVisible && role === 'owner' && (
+        <FloatingToolsModal onClose={toggleToolsModal} />
+      )}
+      
+      {isCalculatorVisible && role !== 'owner' && (
+        <FloatingCalculator onClose={toggleCalculator} />
+      )}
     </div>
   );
 };
