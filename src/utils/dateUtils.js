@@ -2,12 +2,32 @@
 
 /**
  * Chuyển đổi một đối tượng Firebase Timestamp hoặc Date thành chuỗi dd/mm/yyyy.
- * @param {object | Date} timestamp - Đối tượng Timestamp của Firebase hoặc đối tượng Date.
- * @returns {string} - Chuỗi ngày tháng đã định dạng hoặc chuỗi rỗng.
+ * @param {object | Date} dateOrTimestamp - Đối tượng Timestamp của Firebase hoặc đối tượng Date.
+ * @returns {string} - Chuỗi ngày tháng đã định dạng hoặc 'N/A'.
  */
-export const formatDate = (timestamp) => {
-  if (!timestamp || !timestamp.toDate) return 'N/A'; // <-- Sửa thành 'N/A'
-  const date = timestamp.toDate();
+export const formatDate = (dateOrTimestamp) => {
+  // --- BẮT ĐẦU NÂNG CẤP ---
+  let date;
+
+  // Kiểm tra xem có phải là Timestamp của Firebase không và chuyển đổi nó
+  if (dateOrTimestamp && typeof dateOrTimestamp.toDate === 'function') {
+    date = dateOrTimestamp.toDate();
+  }
+  // Nếu không, kiểm tra xem nó có phải là một đối tượng Date của JavaScript không
+  else if (dateOrTimestamp instanceof Date) {
+    date = dateOrTimestamp;
+  }
+  // Nếu không phải cả hai, chúng ta không thể định dạng nó
+  else {
+    return 'N/A';
+  }
+
+  // Đảm bảo chúng ta có một ngày hợp lệ trước khi tiếp tục
+  if (isNaN(date.getTime())) {
+      return 'N/A';
+  }
+  // --- KẾT THÚC NÂNG CẤP ---
+
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
@@ -25,9 +45,7 @@ export const parseDateString = (dateString) => {
     const parts = dateString.split('/');
     if (parts.length !== 3) return null;
     const [day, month, year] = parts;
-    // Chú ý: tháng trong new Date() bắt đầu từ 0
     const dateObj = new Date(year, month - 1, day);
-    // Kiểm tra xem ngày có hợp lệ không (ví dụ: 31/02/2025)
     if (dateObj.getFullYear() != year || dateObj.getMonth() != month - 1 || dateObj.getDate() != day) {
       return null;
     }
@@ -45,26 +63,20 @@ export const parseDateString = (dateString) => {
  */
 export const formatExpiryDate = (value) => {
     if (!value) return '';
-    // 1. Chỉ giữ lại các ký tự số
     const digitsOnly = value.replace(/\D/g, '');
-    // 2. Giới hạn tối đa 8 ký tự (ddmmyyyy)
     const truncatedDigits = digitsOnly.slice(0, 8);
     const len = truncatedDigits.length;
 
-    // 3. Áp dụng định dạng dựa trên độ dài
     if (len <= 2) {
-        return truncatedDigits; // Gõ tới ngày (dd)
+        return truncatedDigits;
     }
     if (len <= 4) {
-        // Gõ tới tháng (dd/mm)
         return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2)}`;
     }
-    // Gõ tới năm (dd/mm/yyyy)
     return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2, 4)}/${truncatedDigits.slice(4)}`;
 };
 
 /**
- * === HÀM MỚI ĐƯỢC THÊM VÀO ===
  * Xác định class màu sắc cho một dòng dựa trên ngày hết hạn.
  * @param {object} expiryDate - Đối tượng Timestamp của Firebase.
  * @returns {string} - Tên class CSS tương ứng.

@@ -3,51 +3,87 @@
 .dashboard-container {
     padding: 20px;
     background-color: #f8f9fa;
-    height: calc(100vh - 60px); /* Chiều cao trừ đi thanh Navbar */
+    height: calc(100vh - 60px);
     overflow-y: auto;
 }
 
 .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 20px;
 }
 
-.dashboard-header h1,
-.dashboard-header h2 {
+.dashboard-header h1 {
     margin: 0;
     color: #343a40;
 }
 
-/* --- Lưới hiển thị chung --- */
-.dashboard-grid {
+.dashboard-grid-layout {
     display: grid;
     gap: 20px;
-    margin-bottom: 20px;
 }
 
-/* Lưới cho các thẻ thống kê */
 .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
 }
 
-/* Lưới cho các biểu đồ */
+.stat-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.stat-card-icon {
+    font-size: 28px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+}
+.stat-card:nth-child(1) .stat-card-icon { background-color: #ffc107; } /* Yellow */
+.stat-card:nth-child(2) .stat-card-icon { background-color: #dc3545; } /* Red */
+.stat-card:nth-child(3) .stat-card-icon { background-color: #17a2b8; } /* Teal */
+.stat-card:nth-child(4) .stat-card-icon { background-color: #6c757d; } /* Gray */
+
+
+.stat-card-info h4 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.stat-card-info p {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #343a40;
+}
+
 .chart-grid {
+    display: grid;
     grid-template-columns: 2fr 1fr;
+    gap: 20px;
 }
 
-/* Lưới cho các bảng thông tin */
 .table-grid {
+    display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
-/* --- Style cho thẻ card chung --- */
 .card {
     background-color: #ffffff;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     border: 1px solid #e9ecef;
 }
 
@@ -56,33 +92,43 @@
     margin-bottom: 15px;
     font-size: 16px;
     color: #495057;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
-/* Container cho bảng */
-.table-container {
-    max-height: 300px;
-    overflow-y: auto;
+.recent-activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-/* --- Style mới cho Dashboard đơn giản hóa --- */
-
-/* Lưới hiển thị một cột */
-.single-column-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
+.recent-activity-list li {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 15px;
+    padding: 10px 5px;
+    border-bottom: 1px solid #f1f1f1;
+    font-size: 14px;
+    align-items: center;
 }
 
-/* Bảng với style tối giản */
-.products-table.minimal {
-  margin-top: 10px;
+.recent-activity-list li:last-child {
+    border-bottom: none;
 }
 
-.products-table.minimal td {
-  padding: 10px 12px;
+.recent-activity-list span:last-child {
+    color: #6c757d;
+    font-size: 13px;
+    text-align: right;
 }
 
-/* Link trong bảng */
+.empty-message {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+}
+
 .table-link {
   color: #007bff;
   font-weight: 500;
@@ -95,12 +141,15 @@
   color: #0056b3;
 }
 
-/* Tin nhắn khi không có dữ liệu */
-.empty-message {
-  padding: 20px;
-  text-align: center;
-  color: #888;
-  font-style: italic;
-  background-color: #fdfdfd;
-  border-radius: 4px;
+/* Responsive */
+@media (max-width: 992px) {
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .table-grid {
+        grid-template-columns: 1fr;
+    }
 }

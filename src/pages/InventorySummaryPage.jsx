@@ -1,8 +1,23 @@
 // src/pages/InventorySummaryPage.jsx
+
 import { formatNumber } from '../utils/numberUtils';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, getDocs, where, orderBy, documentId, limit, startAfter, Timestamp } from 'firebase/firestore';
+import {
+    collection,
+    query,
+    getDocs,
+    where,
+    orderBy,
+    documentId,
+    limit,
+    startAfter,
+    Timestamp,
+    doc,
+    getDoc,
+    onSnapshot
+} from 'firebase/firestore';
+import NewDataNotification from '../components/NewDataNotification';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { FiChevronDown, FiChevronRight, FiChevronLeft, FiPrinter } from 'react-icons/fi';
@@ -12,13 +27,9 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
-
-// <-- THAY ĐỔI 1: Import thêm hàm getRowColorByExpiry
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 
 const PAGE_SIZE = 15;
-
-// <-- THAY ĐỔI 2: Xóa toàn bộ hàm getRowColorByExpiry ở đây
 
 const getLotItemColorClass = (expiryDate) => {
     if (!expiryDate || !expiryDate.toDate) return '';
@@ -35,7 +46,7 @@ const getLotItemColorClass = (expiryDate) => {
     return '';
 };
 
-const InventorySummaryPage = () => {
+const InventorySummaryPage = ({ pageTitle }) => {
     const { userRole } = useAuth();
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -48,77 +59,147 @@ const InventorySummaryPage = () => {
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     const [activeFilter, setActiveFilter] = useState({ type: 'none', value: '' });
+    
+    // State và Ref cho thông báo real-time
+    const [hasNewData, setHasNewData] = useState(false);
+    const lastSeenTimestampRef = useRef(null); // Sử dụng lại ref để lưu timestamp
 
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            let q = query(collection(db, "product_summaries"), orderBy(documentId(), "asc"));
-       
-             if (activeFilter.type === 'team') {
-                q = query(q, where("team", "==", activeFilter.value));
-            } else if (activeFilter.type === 'near_expiry') {
-                const today = Timestamp.now();
-                const futureDate = new Date();
-                 futureDate.setDate(futureDate.getDate() + 120);
-                const futureTimestamp = Timestamp.fromDate(futureDate);
-                q = query(q, where("nearestExpiryDate", ">=", today), where("nearestExpiryDate", "<=", futureTimestamp), orderBy("nearestExpiryDate", "asc"));
-            } else if (activeFilter.type === 'expired') {
-                const today = Timestamp.now();
-                q = query(q, where("nearestExpiryDate", "<", today), orderBy("nearestExpiryDate", "asc"));
+            let baseCollectionRef;
+            let queryConstraints = [];
+            const isDateFilter = activeFilter.type === 'near_expiry' || activeFilter.type === 'expired';
+
+            if (userRole === 'med') {
+                queryConstraints.push(where("team", "==", "MED"));
+            } else if (userRole === 'bio') {
+                queryConstraints.push(where("team", "in", ["BIO", "Spare Part"]));
+            }
+            
+            if (isDateFilter) {
+                baseCollectionRef = collection(db, "product_summaries");
+                if (activeFilter.type === 'near_expiry') {
+                    const today = Timestamp.now();
+                    const futureDate = new Date();
+                    futureDate.setDate(futureDate.getDate() + 120);
+                    const futureTimestamp = Timestamp.fromDate(futureDate);
+                    queryConstraints.push(where("nearestExpiryDate", ">=", today));
+                    queryConstraints.push(where("nearestExpiryDate", "<=", futureTimestamp));
+                    queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
+                } else {
+                    const today = Timestamp.now();
+                    queryConstraints.push(where("nearestExpiryDate", "<", today));
+                    queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
+                }
+            } else {
+                baseCollectionRef = collection(db, "products");
+                if (activeFilter.type === 'team') {
+                    queryConstraints.push(where("team", "==", activeFilter.value));
+                }
+                queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
             if (direction === 'next' && cursor) {
-                q = query(q, startAfter(cursor), limit(PAGE_SIZE));
-            } else {
-                q = query(q, limit(PAGE_SIZE));
-                if (direction === 'first') setPage(1);
+                queryConstraints.push(startAfter(cursor));
+            } else if (direction === 'first') {
+                setPage(1);
+            }
+            queryConstraints.push(limit(PAGE_SIZE));
+            
+            const mainQuery = query(baseCollectionRef, ...queryConstraints);
+            const mainSnapshot = await getDocs(mainQuery);
+
+            if (mainSnapshot.empty) {
+                setSummaries([]);
+                setIsLastPage(true);
+                setLastVisible(null);
+                setLoading(false);
+                return;
             }
 
-            const docSnapshots = await getDocs(q);
-            const summaryList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const mainDocs = mainSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (isDateFilter) {
+                setSummaries(mainDocs);
+            } else {
+                const productIds = mainDocs.map(doc => doc.id);
+                if (productIds.length > 0) {
+                    const summariesQuery = query(collection(db, "product_summaries"), where(documentId(), 'in', productIds));
+                    const summariesSnapshot = await getDocs(summariesQuery);
+                    const summariesMap = new Map(summariesSnapshot.docs.map(doc => [doc.id, doc.data()]));
+                    const mergedData = mainDocs.map(product => {
+                        const summaryData = summariesMap.get(product.id);
+                        return { ...product, totalRemaining: summaryData?.totalRemaining ?? 0, nearestExpiryDate: summaryData?.nearestExpiryDate ?? null };
+                    });
+                    setSummaries(mergedData);
+                } else {
+                    setSummaries([]);
+                }
+            }
 
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1] || null);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setSummaries(summaryList);
+            setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
+            setIsLastPage(mainSnapshot.docs.length < PAGE_SIZE);
+
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu tổng hợp: ", error);
+            toast.error("Không thể tải dữ liệu. Vui lòng kiểm tra Console (F12) để xem lỗi và tạo Index nếu cần.");
         } finally {
             setLoading(false);
         }
-    }, [activeFilter]);
+    }, [activeFilter, userRole]);
 
     const performSearch = useCallback(async (term) => {
         if (!term) return;
         setLoading(true);
         try {
+            let baseSearchRef = collection(db, "products");
+            let searchConstraints = [];
+
+            if (userRole === 'med') {
+               searchConstraints.push(where("team", "==", "MED"));
+            } else if (userRole === 'bio') {
+                searchConstraints.push(where("team", "in", ["BIO", "Spare Part"]));
+            }
+
             const upperTerm = term.toUpperCase();
-            const productSearchQuery = query(
-                collection(db, "product_summaries"),
-                where(documentId(), ">=", upperTerm),
-                where(documentId(), "<=", upperTerm + '\uf8ff')
-            );
-            const lotSearchQuery = query(
-                collection(db, "inventory_lots"),
-                where("lotNumber", "==", term)
-            );
-  
-            const [productSnap, lotSnap] = await Promise.all([
-                getDocs(productSearchQuery),
-                getDocs(lotSearchQuery)
-            ]);
+            const productSearchQuery = query(baseSearchRef, ...searchConstraints, where(documentId(), ">=", upperTerm), where(documentId(), "<=", upperTerm + '\uf8ff'));
+            const lotSearchQuery = query(collection(db, "inventory_lots"), where("lotNumber", "==", term));
+ 
+            const [productSnap, lotSnap] = await Promise.all([ getDocs(productSearchQuery), getDocs(lotSearchQuery) ]);
+            
             const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
-            lotSnap.docs.forEach(doc => foundProductIds.add(doc.data().productId));
-         
+            const allowedTeams = userRole === 'med' ? ['MED'] : (userRole === 'bio' ? ['BIO', 'Spare Part'] : null);
+            for (const lotDoc of lotSnap.docs) {
+                const productId = lotDoc.data().productId;
+                if (allowedTeams) {
+                    const productRef = doc(db, "products", productId);
+                    const productDoc = await getDoc(productRef);
+                    if (productDoc.exists() && allowedTeams.includes(productDoc.data().team)) {
+                        foundProductIds.add(productId);
+                    }
+                } else {
+                    foundProductIds.add(productId);
+                }
+            }
+          
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
             } else {
-                const finalQuery = query(
-                    collection(db, "product_summaries"),
-                    where(documentId(), 'in', Array.from(foundProductIds).slice(0, 30))
-                );
-                const finalSnap = await getDocs(finalQuery);
-                setSummaries(finalSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                const ids = Array.from(foundProductIds).slice(0, 30);
+                const finalProductsQuery = query( collection(db, "products"), where(documentId(), 'in', ids));
+                const finalProductsSnap = await getDocs(finalProductsQuery);
+                const finalProducts = finalProductsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                const summariesQuery = query(collection(db, "product_summaries"), where(documentId(), 'in', ids));
+                const summariesSnapshot = await getDocs(summariesQuery);
+                const summariesMap = new Map(summariesSnapshot.docs.map(doc => [doc.id, doc.data()]));
+                
+                const mergedData = finalProducts.map(product => {
+                    const summaryData = summariesMap.get(product.id);
+                    return { ...product, totalRemaining: summaryData?.totalRemaining ?? 0, nearestExpiryDate: summaryData?.nearestExpiryDate ?? null };
+                });
+                setSummaries(mergedData);
                 setIsLastPage(true);
             }
         } catch (error) {
@@ -126,7 +207,7 @@ const InventorySummaryPage = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [userRole]);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -141,54 +222,81 @@ const InventorySummaryPage = () => {
         return () => clearTimeout(debounce);
     }, [searchTerm, activeFilter, fetchData, performSearch]);
 
-    const toggleRow = async (productId) => {
-        const isCurrentlyExpanded = !!expandedRows[productId];
-        if (!lotDetails[productId]) {
-            setLoadingLots(prev => ({ ...prev, [productId]: true }));
-            try {
-                const lotsQuery = query(
-                    collection(db, "inventory_lots"),
-                    where("productId", "==", productId),
-                    where("quantityRemaining", ">", 0),
-                    orderBy("expiryDate", "asc")
-                );
-                const lotsSnapshot = await getDocs(lotsQuery);
-                const lots = lotsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-                setLotDetails(prev => ({ ...prev, [productId]: lots }));
-            } catch (error) {
-                console.error("Lỗi khi tải chi tiết lô:", error);
-                setLotDetails(prev => ({ ...prev, [productId]: [] }));
-            } finally {
-                setLoadingLots(prev => ({ ...prev, [productId]: false }));
+    // === LOGIC LẮNG NGHE REAL-TIME ĐÃ ĐƯỢC SỬA LẠI ===
+    useEffect(() => {
+        const q = query(collection(db, "product_summaries"), orderBy("lastUpdatedAt", "desc"), limit(1));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) return;
+
+            const newestDocData = snapshot.docs[0].data();
+            const newestTimestamp = newestDocData.lastUpdatedAt;
+
+            // Nếu không có timestamp thì không xử lý
+            if (!newestTimestamp) return;
+            
+            // Lần đầu tiên listener chạy, chỉ ghi lại timestamp và thoát
+            if (lastSeenTimestampRef.current === null) {
+                lastSeenTimestampRef.current = newestTimestamp;
+                return;
             }
+
+            // Từ lần thứ hai trở đi, so sánh timestamp mới với cái đã lưu
+            if (lastSeenTimestampRef.current && newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis()) {
+                // Chỉ hiện thông báo nếu sự thay đổi không phải từ cache của chính client này
+                 if (!snapshot.metadata.hasPendingWrites) {
+                   setHasNewData(true);
+                   // Cập nhật lại timestamp đã thấy để không báo lại cho cùng một sự kiện
+                   lastSeenTimestampRef.current = newestTimestamp;
+                 }
+            }
+        }, (error) => {
+            console.error("Lỗi khi lắng nghe real-time:", error);
+        });
+
+        return () => {
+          unsubscribe();
+          // Reset ref khi component unmount để lần sau vào lại nó sẽ thiết lập lại từ đầu
+          lastSeenTimestampRef.current = null;
+        };
+    }, []);
+
+    const handleRefresh = () => {
+        setHasNewData(false);
+        fetchData('first');
+    };
+    
+     const toggleRow = async (productId) => {
+        const isCurrentlyExpanded = !!expandedRows[productId];
+        // LUÔN LUÔN TẢI LẠI DỮ LIỆU LÔ KHI BẤM VÀO ĐỂ ĐẢM BẢO TÍNH TỨC THỜI
+        setLoadingLots(prev => ({ ...prev, [productId]: true }));
+        try {
+            const lotsQuery = query(
+                collection(db, "inventory_lots"),
+                where("productId", "==", productId),
+                where("quantityRemaining", ">", 0),
+                orderBy("expiryDate", "asc")
+            );
+            const lotsSnapshot = await getDocs(lotsQuery);
+            const lots = lotsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            setLotDetails(prev => ({ ...prev, [productId]: lots }));
+        } catch (error) {
+            console.error("Lỗi khi tải chi tiết lô:", error);
+            setLotDetails(prev => ({ ...prev, [productId]: [] }));
+        } finally {
+            setLoadingLots(prev => ({ ...prev, [productId]: false }));
         }
+        
         setExpandedRows(prev => ({ ...prev, [productId]: !isCurrentlyExpanded }));
     };
 
-    const handleNextPage = () => {
-        if (!isLastPage) {
-            setPage(p => p + 1);
-            fetchData('next', lastVisible);
-        }
-    };
-
-    const handlePrevPage = () => {
-        setLastVisible(null);
-        fetchData('first');
-    };
-
-    const handleFilterChange = (type, value = '') => {
-        if (activeFilter.type === type && activeFilter.value === value) {
-            setActiveFilter({ type: 'none', value: '' });
-        } else {
-            setActiveFilter({ type, value });
-        }
-    };
+    const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
+    const handlePrevPage = () => { fetchData('first'); };
+    const handleFilterChange = (type, value = '') => { if (activeFilter.type === type && activeFilter.value === value) { setActiveFilter({ type: 'none', value: '' }); } else { setActiveFilter({ type, value }); } };
     
     const handlePrint = async () => {
         const originalTitle = document.title;
         document.title = `BaoCao_TonKho_TongHop_${new Date().toLocaleDateString('vi-VN')}`;
-
         const allProductIds = summaries.map(s => s.id);
         const fetchPromises = allProductIds.map(id => {
             if (!lotDetails[id]) return toggleRow(id);
@@ -196,10 +304,7 @@ const InventorySummaryPage = () => {
         });
         toast.info("Đang chuẩn bị dữ liệu để in, vui lòng chờ...");
         await Promise.all(fetchPromises);
-        const allExpanded = allProductIds.reduce((acc, id) => {
-            acc[id] = true;
-            return acc;
-        }, {});
+        const allExpanded = allProductIds.reduce((acc, id) => ({...acc, [id]: true}), {});
         setExpandedRows(allExpanded);
         
         setTimeout(() => {
@@ -208,11 +313,11 @@ const InventorySummaryPage = () => {
             setExpandedRows({});
         }, 500);
     };
-    
+
     return (
         <div className="printable-inventory-area inventory-summary-page">
             <div className="page-header">
-                <h1>Tồn Kho Tổng Hợp</h1>
+                <h1>{pageTitle}</h1>
                 {(userRole === 'owner' || userRole === 'admin') && (
                     <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
                         <FiPrinter style={{marginRight: '5px'}} />
@@ -220,13 +325,28 @@ const InventorySummaryPage = () => {
                     </button>
                 )}
             </div>
-       
+            
+            <NewDataNotification
+                isVisible={hasNewData}
+                onRefresh={handleRefresh}
+                message="Có cập nhật tồn kho mới!"
+            />
+
             <div className="controls-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
-                 <div className="filter-group">
-                    <button className={activeFilter.value === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lọc hàng MED</button>
-                    <button className={activeFilter.value === 'BIO' ? 'active' : ''} onClick={() => handleFilterChange('team', 'BIO')}>Lọc hàng BIO</button>
-                    <button className={activeFilter.value === 'Spare Part' ? 'active' : ''} onClick={() => handleFilterChange('team', 'Spare Part')}>Lọc hàng Spare Part</button>
-                </div>
+                 {(userRole === 'owner' || userRole === 'admin') && (
+                    <div className="filter-group">
+                        <button className={activeFilter.value === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lọc hàng MED</button>
+                        <button className={activeFilter.value === 'BIO' ? 'active' : ''} onClick={() => handleFilterChange('team', 'BIO')}>Lọc hàng BIO</button>
+                        <button className={activeFilter.value === 'Spare Part' ? 'active' : ''} onClick={() => handleFilterChange('team', 'Spare Part')}>Lọc hàng Spare Part</button>
+                    </div>
+                )}
+                
+                {userRole === 'bio' && (
+                     <div className="filter-group">
+                        <button className={activeFilter.value === 'Spare Part' ? 'active' : ''} onClick={() => handleFilterChange('team', 'Spare Part')}>Lọc hàng Spare Part</button>
+                    </div>
+                )}
+
                 <div className="filter-group">
                     <button className={activeFilter.type === 'near_expiry' ? 'active' : ''} onClick={() => handleFilterChange('near_expiry')}>Lọc hàng cận date</button>
                     <button className={activeFilter.type === 'expired' ? 'active' : ''} onClick={() => handleFilterChange('expired')}>Lọc hàng hết date</button>
@@ -254,6 +374,7 @@ const InventorySummaryPage = () => {
                                     <th>HSD Gần Nhất</th>
                                     <th>Tổng Tồn</th>
                                     <th>ĐVT</th>
+                                    <th>Quy cách</th>
                                     <th>Nhiệt độ BQ</th>
                                     <th>Team</th>
                                 </tr>
@@ -273,13 +394,14 @@ const InventorySummaryPage = () => {
                                             <td data-label="HSD Gần Nhất">{formatDate(product.nearestExpiryDate)}</td>
                                             <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
+                                            <td data-label="Quy cách">{product.packaging}</td>
                                             <td data-label="Nhiệt độ BQ"><TempBadge temperature={product.storageTemp} /></td>
                                             <td data-label="Team"><TeamBadge team={product.team} /></td>
                                         </tr>
                              
                                         {expandedRows[product.id] && (
                                             <tr className="lot-details-row">
-                                                <td colSpan="8">
+                                                <td colSpan="9">
                                                     <div className="lot-details-container">
                                                         {loadingLots[product.id] ? (
                                                             <SkeletonTheme baseColor="#e9ecef" highlightColor="#f8f9fa">

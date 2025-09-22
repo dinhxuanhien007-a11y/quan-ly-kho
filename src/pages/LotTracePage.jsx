@@ -20,6 +20,7 @@ const LotTracePage = () => {
   const [exportHistory, setExportHistory] = useState([]);
   const [searchAttempted, setSearchAttempted] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [totalRemaining, setTotalRemaining] = useState(0); 
 
   const handleTrace = async () => {
     if (!lotNumber) {
@@ -31,6 +32,7 @@ const LotTracePage = () => {
     setExportHistory([]);
     setSearchAttempted(true);
     setSelectedNode(null);
+
     try {
       const lotQuery = query(
         collection(db, 'inventory_lots'),
@@ -49,6 +51,14 @@ const LotTracePage = () => {
         ...doc.data(),
       }));
       setImportRecords(foundImports);
+
+      const adjustmentsQuery = query(
+        collection(db, 'inventory_adjustments'),
+        where('lotNumber', '==', lotNumber.trim()),
+        orderBy('createdAt', 'desc')
+      );
+      const adjustmentsSnapshot = await getDocs(adjustmentsQuery);
+      const latestAdjustment = adjustmentsSnapshot.docs[0]?.data();
 
       const history = [];
       const exportsQuery = query(
@@ -72,6 +82,19 @@ const LotTracePage = () => {
         }
       });
       setExportHistory(history);
+
+      if (latestAdjustment) {
+        foundImports[foundImports.length - 1].quantityRemaining = latestAdjustment.quantityAfter;
+        setTotalRemaining(latestAdjustment.quantityAfter);
+        toast.info(`Tồn kho đã được điều chỉnh. Tồn kho hiện tại: ${latestAdjustment.quantityAfter}`);
+      } else {
+        const totalRemainingFromImports = foundImports.reduce(
+          (sum, record) => sum + record.quantityRemaining,
+          0,
+        );
+        setTotalRemaining(totalRemainingFromImports);
+      }
+
     } catch (error) {
       console.error('Lỗi khi truy vết lô hàng: ', error);
       toast.error('Đã có lỗi xảy ra khi truy vết.');
@@ -95,10 +118,7 @@ const LotTracePage = () => {
     (sum, record) => sum + record.quantityImported,
     0,
   );
-  const totalRemaining = importRecords.reduce(
-    (sum, record) => sum + record.quantityRemaining,
-    0,
-  );
+  
   return (
     <div>
       <div className="page-header">
@@ -144,6 +164,7 @@ const LotTracePage = () => {
             <LotJourneyExplorer
               importRecords={importRecords}
               exportHistory={exportHistory}
+              totalRemaining={totalRemaining}
               onNodeClick={handleNodeClick}
               onPaneClick={handlePaneClick}
             />

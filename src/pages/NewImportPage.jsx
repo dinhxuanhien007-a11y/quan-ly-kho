@@ -14,15 +14,27 @@ import { z } from 'zod';
 import useImportSlipStore from '../stores/importSlipStore';
 
 const importItemSchema = z.object({
+  id: z.number(),
   productId: z.string().min(1, "Mã hàng không được để trống."),
-  lotNumber: z.string().min(1, "Số lô không được để trống."),
+  productName: z.string(),
+  unit: z.string(),
+  packaging: z.string(),
+  storageTemp: z.string(),
+  team: z.string(),
+  manufacturer: z.string(),
+  notes: z.string(),
+  lotNumber: z.string(),
   quantity: z.preprocess(
       val => Number(val),
       z.number({ invalid_type_error: "Số lượng phải là một con số." })
        .gt(0, { message: "Số lượng phải lớn hơn 0." })
   ),
-  expiryDate: z.string().refine(val => parseDateString(val) !== null, {
-      message: "Hạn sử dụng không hợp lệ (cần định dạng dd/mm/yyyy)."
+  expiryDate: z.string().refine(val => {
+      const trimmedVal = val.trim();
+      // Hợp lệ nếu: để trống, HOẶC là 'N/A', HOẶC là ngày hợp lệ
+      return trimmedVal === '' || trimmedVal.toUpperCase() === 'N/A' || parseDateString(trimmedVal) !== null;
+  }, {
+      message: "Hạn sử dụng không hợp lệ (cần định dạng dd/mm/yyyy hoặc để trống)."
   }),
 });
 
@@ -51,7 +63,7 @@ const NewImportPage = () => {
     const isSlipValid = useMemo(() => {
         const hasSupplier = supplierId.trim() !== '' && supplierName.trim() !== '';
         const hasValidItem = items.some(
-            item => item.productId && item.lotNumber && item.expiryDate && Number(item.quantity) > 0
+            item => item.productId && Number(item.quantity) > 0
         );
         return hasSupplier && hasValidItem;
     }, [supplierId, supplierName, items]);
@@ -69,12 +81,12 @@ const NewImportPage = () => {
             const supplierList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setAllSuppliers(supplierList);
         };
+        
         fetchSuppliers();
     }, []);
 
     const handleRemoveRow = (index) => {
         if (items.length <= 1) return;
-
         setConfirmModal({
             isOpen: true,
             title: "Xác nhận xóa dòng?",
@@ -88,13 +100,23 @@ const NewImportPage = () => {
 
     const getValidSlipData = () => {
         const validItems = items.filter(item => 
-            item.productId && item.lotNumber && item.quantity && item.expiryDate
-        );
+            item.productId && item.quantity
+        ).map(item => ({
+            ...item,
+            lotNumber: item.lotNumber.trim() || 'N/A'
+        }));
+
+        if (validItems.length === 0) {
+            toast.warn("Phiếu nhập phải có ít nhất một mặt hàng hợp lệ.");
+            return null;
+        }
+
         const slipToValidate = {
             supplierId: supplierId.trim(),
             supplierName: supplierName.trim(),
             items: validItems
         };
+
         const validationResult = importSlipSchema.safeParse(slipToValidate);
 
         if (!validationResult.success) {
@@ -110,6 +132,7 @@ const NewImportPage = () => {
             createdAt: serverTimestamp()
         };
     }
+
     const handleSupplierSearch = async () => {
         if (!supplierId) {
             setSupplier(supplierId, '');
@@ -131,9 +154,11 @@ const NewImportPage = () => {
             setSupplier(supplierId, '');
         }
     };
+
     const handleExpiryDateBlur = (index, value) => {
         updateItem(index, 'expiryDate', formatExpiryDate(value));
     };
+
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
         if (!currentItem.productId || !currentItem.lotNumber) return;
@@ -156,41 +181,40 @@ const NewImportPage = () => {
             console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
         }
     };
+
     const handleProductSearch = async (index, productOrId) => {
-    if (!productOrId) return;
+        if (!productOrId) return;
 
-    // Trường hợp người dùng chọn từ danh sách gợi ý
-    if (typeof productOrId === 'object' && productOrId !== null) {
-        // GỌI HÀM CỦA ZUSTAND STORE ĐỂ CẬP NHẬT DỮ LIỆU
-        handleProductSearchResult(index, productOrId, true);
-        // CẬP NHẬT LẠI ID VÀO Ô INPUT
-        updateItem(index, 'productId', productOrId.id); // <-- DÒNG QUAN TRỌNG BỊ THIẾU
-        return; 
-    }
-
-    // Trường hợp người dùng gõ tay và rời khỏi ô input
-    const productId = String(productOrId).trim().toUpperCase();
-    if (!productId) return;
-
-    try {
-        const productRef = doc(db, 'products', productId);
-        const productSnap = await getDoc(productRef);
-
-        if (productSnap.exists()) {
-            handleProductSearchResult(index, productSnap.data(), true);
-        } else {
-            handleProductSearchResult(index, null, false);
+        if (typeof productOrId === 'object' && productOrId !== null) {
+            handleProductSearchResult(index, productOrId, true);
+            updateItem(index, 'productId', productOrId.id);
+            return;
         }
-    } catch (error) {
-        console.error("Lỗi khi tìm kiếm sản phẩm:", error);
-        toast.error("Lỗi khi tìm kiếm sản phẩm!");
-    }
-};
+
+        const productId = String(productOrId).trim().toUpperCase();
+        if (!productId) return;
+
+        try {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+
+            if (productSnap.exists()) {
+                handleProductSearchResult(index, { id: productSnap.id, ...productSnap.data() }, true);
+            } else {
+                handleProductSearchResult(index, null, false);
+            }
+        } catch (error) {
+            console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+            toast.error("Lỗi khi tìm kiếm sản phẩm!");
+        }
+    };
+
     const handleNewProductCreated = (newData) => {
         const { index } = newProductModal;
         fillNewProductData(index, newData);
         setNewProductModal({ isOpen: false, productId: '', index: -1 });
     };
+
     const handleSaveSlip = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -208,6 +232,7 @@ const NewImportPage = () => {
             setIsSaving(false);
         }
     };
+
     const handleDirectImport = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -216,24 +241,25 @@ const NewImportPage = () => {
         setIsSaving(true);
         try {
             for (const item of slipData.items) {
-                const expiryTimestamp = Timestamp.fromDate(parseDateString(item.expiryDate));
-                const fullItemData = items.find(i => i.productId === item.productId && i.lotNumber === item.lotNumber);
+                const expiryDateObj = parseDateString(item.expiryDate);
+                const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
+                
                 const newLotData = {
                     importDate: Timestamp.now(),
                     productId: item.productId,
-                    productName: fullItemData.productName,
+                    productName: item.productName,
                     lotNumber: item.lotNumber,
                     expiryDate: expiryTimestamp,
-                    unit: fullItemData.unit,
-                    packaging: fullItemData.packaging,
-                    storageTemp: fullItemData.storageTemp,
-                    team: fullItemData.team,
-                    manufacturer: fullItemData.manufacturer,
+                    unit: item.unit,
+                    packaging: item.packaging,
+                    storageTemp: item.storageTemp,
+                    team: item.team,
+                    manufacturer: item.manufacturer,
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
-                    notes: fullItemData.notes,
+                    notes: item.notes,
                     supplier: slipData.supplierName,
-                 };
+                };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
             
@@ -249,6 +275,7 @@ const NewImportPage = () => {
             setIsSaving(false);
         }
     };
+
     const promptForDirectImport = () => {
         if (getValidSlipData()) {
             setConfirmModal({
@@ -297,7 +324,7 @@ const NewImportPage = () => {
                     <div className="form-group">
                         <label>Mã Nhà Cung Cấp (*)</label>
                         <input 
-                             list="suppliers-list"
+                            list="suppliers-list"
                             type="text" 
                             placeholder="Nhập hoặc chọn mã NCC..." 
                             value={supplierId} 
@@ -307,10 +334,10 @@ const NewImportPage = () => {
                          <datalist id="suppliers-list">
                             {allSuppliers.map(sup => (
                                 <option key={sup.id} value={sup.id}>
-                                     {sup.partnerName}
+                                    {sup.partnerName}
                                 </option>
                             ))}
-                         </datalist>
+                        </datalist>
                     </div>
                     <div className="form-group">
                          <label>Tên Nhà Cung Cấp (*)</label>
@@ -318,7 +345,7 @@ const NewImportPage = () => {
                             type="text" 
                             value={supplierName} 
                             readOnly 
-                             style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                         />
                     </div>
                 </div>
@@ -330,100 +357,97 @@ const NewImportPage = () => {
 
             <h2>Chi tiết hàng hóa</h2>
             <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 0.5fr' }}>
-    <div className="grid-header">Mã hàng (*)</div>
-    <div className="grid-header">Tên hàng</div>
-    <div className="grid-header">Số lô (*)</div>
-    <div className="grid-header">HSD (*)</div>
-    <div className="grid-header">ĐVT</div>
-    <div className="grid-header">Quy cách</div>
-    <div className="grid-header">Số lượng (*)</div>
-    <div className="grid-header">Ghi chú</div>
-    <div className="grid-header">Team</div>
-    <div className="grid-header">Xóa</div>
+                <div className="grid-header">Mã hàng (*)</div>
+                <div className="grid-header">Tên hàng</div>
+                <div className="grid-header">Số lô</div>
+                <div className="grid-header">HSD</div>
+                <div className="grid-header">ĐVT</div>
+                <div className="grid-header">Quy cách</div>
+                <div className="grid-header">Số lượng (*)</div>
+                <div className="grid-header">Ghi chú</div>
+                <div className="grid-header">Team</div>
+                <div className="grid-header">Xóa</div>
 
-    {items.map((item, index) => (
-        <React.Fragment key={item.id}>
-            <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                <ProductAutocomplete
-                    value={item.productId}
-                    onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
-                    onSelect={(product) => handleProductSearch(index, product)}
-                    onBlur={() => handleProductSearch(index, item.productId)}
-                />
-                {item.productNotFound && (
-                    <button
-                        onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
-                        className="btn-link"
-                        style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
-                    >
-                        Mã này không tồn tại. Tạo mới...
-                    </button>
-                )}
+                {items.map((item, index) => (
+                    <React.Fragment key={item.id}>
+                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <ProductAutocomplete
+                                value={item.productId}
+                                onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
+                                onSelect={(product) => handleProductSearch(index, product)}
+                                onBlur={() => handleProductSearch(index, item.productId)}
+                            />
+                            {item.productNotFound && (
+                                <button
+                                    onClick={() => setNewProductModal({ isOpen: true, productId: item.productId, index: index })}
+                                    className="btn-link"
+                                    style={{ marginTop: '5px', color: '#007bff', cursor: 'pointer', background: 'none', border: 'none', padding: '0', textAlign: 'left', fontSize: '13px' }}
+                                >
+                                    Mã này không tồn tại. Tạo mới...
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <input
+                                type="text"
+                                value={item.lotNumber}
+                                onChange={e => updateItem(index, 'lotNumber', e.target.value)}
+                                onBlur={() => checkExistingLot(index)}
+                            />
+                            {item.lotStatus === 'exists' && item.existingLotInfo && (
+                                <div className="existing-lot-info">
+                                    <FiInfo />
+                                    <span>Lô đã có | Tồn: {formatNumber(item.existingLotInfo.quantityRemaining)} | HSD: {item.existingLotInfo.expiryDate}</span>
+                                </div>
+                            )}
+                            {item.lotStatus === 'new' && (
+                                <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
+                                    [+] Khai báo lô mới...
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid-cell">
+                            <input 
+                                type="text" 
+                                placeholder="dd/mm/yyyy" 
+                                value={item.expiryDate} 
+                                onChange={e => updateItem(index, 'expiryDate', e.target.value)} 
+                                onBlur={e => handleExpiryDateBlur(index, e.target.value)}
+                                readOnly={item.lotStatus === 'exists'}
+                                style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
+                            />
+                        </div>
+                        <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+                        <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                        <div className="grid-cell">
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={formatNumber(item.quantity)}
+                                onChange={e => {
+                                    const numericValue = parseFormattedNumber(e.target.value);
+                                    if (/^\d*$/.test(numericValue)) {
+                                        updateItem(index, 'quantity', numericValue);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
+                        <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
+                        <div className="grid-cell">
+                            <button 
+                                type="button" 
+                                className="btn-icon btn-delete" 
+                                onClick={() => handleRemoveRow(index)}
+                                title="Xóa dòng này"
+                            >
+                                <FiXCircle />
+                            </button>
+                        </div>
+                    </React.Fragment>
+                ))}
             </div>
-            <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-            <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                <input
-                    type="text"
-                    value={item.lotNumber}
-                    onChange={e => updateItem(index, 'lotNumber', e.target.value)}
-                    onBlur={() => checkExistingLot(index)}
-                />
-                {item.lotStatus === 'exists' && item.existingLotInfo && (
-                    <div className="existing-lot-info">
-                        <FiInfo />
-                        <span>Lô đã có | Tồn: {formatNumber(item.existingLotInfo.quantityRemaining)} | HSD: {item.existingLotInfo.expiryDate}</span>
-                    </div>
-                )}
-                {item.lotStatus === 'new' && (
-                    <button onClick={() => setNewLotModal({ isOpen: true, index: index })} className="btn-link" style={{marginTop: '5px'}}>
-                        [+] Khai báo lô mới...
-                    </button>
-                )}
-            </div>
-            <div className="grid-cell">
-                <input 
-                    type="text" 
-                    placeholder="dd/mm/yyyy" 
-                    value={item.expiryDate} 
-                    onChange={e => updateItem(index, 'expiryDate', e.target.value)} 
-                    onBlur={e => handleExpiryDateBlur(index, e.target.value)}
-                    readOnly={item.lotStatus === 'exists'}
-                    style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
-                />
-            </div>
-            <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-            <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-            <div className="grid-cell">
-    <input
-        type="text" // Đổi sang "text" để cho phép dấu chấm
-        inputMode="numeric" // Gợi ý bàn phím số trên di động
-        value={formatNumber(item.quantity)}
-        onChange={e => {
-            // Chuyển "1.000" về "1000"
-            const numericValue = parseFormattedNumber(e.target.value);
-            // Chỉ cho phép nhập số
-            if (/^\d*$/.test(numericValue)) {
-                updateItem(index, 'quantity', numericValue);
-            }
-        }}
-    />
-</div>
-            <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
-            {/* Cột Team được giữ lại */}
-            <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
-            <div className="grid-cell">
-                <button 
-                    type="button" 
-                    className="btn-icon btn-delete" 
-                    onClick={() => handleRemoveRow(index)}
-                    title="Xóa dòng này"
-                >
-                    <FiXCircle />
-                </button>
-            </div>
-        </React.Fragment>
-    ))}
-</div>
             
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">

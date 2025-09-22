@@ -43,7 +43,9 @@ const NewExportPage = () => {
     const lastInputRef = useRef(null);
 
     const isSlipValid = useMemo(() => {
+        // Kiểm tra xem cả customerId và customerName đều không rỗng
         const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
+        // Kiểm tra có ít nhất một item với đầy đủ productId, selectedLotId và quantityToExport > 0
         const hasValidItem = items.some(
             item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0
         );
@@ -131,7 +133,18 @@ const NewExportPage = () => {
             updateItem(index, 'isOutOfStock', true);
         } else {
             const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            foundLots.sort((a, b) => a.expiryDate.toDate() - b.expiryDate.toDate());
+            foundLots.sort((a, b) => {
+    const aHasExpiry = a.expiryDate && a.expiryDate.toDate;
+    const bHasExpiry = b.expiryDate && b.expiryDate.toDate;
+
+    // Nếu cả hai đều không có HSD, coi như bằng nhau
+    if (!aHasExpiry && !bHasExpiry) return 0;
+    // Lô không có HSD luôn xếp sau lô có HSD (ưu tiên xuất lô có HSD trước)
+    if (!aHasExpiry) return 1;
+    if (!bHasExpiry) return -1;
+    // Sắp xếp bình thường nếu cả hai đều có HSD
+    return a.expiryDate.toDate() - b.expiryDate.toDate();
+});
             
             replaceItem(index, {
                 availableLots: foundLots,

@@ -4,17 +4,16 @@ import React, { useMemo } from 'react';
 import ReactFlow, { Background, Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-const processDataForFlow = (importRecords, exportHistory) => {
+// Sửa đổi hàm này để nhận thêm totalRemaining
+const processDataForFlow = (importRecords, exportHistory, totalRemaining) => {
     const initialNodes = [];
     const initialEdges = [];
-
     if (importRecords.length === 0) {
         return { initialNodes, initialEdges };
     }
 
     const masterInfo = importRecords[0];
     const totalImported = importRecords.reduce((sum, rec) => sum + rec.quantityImported, 0);
-
     const supplierName = masterInfo.supplier || 'Không rõ';
     initialNodes.push({
         id: 'supplier-node',
@@ -22,14 +21,12 @@ const processDataForFlow = (importRecords, exportHistory) => {
         position: { x: 0, y: 150 },
         style: { background: '#fde68a', borderColor: '#ca8a04', whiteSpace: 'pre-wrap' },
     });
-
     initialNodes.push({
         id: 'lot-node',
         data: { label: `Lô: ${masterInfo.lotNumber}\nTổng nhập: ${totalImported}`, type: 'lot' },
         position: { x: 300, y: 150 },
         style: { background: '#a5b4fc', borderColor: '#4338ca', width: 180, whiteSpace: 'pre-wrap' },
     });
-    
     initialEdges.push({
         id: 'edge-supplier-lot',
         source: 'supplier-node',
@@ -37,7 +34,6 @@ const processDataForFlow = (importRecords, exportHistory) => {
         animated: true,
         label: `${totalImported} ${masterInfo.unit}`,
     });
-
     const customerNodes = {};
     exportHistory.forEach(exp => {
         if (!customerNodes[exp.customer]) {
@@ -45,9 +41,9 @@ const processDataForFlow = (importRecords, exportHistory) => {
         }
         customerNodes[exp.customer].total += exp.quantityExported;
     });
-
     const outputNodes = Object.values(customerNodes);
-    const totalRemaining = totalImported - exportHistory.reduce((sum, rec) => sum + rec.quantityExported, 0);
+    
+    // Sử dụng totalRemaining từ prop thay vì tính toán lại
     if (totalRemaining > 0) {
         outputNodes.push({ name: 'Tồn Kho', total: totalRemaining });
     }
@@ -82,12 +78,13 @@ const processDataForFlow = (importRecords, exportHistory) => {
     return { initialNodes, initialEdges };
 };
 
-const LotJourneyExplorer = ({ importRecords, exportHistory, onNodeClick, onPaneClick }) => {
+// Sửa đổi component để nhận prop totalRemaining
+const LotJourneyExplorer = ({ importRecords, exportHistory, totalRemaining, onNodeClick, onPaneClick }) => {
     const { initialNodes, initialEdges } = useMemo(
-        () => processDataForFlow(importRecords, exportHistory),
-        [importRecords, exportHistory]
+        // Truyền totalRemaining vào hàm xử lý
+        () => processDataForFlow(importRecords, exportHistory, totalRemaining),
+        [importRecords, exportHistory, totalRemaining]
     );
-
     if (initialNodes.length === 0) {
         return null;
     }

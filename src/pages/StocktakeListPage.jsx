@@ -1,10 +1,12 @@
 // src/pages/StocktakeListPage.jsx
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch, onSnapshot, limit } from 'firebase/firestore';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
+import NewDataNotification from '../components/NewDataNotification';
 import CreateStocktakeModal from '../components/CreateStocktakeModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { deleteStocktakeSession } from '../services/stocktakeService';
@@ -17,7 +19,6 @@ const StocktakeListPage = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
-    const [hasNewData, setHasNewData] = useState(false);
     const navigate = useNavigate();
     
     const baseQuery = useMemo(() => query(collection(db, "stocktakes"), orderBy("createdAt", "desc")), []);
@@ -31,21 +32,10 @@ const StocktakeListPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    useEffect(() => {
-        if (page !== 1) return;
-        const newestDocQuery = query(collection(db, 'stocktakes'), orderBy("createdAt", "desc"), limit(1));
-        const unsubscribe = onSnapshot(newestDocQuery, (snapshot) => {
-            const newestDocId = snapshot.docs[0]?.id;
-            const currentFirstDocId = stocktakeSessions[0]?.id;
-            if (newestDocId && currentFirstDocId && newestDocId !== currentFirstDocId) {
-                setHasNewData(true);
-            }
-        });
-        return () => unsubscribe();
-    }, [stocktakeSessions, page]);
+    const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
     const handleRefresh = () => {
-        setHasNewData(false);
+        dismissNewData();
         reset();
     };
 
@@ -61,7 +51,9 @@ const StocktakeListPage = () => {
             }
             const querySnapshot = await getDocs(inventoryQuery);
             const inventorySnapshotItems = querySnapshot.docs.map(doc => ({
-                lotId: doc.id, ...doc.data(), systemQty: doc.data().quantityRemaining, countedQty: null, isNew: false, 
+                lotId: doc.id, ...doc.data(), systemQty: doc.data().quantityRemaining, countedQty: null, isNew: false,
+                unit: doc.data().unit || '',          // Lấy đơn vị tính
+                packaging: doc.data().packaging || '' // Lấy quy cách
             }));
 
             const newStocktakeSessionRef = doc(collection(db, 'stocktakes'));
@@ -140,6 +132,12 @@ const StocktakeListPage = () => {
                 <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">Tạo Phiên Mới</button>
             </div>
       
+            <NewDataNotification
+                isVisible={hasNewData}
+                onRefresh={handleRefresh}
+                message="Có phiên kiểm kê mới!"
+            />
+
             {hasNewData && (
                 <div className="new-data-notification">
                     <p>Có phiên kiểm kê mới!</p>

@@ -16,7 +16,7 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                 
                 <div className="compact-info-grid">
                     <div><label>ID Phiếu</label><p><strong>{slip.id}</strong></p></div>
-                    <div><label>Nhà cung cấp</label><p><strong>{slip.supplier}</strong></p></div>
+                    <div><label>Nhà cung cấp</label><p><strong>{slip.supplierName}</strong></p></div> {/* <--- SỬA THÀNH supplierName */}
                     <div><label>Ngày tạo</label>
                       <p><strong>{formatDate(slip.createdAt)}</strong></p>
                     </div>
@@ -43,15 +43,15 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                             <tbody>
                                 {slip.items.map((item, index) => (
                                     <tr key={index}>
-                                        <td>{item.productId}</td>
-                                        <td>{item.productName}</td>
-                                        <td>{item.lotNumber}</td>
-                                        <td>{item.expiryDate}</td>
-                                        <td>{item.quantity}</td>
-                                        <td>{item.unit}</td>
-                                        <td>{item.packaging}</td>
-                                        {hasNotes && <td>{item.notes}</td>}
-                                    </tr>
+            <td>{item.productId}</td>
+            <td>{item.productName}</td>
+            <td>{item.lotNumber}</td>
+            <td>{item.expiryDate}</td>
+            <td>{item.quantity}</td>
+            <td>{item.unit}</td>
+            <td>{item.packaging}</td>
+            {hasNotes && <td>{item.notes}</td>}
+        </tr>
                                 ))}
                             </tbody>
                         </table>

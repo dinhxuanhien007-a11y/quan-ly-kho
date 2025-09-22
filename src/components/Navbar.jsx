@@ -46,29 +46,35 @@ const Navbar = () => {
                 <h3>Kho PT Biomed</h3>
             </div>
             <ul className="nav-items">
-                {/* === Các mục mọi người đều thấy === */}
+                {/* === NÚT LUÔN HIỂN THỊ CHO TẤT CẢ VAI TRÒ === */}
                 <li>
                   <NavLink to="/view" title="Xem Sổ Cái Tồn Kho">
                     <FiBookOpen className="nav-icon" />
                   </NavLink>
                 </li>
-                <li>
-                    <NavLink to="/products" title="Quản lý hàng hóa (Danh mục)">
-                        <FiArchive className="nav-icon" />
-                    </NavLink>
-                </li>
-                <li>
-                    <NavLink to="/lot-trace" title="Truy vết lô hàng">
-                        <FiShare2 className="nav-icon" />
-                    </NavLink>
-                </li>
+                
+                {/* === BẮT ĐẦU THAY ĐỔI: Chỉ Owner mới thấy các nút quản trị === */}
+                
+                {/* Nút Dashboard (vị trí thứ 2) */}
+                {hasRole(['owner']) && (
+                    <li>
+                        <NavLink to="/" title="Bảng điều khiển">
+                            <FiGrid className="nav-icon" />
+                        </NavLink>
+                    </li>
+                )}
 
-                {/* === Các mục dành cho Owner và Admin === */}
-                {hasRole(['owner', 'admin']) && (
+                {/* Các nút quản lý chung */}
+                {hasRole(['owner']) && (
                     <>
                         <li>
-                            <NavLink to="/" title="Bảng điều khiển">
-                                <FiGrid className="nav-icon" />
+                            <NavLink to="/products" title="Quản lý hàng hóa (Danh mục)">
+                                <FiArchive className="nav-icon" />
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink to="/lot-trace" title="Truy vết lô hàng">
+                                <FiShare2 className="nav-icon" />
                             </NavLink>
                         </li>
                         <li>
@@ -91,12 +97,6 @@ const Navbar = () => {
                                 <FiSettings className="nav-icon" />
                             </NavLink>
                         </li>
-                    </>
-                )}
-
-                {/* === Các mục chỉ dành cho Owner === */}
-                {hasRole(['owner']) && (
-                    <>
                         <li>
                             <NavLink to="/new-import" title="Tạo Phiếu Nhập">
                                 <FiFilePlus className="nav-icon" />
@@ -119,8 +119,9 @@ const Navbar = () => {
                         </li>
                     </>
                 )}
+                {/* === KẾT THÚC THAY ĐỔI === */}
                 
-                {/* === Đăng xuất === */}
+                {/* === NÚT ĐĂNG XUẤT (LUÔN HIỂN THỊ) === */}
                 <li>
                     <a href="#" onClick={handleLogout} title="Đăng xuất">
                         <FiLogOut className="nav-icon" />

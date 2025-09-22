@@ -710,6 +710,11 @@ tbody tr.selected-row td {
     text-align: center;
 }
 
+.stocktake-session-page-container .products-table td:nth-child(8) input {
+    width: 100%;
+    box-sizing: border-box; /* Đảm bảo padding không làm tràn input */
+}
+
 /* CSS MỚI: Cho màu nền của từng lô hàng con */
 .lot-item {
     transition: background-color 0.2s; /* Hiệu ứng chuyển màu mượt mà */
@@ -921,6 +926,56 @@ tbody tr.selected-row td {
 /* Fix cho input autocomplete nằm trong grid */
 .grid-cell > div {
     overflow: visible;
+}
+
+  /* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.new-data-notification {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  color: #004085;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.new-data-notification p {
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+  /* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.new-data-notification {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  color: #004085;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.new-data-notification p {
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */

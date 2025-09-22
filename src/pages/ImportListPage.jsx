@@ -1,7 +1,9 @@
 // src/pages/ImportListPage.jsx
 import React, { useState, useMemo } from 'react';
-import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy } from 'firebase/firestore';
-import { FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+// THÊM deleteDoc VÀO ĐÂY
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
+// THÊM FiTrash2 VÀO ĐÂY
+import { FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
@@ -33,11 +35,11 @@ const ImportListPage = () => {
     reset
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-  const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, importSlips, page);
+  const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
   const handleRefresh = () => {
-    dismissNewData(); // <-- Đặt lại trạng thái của notification
-    reset();          // <-- Tải lại dữ liệu từ trang đầu
+    dismissNewData();
+    reset();
   };
 
   const handleConfirmImport = async () => {
@@ -66,7 +68,7 @@ const ImportListPage = () => {
           quantityImported: Number(item.quantity),
           quantityRemaining: Number(item.quantity),
           notes: item.notes,
-          supplier: slip.supplier,
+          supplierName: slip.supplierName, // Sửa lại thành supplierName
         };
         await addDoc(collection(db, "inventory_lots"), newLotData);
       }
@@ -94,14 +96,46 @@ const ImportListPage = () => {
       toast.error('Đã xảy ra lỗi khi cập nhật.');
     }
   };
+  
+  // --- HÀM MỚI: Xử lý xóa phiếu ---
+  const handleDeleteSlip = async (slipToDelete) => {
+      if (!slipToDelete) return;
+      
+      setConfirmModal({ isOpen: false, item: null }); // Đóng modal trước
+      toast.info(`Đang xóa phiếu nhập...`);
+      
+      try {
+          const slipDocRef = doc(db, "import_tickets", slipToDelete.id);
+          await deleteDoc(slipDocRef);
+          toast.success(`Đã xóa thành công phiếu nhập của NCC "${slipToDelete.supplierName}".`);
+          reset(); // Tải lại danh sách
+      } catch (error) {
+          console.error("Lỗi khi xóa phiếu nhập: ", error);
+          toast.error("Đã xảy ra lỗi khi xóa phiếu nhập.");
+      }
+  };
 
   const promptForConfirm = (slip) => {
     setConfirmModal({
         isOpen: true,
         item: slip,
         title: "Xác nhận nhập kho?",
-        message: `Bạn có chắc muốn xác nhận và đưa hàng trong phiếu của NCC "${slip.supplier}" vào kho không? Thao tác này sẽ cập nhật tồn kho.`,
+        message: `Bạn có chắc muốn xác nhận và đưa hàng trong phiếu của NCC "${slip.supplierName}" vào kho không? Thao tác này sẽ cập nhật tồn kho.`,
+        onConfirm: handleConfirmImport,
+        confirmText: "Xác nhận"
     });
+  };
+  
+  // --- HÀM MỚI: Hiển thị hộp thoại xác nhận xóa ---
+  const promptForDelete = (slip) => {
+      setConfirmModal({
+          isOpen: true,
+          item: slip,
+          title: "Xác nhận xóa phiếu nhập?",
+          message: `Bạn có chắc muốn xóa vĩnh viễn phiếu nhập của NCC "${slip.supplierName}" không? Thao tác này không thể hoàn tác.`,
+          onConfirm: () => handleDeleteSlip(slip),
+          confirmText: "Vẫn xóa"
+      });
   };
 
   const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
@@ -113,9 +147,9 @@ const ImportListPage = () => {
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
         message={confirmModal.message}
-        onConfirm={handleConfirmImport}
+        onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal({ isOpen: false, item: null })}
-        confirmText="Xác nhận"
+        confirmText={confirmModal.confirmText}
       />
       {isViewModalOpen && ( <ViewImportSlipModal slip={selectedSlip} onClose={() => setIsViewModalOpen(false)} /> )}
       {isEditModalOpen && ( <EditImportSlipModal slip={selectedSlip} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveSlipChanges} /> )}
@@ -145,8 +179,8 @@ const ImportListPage = () => {
                 <tbody>
                 {importSlips.map(slip => (
                     <tr key={slip.id}>
-                    <td>{slip.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
-                    <td>{slip.supplier}</td>
+                    <td>{formatDate(slip.createdAt)}</td>
+                    <td>{slip.supplierName}</td>
                     <td>{slip.description}</td>
                     <td><StatusBadge status={slip.status} /></td>
                     <td>
@@ -159,8 +193,13 @@ const ImportListPage = () => {
                                 <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
                                     <FiEdit />
                                 </button>
-                                <button className="btn-primary" onClick={() => promptForConfirm(slip)}>
-                                    Xác nhận
+                                
+                                <button className="btn-icon btn-delete" title="Xóa phiếu" onClick={() => promptForDelete(slip)}>
+                                    <FiTrash2 />
+                                </button>
+
+                                <button className="btn-icon btn-confirm" title="Xác nhận nhập kho" onClick={() => promptForConfirm(slip)}>
+                                    <FiCheckCircle />
                                 </button>
                                 </>
                             )}

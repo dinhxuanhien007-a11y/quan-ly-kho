@@ -33,7 +33,7 @@ const ExportListPage = () => {
     reset
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-  const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, exportSlips, page);
+  const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
   const handleRefresh = () => {
     dismissNewData(); // <-- Đặt lại trạng thái của notification
@@ -194,14 +194,14 @@ const ExportListPage = () => {
                                 </button>
                                 {slip.status === 'pending' && (
                                 <>
-                                    <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => promptAction('confirm', slip)}>
-                                        <FiCheckCircle />
-                                    </button>
                                     <button className="btn-icon btn-edit" title="Sửa phiếu" onClick={() => openEditModal(slip)}>
                                         <FiEdit />
                                     </button>
                                     <button className="btn-icon btn-delete" title="Hủy phiếu" onClick={() => promptAction('cancel', slip)}>
                                         <FiXCircle />
+                                    </button>
+                                    <button className="btn-icon btn-confirm" title="Xác nhận xuất kho" onClick={() => promptAction('confirm', slip)}>
+                                        <FiCheckCircle />
                                     </button>
                                 </>
                                 )}

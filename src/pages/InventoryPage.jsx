@@ -11,6 +11,8 @@ import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
+import { useRealtimeNotification } from '../hooks/useRealtimeNotification'; // <-- THÊM DÒNG NÀY
+import NewDataNotification from '../components/NewDataNotification'; // <-- THÊM DÒNG NÀY
 import { PAGE_SIZE } from '../constants';
 
 // <-- THAY ĐỔI 1: Import thêm hàm getRowColorByExpiry
@@ -18,43 +20,47 @@ import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 
 // <-- THAY ĐỔI 2: Xóa toàn bộ hàm getRowColorByExpiry ở đây
 
-const InventoryPage = () => {
+const InventoryPage = ({ pageTitle }) => {
     const { userRole } = useAuth();
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
     const baseQuery = useMemo(() => {
-        let q = query(
-            collection(db, "inventory_lots"),
-            orderBy("productId", "asc"),
-            orderBy("importDate", "asc")
-        );
+    // --- BẮT ĐẦU THAY ĐỔI ---
+    // Quay lại truy vấn gốc, chỉ sắp xếp theo Mã hàng và Ngày nhập
+    let q = query(
+        collection(db, "inventory_lots"),
+        orderBy("productId", "asc"),
+        orderBy("importDate", "asc")
+    );
+    // --- KẾT THÚC THAY ĐỔI ---
 
-        if (userRole === 'med') {
-            q = query(q, where("team", "==", "MED"));
-        } else if (userRole === 'bio') {
-            q = query(q, where("team", "in", ["BIO", "Spare Part"]));
-        }
+    // Các bộ lọc phụ vẫn giữ nguyên
+    if (userRole === 'med') {
+        q = query(q, where("team", "==", "MED"));
+    } else if (userRole === 'bio') {
+        q = query(q, where("team", "in", ["BIO", "Spare Part"]));
+    }
 
-        if (filters.team !== 'all') {
-            q = query(q, where("team", "==", filters.team));
-        }
+    if (filters.team !== 'all') {
+        q = query(q, where("team", "==", filters.team));
+    }
 
-        if (filters.dateStatus === 'expired') {
-            q = query(q, where("expiryDate", "<", Timestamp.now()));
-        } else if (filters.dateStatus === 'near_expiry') {
-            const futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + 120);
-            q = query(q, where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
-        }
-        
-        if (searchTerm) {
-            const upperSearchTerm = searchTerm.toUpperCase();
-            q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
-        }
-        return q;
-    }, [userRole, filters, searchTerm]);
+    if (filters.dateStatus === 'expired') {
+        q = query(q, where("expiryDate", "<", Timestamp.now()));
+    } else if (filters.dateStatus === 'near_expiry') {
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 120);
+        q = query(q, where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+    }
+    
+    if (searchTerm) {
+        const upperSearchTerm = searchTerm.toUpperCase();
+        q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
+    }
+    return q;
+}, [userRole, filters, searchTerm]);
 
     const {
         documents: inventory,
@@ -62,8 +68,17 @@ const InventoryPage = () => {
         isLastPage,
         page,
         nextPage,
-        prevPage
+        prevPage,
+        reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+    const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+
+    // <-- THÊM HÀM XỬ LÝ REFRESH NÀY
+    const handleRefresh = () => {
+      dismissNewData();
+      reset();
+    };
 
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -83,7 +98,7 @@ const InventoryPage = () => {
     return (
         <div className="printable-inventory-area">
             <div className="page-header">
-                <h1>Tồn Kho Chi Tiết</h1>
+                <h1>{pageTitle}</h1>
                 {(userRole === 'owner' || userRole === 'admin') && (
                     <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
                         <FiPrinter style={{marginRight: '5px'}} />
@@ -91,6 +106,12 @@ const InventoryPage = () => {
                     </button>
                 )}
             </div>
+
+            <NewDataNotification
+              isVisible={hasNewData}
+              onRefresh={handleRefresh}
+              message="Có cập nhật tồn kho mới!"
+            />
             
             <div className="controls-container">
                 <InventoryFilters 

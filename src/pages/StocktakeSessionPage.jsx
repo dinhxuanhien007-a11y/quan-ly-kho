@@ -371,16 +371,21 @@ const StocktakeSessionPage = () => {
                             <thead>
                                  <tr>
                                     <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
-                                    <th>HSD</th><th>Tồn hệ thống</th><th>Tồn thực tế</th>
+                                    <th>HSD</th><th>ĐVT</th><th>Quy cách</th><th>Tồn hệ thống</th><th>Tồn thực tế</th>
                                 </tr>
                             </thead>
                             <tbody>
                                  {items.map((item) => (
-                                    <tr key={item.id}>
-                                        <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                        <td>{formatDate(item.expiryDate)}</td><td>{item.systemQty}</td>
-                                        <td>
-                                             <CountInput item={item} onCountSubmit={handleCountSubmit} />
+        <tr key={item.id}>
+            <td>{item.productId}</td>
+            <td>{item.productName}</td>
+            <td>{item.lotNumber}</td>
+            <td>{formatDate(item.expiryDate)}</td>
+            <td>{item.unit}</td>
+            <td>{item.packaging}</td>
+            <td>{item.systemQty}</td>
+            <td>
+                <CountInput item={item} onCountSubmit={handleCountSubmit} />
                                         </td>
                                      </tr>
                                 ))}

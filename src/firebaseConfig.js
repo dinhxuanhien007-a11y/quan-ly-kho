@@ -2,8 +2,8 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getFunctions } from "firebase/functions";
 
-// == THÔNG TIN CẤU HÌNH FIREBASE CỦA BẠN ==
 // Đọc thông tin cấu hình từ biến môi trường
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,9 +14,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Khởi tạo ứng dụng Firebase
+// Khởi tạo các dịch vụ Firebase
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const functions = getFunctions(app);
 
 // Xuất ra các dịch vụ để sử dụng trong toàn bộ ứng dụng
-export const db = getFirestore(app);      // Dịch vụ cơ sở dữ liệu Firestore
-export const auth = getAuth(app);         // Dịch vụ xác thực người dùng
+export { db, auth, functions };
