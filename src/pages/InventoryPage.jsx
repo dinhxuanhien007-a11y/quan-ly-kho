@@ -87,25 +87,9 @@ const InventoryPage = ({ pageTitle }) => {
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
-    
-    const handlePrint = () => {
-        const originalTitle = document.title;
-        document.title = `BaoCao_TonKho_ChiTiet_${new Date().toLocaleDateString('vi-VN')}`;
-        window.print();
-        document.title = originalTitle;
-    };
 
     return (
-        <div className="printable-inventory-area">
-            <div className="page-header">
-                <h1>{pageTitle}</h1>
-                {(userRole === 'owner' || userRole === 'admin') && (
-                    <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
-                        <FiPrinter style={{marginRight: '5px'}} />
-                        In Báo Cáo
-                    </button>
-                )}
-            </div>
+       <div className="printable-inventory-area">
 
             <NewDataNotification
               isVisible={hasNewData}
@@ -160,8 +144,8 @@ const InventoryPage = ({ pageTitle }) => {
                                         <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
                                         <td data-label="Mã hàng">{lot.productId}</td>
                                         <td data-label="Tên hàng">{lot.productName}</td>
-                                        <td data-label="Số lô">{lot.lotNumber}</td>
-                                        <td data-label="HSD">{formatDate(lot.expiryDate)}</td>
+                                        <td data-label="Số lô">{lot.lotNumber || '(Không có)'}</td>
+                                        <td data-label="HSD">{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</td>
                                         <td data-label="ĐVT">{lot.unit}</td>
                                         <td data-label="Quy cách">{lot.packaging}</td>
                                         <td data-label="SL Nhập">{formatNumber(lot.quantityImported)}</td>

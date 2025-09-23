@@ -907,7 +907,7 @@ tbody tr.selected-row td {
 .floating-toggle-btn {
   position: fixed;
   bottom: 25px;
-  right: 25px;
+  left: 20px;
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -988,6 +988,59 @@ tbody tr.selected-row td {
 /* Thêm đoạn mã này vào cuối file */
 .item-details-grid {
     overflow: visible;
+}
+
+/* === CSS CHO LAYOUT MỚI CỦA TRANG VIEWER === */
+.viewer-layout-container {
+  padding: 15px;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.viewer-header-left, .viewer-header-right, .viewer-header-center {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.viewer-header-left {
+  justify-content: flex-start;
+  flex: 1;
+}
+
+.viewer-header-center {
+  flex-direction: column; /* Logo và tiêu đề xếp dọc */
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.viewer-header-center .header-logo {
+  max-width: 277px; /* Tăng kích thước logo một chút */
+  height: auto;
+  margin-bottom: 5px;
+}
+
+.viewer-header-center h1 {
+  margin: 0;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.viewer-header-right {
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.viewer-main-content {
+  padding-top: 10px;
 }
 
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */

@@ -52,13 +52,34 @@ const QuickStockLookup = () => {
         const productDocRef = doc(db, 'products', productId);
         const productSnap = await getDoc(productDocRef);
         const productInfo = productSnap.exists() ? productSnap.data() : null;
+
+        // === BẮT ĐẦU LOGIC GỘP LÔ HÀNG ===
+            const lotAggregator = new Map();
+
+            for (const lot of uniqueLots) {
+                if (lot.quantityRemaining <= 0) continue; // Bỏ qua lô đã hết hàng
+
+                const lotKey = lot.lotNumber; // Gộp theo số lô
+
+                if (lotAggregator.has(lotKey)) {
+                    // Nếu lô đã tồn tại, cộng dồn số lượng
+                    const existingLot = lotAggregator.get(lotKey);
+                    existingLot.quantityRemaining += lot.quantityRemaining;
+                } else {
+                    // Nếu lô chưa có, tạo mới một bản sao để tránh thay đổi dữ liệu gốc
+                    lotAggregator.set(lotKey, { ...lot });
+                }
+            }
+
+            const aggregatedLots = Array.from(lotAggregator.values());
+            // === KẾT THÚC LOGIC GỘP LÔ HÀNG ===
         
         const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
 
         if (productInfo) {
           setProductData({
             generalInfo: { ...productInfo, productId: productId },
-            lots: uniqueLots.filter(lot => lot.quantityRemaining > 0).sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
+            lots: aggregatedLots.sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
             totalRemaining: totalRemaining
           });
         } else {
@@ -152,8 +173,8 @@ const QuickStockLookup = () => {
               {productData.lots.length > 0 ? (
                 productData.lots.map(lot => (
                   <div key={lot.id} className={styles.lotItem}>
-                    <div><strong>Số lô:</strong><span>{lot.lotNumber}</span></div>
-                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                    <div><strong>Số lô:</strong><span>{lot.lotNumber || '(Không có)'}</span></div>
+                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</span></div>
                     <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
                     {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
                   </div>

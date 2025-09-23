@@ -13,6 +13,7 @@ import EditProductModal from '../components/EditProductModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
 import NewDataNotification from '../components/NewDataNotification';
+import HighlightText from '../components/HighlightText';
 
 const ProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,37 +144,44 @@ const ProductsPage = () => {
                 <th>Thao tác</th>
               </tr>
             </thead>
-            <tbody>
-              {products.length > 0 ? (
-                  products.map(product => (
-                  <tr key={product.id}>
-                    <td>{product.id}</td>
-                    <td>{product.productName}</td>
-                    <td>{product.unit}</td>
-                    <td>{product.packaging}</td>
-                    <td>{product.storageTemp}</td>
-                    <td>{product.manufacturer}</td>
-                    <td>{product.team}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button className="btn-icon btn-edit" onClick={() => openEditModal(product)}>
-                          <FiEdit />
-                        </button>
-                        <button className="btn-icon btn-delete" onClick={() => promptForDelete(product)}>
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  ))
-              ) : (
-                  <tr>
-                      <td colSpan="8" style={{textAlign: 'center'}}>
-                        Không tìm thấy sản phẩm nào.
-                      </td>
-                  </tr>
-              )}
-            </tbody>
+            {/* Dán đoạn mã này để thay thế cho toàn bộ khối <tbody> hiện tại trong file ProductsPage.jsx */}
+<tbody>
+  {products.length > 0 ? (
+      products.map(product => (
+      <tr key={product.id}>
+        <td>
+            {/* Highlight Mã hàng */}
+            <HighlightText text={product.id} highlight={searchTerm} />
+        </td>
+        <td>
+            {/* Highlight Tên hàng */}
+            <HighlightText text={product.productName} highlight={searchTerm} />
+        </td>
+        <td>{product.unit}</td>
+        <td>{product.packaging}</td>
+        <td>{product.storageTemp}</td>
+        <td>{product.manufacturer}</td>
+        <td>{product.team}</td>
+        <td>
+          <div className="action-buttons">
+            <button className="btn-icon btn-edit" onClick={() => openEditModal(product)}>
+              <FiEdit />
+            </button>
+            <button className="btn-icon btn-delete" onClick={() => promptForDelete(product)}>
+              <FiTrash2 />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ))
+  ) : (
+      <tr>
+          <td colSpan="8" style={{textAlign: 'center'}}>
+            Không tìm thấy sản phẩm nào.
+          </td>
+      </tr>
+  )}
+</tbody>
           </table>
 
           <div className="pagination-controls">

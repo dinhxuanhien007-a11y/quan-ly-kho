@@ -83,7 +83,7 @@ const DashboardPage = () => {
                                     <td>
                                         <Link to={`/${type}s`} className="table-link">{ticket.id}</Link>
                                     </td>
-                                    <td>{type === 'import' ? ticket.supplier : ticket.customer}</td>
+                                    <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
                                     <td>{formatDate(ticket.createdAt)}</td>
                                 </tr>
                             ))}

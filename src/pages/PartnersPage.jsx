@@ -11,6 +11,7 @@ import Spinner from '../components/Spinner';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { PAGE_SIZE } from '../constants';
 import { normalizeString } from '../utils/stringUtils'; // <-- THÊM DÒNG NÀY
+import HighlightText from '../components/HighlightText';
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -177,31 +178,35 @@ const performSearch = useCallback(async (term) => {
                                 <th>Thao Tác</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {dataToShow.length > 0 ? (
-                                dataToShow.map(partner => (
-                                    <tr key={partner.id}>
-                                        <td>{partner.id}</td>
-                                        <td style={{textAlign: 'left'}}>{partner.partnerName}</td>
-                                        <td>{partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <button className="btn-icon btn-edit" onClick={() => { setPartnerToEdit(partner); setIsEditModalOpen(true); }}>
-                                                    <FiEdit />
-                                                </button>
-                                                <button className="btn-icon btn-delete" onClick={() => handleDelete(partner.id, partner.partnerName)}>
-                                                    <FiTrash2 />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4">Không tìm thấy đối tác nào.</td>
-                                </tr>
-                            )}
-                        </tbody>
+                        {/* Dán đoạn mã này để thay thế cho toàn bộ khối <tbody> hiện tại trong file PartnersPage.jsx */}
+<tbody>
+    {dataToShow.length > 0 ? (
+        dataToShow.map(partner => (
+            <tr key={partner.id}>
+                <td>{partner.id}</td>
+                <td style={{ textAlign: 'left' }}>
+                    {/* Sử dụng component HighlightText để làm nổi bật kết quả tìm kiếm */}
+                    <HighlightText text={partner.partnerName} highlight={searchTerm} />
+                </td>
+                <td>{partner.partnerType === 'supplier' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</td>
+                <td>
+                    <div className="action-buttons">
+                        <button className="btn-icon btn-edit" onClick={() => { setPartnerToEdit(partner); setIsEditModalOpen(true); }}>
+                            <FiEdit />
+                        </button>
+                        <button className="btn-icon btn-delete" onClick={() => handleDelete(partner.id, partner.partnerName)}>
+                            <FiTrash2 />
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        ))
+    ) : (
+        <tr>
+            <td colSpan="4">Không tìm thấy đối tác nào.</td>
+        </tr>
+    )}
+</tbody>
                     </table>
 
                     {/* Chỉ hiển thị phân trang khi không có tìm kiếm */}

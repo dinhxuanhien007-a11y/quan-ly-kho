@@ -28,6 +28,8 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+import HighlightText from '../components/HighlightText';
+import companyLogo from '../assets/logo.png'; // <-- THÊM DÒNG NÀY
 
 const PAGE_SIZE = 15;
 
@@ -315,17 +317,8 @@ const InventorySummaryPage = ({ pageTitle }) => {
     };
 
     return (
-        <div className="printable-inventory-area inventory-summary-page">
-            <div className="page-header">
-                <h1>{pageTitle}</h1>
-                {(userRole === 'owner' || userRole === 'admin') && (
-                    <button onClick={handlePrint} className="btn-secondary" style={{width: 'auto'}}>
-                        <FiPrinter style={{marginRight: '5px'}} />
-                        In Báo Cáo
-                    </button>
-                )}
-            </div>
-            
+        <div className="printable-inventory-area">
+    
             <NewDataNotification
                 isVisible={hasNewData}
                 onRefresh={handleRefresh}
@@ -389,9 +382,15 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                             className={getRowColorByExpiry(product.nearestExpiryDate)}
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
-                                            <td data-label="Mã hàng"><strong>{product.id}</strong></td>
-                                            <td data-label="Tên hàng">{product.productName}</td>
-                                            <td data-label="HSD Gần Nhất">{formatDate(product.nearestExpiryDate)}</td>
+                                            <td data-label="Mã hàng">
+    <strong>
+        <HighlightText text={product.id} highlight={searchTerm} />
+    </strong>
+</td>
+                                            <td data-label="Tên hàng">
+    <HighlightText text={product.productName} highlight={searchTerm} />
+</td>
+                                            <td data-label="HSD Gần Nhất">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(Không có)'}</td>
                                             <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
                                             <td data-label="Quy cách">{product.packaging}</td>
@@ -417,8 +416,8 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                                                     <ul>
                                                                         {lotDetails[product.id].map(lot => (
                                                                             <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate)}`}>
-                                                                                <span>Lô: <strong>{lot.lotNumber}</strong></span>
-                                                                                <span>HSD: <strong>{formatDate(lot.expiryDate)}</strong></span>
+                                                                                <span>Lô: <strong>{lot.lotNumber || '(Không có)'}</strong></span>
+                                                                                <span>HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</strong></span>
                                                                                 <span>Tồn: <strong>{formatNumber(lot.quantityRemaining)}</strong></span>
                                                                             </li>
                                                                         ))}

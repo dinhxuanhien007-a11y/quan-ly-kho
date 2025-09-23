@@ -379,8 +379,8 @@ const StocktakeSessionPage = () => {
         <tr key={item.id}>
             <td>{item.productId}</td>
             <td>{item.productName}</td>
-            <td>{item.lotNumber}</td>
-            <td>{formatDate(item.expiryDate)}</td>
+            <td>{item.lotNumber || '(Không có)'}</td>
+            <td>{item.expiryDate ? formatDate(item.expiryDate) : '(Không có)'}</td>
             <td>{item.unit}</td>
             <td>{item.packaging}</td>
             <td>{item.systemQty}</td>

@@ -48,7 +48,7 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.productId}</td>
                                         <td>{item.productName}</td>
                                         <td>{item.lotNumber}</td>
-                                        <td>{item.expiryDate}</td>
+                                        <td>{item.expiryDate || '(Không có)'}</td>
                                         <td>{item.unit}</td>
                                         <td>{item.packaging}</td>
                                         <td>{item.quantityToExport || item.quantityExported}</td>

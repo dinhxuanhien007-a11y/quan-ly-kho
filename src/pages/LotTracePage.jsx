@@ -34,11 +34,26 @@ const LotTracePage = () => {
     setSelectedNode(null);
 
     try {
-      const lotQuery = query(
-        collection(db, 'inventory_lots'),
-        where('lotNumber', '==', lotNumber.trim()),
-        orderBy('importDate', 'asc'),
-      );
+      let lotQuery;
+      const searchTerm = lotNumber.trim();
+
+      // NẾU người dùng nhập "null", "none", hoặc "khongcolo" (không phân biệt hoa thường)
+      // thì tìm những lô có lotNumber là null.
+      if (['null', 'none', 'khongcolo'].includes(searchTerm.toLowerCase())) {
+        lotQuery = query(
+          collection(db, 'inventory_lots'),
+          where('lotNumber', '==', null), // Tìm kiếm giá trị null
+          orderBy('importDate', 'asc')
+        );
+      } else {
+        // Nếu không, tìm kiếm theo số lô chính xác như cũ.
+        lotQuery = query(
+          collection(db, 'inventory_lots'),
+          where('lotNumber', '==', searchTerm),
+          orderBy('importDate', 'asc')
+        );
+      }
+      
       const lotSnapshot = await getDocs(lotQuery);
 
       if (lotSnapshot.empty) {
@@ -178,8 +193,8 @@ const LotTracePage = () => {
               <div><label>Nhà cung cấp (lần nhập đầu)</label><p>{masterInfo.supplier || '(không có)'}</p></div>
               <div><label>ĐVT</label><p>{masterInfo.unit}</p></div>
               <div><label>Quy cách</label><p>{masterInfo.packaging}</p></div>
-              <div><label>Số lô</label><p><strong>{masterInfo.lotNumber}</strong></p></div>
-              <div><label>HSD</label><p><strong>{formatDate(masterInfo.expiryDate)}</strong></p></div>
+              <div><label>Số lô</label><p><strong>{masterInfo.lotNumber || '(Không có)'}</strong></p></div>
+              <div><label>HSD</label><p><strong>{masterInfo.expiryDate ? formatDate(masterInfo.expiryDate) : '(Không có)'}</strong></p></div>
               <div><label>Tổng đã nhập</label><p style={{color: 'blue', fontSize: '18px'}}><strong>{totalImported}</strong></p></div>
               <div><label>Tổng còn lại</label><p style={{color: 'green', fontSize: '18px'}}><strong>{totalRemaining}</strong></p></div>
             </div>

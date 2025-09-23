@@ -23,7 +23,7 @@ const importItemSchema = z.object({
   team: z.string(),
   manufacturer: z.string(),
   notes: z.string(),
-  lotNumber: z.string(),
+  lotNumber: z.string().nullable(),
   quantity: z.preprocess(
       val => Number(val),
       z.number({ invalid_type_error: "Số lượng phải là một con số." })
@@ -46,8 +46,8 @@ const importSlipSchema = z.object({
 
 const NewImportPage = () => {
     const {
-        supplierId, supplierName, description, items,
-        setSupplier, setDescription, addNewItemRow, updateItem,
+        supplierId, supplierName, description, items, importDate,
+        setSupplier, setDescription, setImportDate, addNewItemRow, updateItem,
         handleProductSearchResult, handleLotCheckResult, declareNewLot,
         fillNewProductData, resetSlip, removeItemRow
     } = useImportSlipStore();
@@ -57,6 +57,7 @@ const NewImportPage = () => {
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [allSuppliers, setAllSuppliers] = useState([]);
+    const [focusedInputIndex, setFocusedInputIndex] = useState(null);
     
     const lastInputRef = useRef(null);
 
@@ -103,7 +104,7 @@ const NewImportPage = () => {
             item.productId && item.quantity
         ).map(item => ({
             ...item,
-            lotNumber: item.lotNumber.trim() || 'N/A'
+            lotNumber: item.lotNumber.trim() || null
         }));
 
         if (validItems.length === 0) {
@@ -125,12 +126,12 @@ const NewImportPage = () => {
         }
 
         return {
-            ...validationResult.data,
-            importDate: formatDate(new Date()),
-            description,
-            status: '',
-            createdAt: serverTimestamp()
-        };
+    ...validationResult.data,
+    importDate: formatDate(new Date(importDate)), // Sử dụng trực tiếp importDate từ store
+    description,
+    status: '',
+    createdAt: serverTimestamp()
+};
     }
 
     const handleSupplierSearch = async () => {
@@ -421,19 +422,21 @@ const NewImportPage = () => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
-                            <input
-    type="text"
-    inputMode="numeric"
-    value={item.quantity} // THAY ĐỔI: Lấy giá trị trực tiếp từ state
-    onChange={e => {
-        const value = e.target.value;
-        // THAY ĐỔI: Kiểm tra để cho phép cả số nguyên và số thập phân
-        if (/^\d*\.?\d*$/.test(value) || value === '') {
-            updateItem(index, 'quantity', value);
-        }
-    }}
-/>
-                        </div>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            value={focusedInputIndex === index ? item.quantity : formatNumber(item.quantity)}
+                            onFocus={() => setFocusedInputIndex(index)}
+                            onBlur={() => setFocusedInputIndex(null)}
+                            onChange={e => {
+                                const rawValue = e.target.value;
+                                const parsedValue = rawValue.replace(',', '.');
+                                if (/^\d*\.?\d*$/.test(parsedValue) || parsedValue === '') {
+                                    updateItem(index, 'quantity', parsedValue);
+                                }
+                            }}
+                        />
+                    </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
                         <div className="grid-cell">

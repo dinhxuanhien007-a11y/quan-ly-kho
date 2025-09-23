@@ -106,11 +106,8 @@ const processData = async (data) => {
                 if (quantityStr && !isNaN(Number(quantityStr)) && Number(quantityStr) > 0) {
                     const quantityNum = Number(quantityStr);
 
-                    // Xử lý Số lô: nếu trống thì mặc định là 'N/A'
-                    let lotNumber = String(row.lotNumber || '').trim();
-                    if (!lotNumber) {
-                        lotNumber = 'N/A';
-                    }
+                    // Xử lý Số lô: nếu trống thì mặc định là 'null'
+                    const lotNumber = String(row.lotNumber || '').trim() || null;
 
                     // Xử lý HSD: nếu trống thì là null, nếu sai định dạng thì báo lỗi
                     const expiryDate = parseDateString(row.expiryDate);

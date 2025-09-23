@@ -9,9 +9,12 @@ import { z } from 'zod'; // <-- IMPORT ZOD
 const importItemSchema = z.object({
   productId: z.string().trim().min(1, { message: "Mã hàng không được để trống." }),
   productName: z.string(), // Tên hàng là readOnly nên không cần check
-  lotNumber: z.string().trim().min(1, { message: "Số lô không được để trống." }),
-  expiryDate: z.string().refine(val => parseDateString(val) !== null, {
-      message: "HSD có định dạng không hợp lệ (cần là dd/mm/yyyy)."
+  lotNumber: z.string().nullable(), // SỬA LẠI: Cho phép Số lô là null
+  expiryDate: z.string().refine(val => { // SỬA LẠI: Logic giống hệt trang Tạo mới
+      const trimmedVal = val.trim();
+      return trimmedVal === '' || trimmedVal.toUpperCase() === 'N/A' || parseDateString(trimmedVal) !== null;
+  }, {
+      message: "HSD không hợp lệ (cần là dd/mm/yyyy hoặc để trống)."
   }),
   quantity: z.preprocess(
       val => Number(String(val).trim()), // Chuyển đổi giá trị sang số
@@ -33,6 +36,24 @@ const importSlipSchema = z.object({
 
 const EditImportSlipModal = ({ slip, onClose, onSave }) => {
   const [slipData, setSlipData] = useState({ ...slip });
+
+  // === BẮT ĐẦU THÊM MỚI ===
+    const dateToInputValue = (dateStr) => {
+        if (!dateStr || dateStr.split('/').length !== 3) return '';
+        const [day, month, year] = dateStr.split('/');
+        return `${year}-${month}-${day}`;
+    };
+
+    const handleInfoChange = (field, value) => {
+        let finalValue = value;
+        if (field === 'importDate') {
+            const [year, month, day] = value.split('-');
+            finalValue = `${day}/${month}/${year}`;
+        }
+        setSlipData(prev => ({ ...prev, [field]: finalValue }));
+    };
+    // === KẾT THÚC THÊM MỚI ===
+
   const lastInputRef = useRef(null);
 
   useEffect(() => {
@@ -78,7 +99,14 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 
   const handleSaveChanges = () => {
     // <-- SỬ DỤNG SCHEMA ĐỂ XÁC THỰC -->
-    const itemsToValidate = slipData.items.filter(item => item.productId); // Chỉ validate những dòng có mã hàng
+    // THÊM BƯỚC MAP ĐỂ CHUẨN HÓA DỮ LIỆU TRƯỚC KHI VALIDATE
+    const itemsToValidate = slipData.items
+        .filter(item => item.productId)
+        .map(item => ({
+            ...item,
+            lotNumber: item.lotNumber ? item.lotNumber.trim() : null
+        }));
+
     const validationResult = importSlipSchema.safeParse({ items: itemsToValidate });
 
     if (!validationResult.success) {
@@ -99,6 +127,33 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
     <div className="modal-backdrop">
       <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
         <h2>Chỉnh sửa Phiếu Nhập Kho (ID: {slipData.id})</h2>
+        {/* === BẮT ĐẦU THÊM MỚI === */}
+            <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>Ngày nhập (*)</label>
+                        <input 
+                            type="date"
+                            value={dateToInputValue(slipData.importDate)}
+                            onChange={(e) => handleInfoChange('importDate', e.target.value)}
+                            min={new Date().toISOString().split('T')[0]} // Chặn ngày quá khứ
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Nhà cung cấp</label>
+                        <input type="text" value={slipData.supplierName} readOnly disabled />
+                    </div>
+                    <div className="form-group">
+                        <label>Diễn giải</label>
+                        <textarea 
+                            value={slipData.description} 
+                            onChange={(e) => handleInfoChange('description', e.target.value)}
+                            rows={1}
+                        />
+                    </div>
+                </div>
+            </div>
+            {/* === KẾT THÚC THÊM MỚI === */}
         <h3>Chi tiết hàng hóa</h3>
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
           <div className="grid-header">Mã hàng (*)</div>

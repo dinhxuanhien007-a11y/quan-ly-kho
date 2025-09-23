@@ -45,7 +45,7 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                                     <tr key={index}>
             <td>{item.productId}</td>
             <td>{item.productName}</td>
-            <td>{item.lotNumber}</td>
+            <td>{item.lotNumber || '(Không có)'}</td>
             <td>{item.expiryDate}</td>
             <td>{item.quantity}</td>
             <td>{item.unit}</td>

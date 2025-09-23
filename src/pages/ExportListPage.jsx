@@ -87,7 +87,8 @@ const ExportListPage = () => {
       await updateDoc(slipDocRef, { 
           items: updatedSlip.items,
           customer: updatedSlip.customer,
-          description: updatedSlip.description
+          description: updatedSlip.description,
+          exportDate: updatedSlip.exportDate // <-- THÊM DÒNG NÀY
       });
       setIsEditModalOpen(false);
       reset();
