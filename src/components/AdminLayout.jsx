@@ -24,6 +24,8 @@ import ViewerLayout from './ViewerLayout';
 import { useAuth } from '../hooks/useAuth';
 import FloatingToolsModal from './FloatingToolsModal'; 
 import { FiGrid } from 'react-icons/fi';
+import SalesAnalyticsPage from '../pages/SalesAnalyticsPage'; // Thêm import
+import ProductLedgerPage from '../pages/ProductLedgerPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -62,6 +64,8 @@ const AdminLayout = () => {
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/sales-analytics" element={<SalesAnalyticsPage />} /> // Thêm route mới
+          <Route path="/product-ledger" element={<ProductLedgerPage />} /> {/* THÊM DÒNG NÀY */}
         </Routes>
       </main>
       

@@ -1043,6 +1043,61 @@ tbody tr.selected-row td {
   padding-top: 10px;
 }
 
+/* src/styles/AdminLayout.css */
+
+/* --- TÙY CHỈNH CHO Ô NHẬP NGÀY THÁNG --- */
+.date-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.date-input-wrapper .date-input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  pointer-events: none; /* Cho phép click xuyên qua icon */
+}
+
+.date-input-wrapper input[type="date"] {
+  position: relative;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+/* Tùy chỉnh giao diện khi focus vào */
+.date-input-wrapper input[type="date"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Ẩn icon lịch mặc định của trình duyệt Chrome/Safari */
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  color: transparent;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Đảm bảo chữ không bị icon mặc định đè lên */
+.date-input-wrapper input[type="date"]::-webkit-inner-spin-button,
+.date-input-wrapper input[type="date"]::-webkit-clear-button {
+  z-index: 1;
+}
+
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */
 @media (max-width: 768px) {
   /* Phần này áp dụng cho cả 2 bảng:

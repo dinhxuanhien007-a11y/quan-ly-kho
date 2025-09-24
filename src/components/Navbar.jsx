@@ -18,7 +18,9 @@ import {
     FiUpload,
     FiSettings,
     FiLogOut,
-    FiBookOpen
+    FiBookOpen,
+    FiBarChart2,
+    FiBook
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 import { useAuth } from '../hooks/useAuth';
@@ -78,6 +80,11 @@ const Navbar = () => {
                             </NavLink>
                         </li>
                         <li>
+                        <NavLink to="/product-ledger" title="Sổ chi tiết Vật tư (Thẻ kho)">
+                            <FiBook className="nav-icon" />
+                        </NavLink>
+                    </li>
+                        <li>
                             <NavLink to="/imports" title="Danh sách Phiếu Nhập">
                                 <FiClipboard className="nav-icon" />
                             </NavLink>
@@ -110,6 +117,11 @@ const Navbar = () => {
                         <li>
                             <NavLink to="/stocktakes" title="Kiểm Kê Kho">
                                 <FiCheckSquare className="nav-icon" />
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink to="/sales-analytics" title="Báo cáo & Phân tích">
+                                <FiBarChart2 className="nav-icon" />
                             </NavLink>
                         </li>
                         <li>

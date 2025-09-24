@@ -889,6 +889,8 @@ import ViewerLayout from './ViewerLayout';
 import { useAuth } from '../hooks/useAuth';
 import FloatingToolsModal from './FloatingToolsModal'; 
 import { FiGrid } from 'react-icons/fi';
+import SalesAnalyticsPage from '../pages/SalesAnalyticsPage'; // ThÃªm import
+import ProductLedgerPage from '../pages/ProductLedgerPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -927,6 +929,8 @@ const AdminLayout = () => {
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/sales-analytics" element={<SalesAnalyticsPage />} /> // ThÃªm route má»›i
+          <Route path="/product-ledger" element={<ProductLedgerPage />} /> {/* THÃŠM DÃ’NG NÃ€Y */}
         </Routes>
       </main>
       
@@ -1238,6 +1242,218 @@ export default CreateStocktakeModal;
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\CustomerAutocomplete.jsx ---
+
+
+// src/components/CustomerAutocomplete.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore'; 
+import { db } from '../firebaseConfig';
+import styles from './Autocomplete.module.css';
+import { FiChevronDown } from 'react-icons/fi';
+import { normalizeString } from '../utils/stringUtils';
+
+const CustomerAutocomplete = ({ value, onSelect }) => {
+    const [suggestions, setSuggestions] = useState([]);
+    const [allCustomers, setAllCustomers] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    
+    const containerRef = useRef(null);
+    const inputRef = useRef(null);
+    const suggestionsRef = useRef(null);
+
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                setIsLoading(true);
+                const q = query(collection(db, 'partners'), where("partnerType", "==", "customer"));
+                const querySnapshot = await getDocs(q);
+                const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAllCustomers(customerList);
+                setError(null);
+            } catch (err) {
+                console.error("Lá»—i khi táº£i danh sÃ¡ch khÃ¡ch hÃ ng:", err);
+                setError("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch khÃ¡ch hÃ ng.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchCustomers();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        if (suggestionsRef.current && activeIndex >= 0) {
+            const activeItem = suggestionsRef.current.children[activeIndex];
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [activeIndex]);
+
+    const handleInputChange = (e) => {
+        const inputValue = e.target.value;
+        onSelect({ id: '', name: inputValue });
+        setActiveIndex(-1);
+        
+        if (inputValue.length > 0) {
+            const normalizedInput = normalizeString(inputValue);
+            const filteredSuggestions = allCustomers.filter(customer =>
+                normalizeString(customer.partnerName).includes(normalizedInput)
+            );
+            setSuggestions(filteredSuggestions);
+        } else {
+            setSuggestions(allCustomers.slice(0, 10)); 
+        }
+        setShowSuggestions(true);
+    };
+
+    const handleSuggestionClick = (customer) => {
+        onSelect({ id: customer.id, name: customer.partnerName });
+        setShowSuggestions(false);
+        setActiveIndex(-1);
+    };
+
+    const handleInputBlur = () => {
+        setTimeout(() => {
+            setShowSuggestions(false);
+        }, 150); 
+    };
+    
+    const handleKeyDown = useCallback((e) => {
+        if (showSuggestions && suggestions.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActiveIndex(prevIndex => (prevIndex + 1) % suggestions.length);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActiveIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeIndex >= 0) {
+                    handleSuggestionClick(suggestions[activeIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                setShowSuggestions(false);
+            }
+        }
+    }, [activeIndex, suggestions, showSuggestions]);
+
+    const SuggestionsPortal = () => createPortal(
+        <ul ref={suggestionsRef} className={styles.suggestionsList} style={{ width: `${inputRef.current?.offsetWidth}px` }}>
+            {isLoading && <li className={styles.feedback}>Äang táº£i...</li>}
+            {error && <li className={styles.feedback}>{error}</li>}
+            {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£</li>}
+            
+            {!isLoading && !error && suggestions.map((customer, index) => (
+                <li 
+                    key={customer.id} 
+                    className={index === activeIndex ? styles.activeSuggestion : ''}
+                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(customer); }}
+                >
+                    <strong>{customer.partnerName}</strong> - <span>{customer.id}</span>
+                </li>
+            ))}
+        </ul>,
+        containerRef.current
+    );
+
+    return (
+        <div className={styles.autocompleteContainer} ref={containerRef}>
+            <input
+                ref={inputRef}
+                type="text"
+                value={value}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                onKeyDown={handleKeyDown}
+                placeholder="GÃµ Ä‘á»ƒ tÃ¬m khÃ¡ch hÃ ng..."
+                onFocus={handleInputChange}
+            />
+            <FiChevronDown className={styles.arrowIcon} />
+            {showSuggestions && containerRef.current && <SuggestionsPortal />}
+        </div>
+    );
+};
+
+export default CustomerAutocomplete;
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\DateRangePresets.jsx ---
+
+
+// src/components/DateRangePresets.jsx
+import React from 'react';
+
+// HÃ m trá»£ giÃºp Ä‘á»ƒ Ä‘á»‹nh dáº¡ng ngÃ y thÃ nh chuá»—i YYYY-MM-DD
+const formatDate = (date) => date.toISOString().split('T')[0];
+
+const DateRangePresets = ({ onPresetSelect }) => {
+    const today = new Date();
+
+    const presets = {
+        'HÃ´m nay': () => {
+            const todayStr = formatDate(today);
+            onPresetSelect(todayStr, todayStr);
+        },
+        '7 ngÃ y qua': () => {
+            const endDate = formatDate(today);
+            const startDate = formatDate(new Date(today.setDate(today.getDate() - 6)));
+            onPresetSelect(startDate, endDate);
+        },
+        'ThÃ¡ng nÃ y': () => {
+            const startDate = formatDate(new Date(today.getFullYear(), today.getMonth(), 1));
+            const endDate = formatDate(new Date());
+            onPresetSelect(startDate, endDate);
+        },
+        'ThÃ¡ng trÆ°á»›c': () => {
+            const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const startDate = formatDate(prevMonth);
+            const endDate = formatDate(new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0));
+            onPresetSelect(startDate, endDate);
+        },
+        'NÄƒm nÃ y': () => {
+            const startDate = formatDate(new Date(today.getFullYear(), 0, 1));
+            const endDate = formatDate(new Date());
+            onPresetSelect(startDate, endDate);
+        }
+    };
+
+    return (
+        <div className="filter-group" style={{ marginBottom: '15px' }}>
+            {Object.keys(presets).map(name => (
+                <button
+                    key={name}
+                    type="button"
+                    className="btn-secondary"
+                    onClick={presets[name]}
+                    style={{ padding: '8px 12px', width: 'auto' }}
+                >
+                    {name}
+                </button>
+            ))}
+        </div>
+    );
+};
+
+export default DateRangePresets;
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditAllowedUserModal.jsx ---
 
 
@@ -1317,7 +1533,7 @@ const exportItemSchema = z.object({
        .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
   ),
   productId: z.string(),
-  lotNumber: z.string(),
+  lotNumber: z.string().nullable(),
 });
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
@@ -1440,7 +1656,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                         <React.Fragment key={item.id || index}>
                             <div className="grid-cell"><input type="text" value={item.productId} readOnly title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng á»Ÿ Ä‘Ã¢y" /></div>
                             <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-                            <div className="grid-cell"><input type="text" value={item.lotNumber} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng á»Ÿ Ä‘Ã¢y" /></div>
+                            <div className="grid-cell"><input type="text" value={item.lotNumber || '(KhÃ´ng cÃ³)'} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng á»Ÿ Ä‘Ã¢y" /></div>
                             <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                             <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                             <div className="grid-cell">
@@ -1488,9 +1704,12 @@ import { z } from 'zod'; // <-- IMPORT ZOD
 const importItemSchema = z.object({
   productId: z.string().trim().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
   productName: z.string(), // TÃªn hÃ ng lÃ  readOnly nÃªn khÃ´ng cáº§n check
-  lotNumber: z.string().trim().min(1, { message: "Sá»‘ lÃ´ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
-  expiryDate: z.string().refine(val => parseDateString(val) !== null, {
-      message: "HSD cÃ³ Ä‘á»‹nh dáº¡ng khÃ´ng há»£p lá»‡ (cáº§n lÃ  dd/mm/yyyy)."
+  lotNumber: z.string().nullable(), // Sá»¬A Láº I: Cho phÃ©p Sá»‘ lÃ´ lÃ  null
+  expiryDate: z.string().refine(val => { // Sá»¬A Láº I: Logic giá»‘ng há»‡t trang Táº¡o má»›i
+      const trimmedVal = val.trim();
+      return trimmedVal === '' || trimmedVal.toUpperCase() === 'N/A' || parseDateString(trimmedVal) !== null;
+  }, {
+      message: "HSD khÃ´ng há»£p lá»‡ (cáº§n lÃ  dd/mm/yyyy hoáº·c Ä‘á»ƒ trá»‘ng)."
   }),
   quantity: z.preprocess(
       val => Number(String(val).trim()), // Chuyá»ƒn Ä‘á»•i giÃ¡ trá»‹ sang sá»‘
@@ -1575,7 +1794,14 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
 
   const handleSaveChanges = () => {
     // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
-    const itemsToValidate = slipData.items.filter(item => item.productId); // Chá»‰ validate nhá»¯ng dÃ²ng cÃ³ mÃ£ hÃ ng
+    // THÃŠM BÆ¯á»šC MAP Äá»‚ CHUáº¨N HÃ“A Dá»® LIá»†U TRÆ¯á»šC KHI VALIDATE
+    const itemsToValidate = slipData.items
+        .filter(item => item.productId)
+        .map(item => ({
+            ...item,
+            lotNumber: item.lotNumber ? item.lotNumber.trim() : null
+        }));
+
     const validationResult = importSlipSchema.safeParse({ items: itemsToValidate });
 
     if (!validationResult.success) {
@@ -3103,7 +3329,9 @@ import {
     FiUpload,
     FiSettings,
     FiLogOut,
-    FiBookOpen
+    FiBookOpen,
+    FiBarChart2,
+    FiBook
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 import { useAuth } from '../hooks/useAuth';
@@ -3163,6 +3391,11 @@ const Navbar = () => {
                             </NavLink>
                         </li>
                         <li>
+                        <NavLink to="/product-ledger" title="Sá»• chi tiáº¿t Váº­t tÆ° (Tháº» kho)">
+                            <FiBook className="nav-icon" />
+                        </NavLink>
+                    </li>
+                        <li>
                             <NavLink to="/imports" title="Danh sÃ¡ch Phiáº¿u Nháº­p">
                                 <FiClipboard className="nav-icon" />
                             </NavLink>
@@ -3195,6 +3428,11 @@ const Navbar = () => {
                         <li>
                             <NavLink to="/stocktakes" title="Kiá»ƒm KÃª Kho">
                                 <FiCheckSquare className="nav-icon" />
+                            </NavLink>
+                        </li>
+                        <li>
+                            <NavLink to="/sales-analytics" title="BÃ¡o cÃ¡o & PhÃ¢n tÃ­ch">
+                                <FiBarChart2 className="nav-icon" />
                             </NavLink>
                         </li>
                         <li>
@@ -3586,8 +3824,8 @@ const QuickStockLookup = () => {
               {productData.lots.length > 0 ? (
                 productData.lots.map(lot => (
                   <div key={lot.id} className={styles.lotItem}>
-                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber}</span></div>
-                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</span></div>
+                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</span></div>
                     <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
                     {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
                   </div>
@@ -4335,7 +4573,7 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.productId}</td>
                                         <td>{item.productName}</td>
                                         <td>{item.lotNumber}</td>
-                                        <td>{item.expiryDate}</td>
+                                        <td>{item.expiryDate || '(KhÃ´ng cÃ³)'}</td>
                                         <td>{item.unit}</td>
                                         <td>{item.packaging}</td>
                                         <td>{item.quantityToExport || item.quantityExported}</td>
@@ -4411,7 +4649,7 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                                     <tr key={index}>
             <td>{item.productId}</td>
             <td>{item.productName}</td>
-            <td>{item.lotNumber}</td>
+            <td>{item.lotNumber || '(KhÃ´ng cÃ³)'}</td>
             <td>{item.expiryDate}</td>
             <td>{item.quantity}</td>
             <td>{item.unit}</td>
@@ -5059,11 +5297,8 @@ const processData = async (data) => {
                 if (quantityStr && !isNaN(Number(quantityStr)) && Number(quantityStr) > 0) {
                     const quantityNum = Number(quantityStr);
 
-                    // Xá»­ lÃ½ Sá»‘ lÃ´: náº¿u trá»‘ng thÃ¬ máº·c Ä‘á»‹nh lÃ  'N/A'
-                    let lotNumber = String(row.lotNumber || '').trim();
-                    if (!lotNumber) {
-                        lotNumber = 'N/A';
-                    }
+                    // Xá»­ lÃ½ Sá»‘ lÃ´: náº¿u trá»‘ng thÃ¬ máº·c Ä‘á»‹nh lÃ  'null'
+                    const lotNumber = String(row.lotNumber || '').trim() || null;
 
                     // Xá»­ lÃ½ HSD: náº¿u trá»‘ng thÃ¬ lÃ  null, náº¿u sai Ä‘á»‹nh dáº¡ng thÃ¬ bÃ¡o lá»—i
                     const expiryDate = parseDateString(row.expiryDate);
@@ -5898,8 +6133,8 @@ const InventoryPage = ({ pageTitle }) => {
                                         <td data-label="NgÃ y nháº­p">{formatDate(lot.importDate)}</td>
                                         <td data-label="MÃ£ hÃ ng">{lot.productId}</td>
                                         <td data-label="TÃªn hÃ ng">{lot.productName}</td>
-                                        <td data-label="Sá»‘ lÃ´">{lot.lotNumber}</td>
-                                        <td data-label="HSD">{formatDate(lot.expiryDate)}</td>
+                                        <td data-label="Sá»‘ lÃ´">{lot.lotNumber || '(KhÃ´ng cÃ³)'}</td>
+                                        <td data-label="HSD">{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
                                         <td data-label="ÄVT">{lot.unit}</td>
                                         <td data-label="Quy cÃ¡ch">{lot.packaging}</td>
                                         <td data-label="SL Nháº­p">{formatNumber(lot.quantityImported)}</td>
@@ -6327,7 +6562,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                             <td data-label="TÃªn hÃ ng">
     <HighlightText text={product.productName} highlight={searchTerm} />
 </td>
-                                            <td data-label="HSD Gáº§n Nháº¥t">{formatDate(product.nearestExpiryDate)}</td>
+                                            <td data-label="HSD Gáº§n Nháº¥t">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(KhÃ´ng cÃ³)'}</td>
                                             <td data-label="Tá»•ng Tá»“n"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ÄVT">{product.unit}</td>
                                             <td data-label="Quy cÃ¡ch">{product.packaging}</td>
@@ -6353,8 +6588,8 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                                                     <ul>
                                                                         {lotDetails[product.id].map(lot => (
                                                                             <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate)}`}>
-                                                                                <span>LÃ´: <strong>{lot.lotNumber}</strong></span>
-                                                                                <span>HSD: <strong>{formatDate(lot.expiryDate)}</strong></span>
+                                                                                <span>LÃ´: <strong>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</strong></span>
+                                                                                <span>HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</strong></span>
                                                                                 <span>Tá»“n: <strong>{formatNumber(lot.quantityRemaining)}</strong></span>
                                                                             </li>
                                                                         ))}
@@ -6431,11 +6666,26 @@ const LotTracePage = () => {
     setSelectedNode(null);
 
     try {
-      const lotQuery = query(
-        collection(db, 'inventory_lots'),
-        where('lotNumber', '==', lotNumber.trim()),
-        orderBy('importDate', 'asc'),
-      );
+      let lotQuery;
+      const searchTerm = lotNumber.trim();
+
+      // Náº¾U ngÆ°á»i dÃ¹ng nháº­p "null", "none", hoáº·c "khongcolo" (khÃ´ng phÃ¢n biá»‡t hoa thÆ°á»ng)
+      // thÃ¬ tÃ¬m nhá»¯ng lÃ´ cÃ³ lotNumber lÃ  null.
+      if (['null', 'none', 'khongcolo'].includes(searchTerm.toLowerCase())) {
+        lotQuery = query(
+          collection(db, 'inventory_lots'),
+          where('lotNumber', '==', null), // TÃ¬m kiáº¿m giÃ¡ trá»‹ null
+          orderBy('importDate', 'asc')
+        );
+      } else {
+        // Náº¿u khÃ´ng, tÃ¬m kiáº¿m theo sá»‘ lÃ´ chÃ­nh xÃ¡c nhÆ° cÅ©.
+        lotQuery = query(
+          collection(db, 'inventory_lots'),
+          where('lotNumber', '==', searchTerm),
+          orderBy('importDate', 'asc')
+        );
+      }
+      
       const lotSnapshot = await getDocs(lotQuery);
 
       if (lotSnapshot.empty) {
@@ -6575,8 +6825,8 @@ const LotTracePage = () => {
               <div><label>NhÃ  cung cáº¥p (láº§n nháº­p Ä‘áº§u)</label><p>{masterInfo.supplier || '(khÃ´ng cÃ³)'}</p></div>
               <div><label>ÄVT</label><p>{masterInfo.unit}</p></div>
               <div><label>Quy cÃ¡ch</label><p>{masterInfo.packaging}</p></div>
-              <div><label>Sá»‘ lÃ´</label><p><strong>{masterInfo.lotNumber}</strong></p></div>
-              <div><label>HSD</label><p><strong>{formatDate(masterInfo.expiryDate)}</strong></p></div>
+              <div><label>Sá»‘ lÃ´</label><p><strong>{masterInfo.lotNumber || '(KhÃ´ng cÃ³)'}</strong></p></div>
+              <div><label>HSD</label><p><strong>{masterInfo.expiryDate ? formatDate(masterInfo.expiryDate) : '(KhÃ´ng cÃ³)'}</strong></p></div>
               <div><label>Tá»•ng Ä‘Ã£ nháº­p</label><p style={{color: 'blue', fontSize: '18px'}}><strong>{totalImported}</strong></p></div>
               <div><label>Tá»•ng cÃ²n láº¡i</label><p style={{color: 'green', fontSize: '18px'}}><strong>{totalRemaining}</strong></p></div>
             </div>
@@ -6868,6 +7118,19 @@ const NewExportPage = () => {
         return hasCustomer && hasValidItem;
     }, [customerId, customerName, items]);
 
+    // === Báº®T Äáº¦U THÃŠM Má»šI ===
+const disabledReason = useMemo(() => {
+    if (isSlipValid) return '';
+    if (!customerId.trim() || !customerName.trim()) {
+        return 'Vui lÃ²ng chá»n KhÃ¡ch HÃ ng.';
+    }
+    if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
+        return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m há»£p lá»‡ (Ä‘Ã£ chá»n lÃ´ vÃ  cÃ³ sá»‘ lÆ°á»£ng).';
+    }
+    return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
+}, [isSlipValid, customerId, customerName, items]);
+// === Káº¾T THÃšC THÃŠM Má»šI ===
+
     useEffect(() => {
         if (lastInputRef.current) {
             lastInputRef.current.focus();
@@ -6964,7 +7227,7 @@ const NewExportPage = () => {
           replaceItem(index, {
               selectedLotId: selectedLotId,
               lotNumber: selectedLot.lotNumber,
-              expiryDate: formatDate(selectedLot.expiryDate),
+              expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
               quantityRemaining: selectedLot.quantityRemaining,
               displayLotText: selectedLot.lotNumber
           });
@@ -7020,6 +7283,7 @@ const NewExportPage = () => {
                     notes: fullItemData?.notes || ''
                 }
             }), 
+            productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
             createdAt: serverTimestamp()
         };
     };
@@ -7091,14 +7355,14 @@ const NewExportPage = () => {
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-                        <label>NgÃ y xuáº¥t</label>
-                        <input 
-                            type="date" 
-                            value={exportDate}
-                            min={today}
-                            onChange={e => setExportDate(e.target.value)}
-                        />
-                    </div>
+    <label>NgÃ y xuáº¥t</label>
+    <input 
+        type="text" 
+        value={formatDate(new Date())} 
+        readOnly 
+        style={{backgroundColor: '#f0f0f0'}} 
+    />
+</div>
                     <div className="form-group">
                         <label>MÃ£ KhÃ¡ch HÃ ng (*)</label>
                         <input
@@ -7176,7 +7440,7 @@ const NewExportPage = () => {
                                      <option value="">-- Chá»n lÃ´ tá»“n kho --</option>
                                     {item.availableLots.map(lot => (
                                         <option key={lot.id} value={lot.id}>
-                                            {`LÃ´: ${lot.lotNumber} | HSD: ${formatDate(lot.expiryDate)} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
+                                            {`LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${formatDate(lot.expiryDate)} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
                                         </option>
                                     ))}
                                 </select>
@@ -7215,6 +7479,7 @@ const NewExportPage = () => {
                     onClick={handleSaveDraft} 
                     className="btn-secondary" 
                     disabled={isProcessing || !isSlipValid}
+                     title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'} // <-- THÃŠM DÃ’NG NÃ€Y
                 >
                     {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
                 </button>
@@ -7222,6 +7487,7 @@ const NewExportPage = () => {
                     onClick={promptForDirectExport} 
                     className="btn-primary" 
                     disabled={isProcessing || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Xuáº¥t hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'} // <-- THÃŠM DÃ’NG NÃ€Y
                 >
                     {isProcessing ? 'Äang xá»­ lÃ½...' : 'Xuáº¥t Kho Trá»±c Tiáº¿p'}
                 </button>
@@ -7262,7 +7528,7 @@ const importItemSchema = z.object({
   team: z.string(),
   manufacturer: z.string(),
   notes: z.string(),
-  lotNumber: z.string(),
+  lotNumber: z.string().nullable(),
   quantity: z.preprocess(
       val => Number(val),
       z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng pháº£i lÃ  má»™t con sá»‘." })
@@ -7285,8 +7551,8 @@ const importSlipSchema = z.object({
 
 const NewImportPage = () => {
     const {
-        supplierId, supplierName, description, items,
-        setSupplier, setDescription, addNewItemRow, updateItem,
+        supplierId, supplierName, description, items, importDate,
+        setSupplier, setDescription, setImportDate, addNewItemRow, updateItem,
         handleProductSearchResult, handleLotCheckResult, declareNewLot,
         fillNewProductData, resetSlip, removeItemRow
     } = useImportSlipStore();
@@ -7307,6 +7573,19 @@ const NewImportPage = () => {
         );
         return hasSupplier && hasValidItem;
     }, [supplierId, supplierName, items]);
+
+    // === Báº®T Äáº¦U THÃŠM Má»šI ===
+const disabledReason = useMemo(() => {
+    if (isSlipValid) return '';
+    if (!supplierId.trim() || !supplierName.trim()) {
+        return 'Vui lÃ²ng chá»n NhÃ  Cung Cáº¥p.';
+    }
+    if (!items.some(item => item.productId && Number(item.quantity) > 0)) {
+        return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m vá»›i sá»‘ lÆ°á»£ng há»£p lá»‡.';
+    }
+    return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
+}, [isSlipValid, supplierId, supplierName, items]);
+// === Káº¾T THÃšC THÃŠM Má»šI ===
 
     useEffect(() => {
         if (lastInputRef.current) {
@@ -7343,7 +7622,7 @@ const NewImportPage = () => {
             item.productId && item.quantity
         ).map(item => ({
             ...item,
-            lotNumber: item.lotNumber.trim() || 'N/A'
+            lotNumber: item.lotNumber.trim() || null
         }));
 
         if (validItems.length === 0) {
@@ -7365,12 +7644,13 @@ const NewImportPage = () => {
         }
 
         return {
-            ...validationResult.data,
-            importDate: formatDate(new Date(importDate.replace(/-/g, '/'))),
-            description,
-            status: '',
-            createdAt: serverTimestamp()
-        };
+    ...validationResult.data,
+    importDate: formatDate(new Date(importDate)), // Sá»­ dá»¥ng trá»±c tiáº¿p importDate tá»« store
+    description,
+    productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
+    status: '',
+    createdAt: serverTimestamp()
+};
     }
 
     const handleSupplierSearch = async () => {
@@ -7698,6 +7978,7 @@ const NewImportPage = () => {
                     onClick={handleSaveSlip} 
                     className="btn-secondary" 
                     disabled={isSaving || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'} // <-- THÃŠM DÃ’NG NÃ€Y
                 >
                     {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
                 </button>
@@ -7705,6 +7986,7 @@ const NewImportPage = () => {
                     onClick={promptForDirectImport} 
                     className="btn-primary" 
                     disabled={isSaving || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Nháº­p hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'} // <-- THÃŠM DÃ’NG NÃ€Y
                 >
                     {isSaving ? 'Äang xá»­ lÃ½...' : 'Nháº­p Kho Trá»±c Tiáº¿p'}
                 </button>
@@ -8067,6 +8349,186 @@ describe('Page: PartnersPage', () => {
 
 
 
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductLedgerPage.jsx ---
+
+
+// src/pages/ProductLedgerPage.jsx
+import React, { useState } from 'react';
+import { db } from '../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+import { getProductLedger } from '../services/dashboardService';
+import { formatDate } from '../utils/dateUtils';
+import { formatNumber } from '../utils/numberUtils';
+import Spinner from '../components/Spinner';
+import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom';
+import ViewImportSlipModal from '../components/ViewImportSlipModal';
+import ViewExportSlipModal from '../components/ViewExportSlipModal';
+
+const ProductLedgerPage = () => {
+    const [productId, setProductId] = useState('');
+    const [productInfo, setProductInfo] = useState(null);
+    const [ledgerData, setLedgerData] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    // THÃŠM CÃC STATE VÃ€ HÃ€M Má»šI DÆ¯á»šI ÄÃ‚Y
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [selectedSlip, setSelectedSlip] = useState(null);
+
+    const openViewModal = async (slipId, slipType) => {
+        const collectionName = slipType === 'NHáº¬P' ? 'import_tickets' : 'export_tickets';
+        try {
+            const docRef = doc(db, collectionName, slipId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                setSelectedSlip({ id: docSnap.id, ...docSnap.data() });
+                setIsViewModalOpen(true);
+            } else {
+                toast.error("KhÃ´ng tÃ¬m tháº¥y chi tiáº¿t cá»§a phiáº¿u nÃ y.");
+            }
+        } catch (error) {
+            toast.error("Lá»—i khi táº£i chi tiáº¿t phiáº¿u.");
+            console.error(error);
+        }
+    };
+
+    const closeViewModal = () => {
+        setIsViewModalOpen(false);
+        setSelectedSlip(null);
+    };
+
+    const handleSearch = async () => {
+        if (!productId.trim()) {
+            toast.warn("Vui lÃ²ng nháº­p MÃ£ hÃ ng Ä‘á»ƒ xem sá»• chi tiáº¿t.");
+            return;
+        }
+        setLoading(true);
+        setLedgerData(null);
+        setProductInfo(null);
+        try {
+            const productRef = doc(db, 'products', productId.trim().toUpperCase());
+            const productSnap = await getDoc(productRef);
+            if (!productSnap.exists()) {
+                toast.error(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+                setLoading(false);
+                return;
+            }
+            setProductInfo(productSnap.data());
+            
+            const data = await getProductLedger(productId);
+            setLedgerData(data);
+
+        } catch (error) {
+            console.error("Lá»—i khi láº¥y sá»• chi tiáº¿t váº­t tÆ°:", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi táº£i dá»¯ liá»‡u.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
+    return (
+        <div>
+            <div className="page-header">
+                <h1>Sá»• chi tiáº¿t Váº­t tÆ° (Tháº» kho)</h1>
+            </div>
+
+            {/* DÃN ÄOáº N MÃƒ Má»šI VÃ€O ÄÃ‚Y */}
+{isViewModalOpen && selectedSlip && (
+    selectedSlip.supplierName ? 
+    <ViewImportSlipModal slip={selectedSlip} onClose={closeViewModal} /> :
+    <ViewExportSlipModal slip={selectedSlip} onClose={closeViewModal} />
+)}
+
+            <div className="form-section">
+                <div className="form-group">
+                    <label>Nháº­p MÃ£ hÃ ng cáº§n xem</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                            type="text"
+                            value={productId}
+                            onChange={(e) => setProductId(e.target.value.toUpperCase())}
+                            placeholder="VÃ­ dá»¥: 02-61860-00"
+                            onKeyDown={handleKeyDown}
+                            style={{ flexGrow: 1 }}
+                            autoFocus
+                        />
+                        <button onClick={handleSearch} className="btn-primary" disabled={loading} style={{ width: 'auto' }}>
+                            {loading ? 'Äang táº£i...' : 'Xem Sá»• kho'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {loading && <Spinner />}
+
+            {ledgerData && productInfo && (
+                <>
+                    <div className="form-section">
+                        <h3>{productInfo.productName} (ÄVT: {productInfo.unit})</h3>
+                        <div className="stats-grid">
+                            <div className="stat-card"><div className="stat-card-info"><h4>Tá»“n Ä‘áº§u ká»³</h4><p>{formatNumber(ledgerData.openingBalance)}</p></div></div>
+                            <div className="stat-card"><div className="stat-card-info"><h4>Tá»•ng Nháº­p</h4><p style={{color: 'green'}}>+{formatNumber(ledgerData.totalImport)}</p></div></div>
+                            <div className="stat-card"><div className="stat-card-info"><h4>Tá»•ng Xuáº¥t</h4><p style={{color: 'red'}}>-{formatNumber(ledgerData.totalExport)}</p></div></div>
+                            <div className="stat-card"><div className="stat-card-info"><h4>Tá»“n cuá»‘i ká»³</h4><p style={{color: 'blue'}}>{formatNumber(ledgerData.closingBalance)}</p></div></div>
+                        </div>
+                    </div>
+
+                    <div className="table-container">
+                        <table className="products-table">
+                            <thead>
+                                <tr>
+                                    <th>NgÃ y</th>
+                                    <th>Chá»©ng tá»«</th>
+                                    <th>Loáº¡i</th>
+                                    <th>Diá»…n giáº£i</th>
+                                    <th>Sá»‘ lÃ´</th>
+                                    <th>HSD</th>
+                                    <th>Nháº­p</th>
+                                    <th>Xuáº¥t</th>
+                                    <th>Tá»“n</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style={{fontWeight: 'bold'}}>
+                                    <td colSpan="8" style={{textAlign: 'right'}}>Tá»“n Ä‘áº§u ká»³</td>
+                                    <td>{formatNumber(ledgerData.openingBalance)}</td>
+                                </tr>
+                                {ledgerData.rows.map((row, index) => (
+                                    <tr key={`${row.docId}-${index}`}>
+                                        <td>{formatDate(row.date)}</td>
+                                        <td>
+    <button onClick={() => openViewModal(row.docId, row.type)} className="btn-link table-link" title="Xem chi tiáº¿t phiáº¿u">
+        {row.docId}
+    </button>
+</td>
+                                        <td>{row.type}</td>
+                                        <td style={{textAlign: 'left'}}>{row.description}</td>
+                                        <td>{row.lotNumber || '(KhÃ´ng cÃ³)'}</td>
+                                        <td>{row.expiryDate || '(KhÃ´ng cÃ³)'}</td>
+                                        <td style={{color: 'green'}}>{row.importQty > 0 ? formatNumber(row.importQty) : ''}</td>
+                                        <td style={{color: 'red'}}>{row.exportQty > 0 ? formatNumber(row.exportQty) : ''}</td>
+                                        <td style={{fontWeight: 'bold'}}>{formatNumber(row.balance)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
+export default ProductLedgerPage;
+
+
+
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductsPage.jsx ---
 
 
@@ -8370,6 +8832,305 @@ describe('Page: ProductsPage', () => {
         expect(searchInput.value).toBe('TEST-SEARCH');
     });
 });
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\SalesAnalyticsPage.jsx ---
+
+
+// src/pages/SalesAnalyticsPage.jsx
+import { Line, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title } from 'chart.js';
+import DateRangePresets from '../components/DateRangePresets';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getSalesAnalytics } from '../services/dashboardService';
+import { formatDate } from '../utils/dateUtils';
+import { formatNumber } from '../utils/numberUtils';
+import Spinner from '../components/Spinner';
+import { toast } from 'react-toastify';
+import { FiCalendar } from 'react-icons/fi';
+// THÃŠM Má»šI: Import cÃ¡c hÃ m cá»§a Firestore Ä‘á»ƒ láº¥y danh sÃ¡ch khÃ¡ch hÃ ng
+import { db } from '../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import CustomerAutocomplete from '../components/CustomerAutocomplete';
+
+
+// ÄÄƒng kÃ½ cÃ¡c thÃ nh pháº§n cá»§a ChartJS
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement
+);
+
+const SalesAnalyticsPage = () => {
+    const [filters, setFilters] = useState({
+        startDate: '',
+        endDate: '',
+        customerId: '', 
+        customerName: '',
+        productId: ''
+    });
+    const [results, setResults] = useState([]);
+    const [summary, setSummary] = useState({ totalQuantity: 0, totalSlips: 0 });
+    const [loading, setLoading] = useState(false);
+    
+    // THÃŠM Má»šI: State Ä‘á»ƒ lÆ°u danh sÃ¡ch khÃ¡ch hÃ ng cho dropdown
+    const [allCustomers, setAllCustomers] = useState([]);
+
+    // THÃŠM Má»šI: useEffect Ä‘á»ƒ láº¥y danh sÃ¡ch khÃ¡ch hÃ ng má»™t láº§n khi component Ä‘Æ°á»£c táº£i
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
+                const querySnapshot = await getDocs(q);
+                const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().partnerName }));
+                setAllCustomers(customerList);
+            } catch (error) {
+                console.error("Lá»—i khi táº£i danh sÃ¡ch khÃ¡ch hÃ ng:", error);
+                toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch khÃ¡ch hÃ ng.");
+            }
+        };
+        fetchCustomers();
+    }, []);
+
+    // THÃŠM Má»šI: Xá»­ lÃ½ dá»¯ liá»‡u Ä‘á»ƒ tÃ¬m top khÃ¡ch hÃ ng vÃ  sáº£n pháº©m
+    const topStats = useMemo(() => {
+        if (!results || results.length === 0) return { topCustomers: [], topProducts: [] };
+
+        // Top khÃ¡ch hÃ ng
+        const salesByCustomer = results.reduce((acc, row) => {
+            acc[row.customer] = (acc[row.customer] || 0) + Number(row.quantityExported);
+            return acc;
+        }, {});
+        const topCustomers = Object.entries(salesByCustomer)
+            .sort(([, qtyA], [, qtyB]) => qtyB - qtyA)
+            .slice(0, 3)
+            .map(([name, quantity]) => ({ name, quantity }));
+
+        // Top sáº£n pháº©m
+        const salesByProduct = results.reduce((acc, row) => {
+            if (!acc[row.productName]) {
+                acc[row.productName] = { quantity: 0, unit: row.unit };
+            }
+            acc[row.productName].quantity += Number(row.quantityExported);
+            return acc;
+        }, {});
+        const topProducts = Object.entries(salesByProduct)
+            .sort(([, dataA], [, dataB]) => dataB.quantity - dataA.quantity)
+            .slice(0, 3)
+            .map(([name, data]) => ({ name, ...data }));
+
+        return { topCustomers, topProducts };
+    }, [results]);
+
+    // Xá»­ lÃ½ dá»¯ liá»‡u cho biá»ƒu Ä‘á»“ Ä‘Æ°á»ng (giá»¯ nguyÃªn)
+    const lineChartData = useMemo(() => {
+        if (!results || results.length === 0) return null;
+        const salesByDate = results.reduce((acc, row) => {
+            const date = formatDate(row.exportDate);
+            acc[date] = (acc[date] || 0) + Number(row.quantityExported);
+            return acc;
+        }, {});
+        const sortedDates = Object.keys(salesByDate).sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-')));
+        return {
+            labels: sortedDates,
+            datasets: [{
+                label: 'Sá»‘ lÆ°á»£ng xuáº¥t',
+                data: sortedDates.map(date => salesByDate[date]),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            }],
+        };
+    }, [results]);
+
+    // Xá»­ lÃ½ dá»¯ liá»‡u cho biá»ƒu Ä‘á»“ trÃ²n (giá»¯ nguyÃªn)
+    const pieChartData = useMemo(() => {
+        if (!results || results.length === 0) return null;
+        const salesByCustomer = results.reduce((acc, row) => {
+            acc[row.customer] = (acc[row.customer] || 0) + Number(row.quantityExported);
+            return acc;
+        }, {});
+        return {
+            labels: Object.keys(salesByCustomer),
+            datasets: [{
+                label: 'Sá»‘ lÆ°á»£ng xuáº¥t',
+                data: Object.values(salesByCustomer),
+                backgroundColor: ['rgba(255, 99, 132, 0.7)','rgba(54, 162, 235, 0.7)','rgba(255, 206, 86, 0.7)','rgba(75, 192, 192, 0.7)','rgba(153, 102, 255, 0.7)','rgba(255, 159, 64, 0.7)',],
+            }],
+        };
+    }, [results]);
+
+    // THÃŠM Má»šI: TÃ¹y chá»n Ä‘á»ƒ cáº£i thiá»‡n giao diá»‡n biá»ƒu Ä‘á»“
+    const chartOptions = {
+        plugins: {
+            title: { display: true, font: { size: 16 } },
+            legend: { position: 'top' },
+        },
+        responsive: true,
+        maintainAspectRatio: false
+    };
+
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch(filters);
+        }
+    };
+
+    const handlePresetSelect = (startDate, endDate) => {
+        const newFilters = { ...filters, startDate, endDate };
+        setFilters(newFilters);
+        handleSearch(newFilters);
+    };
+
+    const handleSearch = async (currentFilters = filters) => {
+        setLoading(true);
+        try {
+            const data = await getSalesAnalytics(currentFilters);
+            setResults(data);
+            const totalQty = data.reduce((sum, item) => sum + Number(item.quantityExported), 0);
+            const uniqueSlips = new Set(data.map(item => item.slipId));
+            setSummary({ totalQuantity: totalQty, totalSlips: uniqueSlips.size });
+        } catch (error) {
+            console.error("Lá»—i khi láº¥y dá»¯ liá»‡u phÃ¢n tÃ­ch:", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi táº£i bÃ¡o cÃ¡o.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div>
+            <div className="page-header">
+                <h1>BÃ¡o cÃ¡o & PhÃ¢n tÃ­ch BÃ¡n hÃ ng</h1>
+            </div>
+
+            <div className="form-section">
+                <DateRangePresets onPresetSelect={handlePresetSelect} />
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>Tá»« ngÃ y</label>
+                        <div className="date-input-wrapper">
+                            <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} />
+                            <FiCalendar className="date-input-icon" />
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <label>Äáº¿n ngÃ y</label>
+                        <div className="date-input-wrapper">
+                            <input type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} />
+                            <FiCalendar className="date-input-icon" />
+                        </div>
+                    </div>
+                </div>
+                {/* THÃŠM Má»šI: HÃ ng bá»™ lá»c thá»© 2 */}
+                <div className="form-row" style={{marginTop: '15px'}}>
+                    <div className="form-group">
+    <label>KhÃ¡ch hÃ ng (TÃ¹y chá»n)</label>
+    <CustomerAutocomplete
+        value={filters.customerName || ''} // Hiá»ƒn thá»‹ tÃªn khÃ¡ch hÃ ng
+        onSelect={({ id, name }) => setFilters(prev => ({ ...prev, customerId: id, customerName: name }))}
+    />
+</div>
+                    <div className="form-group">
+                        <label>MÃ£ hÃ ng (TÃ¹y chá»n)</label>
+                        <input type="text" name="productId" placeholder="Nháº­p mÃ£ hÃ ng Ä‘á»ƒ lá»c..." value={filters.productId} onChange={handleFilterChange} onKeyDown={handleKeyDown}/>
+                    </div>
+                </div>
+                <div className="page-actions" style={{ justifyContent: 'flex-start' }}>
+                    <button onClick={() => handleSearch(filters)} className="btn-primary" disabled={loading}>
+                        {loading ? 'Äang táº£i...' : 'Xem BÃ¡o cÃ¡o'}
+                    </button>
+                </div>
+            </div>
+
+            {loading ? <Spinner /> : (
+                <>
+                    <div className="stats-grid" style={{ marginBottom: '20px' }}>
+                        <div className="stat-card">
+                            <div className="stat-card-info"><h4>Tá»•ng sá»‘ Phiáº¿u xuáº¥t</h4><p>{summary.totalSlips}</p></div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-card-info"><h4>Tá»•ng sá»‘ lÆ°á»£ng Ä‘Ã£ xuáº¥t</h4><p>{formatNumber(summary.totalQuantity)}</p></div>
+                        </div>
+                    </div>
+
+                    {/* THÃŠM Má»šI: Hiá»ƒn thá»‹ Top 3 */}
+                    {results.length > 0 && (
+                         <div className="table-grid" style={{ marginBottom: '20px' }}>
+                            <div className="card">
+                                <h3>Top 3 KhÃ¡ch hÃ ng</h3>
+                                <ul className="recent-activity-list">
+                                    {topStats.topCustomers.map(c => <li key={c.name}><span>{c.name}</span><span>{formatNumber(c.quantity)}</span></li>)}
+                                </ul>
+                            </div>
+                            <div className="card">
+                                <h3>Top 3 Sáº£n pháº©m BÃ¡n cháº¡y</h3>
+                                <ul className="recent-activity-list">
+                                    {topStats.topProducts.map(p => <li key={p.name}><span>{p.name}</span><span>{formatNumber(p.quantity)} {p.unit}</span></li>)}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {results.length > 0 && (
+                        <div className="chart-grid" style={{ marginBottom: '20px' }}>
+                            {lineChartData && (
+                                <div className="card">
+                                    <Line key={JSON.stringify(results)} data={lineChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Xu hÆ°á»›ng xuáº¥t kho theo thá»i gian'}}}} />
+                                </div>
+                            )}
+                            {pieChartData && (
+                                <div className="card">
+                                    <Pie key={JSON.stringify(results) + 'pie'} data={pieChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Tá»· trá»ng xuáº¥t kho theo KhÃ¡ch hÃ ng'}}}} />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="table-container">
+                        <table className="products-table">
+                            <thead>
+                                <tr>
+                                    <th>NgÃ y xuáº¥t</th><th>KhÃ¡ch hÃ ng</th><th>MÃ£ hÃ ng</th>
+                                    <th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th><th>Sá»‘ lÆ°á»£ng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {results.length > 0 ? results.map((row, index) => (
+                                    <tr key={`${row.slipId}-${index}`}>
+                                        <td>{formatDate(row.exportDate)}</td>
+                                        <td style={{textAlign: 'left'}}>{row.customer}</td>
+                                        <td>{row.productId}</td>
+                                        <td style={{textAlign: 'left'}}>{row.productName}</td>
+                                        <td>{row.lotNumber || '(KhÃ´ng cÃ³)'}</td>
+                                        <td>{formatNumber(row.quantityExported)} {row.unit}</td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="6" style={{textAlign: 'center'}}>KhÃ´ng cÃ³ dá»¯ liá»‡u hoáº·c vui lÃ²ng nháº¥n "Xem BÃ¡o cÃ¡o".</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
+export default SalesAnalyticsPage;
 
 
 
@@ -8975,8 +9736,8 @@ const StocktakeSessionPage = () => {
         <tr key={item.id}>
             <td>{item.productId}</td>
             <td>{item.productName}</td>
-            <td>{item.lotNumber}</td>
-            <td>{formatDate(item.expiryDate)}</td>
+            <td>{item.lotNumber || '(KhÃ´ng cÃ³)'}</td>
+            <td>{item.expiryDate ? formatDate(item.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
             <td>{item.unit}</td>
             <td>{item.packaging}</td>
             <td>{item.systemQty}</td>
@@ -9348,6 +10109,169 @@ export const getChartData = async () => {
     });
 
     return { expiryData, teamData: teamCounts };
+};
+
+/**
+ * Láº¥y vÃ  xá»­ lÃ½ dá»¯ liá»‡u phÃ¢n tÃ­ch bÃ¡n hÃ ng dá»±a trÃªn bá»™ lá»c.
+ * @param {object} filters - Äá»‘i tÆ°á»£ng chá»©a cÃ¡c bá»™ lá»c { startDate, endDate, customerId, productId }.
+ * @returns {Promise<Array>} - Má»™t máº£ng chá»©a cÃ¡c dÃ²ng dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½.
+ */
+export const getSalesAnalytics = async (filters = {}) => {
+    let salesQuery = query(
+        collection(db, 'export_tickets'),
+        where("status", "==", "completed"),
+        orderBy("createdAt", "desc")
+    );
+
+    // Ãp dá»¥ng bá»™ lá»c
+    if (filters.startDate) {
+        salesQuery = query(salesQuery, where("createdAt", ">=", Timestamp.fromDate(new Date(filters.startDate))));
+    }
+    if (filters.endDate) {
+        const endOfDay = new Date(filters.endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        salesQuery = query(salesQuery, where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
+    }
+    if (filters.customerId) {
+        salesQuery = query(salesQuery, where("customerId", "==", filters.customerId));
+    }
+    // Sá»¬A Láº I: Báº¬T Bá»˜ Lá»ŒC CHO PRODUCT ID
+    if (filters.productId && filters.productId.trim() !== '') {
+        salesQuery = query(salesQuery, where("productIds", "array-contains", filters.productId.trim()));
+    }
+
+    const querySnapshot = await getDocs(salesQuery);
+
+    // Xá»­ lÃ½ vÃ  lÃ m pháº³ng dá»¯ liá»‡u
+    const detailedRows = [];
+    querySnapshot.forEach(doc => {
+        const slip = doc.data();
+        slip.items.forEach(item => {
+            // Sá»¬A Láº I: Náº¾U CÃ“ Lá»ŒC THEO MÃƒ HÃ€NG, CHá»ˆ Láº¤Y ÄÃšNG Máº¶T HÃ€NG ÄÃ“
+            if (filters.productId && filters.productId.trim() !== '' && item.productId !== filters.productId.trim()) {
+                return; // Bá» qua cÃ¡c máº·t hÃ ng khÃ´ng khá»›p
+            }
+            detailedRows.push({
+                slipId: doc.id,
+                exportDate: slip.createdAt,
+                customer: slip.customer,
+                productId: item.productId,
+                productName: item.productName,
+                lotNumber: item.lotNumber,
+                quantityExported: item.quantityToExport || item.quantityExported,
+                unit: item.unit
+            });
+        });
+    });
+
+    return detailedRows;
+};
+
+/**
+ * Láº¥y toÃ n bá»™ lá»‹ch sá»­ giao dá»‹ch (tháº» kho) cho má»™t mÃ£ hÃ ng.
+ * @param {string} productId - MÃ£ hÃ ng cáº§n truy váº¥n.
+ * @returns {Promise<object>} - Dá»¯ liá»‡u tháº» kho Ä‘Ã£ xá»­ lÃ½.
+ */
+export const getProductLedger = async (productId) => {
+    if (!productId) {
+        throw new Error("MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.");
+    }
+
+    const upperProductId = productId.toUpperCase().trim();
+    let openingBalance = 0;
+    const transactions = [];
+
+    // 1. Láº¥y tá»“n Ä‘áº§u ká»³ tá»« inventory_lots
+    const openingQuery = query(
+        collection(db, 'inventory_lots'),
+        where('productId', '==', upperProductId),
+        where('supplierName', '==', 'Tá»“n Ä‘áº§u ká»³')
+    );
+
+    // 2. Láº¥y táº¥t cáº£ phiáº¿u nháº­p Ä‘Ã£ hoÃ n thÃ nh
+    const importQuery = query(
+        collection(db, 'import_tickets'),
+        where('status', '==', 'completed'),
+        where('productIds', 'array-contains', upperProductId)
+    );
+
+    // 3. Láº¥y táº¥t cáº£ phiáº¿u xuáº¥t Ä‘Ã£ hoÃ n thÃ nh
+    const exportQuery = query(
+        collection(db, 'export_tickets'),
+        where('status', '==', 'completed'),
+        where('productIds', 'array-contains', upperProductId)
+    );
+
+    const [openingSnap, importSnap, exportSnap] = await Promise.all([
+        getDocs(openingQuery),
+        getDocs(importQuery),
+        getDocs(exportQuery)
+    ]);
+
+    // Xá»­ lÃ½ tá»“n Ä‘áº§u ká»³
+    openingSnap.forEach(doc => {
+        openingBalance += Number(doc.data().quantityImported);
+    });
+
+    // Xá»­ lÃ½ phiáº¿u nháº­p
+    importSnap.forEach(doc => {
+        const slip = doc.data();
+        slip.items.forEach(item => {
+            if (item.productId === upperProductId) {
+                transactions.push({
+                    date: slip.createdAt.toDate(),
+                    docId: doc.id,
+                    type: 'NHáº¬P',
+                    description: `Nháº­p hÃ ng tá»«: ${slip.supplierName}`,
+                    importQty: Number(item.quantity),
+                    exportQty: 0,
+                    lotNumber: item.lotNumber,   // <-- THÃŠM Má»šI
+                    expiryDate: item.expiryDate  // <-- THÃŠM Má»šI
+                });
+            }
+        });
+    });
+
+    // Xá»­ lÃ½ phiáº¿u xuáº¥t
+    exportSnap.forEach(doc => {
+        const slip = doc.data();
+        slip.items.forEach(item => {
+            if (item.productId === upperProductId) {
+                transactions.push({
+                    date: slip.createdAt.toDate(),
+                    docId: doc.id,
+                    type: 'XUáº¤T',
+                    description: `Xuáº¥t hÃ ng cho: ${slip.customer}`,
+                    importQty: 0,
+                    exportQty: Number(item.quantityToExport || item.quantityExported),
+                    lotNumber: item.lotNumber,   // <-- THÃŠM Má»šI
+                    expiryDate: item.expiryDate  // <-- THÃŠM Má»šI
+                });
+            }
+        });
+    });
+
+    // Sáº¯p xáº¿p táº¥t cáº£ giao dá»‹ch theo ngÃ y
+    transactions.sort((a, b) => a.date - b.date);
+
+    // TÃ­nh toÃ¡n sá»‘ dÆ° tá»“n kho qua tá»«ng giao dá»‹ch
+    let currentBalance = openingBalance;
+    let totalImport = 0;
+    let totalExport = 0;
+    const ledgerRows = transactions.map(tx => {
+        currentBalance = currentBalance + tx.importQty - tx.exportQty;
+        totalImport += tx.importQty;
+        totalExport += tx.exportQty;
+        return { ...tx, balance: currentBalance };
+    });
+
+    return {
+        openingBalance,
+        totalImport,
+        totalExport,
+        closingBalance: currentBalance,
+        rows: ledgerRows
+    };
 };
 
 
@@ -9869,6 +10793,7 @@ const initialState = {
     supplierId: '',
     supplierName: '',
     description: '',
+    importDate: new Date().toISOString().split('T')[0],
     items: [{ ...initialItemState, id: Date.now() }]
 };
 
@@ -9882,6 +10807,8 @@ const useImportSlipStore = create(
             setSupplier: (id, name) => set({ supplierId: id, supplierName: name }),
             
             setDescription: (description) => set({ description }),
+
+            setImportDate: (date) => set({ importDate: date }),
 
             addNewItemRow: () => set(state => ({
                 items: [...state.items, { ...initialItemState, id: Date.now() }]
@@ -10975,7 +11902,7 @@ tbody tr.selected-row td {
 .floating-toggle-btn {
   position: fixed;
   bottom: 25px;
-  right: 25px;
+  left: 20px;
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -11109,6 +12036,61 @@ tbody tr.selected-row td {
 
 .viewer-main-content {
   padding-top: 10px;
+}
+
+/* src/styles/AdminLayout.css */
+
+/* --- TÃ™Y CHá»ˆNH CHO Ã” NHáº¬P NGÃ€Y THÃNG --- */
+.date-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.date-input-wrapper .date-input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  pointer-events: none; /* Cho phÃ©p click xuyÃªn qua icon */
+}
+
+.date-input-wrapper input[type="date"] {
+  position: relative;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+/* TÃ¹y chá»‰nh giao diá»‡n khi focus vÃ o */
+.date-input-wrapper input[type="date"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* áº¨n icon lá»‹ch máº·c Ä‘á»‹nh cá»§a trÃ¬nh duyá»‡t Chrome/Safari */
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  color: transparent;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Äáº£m báº£o chá»¯ khÃ´ng bá»‹ icon máº·c Ä‘á»‹nh Ä‘Ã¨ lÃªn */
+.date-input-wrapper input[type="date"]::-webkit-inner-spin-button,
+.date-input-wrapper input[type="date"]::-webkit-clear-button {
+  z-index: 1;
 }
 
 /* --- CSS CHO GIAO DIá»†N RESPONSIVE TRÃŠN DI Äá»˜NG --- */

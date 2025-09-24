@@ -69,6 +69,19 @@ const NewImportPage = () => {
         return hasSupplier && hasValidItem;
     }, [supplierId, supplierName, items]);
 
+    // === BẮT ĐẦU THÊM MỚI ===
+const disabledReason = useMemo(() => {
+    if (isSlipValid) return '';
+    if (!supplierId.trim() || !supplierName.trim()) {
+        return 'Vui lòng chọn Nhà Cung Cấp.';
+    }
+    if (!items.some(item => item.productId && Number(item.quantity) > 0)) {
+        return 'Vui lòng thêm ít nhất một sản phẩm với số lượng hợp lệ.';
+    }
+    return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
+}, [isSlipValid, supplierId, supplierName, items]);
+// === KẾT THÚC THÊM MỚI ===
+
     useEffect(() => {
         if (lastInputRef.current) {
             lastInputRef.current.focus();
@@ -129,6 +142,7 @@ const NewImportPage = () => {
     ...validationResult.data,
     importDate: formatDate(new Date(importDate)), // Sử dụng trực tiếp importDate từ store
     description,
+    productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
     status: '',
     createdAt: serverTimestamp()
 };
@@ -459,6 +473,7 @@ const NewImportPage = () => {
                     onClick={handleSaveSlip} 
                     className="btn-secondary" 
                     disabled={isSaving || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'} // <-- THÊM DÒNG NÀY
                 >
                     {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}
                 </button>
@@ -466,6 +481,7 @@ const NewImportPage = () => {
                     onClick={promptForDirectImport} 
                     className="btn-primary" 
                     disabled={isSaving || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Nhập hàng và cập nhật tồn kho ngay lập tức'} // <-- THÊM DÒNG NÀY
                 >
                     {isSaving ? 'Đang xử lý...' : 'Nhập Kho Trực Tiếp'}
                 </button>

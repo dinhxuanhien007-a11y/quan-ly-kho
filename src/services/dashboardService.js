@@ -138,3 +138,166 @@ export const getChartData = async () => {
 
     return { expiryData, teamData: teamCounts };
 };
+
+/**
+ * Lấy và xử lý dữ liệu phân tích bán hàng dựa trên bộ lọc.
+ * @param {object} filters - Đối tượng chứa các bộ lọc { startDate, endDate, customerId, productId }.
+ * @returns {Promise<Array>} - Một mảng chứa các dòng dữ liệu đã được xử lý.
+ */
+export const getSalesAnalytics = async (filters = {}) => {
+    let salesQuery = query(
+        collection(db, 'export_tickets'),
+        where("status", "==", "completed"),
+        orderBy("createdAt", "desc")
+    );
+
+    // Áp dụng bộ lọc
+    if (filters.startDate) {
+        salesQuery = query(salesQuery, where("createdAt", ">=", Timestamp.fromDate(new Date(filters.startDate))));
+    }
+    if (filters.endDate) {
+        const endOfDay = new Date(filters.endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        salesQuery = query(salesQuery, where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
+    }
+    if (filters.customerId) {
+        salesQuery = query(salesQuery, where("customerId", "==", filters.customerId));
+    }
+    // SỬA LẠI: BẬT BỘ LỌC CHO PRODUCT ID
+    if (filters.productId && filters.productId.trim() !== '') {
+        salesQuery = query(salesQuery, where("productIds", "array-contains", filters.productId.trim()));
+    }
+
+    const querySnapshot = await getDocs(salesQuery);
+
+    // Xử lý và làm phẳng dữ liệu
+    const detailedRows = [];
+    querySnapshot.forEach(doc => {
+        const slip = doc.data();
+        slip.items.forEach(item => {
+            // SỬA LẠI: NẾU CÓ LỌC THEO MÃ HÀNG, CHỈ LẤY ĐÚNG MẶT HÀNG ĐÓ
+            if (filters.productId && filters.productId.trim() !== '' && item.productId !== filters.productId.trim()) {
+                return; // Bỏ qua các mặt hàng không khớp
+            }
+            detailedRows.push({
+                slipId: doc.id,
+                exportDate: slip.createdAt,
+                customer: slip.customer,
+                productId: item.productId,
+                productName: item.productName,
+                lotNumber: item.lotNumber,
+                quantityExported: item.quantityToExport || item.quantityExported,
+                unit: item.unit
+            });
+        });
+    });
+
+    return detailedRows;
+};
+
+/**
+ * Lấy toàn bộ lịch sử giao dịch (thẻ kho) cho một mã hàng.
+ * @param {string} productId - Mã hàng cần truy vấn.
+ * @returns {Promise<object>} - Dữ liệu thẻ kho đã xử lý.
+ */
+export const getProductLedger = async (productId) => {
+    if (!productId) {
+        throw new Error("Mã hàng không được để trống.");
+    }
+
+    const upperProductId = productId.toUpperCase().trim();
+    let openingBalance = 0;
+    const transactions = [];
+
+    // 1. Lấy tồn đầu kỳ từ inventory_lots
+    const openingQuery = query(
+        collection(db, 'inventory_lots'),
+        where('productId', '==', upperProductId),
+        where('supplierName', '==', 'Tồn đầu kỳ')
+    );
+
+    // 2. Lấy tất cả phiếu nhập đã hoàn thành
+    const importQuery = query(
+        collection(db, 'import_tickets'),
+        where('status', '==', 'completed'),
+        where('productIds', 'array-contains', upperProductId)
+    );
+
+    // 3. Lấy tất cả phiếu xuất đã hoàn thành
+    const exportQuery = query(
+        collection(db, 'export_tickets'),
+        where('status', '==', 'completed'),
+        where('productIds', 'array-contains', upperProductId)
+    );
+
+    const [openingSnap, importSnap, exportSnap] = await Promise.all([
+        getDocs(openingQuery),
+        getDocs(importQuery),
+        getDocs(exportQuery)
+    ]);
+
+    // Xử lý tồn đầu kỳ
+    openingSnap.forEach(doc => {
+        openingBalance += Number(doc.data().quantityImported);
+    });
+
+    // Xử lý phiếu nhập
+    importSnap.forEach(doc => {
+        const slip = doc.data();
+        slip.items.forEach(item => {
+            if (item.productId === upperProductId) {
+                transactions.push({
+                    date: slip.createdAt.toDate(),
+                    docId: doc.id,
+                    type: 'NHẬP',
+                    description: `Nhập hàng từ: ${slip.supplierName}`,
+                    importQty: Number(item.quantity),
+                    exportQty: 0,
+                    lotNumber: item.lotNumber,   // <-- THÊM MỚI
+                    expiryDate: item.expiryDate  // <-- THÊM MỚI
+                });
+            }
+        });
+    });
+
+    // Xử lý phiếu xuất
+    exportSnap.forEach(doc => {
+        const slip = doc.data();
+        slip.items.forEach(item => {
+            if (item.productId === upperProductId) {
+                transactions.push({
+                    date: slip.createdAt.toDate(),
+                    docId: doc.id,
+                    type: 'XUẤT',
+                    description: `Xuất hàng cho: ${slip.customer}`,
+                    importQty: 0,
+                    exportQty: Number(item.quantityToExport || item.quantityExported),
+                    lotNumber: item.lotNumber,   // <-- THÊM MỚI
+                    expiryDate: item.expiryDate  // <-- THÊM MỚI
+                });
+            }
+        });
+    });
+
+    // Sắp xếp tất cả giao dịch theo ngày
+    transactions.sort((a, b) => a.date - b.date);
+
+    // Tính toán số dư tồn kho qua từng giao dịch
+    let currentBalance = openingBalance;
+    let totalImport = 0;
+    let totalExport = 0;
+    const ledgerRows = transactions.map(tx => {
+        currentBalance = currentBalance + tx.importQty - tx.exportQty;
+        totalImport += tx.importQty;
+        totalExport += tx.exportQty;
+        return { ...tx, balance: currentBalance };
+    });
+
+    return {
+        openingBalance,
+        totalImport,
+        totalExport,
+        closingBalance: currentBalance,
+        rows: ledgerRows
+    };
+};

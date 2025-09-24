@@ -51,6 +51,19 @@ const NewExportPage = () => {
         return hasCustomer && hasValidItem;
     }, [customerId, customerName, items]);
 
+    // === BẮT ĐẦU THÊM MỚI ===
+const disabledReason = useMemo(() => {
+    if (isSlipValid) return '';
+    if (!customerId.trim() || !customerName.trim()) {
+        return 'Vui lòng chọn Khách Hàng.';
+    }
+    if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
+        return 'Vui lòng thêm ít nhất một sản phẩm hợp lệ (đã chọn lô và có số lượng).';
+    }
+    return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
+}, [isSlipValid, customerId, customerName, items]);
+// === KẾT THÚC THÊM MỚI ===
+
     useEffect(() => {
         if (lastInputRef.current) {
             lastInputRef.current.focus();
@@ -203,6 +216,7 @@ const NewExportPage = () => {
                     notes: fullItemData?.notes || ''
                 }
             }), 
+            productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
             createdAt: serverTimestamp()
         };
     };
@@ -274,14 +288,14 @@ const NewExportPage = () => {
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-                        <label>Ngày xuất</label>
-                        <input 
-                            type="date" 
-                            value={exportDate}
-                            min={today}
-                            onChange={e => setExportDate(e.target.value)}
-                        />
-                    </div>
+    <label>Ngày xuất</label>
+    <input 
+        type="text" 
+        value={formatDate(new Date())} 
+        readOnly 
+        style={{backgroundColor: '#f0f0f0'}} 
+    />
+</div>
                     <div className="form-group">
                         <label>Mã Khách Hàng (*)</label>
                         <input
@@ -398,6 +412,7 @@ const NewExportPage = () => {
                     onClick={handleSaveDraft} 
                     className="btn-secondary" 
                     disabled={isProcessing || !isSlipValid}
+                     title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'} // <-- THÊM DÒNG NÀY
                 >
                     {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
                 </button>
@@ -405,6 +420,7 @@ const NewExportPage = () => {
                     onClick={promptForDirectExport} 
                     className="btn-primary" 
                     disabled={isProcessing || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Xuất hàng và cập nhật tồn kho ngay lập tức'} // <-- THÊM DÒNG NÀY
                 >
                     {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}
                 </button>
