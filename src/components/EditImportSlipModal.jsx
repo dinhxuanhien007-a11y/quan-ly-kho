@@ -1,6 +1,6 @@
 // src/components/EditImportSlipModal.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
+import { FiPlusCircle, FiXCircle, FiCalendar } from 'react-icons/fi';
 import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify'; 
 import { z } from 'zod'; // <-- IMPORT ZOD
@@ -131,14 +131,17 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
             <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
                 <div className="form-row">
                     <div className="form-group">
-                        <label>Ngày nhập (*)</label>
-                        <input 
-                            type="date"
-                            value={dateToInputValue(slipData.importDate)}
-                            onChange={(e) => handleInfoChange('importDate', e.target.value)}
-                            min={new Date().toISOString().split('T')[0]} // Chặn ngày quá khứ
-                        />
-                    </div>
+    <label>Ngày nhập (*)</label>
+    <div className="date-input-wrapper">
+        <input 
+            type="date"
+            value={dateToInputValue(slipData.importDate)}
+            onChange={(e) => handleInfoChange('importDate', e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+        />
+        <FiCalendar className="date-input-icon" />
+    </div>
+</div>
                     <div className="form-group">
                         <label>Nhà cung cấp</label>
                         <input type="text" value={slipData.supplierName} readOnly disabled />
@@ -154,6 +157,7 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
                 </div>
             </div>
             {/* === KẾT THÚC THÊM MỚI === */}
+            <div className="modal-body">
         <h3>Chi tiết hàng hóa</h3>
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
           <div className="grid-header">Mã hàng (*)</div>
@@ -212,13 +216,12 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
             </React.Fragment>
           ))}
         </div>
-
-        <button type="button" onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>
-          <FiPlusCircle style={{ marginRight: '5px' }} />
-          Thêm dòng
-        </button>
+        </div> {/* <-- THẺ NÀY ĐÓNG LẠI .modal-body */}
 
         <div className="modal-actions">
+          <button type="button" onClick={addNewRow} className="btn-secondary">
+                Thêm dòng
+            </button>
           <button type="button" onClick={onClose} className="btn-secondary">Đóng</button>
           <button type="button" onClick={handleSaveChanges} className="btn-primary">Lưu thay đổi</button>
         </div>

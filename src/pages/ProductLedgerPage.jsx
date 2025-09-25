@@ -149,9 +149,14 @@ const ProductLedgerPage = () => {
                                     <tr key={`${row.docId}-${index}`}>
                                         <td>{formatDate(row.date)}</td>
                                         <td>
-    <button onClick={() => openViewModal(row.docId, row.type)} className="btn-link table-link" title="Xem chi tiết phiếu">
-        {row.docId}
-    </button>
+    {/* Sửa lại: Chỉ cho phép nhấn vào xem chi tiết nếu đó là một phiếu, không phải lô import trực tiếp */}
+    {row.isTicket ? (
+        <button onClick={() => openViewModal(row.docId, row.type)} className="btn-link table-link" title="Xem chi tiết phiếu">
+            {row.docId}
+        </button>
+    ) : (
+        <span title="Bản ghi tồn kho gốc, không có phiếu chi tiết">{row.docId}</span>
+    )}
 </td>
                                         <td>{row.type}</td>
                                         <td style={{textAlign: 'left'}}>{row.description}</td>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Navbar from './Navbar';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
 import PartnersPage from '../pages/PartnersPage';
@@ -51,9 +51,14 @@ const AdminLayout = () => {
         {location.pathname === '/new-import' && <ImportSlipCounter />}
 
         <Routes>
-          <Route path="/view" element={<ViewerLayout />} />
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/products" element={<ProductsPage />} />
+          {/* TỰ ĐỘNG CHUYỂN HƯỚNG TỪ TRANG GỐC SANG DASHBOARD */}
+  <Route path="/" element={<Navigate to="/dashboard" />} />
+  
+  {/* ĐỊNH NGHĨA LẠI ĐƯỜNG DẪN CỤ THỂ CHO DASHBOARD */}
+  <Route path="/dashboard" element={<DashboardPage />} />
+
+  <Route path="/view" element={<ViewerLayout />} />
+  <Route path="/products" element={<ProductsPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/new-import" element={<NewImportPage />} />
           <Route path="/new-export" element={<NewExportPage />} />

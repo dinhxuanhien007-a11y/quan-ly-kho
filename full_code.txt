@@ -686,6 +686,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
             manufacturer: manufacturer,
             team: team,
         });
+        onClose();
     };
     
     const handleExpiryDateBlur = (e) => {
@@ -867,7 +868,7 @@ export default AddUserModal;
 
 import React, { useState } from 'react';
 import Navbar from './Navbar';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
 import ProductsPage from '../pages/ProductsPage';
 import PartnersPage from '../pages/PartnersPage';
@@ -916,9 +917,14 @@ const AdminLayout = () => {
         {location.pathname === '/new-import' && <ImportSlipCounter />}
 
         <Routes>
-          <Route path="/view" element={<ViewerLayout />} />
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/products" element={<ProductsPage />} />
+          {/* Tá»° Äá»˜NG CHUYá»‚N HÆ¯á»šNG Tá»ª TRANG Gá»C SANG DASHBOARD */}
+  <Route path="/" element={<Navigate to="/dashboard" />} />
+  
+  {/* Äá»ŠNH NGHÄ¨A Láº I ÄÆ¯á»œNG DáºªN Cá»¤ THá»‚ CHO DASHBOARD */}
+  <Route path="/dashboard" element={<DashboardPage />} />
+
+  <Route path="/view" element={<ViewerLayout />} />
+  <Route path="/products" element={<ProductsPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/new-import" element={<NewImportPage />} />
           <Route path="/new-export" element={<NewExportPage />} />
@@ -1334,23 +1340,25 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
     };
     
     const handleKeyDown = useCallback((e) => {
-        if (showSuggestions && suggestions.length > 0) {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                setActiveIndex(prevIndex => (prevIndex + 1) % suggestions.length);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                setActiveIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (activeIndex >= 0) {
-                    handleSuggestionClick(suggestions[activeIndex]);
-                }
-            } else if (e.key === 'Escape') {
-                setShowSuggestions(false);
+    if (showSuggestions && suggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(prevIndex => (prevIndex + 1) % suggestions.length);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
+        } 
+        // THÃŠM Má»šI LOGIC CHO PHÃM TAB
+        else if (e.key === 'Tab' || e.key === 'Enter') {
+            if (activeIndex >= 0) { // Chá»‰ hoáº¡t Ä‘á»™ng khi Ä‘Ã£ cÃ³ má»™t má»¥c Ä‘Æ°á»£c highlight
+                e.preventDefault(); // NgÄƒn hÃ nh vi máº·c Ä‘á»‹nh cá»§a Tab (chuyá»ƒn focus)
+                handleSuggestionClick(suggestions[activeIndex]);
             }
+        } else if (e.key === 'Escape') {
+            setShowSuggestions(false);
         }
-    }, [activeIndex, suggestions, showSuggestions]);
+    }
+}, [activeIndex, suggestions, showSuggestions, handleSuggestionClick]);
 
     const SuggestionsPortal = () => createPortal(
         <ul ref={suggestionsRef} className={styles.suggestionsList} style={{ width: `${inputRef.current?.offsetWidth}px` }}>
@@ -1522,7 +1530,7 @@ export default EditAllowedUserModal;
 
 
 import React, { useState } from 'react';
-import { FiXCircle } from 'react-icons/fi';
+import { FiXCircle, FiPlusCircle, FiCalendar } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
@@ -1582,6 +1590,25 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
         setSlipData({ ...slipData, items: newItems });
     };
 
+    const addNewRow = () => {
+        const newRow = {
+            id: Date.now(), // Táº¡o má»™t ID táº¡m thá»i duy nháº¥t
+            productId: '',
+            productName: '',
+            lotNumber: '',
+            unit: '',
+            packaging: '',
+            quantityToExport: '',
+            notes: '',
+            quantityRemaining: 0 // Máº·c Ä‘á»‹nh tá»“n kho lÃ  0 cho dÃ²ng má»›i
+        };
+
+        setSlipData(prev => ({
+            ...prev,
+            items: [...prev.items, newRow]
+        }));
+    };
+
     // === ÄÃƒ DI CHUYá»‚N RA NGOÃ€I ÄÃšNG Vá»Š TRÃ ===
     const handleSaveChanges = () => {
         const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
@@ -1618,14 +1645,17 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                 <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
                     <div className="form-row">
                         <div className="form-group">
-                            <label>NgÃ y xuáº¥t (*)</label>
-                            <input 
-                                type="date"
-                                value={dateToInputValue(slipData.exportDate)}
-                                onChange={(e) => handleInfoChange('exportDate', e.target.value)}
-                                min={new Date().toISOString().split('T')[0]}
-                            />
-                        </div>
+    <label>NgÃ y xuáº¥t (*)</label>
+    <div className="date-input-wrapper">
+        <input 
+            type="date"
+            value={dateToInputValue(slipData.exportDate)}
+            onChange={(e) => handleInfoChange('exportDate', e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+        />
+        <FiCalendar className="date-input-icon" />
+    </div>
+</div>
                         <div className="form-group">
                             <label>KhÃ¡ch hÃ ng</label>
                             <input type="text" value={slipData.customer} readOnly disabled />
@@ -1641,6 +1671,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                     </div>
                 </div>
 
+                <div className="modal-body">
                 <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
                 <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 1.5fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
                     <div className="grid-header">MÃ£ hÃ ng</div>
@@ -1676,8 +1707,12 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                         </React.Fragment>
                     ))}
                 </div>
-
+        </div>
+        
                 <div className="modal-actions">
+                    <button type="button" onClick={addNewRow} className="btn-secondary">
+                ThÃªm dÃ²ng
+            </button>
                     <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
                     <button type="button" onClick={handleSaveChanges} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
                 </div>
@@ -1695,7 +1730,7 @@ export default EditExportSlipModal;
 
 // src/components/EditImportSlipModal.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { FiPlusCircle, FiXCircle } from 'react-icons/fi';
+import { FiPlusCircle, FiXCircle, FiCalendar } from 'react-icons/fi';
 import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify'; 
 import { z } from 'zod'; // <-- IMPORT ZOD
@@ -1826,14 +1861,17 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
             <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
                 <div className="form-row">
                     <div className="form-group">
-                        <label>NgÃ y nháº­p (*)</label>
-                        <input 
-                            type="date"
-                            value={dateToInputValue(slipData.importDate)}
-                            onChange={(e) => handleInfoChange('importDate', e.target.value)}
-                            min={new Date().toISOString().split('T')[0]} // Cháº·n ngÃ y quÃ¡ khá»©
-                        />
-                    </div>
+    <label>NgÃ y nháº­p (*)</label>
+    <div className="date-input-wrapper">
+        <input 
+            type="date"
+            value={dateToInputValue(slipData.importDate)}
+            onChange={(e) => handleInfoChange('importDate', e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+        />
+        <FiCalendar className="date-input-icon" />
+    </div>
+</div>
                     <div className="form-group">
                         <label>NhÃ  cung cáº¥p</label>
                         <input type="text" value={slipData.supplierName} readOnly disabled />
@@ -1849,6 +1887,7 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
                 </div>
             </div>
             {/* === Káº¾T THÃšC THÃŠM Má»šI === */}
+            <div className="modal-body">
         <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
         <div className="item-details-grid" style={{ gridTemplateColumns: '1fr 2fr 1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
           <div className="grid-header">MÃ£ hÃ ng (*)</div>
@@ -1907,13 +1946,12 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
             </React.Fragment>
           ))}
         </div>
-
-        <button type="button" onClick={addNewRow} className="btn-secondary" style={{ marginTop: '10px' }}>
-          <FiPlusCircle style={{ marginRight: '5px' }} />
-          ThÃªm dÃ²ng
-        </button>
+        </div> {/* <-- THáºº NÃ€Y ÄÃ“NG Láº I .modal-body */}
 
         <div className="modal-actions">
+          <button type="button" onClick={addNewRow} className="btn-secondary">
+                ThÃªm dÃ²ng
+            </button>
           <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
           <button type="button" onClick={handleSaveChanges} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
         </div>
@@ -2268,29 +2306,23 @@ const ExpiryNotificationBanner = () => {
     const [isProcessing, setIsProcessing] = useState(null); // LÆ°u ID cá»§a notif Ä‘ang xá»­ lÃ½
 
     useEffect(() => {
-        // Chá»‰ láº¯ng nghe khi user Ä‘Ã£ Ä‘Äƒng nháº­p
-        const unsubscribeAuth = auth.onAuthStateChanged(user => {
-            if (user) {
-                const q = query(collection(db, "notifications"), where("status", "==", "UNCONFIRMED"));
-                
-                const unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
-                    const activeNotifs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setNotifications(activeNotifs);
-                }, (error) => {
-                    console.error("Lá»—i khi láº¯ng nghe cáº£nh bÃ¡o: ", error);
-                    toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch cáº£nh bÃ¡o.");
-                });
+    // VÃ¬ component nÃ y chá»‰ Ä‘Æ°á»£c render khi user lÃ  'owner',
+    // chÃºng ta cÃ³ thá»ƒ tá»± tin ráº±ng mÃ¬nh cÃ³ quyá»n Ä‘á»c dá»¯ liá»‡u.
+    const q = query(collection(db, "notifications"), where("status", "==", "UNCONFIRMED"));
+    
+    const unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
+        const activeNotifs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setNotifications(activeNotifs);
+    }, (error) => {
+        // Váº«n giá»¯ láº¡i Ä‘á»ƒ báº¯t cÃ¡c lá»—i permission tháº­t sá»±
+        console.error("Lá»—i khi láº¯ng nghe cáº£nh bÃ¡o:", error);
+    });
 
-                // Tráº£ vá» hÃ m dá»n dáº¹p cho snapshot listener
-                return () => unsubscribeSnapshot();
-            } else {
-                setNotifications([]); // XÃ³a cáº£nh bÃ¡o náº¿u user Ä‘Äƒng xuáº¥t
-            }
-        });
-
-        // Tráº£ vá» hÃ m dá»n dáº¹p cho auth listener
-        return () => unsubscribeAuth();
-    }, []);
+    // Khi component bá»‹ gá»¡ bá» (khi Ä‘Äƒng xuáº¥t), chá»‰ cáº§n ngáº¯t káº¿t ná»‘i snapshot.
+    return () => {
+        unsubscribeSnapshot();
+    };
+}, []); // Máº£ng rá»—ng Ä‘áº£m báº£o effect nÃ y chá»‰ cháº¡y má»™t láº§n khi component Ä‘Æ°á»£c táº¡o.
 
     const handleConfirm = async (notificationId, lotId) => {
         setIsProcessing(notificationId);
@@ -3493,21 +3525,22 @@ import { db } from '../firebaseConfig';
 import styles from './Autocomplete.module.css';
 import { FiChevronDown } from 'react-icons/fi';
 
-const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
+const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
+    const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
-    
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-
-    // Má»šI: State Ä‘á»ƒ theo dÃµi má»¥c Ä‘ang Ä‘Æ°á»£c chá»n báº±ng bÃ n phÃ­m
     const [activeIndex, setActiveIndex] = useState(-1);
     
     const containerRef = useRef(null);
     const inputRef = useRef(null);
-    const suggestionsRef = useRef(null); // Ref cho danh sÃ¡ch ul
+    const suggestionsRef = useRef(null);
+
+    useEffect(() => {
+        setInputValue(value);
+    }, [value]);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -3537,8 +3570,54 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+    
+    useEffect(() => {
+        if (suggestionsRef.current && activeIndex >= 0) {
+            const activeItem = suggestionsRef.current.children[activeIndex];
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [activeIndex]);
 
-    // Má»šI: Logic xá»­ lÃ½ bÃ n phÃ­m
+    const handleSuggestionClick = useCallback((product) => {
+        setInputValue(product.id);
+        if (onSelect) {
+            onSelect(product);
+        }
+        setShowSuggestions(false);
+        setActiveIndex(-1);
+    }, [onSelect]);
+
+    const handleInputChange = useCallback((e) => {
+        const newInputValue = e.target.value.toUpperCase();
+        setInputValue(newInputValue);
+        
+        if (onChange) {
+            onChange(newInputValue);
+        }
+
+        setActiveIndex(-1);
+        if (newInputValue.length > 0) {
+            const filteredSuggestions = allProducts.filter(p =>
+                p.id.toUpperCase().includes(newInputValue)
+            );
+            setSuggestions(filteredSuggestions);
+        } else {
+            setSuggestions(allProducts.slice(0, 10));
+        }
+        setShowSuggestions(true);
+    }, [allProducts, onChange]);
+
+    const handleInputBlur = useCallback(() => {
+        setTimeout(() => {
+            setShowSuggestions(false);
+            if (onBlur) {
+                onBlur();
+            }
+        }, 150);
+    }, [onBlur]);
+    
     const handleKeyDown = useCallback((e) => {
         if (showSuggestions && suggestions.length > 0) {
             if (e.key === 'ArrowDown') {
@@ -3551,93 +3630,49 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
                 e.preventDefault();
                 if (activeIndex >= 0) {
                     handleSuggestionClick(suggestions[activeIndex]);
+                } else {
+                    if (onBlur) onBlur();
+                    setShowSuggestions(false);
                 }
             } else if (e.key === 'Escape') {
                 setShowSuggestions(false);
             }
         }
-    }, [activeIndex, suggestions, showSuggestions]);
-
-    useEffect(() => {
-        if (suggestionsRef.current && activeIndex >= 0) {
-            const activeItem = suggestionsRef.current.children[activeIndex];
-            if (activeItem) {
-                activeItem.scrollIntoView({ block: 'nearest' });
-            }
-        }
-    }, [activeIndex]);
-
-    const handleInputChange = (e) => {
-        const inputValue = e.target.value.toUpperCase();
-        onChange(inputValue);
-        setActiveIndex(-1); // Reset active index khi gÃµ
-
-        if (inputValue.length > 0) {
-            const filteredSuggestions = allProducts.filter(product =>
-                product.id.toUpperCase().includes(inputValue)
-            );
-            setSuggestions(filteredSuggestions);
-        } else {
-            setSuggestions(allProducts.slice(0, 10)); // Hiá»ƒn thá»‹ má»™t vÃ i gá»£i Ã½ khi trá»‘ng
-        }
-        setShowSuggestions(true);
-    };
-
-    const handleSuggestionClick = (product) => {
-        onSelect(product);
-        setShowSuggestions(false);
-        setActiveIndex(-1);
-    };
-
-    const handleInputBlur = () => {
-        setTimeout(() => {
-            setShowSuggestions(false);
-            if (onBlur) onBlur();
-        }, 150); // Delay Ä‘á»ƒ sá»± kiá»‡n click trÃªn suggestion ká»‹p xá»­ lÃ½
-    };
+    }, [activeIndex, suggestions, showSuggestions, onBlur, handleSuggestionClick]);
     
     const SuggestionsPortal = () => createPortal(
-    <ul
-        ref={suggestionsRef}
-        className={styles.suggestionsList}
-        style={{
-            // ChÃºng ta khÃ´ng cáº§n Ä‘á»‹nh vá»‹ báº±ng top, left ná»¯a
-            // chá»‰ cáº§n width Ä‘á»ƒ Ä‘áº£m báº£o nÃ³ khá»›p vá»›i input
-            width: `${inputRef.current.offsetWidth}px`,
-        }}
-    >
-        {isLoading && <li className={styles.feedback}>Äang táº£i...</li>}
-        {error && <li className={styles.feedback}>{error}</li>}
-        {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£</li>}
-        
-        {!isLoading && !error && suggestions.map((product, index) => (
-            <li 
-                key={product.id} 
-                className={index === activeIndex ? styles.activeSuggestion : ''}
-                onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }}
-            >
-                <strong>{product.id}</strong> - <span>{product.productName}</span>
-            </li>
-        ))}
-    </ul>,
-    // Äáº·t portal vÃ o container Autocomplete
-    containerRef.current
-);
+        <ul ref={suggestionsRef} className={styles.suggestionsList} style={{ width: `${inputRef.current?.offsetWidth}px` }}>
+            {isLoading && <li className={styles.feedback}>Äang táº£i...</li>}
+            {error && <li className={styles.feedback}>{error}</li>}
+            {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£</li>}
+            
+            {!isLoading && !error && suggestions.map((product, index) => (
+                <li 
+                    key={product.id} 
+                    className={index === activeIndex ? styles.activeSuggestion : ''}
+                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }}
+                >
+                    <strong>{product.id}</strong> - <span>{product.productName}</span>
+                </li>
+            ))}
+        </ul>,
+        containerRef.current
+    );
 
     return (
         <div className={styles.autocompleteContainer} ref={containerRef}>
             <input
                 ref={inputRef}
                 type="text"
-                value={value}
+                value={inputValue}
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
-                onKeyDown={handleKeyDown} // <-- Má»šI: Gáº¯n sá»± kiá»‡n bÃ n phÃ­m
+                onKeyDown={handleKeyDown}
                 placeholder="Nháº­p MÃ£ hÃ ng..."
                 onFocus={handleInputChange}
             />
             <FiChevronDown className={styles.arrowIcon} />
-            {showSuggestions && <SuggestionsPortal />}
+            {showSuggestions && containerRef.current && <SuggestionsPortal />}
         </div>
     );
 };
@@ -3991,7 +4026,7 @@ import { Link } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
 import Skeleton from 'react-loading-skeleton';
 
-const RecentActivityList = ({ title, items, type, isLoading }) => {
+const RecentActivityList = ({ title, items, type, isLoading, onView }) => { // ThÃªm "onView"
     return (
         <div className="card">
             <h3>{title}</h3>
@@ -4001,12 +4036,15 @@ const RecentActivityList = ({ title, items, type, isLoading }) => {
                 <ul className="recent-activity-list">
                     {items.map(item => (
                         <li key={item.id}>
-                            <Link to={`/${type}s`} className="table-link">{item.id}</Link>
-                            <span>{type === 'import' ? item.supplier : item.customer}</span>
-                            <span>{formatDate(item.createdAt)}</span>
-                        </li>
-                    ))}
-                </ul>
+                            {/* THAY THáº¾ <Link> Báº°NG <button> */}
+                <button onClick={() => onView(item.id, type)} className="btn-link table-link">
+                    {item.id}
+                </button>
+                <span>{type === 'import' ? item.supplierName : item.customer}</span>
+                <span>{formatDate(item.createdAt)}</span>
+            </li>
+        ))}
+    </ul>
             ) : (
                 <p className="empty-message">KhÃ´ng cÃ³ hoáº¡t Ä‘á»™ng nÃ o gáº§n Ä‘Ã¢y.</p>
             )}
@@ -4286,6 +4324,164 @@ describe('Component: StatusBadge', () => {
         expect(badgeElement).toHaveClass(`status-${randomStatus}`);
     });
 });
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\SupplierAutocomplete.jsx ---
+
+
+// src/components/SupplierAutocomplete.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore'; 
+import { db } from '../firebaseConfig';
+import styles from './Autocomplete.module.css';
+import { FiChevronDown } from 'react-icons/fi';
+import { normalizeString } from '../utils/stringUtils';
+
+// Äá»•i tÃªn component
+const SupplierAutocomplete = ({ value, onSelect }) => {
+    const [suggestions, setSuggestions] = useState([]);
+    // Äá»•i tÃªn state
+    const [allSuppliers, setAllSuppliers] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    
+    const containerRef = useRef(null);
+    const inputRef = useRef(null);
+    const suggestionsRef = useRef(null);
+
+    useEffect(() => {
+        // Logic láº¥y dá»¯ liá»‡u nhÃ  cung cáº¥p
+        const fetchSuppliers = async () => {
+            try {
+                setIsLoading(true);
+                // Sá»¬A Láº I: Truy váº¥n "supplier" thay vÃ¬ "customer"
+                const q = query(collection(db, 'partners'), where("partnerType", "==", "supplier"));
+                const querySnapshot = await getDocs(q);
+                const supplierList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAllSuppliers(supplierList);
+                setError(null);
+            } catch (err) {
+                console.error("Lá»—i khi táº£i danh sÃ¡ch nhÃ  cung cáº¥p:", err);
+                setError("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch nhÃ  cung cáº¥p.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchSuppliers();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        if (suggestionsRef.current && activeIndex >= 0) {
+            const activeItem = suggestionsRef.current.children[activeIndex];
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [activeIndex]);
+
+    const handleInputChange = (e) => {
+        const inputValue = e.target.value;
+        onSelect({ id: '', name: inputValue });
+        setActiveIndex(-1);
+        
+        if (inputValue.length > 0) {
+            const normalizedInput = normalizeString(inputValue);
+            const filteredSuggestions = allSuppliers.filter(supplier =>
+                normalizeString(supplier.partnerName).includes(normalizedInput)
+            );
+            setSuggestions(filteredSuggestions);
+        } else {
+            setSuggestions(allSuppliers.slice(0, 10)); 
+        }
+        setShowSuggestions(true);
+    };
+
+    const handleSuggestionClick = (supplier) => {
+        onSelect({ id: supplier.id, name: supplier.partnerName });
+        setShowSuggestions(false);
+        setActiveIndex(-1);
+    };
+
+    const handleInputBlur = () => {
+        setTimeout(() => {
+            setShowSuggestions(false);
+        }, 150); 
+    };
+    
+    const handleKeyDown = useCallback((e) => {
+    if (showSuggestions && suggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(prevIndex => (prevIndex + 1) % suggestions.length);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
+        } 
+        // THÃŠM Má»šI LOGIC CHO PHÃM TAB
+        else if (e.key === 'Tab' || e.key === 'Enter') {
+            if (activeIndex >= 0) { // Chá»‰ hoáº¡t Ä‘á»™ng khi Ä‘Ã£ cÃ³ má»™t má»¥c Ä‘Æ°á»£c highlight
+                e.preventDefault(); // NgÄƒn hÃ nh vi máº·c Ä‘á»‹nh cá»§a Tab (chuyá»ƒn focus)
+                handleSuggestionClick(suggestions[activeIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            setShowSuggestions(false);
+        }
+    }
+}, [activeIndex, suggestions, showSuggestions, handleSuggestionClick]);
+
+
+    const SuggestionsPortal = () => createPortal(
+        <ul ref={suggestionsRef} className={styles.suggestionsList} style={{ width: `${inputRef.current?.offsetWidth}px` }}>
+            {isLoading && <li className={styles.feedback}>Äang táº£i...</li>}
+            {error && <li className={styles.feedback}>{error}</li>}
+            {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£</li>}
+            
+            {!isLoading && !error && suggestions.map((supplier, index) => (
+                <li 
+                    key={supplier.id} 
+                    className={index === activeIndex ? styles.activeSuggestion : ''}
+                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(supplier); }}
+                >
+                    <strong>{supplier.partnerName}</strong> - <span>{supplier.id}</span>
+                </li>
+            ))}
+        </ul>,
+        containerRef.current
+    );
+
+    return (
+        <div className={styles.autocompleteContainer} ref={containerRef}>
+            <input
+                ref={inputRef}
+                type="text"
+                value={value}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                onKeyDown={handleKeyDown}
+                placeholder="GÃµ Ä‘á»ƒ tÃ¬m nhÃ  cung cáº¥p..." // Sá»¬A Láº I
+                onFocus={handleInputChange}
+            />
+            <FiChevronDown className={styles.arrowIcon} />
+            {showSuggestions && containerRef.current && <SuggestionsPortal />}
+        </div>
+    );
+};
+
+export default SupplierAutocomplete;
 
 
 
@@ -4995,12 +5191,14 @@ export const useRealtimeNotification = (baseQuery) => {
             }
 
             const newestDoc = snapshot.docs[0].data();
-            const newestTimestamp = newestDoc.createdAt;
+const newestTimestamp = newestDoc.createdAt;
 
-            // Chá»‰ hiá»ƒn thá»‹ thÃ´ng bÃ¡o náº¿u cÃ³ document má»›i tháº­t sá»±
-            if (lastSeenTimestampRef.current && newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis()) {
-                setHasNewData(true);
-            }
+// KIá»‚M TRA Äáº¦Y Äá»¦: Timestamp pháº£i há»£p lá»‡ VÃ€ thay Ä‘á»•i nÃ y khÃ´ng pháº£i tá»« client hiá»‡n táº¡i
+if (lastSeenTimestampRef.current && newestTimestamp && typeof newestTimestamp.toMillis === 'function') {
+    if (newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis() && !snapshot.metadata.hasPendingWrites) {
+        setHasNewData(true);
+    }
+}
         }, (error) => {
             console.error("Lá»—i khi láº¯ng nghe dá»¯ liá»‡u real-time:", error);
         });
@@ -5051,6 +5249,7 @@ export const useResponsive = () => {
 
 // src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { 
     getDashboardStats, 
     getRecentCompletedImports, 
@@ -5068,6 +5267,10 @@ import Spinner from '../components/Spinner';
 import '../styles/Dashboard.css';
 import { Link } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
+import { doc, getDoc } from 'firebase/firestore'; // ThÃªm getDoc vÃ  doc
+import { db } from '../firebaseConfig'; // ThÃªm db
+import ViewImportSlipModal from '../components/ViewImportSlipModal'; // ThÃªm modal phiáº¿u nháº­p
+import ViewExportSlipModal from '../components/ViewExportSlipModal'; // ThÃªm modal phiáº¿u xuáº¥t
 
 const DashboardPage = () => {
     const [stats, setStats] = useState({});
@@ -5077,6 +5280,36 @@ const DashboardPage = () => {
     const [pendingImports, setPendingImports] = useState([]);
     const [pendingExports, setPendingExports] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // --- Báº®T Äáº¦U THÃŠM CODE Má»šI ---
+    const [viewModal, setViewModal] = useState({ isOpen: false, slip: null, type: '' });
+
+    const handleViewSlip = async (slipId, slipType) => {
+        const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
+        toast.info("Äang táº£i chi tiáº¿t phiáº¿u...");
+        try {
+            const docRef = doc(db, collectionName, slipId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                setViewModal({ 
+                    isOpen: true, 
+                    slip: { id: docSnap.id, ...docSnap.data() }, 
+                    type: slipType 
+                });
+            } else {
+                toast.error("KhÃ´ng tÃ¬m tháº¥y chi tiáº¿t cá»§a phiáº¿u nÃ y.");
+            }
+        } catch (error) {
+            toast.error("Lá»—i khi táº£i chi tiáº¿t phiáº¿u.");
+            console.error(error);
+        }
+    };
+
+    const closeViewModal = () => {
+        setViewModal({ isOpen: false, slip: null, type: '' });
+    };
+    // --- Káº¾T THÃšC THÃŠM CODE Má»šI ---
 
     useEffect(() => {
         const fetchData = async () => {
@@ -5113,7 +5346,7 @@ const DashboardPage = () => {
         fetchData();
     }, []);
 
-    const PendingList = ({ title, tickets, type }) => (
+    const PendingList = ({ title, tickets, type, onView }) => ( // ThÃªm "onView"
         <div className="card">
             <h3>{title} ({tickets.length})</h3>
             {loading ? (
@@ -5132,13 +5365,16 @@ const DashboardPage = () => {
                             {tickets.map(ticket => (
                                 <tr key={ticket.id}>
                                     <td>
-                                        <Link to={`/${type}s`} className="table-link">{ticket.id}</Link>
-                                    </td>
-                                    <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
-                                    <td>{formatDate(ticket.createdAt)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
+                        {/* THAY THáº¾ <Link> Báº°NG <button> */}
+                        <button onClick={() => onView(ticket.id, type)} className="btn-link table-link">
+                            {ticket.id}
+                        </button>
+                    </td>
+                    <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
+                    <td>{formatDate(ticket.createdAt)}</td>
+                </tr>
+            ))}
+        </tbody>
                     </table>
                 </div>
             ) : (
@@ -5149,6 +5385,14 @@ const DashboardPage = () => {
 
     return (
         <div className="dashboard-container">
+            {/* --- Báº®T Äáº¦U THÃŠM CODE Má»šI --- */}
+        {viewModal.isOpen && viewModal.type === 'import' && (
+            <ViewImportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
+        )}
+        {viewModal.isOpen && viewModal.type === 'export' && (
+            <ViewExportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
+        )}
+        {/* --- Káº¾T THÃšC THÃŠM CODE Má»šI --- */}
             <div className="dashboard-header">
                 <h1>Tá»•ng Quan</h1>
             </div>
@@ -5168,14 +5412,14 @@ const DashboardPage = () => {
                     </div>
                     
                     <div className="table-grid">
-                        <PendingList title="Phiáº¿u Nháº­p Chá» Xá»­ LÃ½" tickets={pendingImports} type="import" />
-                        <PendingList title="Phiáº¿u Xuáº¥t Chá» Xá»­ LÃ½" tickets={pendingExports} type="export" />
-                    </div>
+    <PendingList title="Phiáº¿u Nháº­p Chá» Xá»­ LÃ½" tickets={pendingImports} type="import" onView={handleViewSlip} />
+    <PendingList title="Phiáº¿u Xuáº¥t Chá» Xá»­ LÃ½" tickets={pendingExports} type="export" onView={handleViewSlip} />
+</div>
 
                     <div className="table-grid">
-                        <RecentActivityList title="Phiáº¿u Nháº­p Vá»«a HoÃ n Táº¥t" items={recentImports} type="import" isLoading={loading} />
-                        <RecentActivityList title="Phiáº¿u Xuáº¥t Vá»«a HoÃ n Táº¥t" items={recentExports} type="export" isLoading={loading} />
-                    </div>
+    <RecentActivityList title="Phiáº¿u Nháº­p Vá»«a HoÃ n Táº¥t" items={recentImports} type="import" isLoading={loading} onView={handleViewSlip} />
+    <RecentActivityList title="Phiáº¿u Xuáº¥t Vá»«a HoÃ n Táº¥t" items={recentExports} type="export" isLoading={loading} onView={handleViewSlip} />
+</div>
                 </div>
             )}
         </div>
@@ -5320,7 +5564,7 @@ const processData = async (data) => {
                             storageTemp: productData.storageTemp,
                             team: productData.team,
                             manufacturer: productData.manufacturer,
-                            supplier: 'Tá»“n Ä‘áº§u ká»³',
+                            supplierName: 'Tá»“n Ä‘áº§u ká»³',
                             notes: String(row.notes || '').trim()
                         };
                         batch.set(inventoryRef, inventoryData);
@@ -6020,6 +6264,7 @@ const InventoryPage = ({ pageTitle }) => {
     // Quay láº¡i truy váº¥n gá»‘c, chá»‰ sáº¯p xáº¿p theo MÃ£ hÃ ng vÃ  NgÃ y nháº­p
     let q = query(
         collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
         orderBy("productId", "asc"),
         orderBy("importDate", "asc")
     );
@@ -7068,12 +7313,13 @@ export default MobileInventoryPage;
 // src/pages/NewExportPage.jsx
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
+import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useExportSlipStore from '../stores/exportSlipStore';
@@ -7147,23 +7393,24 @@ const disabledReason = useMemo(() => {
         fetchCustomers();
     }, []);
 
-    const handleCustomerSearch = async () => {
-        if (!customerId) {
-            setCustomer(customerId, '');
+    const handleCustomerSearch = async (idToSearch) => { 
+        if (!idToSearch) {
+            setCustomer(idToSearch, '');
             return;
         }
         try {
-            const partnerRef = doc(db, 'partners', customerId.toUpperCase());
+            // Sá»¬A Láº I: DÃ¹ng idToSearch thay vÃ¬ customerId
+            const partnerRef = doc(db, 'partners', idToSearch.toUpperCase()); 
             const partnerSnap = await getDoc(partnerRef);
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
-                setCustomer(customerId, partnerSnap.data().partnerName);
+                setCustomer(idToSearch, partnerSnap.data().partnerName);
             } else {
-                setCustomer(customerId, '');
-                toast.error(`KhÃ´ng tÃ¬m tháº¥y KhÃ¡ch hÃ ng vá»›i mÃ£ "${customerId}"`);
+                setCustomer(idToSearch, '');
+                toast.error(`KhÃ´ng tÃ¬m tháº¥y KhÃ¡ch hÃ ng vá»›i mÃ£ "${idToSearch}"`);
             }
         } catch (error) {
             console.error("Lá»—i khi tÃ¬m khÃ¡ch hÃ ng:", error);
-            setCustomer(customerId, '');
+            setCustomer(idToSearch, '');
         }
     };
 
@@ -7363,33 +7610,19 @@ const disabledReason = useMemo(() => {
         style={{backgroundColor: '#f0f0f0'}} 
     />
 </div>
-                    <div className="form-group">
-                        <label>MÃ£ KhÃ¡ch HÃ ng (*)</label>
-                        <input
-                            list="customers-list"
-                            type="text"
-                            placeholder="Nháº­p hoáº·c chá»n mÃ£ KH..."
-                            value={customerId}
-                            onChange={e => setCustomer(e.target.value.toUpperCase(), customerName)}
-                            onBlur={handleCustomerSearch}
-                        />
-                        <datalist id="customers-list">
-                            {allCustomers.map(cus => (
-                                <option key={cus.id} value={cus.id}>
-                                    {cus.partnerName}
-                                </option>
-                            ))}
-                        </datalist>
-                    </div>
-                    <div className="form-group">
-                        <label>TÃªn KhÃ¡ch HÃ ng / NÆ¡i nháº­n (*)</label>
-                        <input
-                            type="text"
-                            value={customerName}
-                            readOnly
-                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
-                        />
-                    </div>
+                    <div className="form-group" style={{ flex: 2 }}>
+        <label>KhÃ¡ch hÃ ng (*)</label>
+        <CustomerAutocomplete
+        value={customerName || customerId}
+        onSelect={({ id, name }) => {
+            setCustomer(id, name);
+            if (!id && name) { // Náº¿u ngÆ°á»i dÃ¹ng Ä‘ang gÃµ mÃ  chÆ°a chá»n
+                setCustomer(name, '');
+            }
+        }}
+    />
+</div>
+                    
                 </div>
                 <div className="form-group">
                     <label>Diá»…n giáº£i</label>
@@ -7439,10 +7672,10 @@ const disabledReason = useMemo(() => {
                                 >
                                      <option value="">-- Chá»n lÃ´ tá»“n kho --</option>
                                     {item.availableLots.map(lot => (
-                                        <option key={lot.id} value={lot.id}>
-                                            {`LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${formatDate(lot.expiryDate)} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
-                                        </option>
-                                    ))}
+    <option key={lot.id} value={lot.id}>
+        {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
+    </option>
+))}
                                 </select>
                             )}
                         </div>
@@ -7506,6 +7739,7 @@ export default NewExportPage;
 // src/pages/NewImportPage.jsx
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
+import SupplierAutocomplete from '../components/SupplierAutocomplete';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
@@ -7653,11 +7887,11 @@ const disabledReason = useMemo(() => {
 };
     }
 
-    const handleSupplierSearch = async () => {
-        if (!supplierId) {
-            setSupplier(supplierId, '');
-            return;
-        }
+    const handleSupplierSearch = async (idToSearch = supplierId) => {
+    if (!idToSearch) {
+        setSupplier(idToSearch, '');
+        return;
+    }
         try {
             const partnerRef = doc(db, 'partners', supplierId.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
@@ -7838,36 +8072,34 @@ const disabledReason = useMemo(() => {
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-                        <label>NgÃ y nháº­p</label>
-                        <input type="text" value={formatDate(new Date())} readOnly style={{backgroundColor: '#f0f0f0'}} />
-                    </div>
-                    <div className="form-group">
-                        <label>MÃ£ NhÃ  Cung Cáº¥p (*)</label>
-                        <input 
-                            list="suppliers-list"
-                            type="text" 
-                            placeholder="Nháº­p hoáº·c chá»n mÃ£ NCC..." 
-                            value={supplierId} 
-                            onChange={e => setSupplier(e.target.value.toUpperCase(), '')}
-                            onBlur={handleSupplierSearch}
-                        />
-                         <datalist id="suppliers-list">
-                            {allSuppliers.map(sup => (
-                                <option key={sup.id} value={sup.id}>
-                                    {sup.partnerName}
-                                </option>
-                            ))}
-                        </datalist>
-                    </div>
-                    <div className="form-group">
-                         <label>TÃªn NhÃ  Cung Cáº¥p (*)</label>
-                         <input 
-                            type="text" 
-                            value={supplierName} 
-                            readOnly 
-                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
-                        />
-                    </div>
+            <label>NgÃ y nháº­p</label>
+            <input 
+                type="text" 
+                value={formatDate(new Date())} 
+                readOnly 
+                style={{backgroundColor: '#f0f0f0'}} 
+            />
+        </div>
+                    <div className="form-group" style={{ flex: 2 }}>
+        <label>NhÃ  Cung Cáº¥p (*)</label>
+        <SupplierAutocomplete
+        value={supplierName || supplierId}
+        onSelect={({ id, name }) => {
+            setSupplier(id, name);
+            // Náº¿u ngÆ°á»i dÃ¹ng chá»‰ gÃµ mÃ  chÆ°a chá»n, ta cáº­p nháº­t mÃ£ NCC báº±ng text há» gÃµ
+            if (!id && name) { 
+                setSupplier(name, '');
+            }
+        }}
+        // ThÃªm prop onBlur Ä‘á»ƒ chá»‰ tÃ¬m kiáº¿m khi ngÆ°á»i dÃ¹ng báº¥m ra ngoÃ i
+        onBlur={() => {
+            // Chá»‰ tÃ¬m kiáº¿m náº¿u chÆ°a cÃ³ mÃ£ NCC Ä‘Æ°á»£c chá»n tá»« danh sÃ¡ch
+            if (!supplierId && supplierName) {
+                handleSupplierSearch(supplierName);
+            }
+        }}
+    />
+</div>
                 </div>
                 <div className="form-group">
                     <label>Diá»…n giáº£i</label>
@@ -8503,9 +8735,14 @@ const ProductLedgerPage = () => {
                                     <tr key={`${row.docId}-${index}`}>
                                         <td>{formatDate(row.date)}</td>
                                         <td>
-    <button onClick={() => openViewModal(row.docId, row.type)} className="btn-link table-link" title="Xem chi tiáº¿t phiáº¿u">
-        {row.docId}
-    </button>
+    {/* Sá»­a láº¡i: Chá»‰ cho phÃ©p nháº¥n vÃ o xem chi tiáº¿t náº¿u Ä‘Ã³ lÃ  má»™t phiáº¿u, khÃ´ng pháº£i lÃ´ import trá»±c tiáº¿p */}
+    {row.isTicket ? (
+        <button onClick={() => openViewModal(row.docId, row.type)} className="btn-link table-link" title="Xem chi tiáº¿t phiáº¿u">
+            {row.docId}
+        </button>
+    ) : (
+        <span title="Báº£n ghi tá»“n kho gá»‘c, khÃ´ng cÃ³ phiáº¿u chi tiáº¿t">{row.docId}</span>
+    )}
 </td>
                                         <td>{row.type}</td>
                                         <td style={{textAlign: 'left'}}>{row.description}</td>
@@ -9138,7 +9375,7 @@ export default SalesAnalyticsPage;
 
 
 // src/pages/StocktakeListPage.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch, onSnapshot, limit } from 'firebase/firestore';
@@ -9159,6 +9396,14 @@ const StocktakeListPage = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
     const navigate = useNavigate();
+    // THÃŠM 2 ÄOáº N CODE NÃ€Y VÃ€O
+const [navigateToSession, setNavigateToSession] = useState(null);
+
+useEffect(() => {
+    if (navigateToSession) {
+        navigate(navigateToSession);
+    }
+}, [navigateToSession, navigate]);
     
     const baseQuery = useMemo(() => query(collection(db, "stocktakes"), orderBy("createdAt", "desc")), []);
     const {
@@ -9179,50 +9424,69 @@ const StocktakeListPage = () => {
     };
 
     const handleCreateStocktake = async (sessionData) => {
-        setIsCreating(true);
-        toast.info("Äang láº¥y dá»¯ liá»‡u tá»“n kho, vui lÃ²ng chá»...");
-        try {
-            let inventoryQuery;
-            if (sessionData.scope === 'all') {
-                inventoryQuery = query(collection(db, "inventory_lots"), where("quantityRemaining", ">", 0));
-            } else {
-                inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope), where("quantityRemaining", ">", 0));
-            }
-            const querySnapshot = await getDocs(inventoryQuery);
-            const inventorySnapshotItems = querySnapshot.docs.map(doc => ({
-                lotId: doc.id, ...doc.data(), systemQty: doc.data().quantityRemaining, countedQty: null, isNew: false,
-                unit: doc.data().unit || '',          // Láº¥y Ä‘Æ¡n vá»‹ tÃ­nh
-                packaging: doc.data().packaging || '' // Láº¥y quy cÃ¡ch
-            }));
-
-            const newStocktakeSessionRef = doc(collection(db, 'stocktakes'));
-            await setDoc(newStocktakeSessionRef, {
-                name: sessionData.sessionName, scope: sessionData.scope, status: 'in_progress', createdAt: serverTimestamp(),
-            });
-
-            toast.info(`ÄÃ£ láº¥y ${inventorySnapshotItems.length} má»¥c. Báº¯t Ä‘áº§u ghi dá»¯ liá»‡u...`);
-            const itemsCollectionRef = collection(db, 'stocktakes', newStocktakeSessionRef.id, 'items');
-            const MAX_BATCH_SIZE = 500;
-            for (let i = 0; i < inventorySnapshotItems.length; i += MAX_BATCH_SIZE) {
-                const batch = writeBatch(db);
-                const chunk = inventorySnapshotItems.slice(i, i + MAX_BATCH_SIZE);
-                chunk.forEach(item => {
-                    const newItemRef = doc(itemsCollectionRef, item.lotId);
-                    batch.set(newItemRef, item);
-                });
-                await batch.commit();
-            }
-            
-            toast.success("Táº¡o phiÃªn kiá»ƒm kÃª má»›i thÃ nh cÃ´ng!");
-            setIsCreateModalOpen(false);
-            navigate(`/stocktakes/${newStocktakeSessionRef.id}`);
-        } catch (error) {
-            console.error("Lá»—i khi táº¡o phiÃªn kiá»ƒm kÃª: ", error);
-            toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi táº¡o phiÃªn kiá»ƒm kÃª.");
-        } finally {
-            setIsCreating(false);
+    setIsCreating(true);
+    toast.info("Äang láº¥y dá»¯ liá»‡u tá»“n kho, vui lÃ²ng chá»...");
+    try {
+        let inventoryQuery;
+        if (sessionData.scope === 'all') {
+            inventoryQuery = query(collection(db, "inventory_lots"), where("quantityRemaining", ">", 0));
+        } else {
+            inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope), where("quantityRemaining", ">", 0));
         }
-    };
+        const querySnapshot = await getDocs(inventoryQuery);
+        const inventorySnapshotItems = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                productId: data.productId || '',
+                productName: data.productName || '',
+                lotNumber: data.lotNumber !== undefined ? data.lotNumber : null,
+                expiryDate: data.expiryDate || null,
+                unit: data.unit || '',
+                packaging: data.packaging || '',
+                storageTemp: data.storageTemp || '',
+                team: data.team || '',
+                manufacturer: data.manufacturer || '',
+                notes: data.notes || '',
+                lotId: doc.id,
+                systemQty: data.quantityRemaining || 0,
+                countedQty: null,
+                isNew: false
+            };
+        });
+
+        const newStocktakeSessionRef = doc(collection(db, 'stocktakes'));
+        await setDoc(newStocktakeSessionRef, {
+            name: sessionData.sessionName, scope: sessionData.scope, status: 'in_progress', createdAt: serverTimestamp(),
+        });
+
+        toast.info(`ÄÃ£ láº¥y ${inventorySnapshotItems.length} má»¥c. Báº¯t Ä‘áº§u ghi dá»¯ liá»‡u...`);
+        const itemsCollectionRef = collection(db, 'stocktakes', newStocktakeSessionRef.id, 'items');
+        const MAX_BATCH_SIZE = 500;
+        for (let i = 0; i < inventorySnapshotItems.length; i += MAX_BATCH_SIZE) {
+            const batch = writeBatch(db);
+            const chunk = inventorySnapshotItems.slice(i, i + MAX_BATCH_SIZE);
+            chunk.forEach(item => {
+                const newItemRef = doc(itemsCollectionRef, item.lotId);
+                batch.set(newItemRef, item);
+            });
+            await batch.commit();
+        }
+
+        toast.success("Táº¡o phiÃªn kiá»ƒm kÃª má»›i thÃ nh cÃ´ng!");
+        
+        // THAY Äá»”I QUAN TRá»ŒNG:
+        // 1. ÄÃ³ng modal
+        setIsCreateModalOpen(false);
+        // 2. Gá»­i tÃ­n hiá»‡u Ä‘á»ƒ useEffect thá»±c hiá»‡n Ä‘iá»u hÆ°á»›ng
+        setNavigateToSession(`/stocktakes/${newStocktakeSessionRef.id}`);
+
+    } catch (error) {
+        console.error("Lá»—i khi táº¡o phiÃªn kiá»ƒm kÃª: ", error);
+        toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi táº¡o phiÃªn kiá»ƒm kÃª.");
+    } finally {
+        setIsCreating(false);
+    }
+};
 
     const promptForDelete = (session) => {
         setConfirmModal({
@@ -9359,7 +9623,7 @@ export default StocktakeListPage;
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc, documentId } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -9432,382 +9696,452 @@ const evaluateMathExpression = (str) => {
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
-    const navigate = useNavigate();
-    const {
-        sessionData, items, discrepancyItems, checkedItems, summaryStats, loading,
-        initializeSession, setItems, setSummary, setSessionStatus,
-        toggleCheckedItem, toggleAllCheckedItems, clearStore, updateItemCountInUI
-    } = useStocktakeStore();
-    const [loadingItems, setLoadingItems] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [lastVisible, setLastVisible] = useState(null);
-    const [page, setPage] = useState(1);
-    const [isLastPage, setIsLastPage] = useState(false);
-    const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+Â  Â  const navigate = useNavigate();
+Â  Â  const {
+Â  Â  Â  Â  sessionData, items, discrepancyItems, checkedItems, summaryStats, loading,
+Â  Â  Â  Â  initializeSession, setItems, setSummary, setSessionStatus,
+Â  Â  Â  Â  toggleCheckedItem, toggleAllCheckedItems, clearStore, updateItemCountInUI
+Â  Â  } = useStocktakeStore();
 
-    const performCountUpdate = async (itemId, finalCount) => {
-        updateItemCountInUI(itemId, finalCount);
-        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
-        try {
-            await updateDoc(itemRef, { countedQty: finalCount });
-            await fetchStatsAndDiscrepancies();
-            return true;
-        } catch (error) {
-            toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
-            return false;
-        }
-    };
+Â  Â  const [loadingItems, setLoadingItems] = useState(true);
+Â  Â  const [searchTerm, setSearchTerm] = useState('');
+Â  Â  const [lastVisible, setLastVisible] = useState(null);
+Â  Â  const [page, setPage] = useState(1);
+Â  Â  const [isLastPage, setIsLastPage] = useState(false);
+Â  Â  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+Â  Â  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-    // =================================================================
-    // === Báº®T Äáº¦U PHáº¦N LOGIC handleCountSubmit ÄÃƒ ÄÆ¯á»¢C VIáº¾T Láº I HOÃ€N TOÃ€N ===
-    // =================================================================
-    const handleCountSubmit = (itemId, value) => {
-        const item = useStocktakeStore.getState().items.find(i => i.id === itemId);
-        if (!item) return;
+Â  Â  const performCountUpdate = async (itemId, finalCount) => {
+Â  Â  Â  Â  updateItemCountInUI(itemId, finalCount);
+Â  Â  Â  Â  const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
+Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  await updateDoc(itemRef, { countedQty: finalCount });
+Â  Â  Â  Â  Â  Â  await fetchStatsAndDiscrepancies();
+Â  Â  Â  Â  Â  Â  return true;
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
+Â  Â  Â  Â  Â  Â  return false;
+Â  Â  Â  Â  }
+Â  Â  };
 
-        const prevCountedQty = item.countedQtyBeforeSubmit ?? 0;
-        const rawValue = String(value).trim();
-        
-        if (rawValue === String(item.countedQtyBeforeSubmit ?? '')) return;
-        
-        if (rawValue === '') {
-            performCountUpdate(itemId, null);
-            return;
-        }
+Â  Â  const handleCountSubmit = (itemId, value) => {
+Â  Â  Â  Â  const item = useStocktakeStore.getState().items.find(i => i.id === itemId);
+Â  Â  Â  Â  if (!item) return;
+Â  Â  Â  Â  const prevCountedQty = item.countedQtyBeforeSubmit ?? 0;
+Â  Â  Â  Â  const rawValue = String(value).trim();
+Â  Â  Â  Â  if (rawValue === String(item.countedQtyBeforeSubmit ?? '')) return;
+Â  Â  Â  Â  if (rawValue === '') {
+Â  Â  Â  Â  Â  Â  performCountUpdate(itemId, null);
+Â  Â  Â  Â  Â  Â  return;
+Â  Â  Â  Â  }
+Â  Â  Â  Â  let finalCount = NaN;
+Â  Â  Â  Â  if (rawValue.startsWith('+')) {
+Â  Â  Â  Â  Â  Â  const addedValue = evaluateMathExpression(rawValue.substring(1));
+Â  Â  Â  Â  Â  Â  if (!isNaN(addedValue) && addedValue > 0) {
+Â  Â  Â  Â  Â  Â  Â  Â  finalCount = prevCountedQty + addedValue;
+Â  Â  Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  Â  Â  toast.warn("GiÃ¡ trá»‹ cá»™ng dá»“n khÃ´ng há»£p lá»‡.");
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  finalCount = evaluateMathExpression(rawValue);
+Â  Â  Â  Â  }
+Â  Â  Â  Â  if (isNaN(finalCount) || finalCount < 0) {
+Â  Â  Â  Â  Â  Â  toast.warn("GiÃ¡ trá»‹ nháº­p khÃ´ng há»£p lá»‡.");
+Â  Â  Â  Â  Â  Â  updateItemCountInUI(itemId, item.countedQtyBeforeSubmit ?? null);
+Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  performCountUpdate(itemId, finalCount);
+Â  Â  Â  Â  }
+Â  Â  };
 
-        let finalCount = NaN;
-
-        // TrÆ°á»ng há»£p 1: Cá»™ng dá»“n nhanh (báº¯t Ä‘áº§u báº±ng '+')
-        if (rawValue.startsWith('+')) {
-            const addedValue = evaluateMathExpression(rawValue.substring(1));
-            if (!isNaN(addedValue) && addedValue > 0) {
-                finalCount = prevCountedQty + addedValue;
-            } else {
-                 toast.warn("GiÃ¡ trá»‹ cá»™ng dá»“n khÃ´ng há»£p lá»‡.");
-            }
-        } else {
-            // TrÆ°á»ng há»£p 2: TÃ­nh toÃ¡n biá»ƒu thá»©c hoáº·c ghi Ä‘Ã¨ sá»‘
-            finalCount = evaluateMathExpression(rawValue);
-        }
-
-        // Kiá»ƒm tra káº¿t quáº£ cuá»‘i cÃ¹ng
-        if (isNaN(finalCount) || finalCount < 0) {
-            toast.warn("GiÃ¡ trá»‹ nháº­p khÃ´ng há»£p lá»‡.");
-            updateItemCountInUI(itemId, item.countedQtyBeforeSubmit ?? null); // HoÃ n láº¡i giÃ¡ trá»‹ cÅ©
-        } else {
-            performCountUpdate(itemId, finalCount);
-        }
-    };
-    // ===============================================================
-    // === Káº¾T THÃšC PHáº¦N LOGIC handleCountSubmit Má»šI ===
-    // ===============================================================
-
-    const fetchStatsAndDiscrepancies = useCallback(async () => {
+Â  Â  const fetchStatsAndDiscrepancies = useCallback(async () => {
         if (!sessionId) return;
         const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+        const sessionRef = doc(db, 'stocktakes', sessionId);
         const totalQuery = query(itemsRef, where('isNew', '==', false));
         const countedQuery = query(itemsRef, where('countedQty', '!=', null));
-        
-        const [totalSnap, countedDocsSnap] = await Promise.all([
-             getCountFromServer(totalQuery),
-             getDocs(countedQuery)
+        const [totalSnap, countedSnap, sessionSnap] = await Promise.all([
+            getCountFromServer(totalQuery),
+            getCountFromServer(countedQuery),
+            getDoc(sessionRef)
         ]);
-        
-        const discrepancies = [];
-        countedDocsSnap.forEach(doc => {
-            const data = doc.data();
-            if (data.systemQty !== data.countedQty) {
-                discrepancies.push({ id: doc.id, ...data });
-            }
-        });
-
+        const sessionStatus = sessionSnap.exists() ? sessionSnap.data().status : 'in_progress';
+        let discrepancies = [];
+        let discrepancyCount = 0;
+        if (sessionStatus === 'completed' || sessionStatus === 'adjusted') {
+            const discrepancyDocsSnap = await getDocs(query(itemsRef, where('countedQty', '!=', null)));
+            discrepancyDocsSnap.forEach(doc => {
+                const data = doc.data();
+                if (data.systemQty !== data.countedQty) {
+                    discrepancies.push({ id: doc.id, ...data });
+                }
+            });
+            discrepancyCount = discrepancies.length;
+        }
         const newSummary = {
             totalItems: totalSnap.data().count,
-            countedItems: countedDocsSnap.size,
-            discrepancies: discrepancies.length
+            countedItems: countedSnap.data().count,
+            discrepancies: discrepancyCount
         };
         const sortedDiscrepancies = discrepancies.sort((a, b) => a.productId.localeCompare(b.productId));
         setSummary(newSummary, sortedDiscrepancies);
     }, [sessionId, setSummary]);
 
-    useEffect(() => {
-        const fetchSessionData = async () => {
-            const docRef = doc(db, 'stocktakes', sessionId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                await fetchStatsAndDiscrepancies();
-                const storeState = useStocktakeStore.getState();
-                initializeSession(
-                    { id: docSnap.id, ...docSnap.data() }, 
-                    storeState.summaryStats, 
-                    storeState.discrepancyItems
-                );
-            } else {
-                toast.error("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
-                navigate('/stocktakes');
+Â  Â  useEffect(() => {
+Â  Â  Â  Â  const fetchSessionData = async () => {
+Â  Â  Â  Â  Â  Â  const docRef = doc(db, 'stocktakes', sessionId);
+Â  Â  Â  Â  Â  Â  const docSnap = await getDoc(docRef);
+Â  Â  Â  Â  Â  Â  if (docSnap.exists()) {
+Â  Â  Â  Â  Â  Â  Â  Â  await fetchStatsAndDiscrepancies();
+Â  Â  Â  Â  Â  Â  Â  Â  const storeState = useStocktakeStore.getState();
+Â  Â  Â  Â  Â  Â  Â  Â  initializeSession(
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  { id: docSnap.id, ...docSnap.data() },
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storeState.summaryStats,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storeState.discrepancyItems
+Â  Â  Â  Â  Â  Â  Â  Â  );
+Â  Â  Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  Â  Â  toast.error("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
+Â  Â  Â  Â  Â  Â  Â  Â  navigate('/stocktakes');
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  };
+Â  Â  Â  Â  fetchSessionData();
+Â  Â  Â  Â  return () => {
+Â  Â  Â  Â  Â  Â  clearStore();
+Â  Â  Â  Â  }
+Â  Â  }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
+
+Â  Â  // useEffect Má»šI: Chá»‰ dÃ¹ng Ä‘á»ƒ táº£i dá»¯ liá»‡u láº§n Ä‘áº§u tiÃªn
+Â  Â  useEffect(() => {
+Â  Â  Â  Â  const fetchInitialItems = async () => {
+Â  Â  Â  Â  Â  Â  if (!sessionId) return;
+Â  Â  Â  Â  Â  Â  setLoadingItems(true);
+Â  Â  Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  Â  Â  const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+Â  Â  Â  Â  Â  Â  Â  Â  const q = query(itemsRef, orderBy('productId'), limit(PAGE_SIZE));
+Â  Â  Â  Â  Â  Â  Â  Â  const docSnapshots = await getDocs(q);
+Â  Â  Â  Â  Â  Â  Â  Â  const itemsList = docSnapshots.docs.map(doc => ({
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null
+Â  Â  Â  Â  Â  Â  Â  Â  }));
+Â  Â  Â  Â  Â  Â  Â  Â  setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+Â  Â  Â  Â  Â  Â  Â  Â  setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+Â  Â  Â  Â  Â  Â  Â  Â  setItems(itemsList);
+Â  Â  Â  Â  Â  Â  } catch (error) {
+                console.error("Lá»—i khi táº£i danh sÃ¡ch kiá»ƒm kÃª ban Ä‘áº§u: ", error);
+Â  Â  Â  Â  Â  Â  Â  Â  toast.error("Lá»—i khi táº£i danh sÃ¡ch kiá»ƒm kÃª.");
+Â  Â  Â  Â  Â  Â  } finally {
+Â  Â  Â  Â  Â  Â  Â  Â  setLoadingItems(false);
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  };
+Â  Â  Â  Â  fetchInitialItems();
+Â  Â  }, [sessionId]);
+
+    // HÃ€M Má»šI: Thay tháº¿ hÃ m handleSearch rá»—ng trÆ°á»›c Ä‘Ã³
+Â  Â  const handleSearch = async (e) => {
+Â  Â  Â  Â  const term = e.target.value;
+        setSearchTerm(term); // Cáº­p nháº­t state ngay khi gÃµ
+
+Â  Â  Â  Â  if (e.key !== 'Enter') return;
+
+        setLoadingItems(true);
+Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+Â  Â  Â  Â  Â  Â  let q = query(itemsCollectionRef, orderBy('productId'));
+
+Â  Â  Â  Â  Â  Â  if (term.trim()) {
+Â  Â  Â  Â  Â  Â  Â  Â  const upperSearchTerm = term.trim().toUpperCase();
+Â  Â  Â  Â  Â  Â  Â  Â  q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  const finalQuery = query(q, limit(PAGE_SIZE));
+Â  Â  Â  Â  Â  Â  const docSnapshots = await getDocs(finalQuery);
+
+Â  Â  Â  Â  Â  Â  const itemsList = docSnapshots.docs.map(doc => ({
+Â  Â  Â  Â  Â  Â  Â  Â  id: doc.id,
+Â  Â  Â  Â  Â  Â  Â  Â  ...doc.data(),
+Â  Â  Â  Â  Â  Â  Â  Â  countedQtyBeforeSubmit: doc.data().countedQty ?? null
+Â  Â  Â  Â  Â  Â  }));
+
+Â  Â  Â  Â  Â  Â  setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+Â  Â  Â  Â  Â  Â  setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+Â  Â  Â  Â  Â  Â  setItems(itemsList);
+Â  Â  Â  Â  Â  Â  setPage(1);
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m kiáº¿m váº­t tÆ°: ", error);
+Â  Â  Â  Â  Â  Â  toast.error("KhÃ´ng thá»ƒ tÃ¬m kiáº¿m danh sÃ¡ch váº­t tÆ°.");
+Â  Â  Â  Â  } finally {
+Â  Â  Â  Â  Â  Â  setLoadingItems(false);
+Â  Â  Â  Â  }
+Â  Â  };
+
+Â  Â  const handleFinalizeCount = async () => {
+Â  Â  Â  Â  setConfirmModal({ isOpen: false });
+Â  Â  Â  Â  const sessionRef = doc(db, 'stocktakes', sessionId);
+Â  Â  Â  Â  await updateDoc(sessionRef, { status: 'completed' });
+Â  Â  Â  Â  setSessionStatus('completed');
+Â  Â  Â  Â  toast.success("ÄÃ£ hoÃ n táº¥t phiÃªn kiá»ƒm kÃª!");
+Â  Â  };
+
+Â  Â  const promptForFinalize = () => {
+Â  Â  Â  Â  const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
+Â  Â  Â  Â  let message = "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.";
+Â  Â  Â  Â  if (uncountedItems > 0) {
+Â  Â  Â  Â  Â  Â  message = `Cáº¢NH BÃO: Váº«n cÃ²n ${uncountedItems} mÃ£ hÃ ng chÆ°a Ä‘Æ°á»£c Ä‘áº¿m. Náº¿u báº¡n hoÃ n táº¥t, sá»‘ lÆ°á»£ng cá»§a chÃºng sáº½ Ä‘Æ°á»£c coi lÃ  0. ` + message;
+Â  Â  Â  Â  }
+Â  Â  Â  Â  setConfirmModal({
+Â  Â  Â  Â  Â  Â  isOpen: true,
+Â  Â  Â  Â  Â  Â  title: "HoÃ n táº¥t phiÃªn kiá»ƒm kÃª?",
+Â  Â  Â  Â  Â  Â  message: message,
+Â  Â  Â  Â  Â  Â  onConfirm: handleFinalizeCount,
+Â  Â  Â  Â  Â  Â  confirmText: "Váº«n hoÃ n táº¥t"
+Â  Â  Â  Â  });
+Â  Â  };
+
+Â  Â  const handleAddUnlistedItem = async (newItem) => {
+Â  Â  Â  Â  const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  const docRef = doc(itemsRef, newItem.lotId);
+Â  Â  Â  Â  Â  Â  await setDoc(docRef, newItem);
+Â  Â  Â  Â  Â  Â  toast.success("ÄÃ£ thÃªm máº·t hÃ ng má»›i vÃ o phiÃªn kiá»ƒm kÃª.");
+            // Táº£i láº¡i trang Ä‘áº§u tiÃªn sau khi thÃªm
+Â  Â  Â  Â  Â  Â  const q = query(collection(db, 'stocktakes', sessionId, 'items'), orderBy('productId'), limit(PAGE_SIZE));
+            // Táº¡o má»™t hÃ m táº¡m Ä‘á»ƒ fetch
+            const fetchAgain = async () => {
+                const docSnapshots = await getDocs(q);
+                const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
+                setItems(itemsList);
+                setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+                setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+                setPage(1);
             }
-        };
-        fetchSessionData();
-        return () => {
-            clearStore();
-        }
-    }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
+            fetchAgain();
+Â  Â  Â  Â  Â  Â  setIsAddItemModalOpen(false);
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  toast.error("CÃ³ lá»—i khi lÆ°u máº·t hÃ ng má»›i, vui lÃ²ng thá»­ láº¡i.");
+Â  Â  Â  Â  }
+Â  Â  };
 
-    const buildItemsQuery = useCallback(() => {
-        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-        let q = query(itemsCollectionRef, orderBy('productId'));
-        if (searchTerm) {
-            const upperSearchTerm = searchTerm.toUpperCase();
-            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
-        }
-        return q;
-    }, [sessionId, searchTerm]);
+Â  Â  const handleAdjustInventory = async () => {
+Â  Â  Â  Â  setConfirmModal({ isOpen: false });
+Â  Â  Â  Â  const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
+Â  Â  Â  Â  if (itemsToAdjust.length === 0) {
+Â  Â  Â  Â  Â  Â  return toast.warn("Vui lÃ²ng chá»n má»¥c Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
+Â  Â  Â  Â  }
+Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  const batch = writeBatch(db);
+Â  Â  Â  Â  Â  Â  const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
+Â  Â  Â  Â  Â  Â  for (const item of itemsToAdjust) {
+Â  Â  Â  Â  Â  Â  Â  Â  const finalCountedQty = item.countedQty ?? 0;
+Â  Â  Â  Â  Â  Â  Â  Â  if (!item.isNew) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
+Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  const newAdjustmentRef = doc(adjustmentsCollectionRef);
+Â  Â  Â  Â  Â  Â  Â  Â  batch.set(newAdjustmentRef, {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  createdAt: serverTimestamp(), stocktakeId: sessionId, productId: item.productId,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productName: item.productName, lotNumber: item.lotNumber, quantityBefore: item.systemQty,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAfter: finalCountedQty, variance: finalCountedQty - item.systemQty,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  reason: `Äiá»u chá»‰nh sau kiá»ƒm kÃª phiÃªn: ${sessionData.name}`
+Â  Â  Â  Â  Â  Â  Â  Â  });
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  const sessionRef = doc(db, 'stocktakes', sessionId);
+Â  Â  Â  Â  Â  Â  batch.update(sessionRef, { status: 'adjusted' });
+Â  Â  Â  Â  Â  Â  await batch.commit();
+Â  Â  Â  Â  Â  Â  setSessionStatus('adjusted');
+Â  Â  Â  Â  Â  Â  toast.success("ÄÃ£ Ä‘iá»u chá»‰nh tá»“n kho thÃ nh cÃ´ng!");
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  toast.error("ÄÃ£ xáº£y ra lá»—i khi Ä‘iá»u chá»‰nh tá»“n kho.");
+Â  Â  Â  Â  }
+Â  Â  };
+Â  Â  
+Â  Â  const promptForAdjust = () => {
+Â  Â  Â  Â  const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
+Â  Â  Â  Â  if (itemsToAdjust.length === 0) return toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t máº·t hÃ ng Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
+Â  Â  Â  Â  setConfirmModal({
+Â  Â  Â  Â  Â  Â  isOpen: true,
+Â  Â  Â  Â  Â  Â  title: "XÃ¡c nháº­n Ä‘iá»u chá»‰nh tá»“n kho?",
+Â  Â  Â  Â  Â  Â  message: `Báº¡n cÃ³ cháº¯c muá»‘n Ä‘iá»u chá»‰nh tá»“n kho cho ${itemsToAdjust.length} máº·t hÃ ng Ä‘Ã£ chá»n khÃ´ng? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.`,
+Â  Â  Â  Â  Â  Â  onConfirm: handleAdjustInventory,
+Â  Â  Â  Â  Â  Â  confirmText: "Äá»“ng Ã½ Ä‘iá»u chá»‰nh"
+Â  Â  Â  Â  });
+Â  Â  };
+Â  Â  
+Â  Â  if (loading) return <Spinner />;
+Â  Â  if (!sessionData) return <div>KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.</div>;
 
-    const fetchItemsPage = useCallback(async (newQuery, isNextPage = false) => {
-        if (!sessionId) return;
+Â  Â  const isSessionInProgress = sessionData.status === 'in_progress';
+
+Â  Â  const handleNextPage = async () => {
+        if (isLastPage) return;
         setLoadingItems(true);
         try {
-            const docSnapshots = await getDocs(newQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data()
-            }));
+            const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+            let q = query(itemsCollectionRef, orderBy('productId'));
+            if (searchTerm) {
+                const upperSearchTerm = searchTerm.toUpperCase();
+                q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+            }
+            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(nextPageQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
+            setItems(itemsList);
             setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
             setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setItems(itemsList);
-            if (!isNextPage) setPage(1);
+            setPage(p => p + 1);
         } catch (error) {
-            console.error("Lá»—i khi táº£i váº­t tÆ° kiá»ƒm kÃª: ", error);
-            toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch váº­t tÆ°.");
+            toast.error("Lá»—i khi táº£i trang tiáº¿p theo.");
         } finally {
             setLoadingItems(false);
         }
-    }, [sessionId, setItems]);
+    };
 
-    useEffect(() => {
-        const q = buildItemsQuery();
+    const handlePrevPage = async () => {
+        // Pagination vá» trang trÆ°á»›c phá»©c táº¡p hÆ¡n vá»›i cursor,
+        // táº¡m thá»i chá»‰ lÃ m chá»©c nÄƒng quay vá» trang Ä‘áº§u
+        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+        let q = query(itemsCollectionRef, orderBy('productId'));
+         if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+        }
         const firstPageQuery = query(q, limit(PAGE_SIZE));
-        const debounce = setTimeout(() => {
-            fetchItemsPage(firstPageQuery);
-        }, 500);
-        return () => clearTimeout(debounce);
-    }, [searchTerm, buildItemsQuery, fetchItemsPage]);
-
-    const handleFinalizeCount = async () => {
-        setConfirmModal({isOpen: false});
-        const sessionRef = doc(db, 'stocktakes', sessionId);
-        await updateDoc(sessionRef, { status: 'completed' });
-        setSessionStatus('completed');
-        toast.success("ÄÃ£ hoÃ n táº¥t phiÃªn kiá»ƒm kÃª!");
-    };
-    
-    const promptForFinalize = () => {
-        const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
-        let message = "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.";
-        if (uncountedItems > 0) {
-            message = `Cáº¢NH BÃO: Váº«n cÃ²n ${uncountedItems} mÃ£ hÃ ng chÆ°a Ä‘Æ°á»£c Ä‘áº¿m. Náº¿u báº¡n hoÃ n táº¥t, sá»‘ lÆ°á»£ng cá»§a chÃºng sáº½ Ä‘Æ°á»£c coi lÃ  0. ` + message;
+        // Gá»i láº¡i logic fetch cá»§a useEffect
+        const fetchFirstPage = async () => {
+             setLoadingItems(true);
+             try {
+                const docSnapshots = await getDocs(firstPageQuery);
+                const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
+                setItems(itemsList);
+                setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+                setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+                setPage(1);
+             } catch(e) { toast.error("Lá»—i khi táº£i láº¡i trang Ä‘áº§u."); }
+             finally { setLoadingItems(false); }
         }
-        setConfirmModal({
-            isOpen: true,
-            title: "HoÃ n táº¥t phiÃªn kiá»ƒm kÃª?",
-            message: message,
-            onConfirm: handleFinalizeCount,
-            confirmText: "Váº«n hoÃ n táº¥t"
-        });
+        fetchFirstPage();
     };
 
-    const handleAddUnlistedItem = async (newItem) => {
-        const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
-        try {
-            const docRef = doc(itemsRef, newItem.lotId);
-            await setDoc(docRef, newItem);
-            toast.success("ÄÃ£ thÃªm máº·t hÃ ng má»›i vÃ o phiÃªn kiá»ƒm kÃª.");
-            const q = buildItemsQuery();
-            const firstPageQuery = query(q, limit(PAGE_SIZE));
-            fetchItemsPage(firstPageQuery);
-            setIsAddItemModalOpen(false);
-        } catch (error) {
-            toast.error("CÃ³ lá»—i khi lÆ°u máº·t hÃ ng má»›i, vui lÃ²ng thá»­ láº¡i.");
-        }
-    };
+Â  Â  return (
+Â  Â  Â  Â  <div className="stocktake-session-page-container">
+Â  Â  Â  Â  Â  Â  <ConfirmationModal 
+Â  Â  Â  Â  Â  Â  Â  Â  isOpen={confirmModal.isOpen} 
+Â  Â  Â  Â  Â  Â  Â  Â  title={confirmModal.title}
+Â  Â  Â  Â  Â  Â  Â  Â  message={confirmModal.message}
+Â  Â  Â  Â  Â  Â  Â  Â  onConfirm={confirmModal.onConfirm}
+Â  Â  Â  Â  Â  Â  Â  Â  onCancel={confirmModal.onCancel ?? (() => setConfirmModal({ isOpen: false }))}
+Â  Â  Â  Â  Â  Â  Â  Â  confirmText={confirmModal.confirmText}
+Â  Â  Â  Â  Â  Â  Â  Â  cancelText={confirmModal.cancelText}
+Â  Â  Â  Â  Â  Â  />
+Â  Â  Â  Â  Â  Â  {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
 
-    const handleAdjustInventory = async () => {
-        setConfirmModal({isOpen: false});
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
-        if (itemsToAdjust.length === 0) {
-            return toast.warn("Vui lÃ²ng chá»n má»¥c Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
-        }
-        try {
-            const batch = writeBatch(db);
-            const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
-            for (const item of itemsToAdjust) {
-                const finalCountedQty = item.countedQty ?? 0;
-                if (!item.isNew) {
-                    const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
-                    batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
-                }
-                const newAdjustmentRef = doc(adjustmentsCollectionRef);
-                batch.set(newAdjustmentRef, {
-                    createdAt: serverTimestamp(), stocktakeId: sessionId, productId: item.productId,
-                    productName: item.productName, lotNumber: item.lotNumber, quantityBefore: item.systemQty,
-                    quantityAfter: finalCountedQty, variance: finalCountedQty - item.systemQty,
-                    reason: `Äiá»u chá»‰nh sau kiá»ƒm kÃª phiÃªn: ${sessionData.name}`
-                });
-            }
-            const sessionRef = doc(db, 'stocktakes', sessionId);
-            batch.update(sessionRef, { status: 'adjusted' });
-            await batch.commit();
-            setSessionStatus('adjusted');
-            toast.success("ÄÃ£ Ä‘iá»u chá»‰nh tá»“n kho thÃ nh cÃ´ng!");
-        } catch (error) {
-            toast.error("ÄÃ£ xáº£y ra lá»—i khi Ä‘iá»u chá»‰nh tá»“n kho.");
-        }
-    };
-    
-    const promptForAdjust = () => {
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
-        if (itemsToAdjust.length === 0) return toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t máº·t hÃ ng Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
-        setConfirmModal({
-            isOpen: true,
-            title: "XÃ¡c nháº­n Ä‘iá»u chá»‰nh tá»“n kho?",
-            message: `Báº¡n cÃ³ cháº¯c muá»‘n Ä‘iá»u chá»‰nh tá»“n kho cho ${itemsToAdjust.length} máº·t hÃ ng Ä‘Ã£ chá»n khÃ´ng? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.`,
-            onConfirm: handleAdjustInventory,
-            confirmText: "Äá»“ng Ã½ Ä‘iá»u chá»‰nh"
-        });
-    };
-    
-    if (loading) return <Spinner />;
-    if (!sessionData) return <div>KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.</div>;
+Â  Â  Â  Â  Â  Â  <div className="page-header">
+Â  Â  Â  Â  Â  Â  Â  Â  <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
+Â  Â  Â  Â  Â  Â  Â  Â  <div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">HoÃ n táº¥t Ä‘áº¿m</button>)}
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  </div>
 
-    const isSessionInProgress = sessionData.status === 'in_progress';
+Â  Â  Â  Â  Â  Â  {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
+Â  Â  Â  Â  Â  Â  Â  Â  Â <div className="form-section">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div><label>Tá»•ng sá»‘ mÃ£ cáº§n Ä‘áº¿m</label><p><strong>{summaryStats.totalItems}</strong></p></div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div><label>Sá»‘ mÃ£ Ä‘Ã£ Ä‘áº¿m</label><p style={{color: 'green'}}><strong>{summaryStats.countedItems}</strong></p></div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div><label>Sá»‘ mÃ£ cÃ³ chÃªnh lá»‡ch</label><p style={{color: 'red'}}><strong>{summaryStats.discrepancies}</strong></p></div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  )}
 
-    return (
-        <div className="stocktake-session-page-container">
-            <ConfirmationModal 
-                isOpen={confirmModal.isOpen} 
-                title={confirmModal.title}
-                message={confirmModal.message}
-                onConfirm={confirmModal.onConfirm}
-                onCancel={confirmModal.onCancel ?? (() => setConfirmModal({ isOpen: false }))}
-                confirmText={confirmModal.confirmText}
-                cancelText={confirmModal.cancelText}
-            />
-            {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
+Â  Â  Â  Â  Â  Â  <div className="controls-container">
+Â  Â  Â  Â  Â  Â  Â  Â  <div className="search-container">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <input 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="text" 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  placeholder="TÃ¬m MÃ£ hÃ ng rá»“i nháº¥n Enter..." 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={searchTerm} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(e) => setSearchTerm(e.target.value)} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onKeyDown={handleSearch} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  className="search-input" />
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  {isSessionInProgress && (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ ThÃªm HÃ ng NgoÃ i DS</button>
+Â  Â  Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  Â  Â  </div>
 
-            <div className="page-header">
-                <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
-                <div>
-                    {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">HoÃ n táº¥t Ä‘áº¿m</button>)}
-                </div>
-            </div>
+Â  Â  Â  Â  Â  Â  {loadingItems ? <Spinner /> : (
+Â  Â  Â  Â  Â  Â  Â  Â  <>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="table-container">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <table className="products-table">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <thead>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>HSD</th><th>ÄVT</th><th>Quy cÃ¡ch</th><th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â {items.map((item) => (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tr key={item.id}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productId}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productName}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.lotNumber || '(KhÃ´ng cÃ³)'}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.expiryDate ? formatDate(item.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.unit}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.packaging}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.systemQty}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <CountInput item={item} onCountSubmit={handleCountSubmit} />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tbody>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </table>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {!searchTerm && (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="pagination-controls">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={handlePrevPage}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiChevronLeft /> Trang Äáº§u
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </button>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <span>Trang {page}</span>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={handleNextPage} disabled={isLastPage}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Trang Tiáº¿p <FiChevronRight />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </button>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  Â  Â  Â  Â  </>
+Â  Â  Â  Â  Â  Â  )}
 
-            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
-                 <div className="form-section">
-                    <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
-                        <div><label>Tá»•ng sá»‘ mÃ£ cáº§n Ä‘áº¿m</label><p><strong>{summaryStats.totalItems}</strong></p></div>
-                        <div><label>Sá»‘ mÃ£ Ä‘Ã£ Ä‘áº¿m</label><p style={{color: 'green'}}><strong>{summaryStats.countedItems}</strong></p></div>
-                        <div><label>Sá»‘ mÃ£ cÃ³ chÃªnh lá»‡ch</label><p style={{color: 'red'}}><strong>{summaryStats.discrepancies}</strong></p></div>
-                    </div>
-                </div>
-            )}
-
-            <div className="controls-container">
-                <div className="search-container">
-                     <input type="text" placeholder="TÃ¬m theo MÃ£ hÃ ng..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
-                </div>
-                {isSessionInProgress && (
-                    <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ ThÃªm HÃ ng NgoÃ i DS</button>
-                )}
-            </div>
-
-            {loadingItems ? <Spinner /> : (
-                <>
-                    <div className="table-container">
-                        <table className="products-table">
-                            <thead>
-                                 <tr>
-                                    <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
-                                    <th>HSD</th><th>ÄVT</th><th>Quy cÃ¡ch</th><th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                 {items.map((item) => (
-        <tr key={item.id}>
-            <td>{item.productId}</td>
-            <td>{item.productName}</td>
-            <td>{item.lotNumber || '(KhÃ´ng cÃ³)'}</td>
-            <td>{item.expiryDate ? formatDate(item.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
-            <td>{item.unit}</td>
-            <td>{item.packaging}</td>
-            <td>{item.systemQty}</td>
-            <td>
-                <CountInput item={item} onCountSubmit={handleCountSubmit} />
-                                        </td>
-                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                     </div>
-                    {!searchTerm && (
-                        <div className="pagination-controls">
-                            <button onClick={() => {
-                                     const q = buildItemsQuery();
-                                     const firstPageQuery = query(q, limit(PAGE_SIZE));
-                                fetchItemsPage(firstPageQuery);
-                            }} disabled={page <= 1}>
-                                <FiChevronLeft /> Trang Äáº§u
-                            </button>
-                             <span>Trang {page}</span>
-                            <button onClick={() => {
-                                const q = buildItemsQuery();
-                                const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-                                fetchItemsPage(nextPageQuery, true);
-                                setPage(p => p + 1);
-                            }} disabled={isLastPage}>
-                                Trang Tiáº¿p <FiChevronRight />
-                            </button>
-                        </div>
-                     )}
-                </>
-            )}
-
-            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
-                <div className="form-section" style={{marginTop: '20px'}}>
-                    <h3 style={{color: '#dc3545'}}>Xá»­ LÃ½ ChÃªnh Lá»‡ch</h3>
-                    {discrepancyItems.length > 0 ? (
-                        <>
-                            <table className="products-table discrepancy-table">
-                                 <thead>
-                                    <tr>
-                                        <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
-                                         <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
-                                        <th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>ChÃªnh lá»‡ch</th>
-                                   </tr>
-                                </thead>
-                                <tbody>
-                                     {discrepancyItems.map(item => (
-                                        <tr key={item.id}>
-                                             <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheckedItem(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
-                                            <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-                                             <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
-                                            <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>
-                                        </tr>
-                                    ))}
-                                 </tbody>
-                            </table>
-                            {sessionData.status !== 'adjusted' && (
-                                 <div className="page-actions">
-                                    <button onClick={promptForAdjust} className="btn-primary">XÃ¡c Nháº­n Äiá»u Chá»‰nh Tá»“n Kho</button>
-                                </div>
-                             )}
-                        </>
-                    ) : <p>KhÃ´ng cÃ³ chÃªnh lá»‡ch nÃ o Ä‘Æ°á»£c ghi nháº­n.</p>
-                    }
-                 </div>
-            )}
-        </div>
-    );
+Â  Â  Â  Â  Â  Â  {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
+Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-section" style={{marginTop: '20px'}}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <h3 style={{color: '#dc3545'}}>Xá»­ LÃ½ ChÃªnh Lá»‡ch</h3>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {discrepancyItems.length > 0 ? (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <table className="products-table discrepancy-table">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <thead>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  _ Â  Â  Â  Â  <tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>ChÃªnh lá»‡ch</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â </tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â {discrepancyItems.map(item => (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tr key={item.id}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheckedItem(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â </tbody>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </table>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {sessionData.status !== 'adjusted' && (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <div className="page-actions">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={promptForAdjust} className="btn-primary">XÃ¡c Nháº­n Äiá»u Chá»‰nh Tá»“n Kho</button>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  _ Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â )}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : <p>KhÃ´ng cÃ³ chÃªnh lá»‡ch nÃ o Ä‘Æ°á»£c ghi nháº­n.</p>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  </div>
+Â  Â  );
 };
 
 export default StocktakeSessionPage;
@@ -9973,6 +10307,7 @@ export default UsersPage;
 // src/services/dashboardService.js
 import { collection, getDocs, query, where, orderBy, limit, Timestamp, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { formatDate } from '../utils/dateUtils';
 
 // --- Báº®T Äáº¦U THÃŠM Láº I CÃC HÃ€M Bá»Š THIáº¾U ---
 
@@ -10178,61 +10513,47 @@ export const getProductLedger = async (productId) => {
     }
 
     const upperProductId = productId.toUpperCase().trim();
-    let openingBalance = 0;
-    const transactions = [];
+    let transactions = [];
 
-    // 1. Láº¥y tá»“n Ä‘áº§u ká»³ tá»« inventory_lots
-    const openingQuery = query(
+    // Láº¥y táº¥t cáº£ cÃ¡c lÃ´ hÃ ng (bao gá»“m tá»“n Ä‘áº§u ká»³ vÃ  cÃ¡c láº§n nháº­p)
+    const allLotsQuery = query(
         collection(db, 'inventory_lots'),
-        where('productId', '==', upperProductId),
-        where('supplierName', '==', 'Tá»“n Ä‘áº§u ká»³')
+        where('productId', '==', upperProductId)
     );
 
-    // 2. Láº¥y táº¥t cáº£ phiáº¿u nháº­p Ä‘Ã£ hoÃ n thÃ nh
-    const importQuery = query(
-        collection(db, 'import_tickets'),
-        where('status', '==', 'completed'),
-        where('productIds', 'array-contains', upperProductId)
-    );
-
-    // 3. Láº¥y táº¥t cáº£ phiáº¿u xuáº¥t Ä‘Ã£ hoÃ n thÃ nh
+    // Láº¥y táº¥t cáº£ cÃ¡c phiáº¿u xuáº¥t Ä‘Ã£ hoÃ n thÃ nh
     const exportQuery = query(
         collection(db, 'export_tickets'),
         where('status', '==', 'completed'),
         where('productIds', 'array-contains', upperProductId)
     );
 
-    const [openingSnap, importSnap, exportSnap] = await Promise.all([
-        getDocs(openingQuery),
-        getDocs(importQuery),
+    const [allLotsSnap, exportSnap] = await Promise.all([
+        getDocs(allLotsQuery),
         getDocs(exportQuery)
     ]);
 
-    // Xá»­ lÃ½ tá»“n Ä‘áº§u ká»³
-    openingSnap.forEach(doc => {
-        openingBalance += Number(doc.data().quantityImported);
-    });
-
-    // Xá»­ lÃ½ phiáº¿u nháº­p
-    importSnap.forEach(doc => {
-        const slip = doc.data();
-        slip.items.forEach(item => {
-            if (item.productId === upperProductId) {
-                transactions.push({
-                    date: slip.createdAt.toDate(),
-                    docId: doc.id,
-                    type: 'NHáº¬P',
-                    description: `Nháº­p hÃ ng tá»«: ${slip.supplierName}`,
-                    importQty: Number(item.quantity),
-                    exportQty: 0,
-                    lotNumber: item.lotNumber,   // <-- THÃŠM Má»šI
-                    expiryDate: item.expiryDate  // <-- THÃŠM Má»šI
-                });
-            }
+    // Xá»­ lÃ½ táº¥t cáº£ cÃ¡c láº§n nháº­p kho
+    allLotsSnap.forEach(doc => {
+        const lot = doc.data();
+        // Sá»¬A Láº I: Kiá»ƒm tra cáº£ `supplier` vÃ  `supplierName`
+        const isOpeningStock = lot.supplierName === 'Tá»“n Ä‘áº§u ká»³' || lot.supplier === 'Tá»“n Ä‘áº§u ká»³';
+        
+        transactions.push({
+            date: lot.importDate.toDate(),
+            docId: doc.id,
+            isLot: true,
+            type: 'NHáº¬P',
+            // Sá»¬A Láº I: DÃ¹ng biáº¿n isOpeningStock Ä‘á»ƒ xÃ¡c Ä‘á»‹nh description
+            description: isOpeningStock ? 'Nháº­p tá»“n kho Ä‘áº§u ká»³' : `Nháº­p tá»«: ${lot.supplierName || lot.supplier || '(KhÃ´ng rÃµ)'}`,
+            importQty: Number(lot.quantityImported),
+            exportQty: 0,
+            lotNumber: lot.lotNumber,
+            expiryDate: lot.expiryDate ? formatDate(lot.expiryDate) : ''
         });
     });
 
-    // Xá»­ lÃ½ phiáº¿u xuáº¥t
+    // Xá»­ lÃ½ táº¥t cáº£ cÃ¡c láº§n xuáº¥t kho
     exportSnap.forEach(doc => {
         const slip = doc.data();
         slip.items.forEach(item => {
@@ -10240,29 +10561,41 @@ export const getProductLedger = async (productId) => {
                 transactions.push({
                     date: slip.createdAt.toDate(),
                     docId: doc.id,
+                    isTicket: true,
                     type: 'XUáº¤T',
-                    description: `Xuáº¥t hÃ ng cho: ${slip.customer}`,
+                    description: `Xuáº¥t cho: ${slip.customer}`,
                     importQty: 0,
                     exportQty: Number(item.quantityToExport || item.quantityExported),
-                    lotNumber: item.lotNumber,   // <-- THÃŠM Má»šI
-                    expiryDate: item.expiryDate  // <-- THÃŠM Má»šI
+                    lotNumber: item.lotNumber,
+                    expiryDate: item.expiryDate
                 });
             }
         });
     });
 
-    // Sáº¯p xáº¿p táº¥t cáº£ giao dá»‹ch theo ngÃ y
-    transactions.sort((a, b) => a.date - b.date);
+    // Sáº¯p xáº¿p táº¥t cáº£ giao dá»‹ch theo ngÃ y thÃ¡ng
+    transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    // TÃ­nh toÃ¡n sá»‘ dÆ° tá»“n kho qua tá»«ng giao dá»‹ch
-    let currentBalance = openingBalance;
+    // --- LOGIC TÃNH TOÃN CUá»I CÃ™NG ---
+    let openingBalance = 0;
     let totalImport = 0;
     let totalExport = 0;
-    const ledgerRows = transactions.map(tx => {
-        currentBalance = currentBalance + tx.importQty - tx.exportQty;
-        totalImport += tx.importQty;
-        totalExport += tx.exportQty;
-        return { ...tx, balance: currentBalance };
+    let currentBalance = 0;
+
+    const openingTxns = transactions.filter(tx => tx.description === 'Nháº­p tá»“n kho Ä‘áº§u ká»³');
+    openingBalance = openingTxns.reduce((sum, tx) => sum + tx.importQty, 0);
+
+    const inPeriodImports = transactions.filter(tx => tx.type === 'NHáº¬P' && tx.description !== 'Nháº­p tá»“n kho Ä‘áº§u ká»³');
+    totalImport = inPeriodImports.reduce((sum, tx) => sum + tx.importQty, 0);
+
+    const inPeriodExports = transactions.filter(tx => tx.type === 'XUáº¤T');
+    totalExport = inPeriodExports.reduce((sum, tx) => sum + tx.exportQty, 0);
+    
+    const ledgerRows = [];
+    currentBalance = 0;
+    transactions.forEach(tx => {
+        currentBalance += (tx.importQty - tx.exportQty);
+        ledgerRows.push({ ...tx, balance: currentBalance });
     });
 
     return {
@@ -11204,10 +11537,15 @@ export default useStocktakeStore;
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
+  display: grid; 
+  grid-template-columns: 1fr 1fr 1fr; 
   gap: 10px;
   margin-top: 20px;
+}
+
+/* THÃŠM KHá»I MÃƒ NÃ€Y VÃ€O */
+.modal-actions button {
+    width: 100%; /* Buá»™c nÃºt pháº£i láº¥p Ä‘áº§y chiá»u rá»™ng cá»§a cá»™t chá»©a nÃ³ */
 }
 
 /* THÃŠM ÄOáº N MÃƒ NÃ€Y VÃ€O */
@@ -12091,6 +12429,11 @@ tbody tr.selected-row td {
 .date-input-wrapper input[type="date"]::-webkit-inner-spin-button,
 .date-input-wrapper input[type="date"]::-webkit-clear-button {
   z-index: 1;
+}
+
+/* --- Äá»’NG Bá»˜ KÃCH THÆ¯á»šC CÃC NÃšT TRONG MODAL ACTIONS --- */
+.modal-actions button {
+    flex: 1; /* Buá»™c má»—i nÃºt chiáº¿m má»™t pháº§n khÃ´ng gian báº±ng nhau */
 }
 
 /* --- CSS CHO GIAO DIá»†N RESPONSIVE TRÃŠN DI Äá»˜NG --- */
@@ -13220,6 +13563,25 @@ export const getRowColorByExpiry = (expiryDate) => {
     if (diffDays <= 90) return 'near-expiry-orange';
     if (diffDays <= 120) return 'near-expiry-yellow';
     return '';
+};
+
+/**
+ * Tráº£ vá» má»™t chuá»—i tiá»n tá»‘ cáº£nh bÃ¡o dá»±a trÃªn ngÃ y háº¿t háº¡n.
+ * @param {object} expiryDate - Äá»‘i tÆ°á»£ng Timestamp cá»§a Firebase.
+ * @returns {string} - Chuá»—i tiá»n tá»‘ cáº£nh bÃ¡o (vÃ­ dá»¥: 'âš ï¸ Cáº¬N DATE - ').
+ */
+export const getExpiryStatusPrefix = (expiryDate) => {
+  if (!expiryDate || !expiryDate.toDate) return '';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expDate = expiryDate.toDate();
+  const diffTime = expDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return 'âŒ - ';
+  if (diffDays <= 120) return 'âš ï¸ - ';
+  return '';
 };
 
 

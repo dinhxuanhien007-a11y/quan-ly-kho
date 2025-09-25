@@ -31,6 +31,7 @@ const InventoryPage = ({ pageTitle }) => {
     // Quay lại truy vấn gốc, chỉ sắp xếp theo Mã hàng và Ngày nhập
     let q = query(
         collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
         orderBy("productId", "asc"),
         orderBy("importDate", "asc")
     );

@@ -1,12 +1,13 @@
 // src/pages/NewExportPage.jsx
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
+import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useExportSlipStore from '../stores/exportSlipStore';
@@ -80,23 +81,24 @@ const disabledReason = useMemo(() => {
         fetchCustomers();
     }, []);
 
-    const handleCustomerSearch = async () => {
-        if (!customerId) {
-            setCustomer(customerId, '');
+    const handleCustomerSearch = async (idToSearch) => { 
+        if (!idToSearch) {
+            setCustomer(idToSearch, '');
             return;
         }
         try {
-            const partnerRef = doc(db, 'partners', customerId.toUpperCase());
+            // SỬA LẠI: Dùng idToSearch thay vì customerId
+            const partnerRef = doc(db, 'partners', idToSearch.toUpperCase()); 
             const partnerSnap = await getDoc(partnerRef);
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
-                setCustomer(customerId, partnerSnap.data().partnerName);
+                setCustomer(idToSearch, partnerSnap.data().partnerName);
             } else {
-                setCustomer(customerId, '');
-                toast.error(`Không tìm thấy Khách hàng với mã "${customerId}"`);
+                setCustomer(idToSearch, '');
+                toast.error(`Không tìm thấy Khách hàng với mã "${idToSearch}"`);
             }
         } catch (error) {
             console.error("Lỗi khi tìm khách hàng:", error);
-            setCustomer(customerId, '');
+            setCustomer(idToSearch, '');
         }
     };
 
@@ -296,33 +298,19 @@ const disabledReason = useMemo(() => {
         style={{backgroundColor: '#f0f0f0'}} 
     />
 </div>
-                    <div className="form-group">
-                        <label>Mã Khách Hàng (*)</label>
-                        <input
-                            list="customers-list"
-                            type="text"
-                            placeholder="Nhập hoặc chọn mã KH..."
-                            value={customerId}
-                            onChange={e => setCustomer(e.target.value.toUpperCase(), customerName)}
-                            onBlur={handleCustomerSearch}
-                        />
-                        <datalist id="customers-list">
-                            {allCustomers.map(cus => (
-                                <option key={cus.id} value={cus.id}>
-                                    {cus.partnerName}
-                                </option>
-                            ))}
-                        </datalist>
-                    </div>
-                    <div className="form-group">
-                        <label>Tên Khách Hàng / Nơi nhận (*)</label>
-                        <input
-                            type="text"
-                            value={customerName}
-                            readOnly
-                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
-                        />
-                    </div>
+                    <div className="form-group" style={{ flex: 2 }}>
+        <label>Khách hàng (*)</label>
+        <CustomerAutocomplete
+        value={customerName || customerId}
+        onSelect={({ id, name }) => {
+            setCustomer(id, name);
+            if (!id && name) { // Nếu người dùng đang gõ mà chưa chọn
+                setCustomer(name, '');
+            }
+        }}
+    />
+</div>
+                    
                 </div>
                 <div className="form-group">
                     <label>Diễn giải</label>
@@ -372,10 +360,10 @@ const disabledReason = useMemo(() => {
                                 >
                                      <option value="">-- Chọn lô tồn kho --</option>
                                     {item.availableLots.map(lot => (
-                                        <option key={lot.id} value={lot.id}>
-                                            {`Lô: ${lot.lotNumber || '(Không có)'} | HSD: ${formatDate(lot.expiryDate)} | Tồn: ${formatNumber(lot.quantityRemaining)}`}
-                                        </option>
-                                    ))}
+    <option key={lot.id} value={lot.id}>
+        {`${getExpiryStatusPrefix(lot.expiryDate)}Lô: ${lot.lotNumber || '(Không có)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'} | Tồn: ${formatNumber(lot.quantityRemaining)}`}
+    </option>
+))}
                                 </select>
                             )}
                         </div>

@@ -1,6 +1,7 @@
 // src/services/dashboardService.js
 import { collection, getDocs, query, where, orderBy, limit, Timestamp, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { formatDate } from '../utils/dateUtils';
 
 // --- BẮT ĐẦU THÊM LẠI CÁC HÀM BỊ THIẾU ---
 
@@ -206,61 +207,47 @@ export const getProductLedger = async (productId) => {
     }
 
     const upperProductId = productId.toUpperCase().trim();
-    let openingBalance = 0;
-    const transactions = [];
+    let transactions = [];
 
-    // 1. Lấy tồn đầu kỳ từ inventory_lots
-    const openingQuery = query(
+    // Lấy tất cả các lô hàng (bao gồm tồn đầu kỳ và các lần nhập)
+    const allLotsQuery = query(
         collection(db, 'inventory_lots'),
-        where('productId', '==', upperProductId),
-        where('supplierName', '==', 'Tồn đầu kỳ')
+        where('productId', '==', upperProductId)
     );
 
-    // 2. Lấy tất cả phiếu nhập đã hoàn thành
-    const importQuery = query(
-        collection(db, 'import_tickets'),
-        where('status', '==', 'completed'),
-        where('productIds', 'array-contains', upperProductId)
-    );
-
-    // 3. Lấy tất cả phiếu xuất đã hoàn thành
+    // Lấy tất cả các phiếu xuất đã hoàn thành
     const exportQuery = query(
         collection(db, 'export_tickets'),
         where('status', '==', 'completed'),
         where('productIds', 'array-contains', upperProductId)
     );
 
-    const [openingSnap, importSnap, exportSnap] = await Promise.all([
-        getDocs(openingQuery),
-        getDocs(importQuery),
+    const [allLotsSnap, exportSnap] = await Promise.all([
+        getDocs(allLotsQuery),
         getDocs(exportQuery)
     ]);
 
-    // Xử lý tồn đầu kỳ
-    openingSnap.forEach(doc => {
-        openingBalance += Number(doc.data().quantityImported);
-    });
-
-    // Xử lý phiếu nhập
-    importSnap.forEach(doc => {
-        const slip = doc.data();
-        slip.items.forEach(item => {
-            if (item.productId === upperProductId) {
-                transactions.push({
-                    date: slip.createdAt.toDate(),
-                    docId: doc.id,
-                    type: 'NHẬP',
-                    description: `Nhập hàng từ: ${slip.supplierName}`,
-                    importQty: Number(item.quantity),
-                    exportQty: 0,
-                    lotNumber: item.lotNumber,   // <-- THÊM MỚI
-                    expiryDate: item.expiryDate  // <-- THÊM MỚI
-                });
-            }
+    // Xử lý tất cả các lần nhập kho
+    allLotsSnap.forEach(doc => {
+        const lot = doc.data();
+        // SỬA LẠI: Kiểm tra cả `supplier` và `supplierName`
+        const isOpeningStock = lot.supplierName === 'Tồn đầu kỳ' || lot.supplier === 'Tồn đầu kỳ';
+        
+        transactions.push({
+            date: lot.importDate.toDate(),
+            docId: doc.id,
+            isLot: true,
+            type: 'NHẬP',
+            // SỬA LẠI: Dùng biến isOpeningStock để xác định description
+            description: isOpeningStock ? 'Nhập tồn kho đầu kỳ' : `Nhập từ: ${lot.supplierName || lot.supplier || '(Không rõ)'}`,
+            importQty: Number(lot.quantityImported),
+            exportQty: 0,
+            lotNumber: lot.lotNumber,
+            expiryDate: lot.expiryDate ? formatDate(lot.expiryDate) : ''
         });
     });
 
-    // Xử lý phiếu xuất
+    // Xử lý tất cả các lần xuất kho
     exportSnap.forEach(doc => {
         const slip = doc.data();
         slip.items.forEach(item => {
@@ -268,29 +255,41 @@ export const getProductLedger = async (productId) => {
                 transactions.push({
                     date: slip.createdAt.toDate(),
                     docId: doc.id,
+                    isTicket: true,
                     type: 'XUẤT',
-                    description: `Xuất hàng cho: ${slip.customer}`,
+                    description: `Xuất cho: ${slip.customer}`,
                     importQty: 0,
                     exportQty: Number(item.quantityToExport || item.quantityExported),
-                    lotNumber: item.lotNumber,   // <-- THÊM MỚI
-                    expiryDate: item.expiryDate  // <-- THÊM MỚI
+                    lotNumber: item.lotNumber,
+                    expiryDate: item.expiryDate
                 });
             }
         });
     });
 
-    // Sắp xếp tất cả giao dịch theo ngày
-    transactions.sort((a, b) => a.date - b.date);
+    // Sắp xếp tất cả giao dịch theo ngày tháng
+    transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    // Tính toán số dư tồn kho qua từng giao dịch
-    let currentBalance = openingBalance;
+    // --- LOGIC TÍNH TOÁN CUỐI CÙNG ---
+    let openingBalance = 0;
     let totalImport = 0;
     let totalExport = 0;
-    const ledgerRows = transactions.map(tx => {
-        currentBalance = currentBalance + tx.importQty - tx.exportQty;
-        totalImport += tx.importQty;
-        totalExport += tx.exportQty;
-        return { ...tx, balance: currentBalance };
+    let currentBalance = 0;
+
+    const openingTxns = transactions.filter(tx => tx.description === 'Nhập tồn kho đầu kỳ');
+    openingBalance = openingTxns.reduce((sum, tx) => sum + tx.importQty, 0);
+
+    const inPeriodImports = transactions.filter(tx => tx.type === 'NHẬP' && tx.description !== 'Nhập tồn kho đầu kỳ');
+    totalImport = inPeriodImports.reduce((sum, tx) => sum + tx.importQty, 0);
+
+    const inPeriodExports = transactions.filter(tx => tx.type === 'XUẤT');
+    totalExport = inPeriodExports.reduce((sum, tx) => sum + tx.exportQty, 0);
+    
+    const ledgerRows = [];
+    currentBalance = 0;
+    transactions.forEach(tx => {
+        currentBalance += (tx.importQty - tx.exportQty);
+        ledgerRows.push({ ...tx, balance: currentBalance });
     });
 
     return {

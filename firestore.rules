@@ -7,12 +7,7 @@ service cloud.firestore {
     function isOwner() {
       return request.auth.token.role == 'owner';
     }
-    function isManager() {
-      return request.auth.token.role == 'manager';
-    }
-    function isOwnerOrManager() {
-      return isOwner() || isManager();
-    }
+    // Bỏ hàm isManager() không dùng đến để cho gọn
     function isSignedIn() {
       return request.auth != null;
     }
@@ -23,13 +18,12 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow list: if isOwnerOrManager();
+      allow list: if isOwner(); // Chỉ owner mới được list
       allow read: if isSignedIn() && (request.auth.uid == userId || isOwner());
       allow write: if isOwner();
     }
 
     // --- DỮ LIỆU CỐT LÕI ---
-    // (Đã tách thành các match riêng biệt)
     match /products/{docId} {
       allow read: if isSignedIn();
       allow write: if isOwner();
@@ -43,40 +37,38 @@ service cloud.firestore {
       allow write: if isOwner();
     }
     match /product_summaries/{docId} {
-  allow read: if isSignedIn();
-  allow write: if false; // Chặn ghi từ client, kể cả owner
-}
+      allow read: if isSignedIn();
+      allow write: if false; // Chặn ghi từ client, kể cả owner
+    }
 
     // --- PHIẾU NHẬP/XUẤT ---
-    // (Đã tách thành các match riêng biệt)
     match /import_tickets/{ticketId} {
-      allow read: if isOwnerOrManager();
+      allow read: if isOwner();
       allow write: if isOwner();
     }
     match /export_tickets/{ticketId} {
-      allow read: if isOwnerOrManager();
+      allow read: if isOwner();
       allow write: if isOwner();
     }
     
     // --- DỮ LIỆU DASHBOARD ---
-    // (Đã tách thành các match riêng biệt)
     match /dailyActivity/{docId} {
-        allow read: if isOwnerOrManager();
+        allow read: if isOwner();
         allow write: if false;
     }
     match /dashboardStats/{docId} {
-        allow read: if isOwnerOrManager();
+        allow read: if isOwner();
         allow write: if false;
     }
 
     // --- CẢNH BÁO & KIỂM KÊ ---
+    // Gộp 2 rule cũ thành 1 rule đúng duy nhất
     match /notifications/{notificationId} {
-      allow read, write: if isOwner();
+      allow read, write, delete: if isOwner();
     }
     
     match /stocktakes/{sessionId} {
       allow read, write: if isOwner();
-      // Áp dụng cho sub-collection items bên trong
       match /items/{itemId} {
         allow read, write: if isOwner();
       }
@@ -87,5 +79,6 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isOwner();
     }
-  }
+
+  } // Đóng match /databases/{database}/documents
 }

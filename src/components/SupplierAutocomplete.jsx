@@ -1,4 +1,4 @@
-// src/components/CustomerAutocomplete.jsx
+// src/components/SupplierAutocomplete.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore'; 
@@ -7,9 +7,11 @@ import styles from './Autocomplete.module.css';
 import { FiChevronDown } from 'react-icons/fi';
 import { normalizeString } from '../utils/stringUtils';
 
-const CustomerAutocomplete = ({ value, onSelect }) => {
+// Đổi tên component
+const SupplierAutocomplete = ({ value, onSelect }) => {
     const [suggestions, setSuggestions] = useState([]);
-    const [allCustomers, setAllCustomers] = useState([]);
+    // Đổi tên state
+    const [allSuppliers, setAllSuppliers] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -20,22 +22,24 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
     const suggestionsRef = useRef(null);
 
     useEffect(() => {
-        const fetchCustomers = async () => {
+        // Logic lấy dữ liệu nhà cung cấp
+        const fetchSuppliers = async () => {
             try {
                 setIsLoading(true);
-                const q = query(collection(db, 'partners'), where("partnerType", "==", "customer"));
+                // SỬA LẠI: Truy vấn "supplier" thay vì "customer"
+                const q = query(collection(db, 'partners'), where("partnerType", "==", "supplier"));
                 const querySnapshot = await getDocs(q);
-                const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setAllCustomers(customerList);
+                const supplierList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAllSuppliers(supplierList);
                 setError(null);
             } catch (err) {
-                console.error("Lỗi khi tải danh sách khách hàng:", err);
-                setError("Không thể tải danh sách khách hàng.");
+                console.error("Lỗi khi tải danh sách nhà cung cấp:", err);
+                setError("Không thể tải danh sách nhà cung cấp.");
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchCustomers();
+        fetchSuppliers();
     }, []);
 
     useEffect(() => {
@@ -64,18 +68,18 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
         
         if (inputValue.length > 0) {
             const normalizedInput = normalizeString(inputValue);
-            const filteredSuggestions = allCustomers.filter(customer =>
-                normalizeString(customer.partnerName).includes(normalizedInput)
+            const filteredSuggestions = allSuppliers.filter(supplier =>
+                normalizeString(supplier.partnerName).includes(normalizedInput)
             );
             setSuggestions(filteredSuggestions);
         } else {
-            setSuggestions(allCustomers.slice(0, 10)); 
+            setSuggestions(allSuppliers.slice(0, 10)); 
         }
         setShowSuggestions(true);
     };
 
-    const handleSuggestionClick = (customer) => {
-        onSelect({ id: customer.id, name: customer.partnerName });
+    const handleSuggestionClick = (supplier) => {
+        onSelect({ id: supplier.id, name: supplier.partnerName });
         setShowSuggestions(false);
         setActiveIndex(-1);
     };
@@ -107,19 +111,20 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
     }
 }, [activeIndex, suggestions, showSuggestions, handleSuggestionClick]);
 
+
     const SuggestionsPortal = () => createPortal(
         <ul ref={suggestionsRef} className={styles.suggestionsList} style={{ width: `${inputRef.current?.offsetWidth}px` }}>
             {isLoading && <li className={styles.feedback}>Đang tải...</li>}
             {error && <li className={styles.feedback}>{error}</li>}
             {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>Không tìm thấy kết quả</li>}
             
-            {!isLoading && !error && suggestions.map((customer, index) => (
+            {!isLoading && !error && suggestions.map((supplier, index) => (
                 <li 
-                    key={customer.id} 
+                    key={supplier.id} 
                     className={index === activeIndex ? styles.activeSuggestion : ''}
-                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(customer); }}
+                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(supplier); }}
                 >
-                    <strong>{customer.partnerName}</strong> - <span>{customer.id}</span>
+                    <strong>{supplier.partnerName}</strong> - <span>{supplier.id}</span>
                 </li>
             ))}
         </ul>,
@@ -135,7 +140,7 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleKeyDown}
-                placeholder="Gõ để tìm khách hàng..."
+                placeholder="Gõ để tìm nhà cung cấp..." // SỬA LẠI
                 onFocus={handleInputChange}
             />
             <FiChevronDown className={styles.arrowIcon} />
@@ -144,4 +149,4 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
     );
 };
 
-export default CustomerAutocomplete;
+export default SupplierAutocomplete;

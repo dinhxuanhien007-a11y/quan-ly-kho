@@ -95,3 +95,22 @@ export const getRowColorByExpiry = (expiryDate) => {
     if (diffDays <= 120) return 'near-expiry-yellow';
     return '';
 };
+
+/**
+ * Trả về một chuỗi tiền tố cảnh báo dựa trên ngày hết hạn.
+ * @param {object} expiryDate - Đối tượng Timestamp của Firebase.
+ * @returns {string} - Chuỗi tiền tố cảnh báo (ví dụ: '⚠️ CẬN DATE - ').
+ */
+export const getExpiryStatusPrefix = (expiryDate) => {
+  if (!expiryDate || !expiryDate.toDate) return '';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expDate = expiryDate.toDate();
+  const diffTime = expDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return '❌ - ';
+  if (diffDays <= 120) return '⚠️ - ';
+  return '';
+};

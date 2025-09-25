@@ -1,6 +1,7 @@
 // src/pages/NewImportPage.jsx
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
+import SupplierAutocomplete from '../components/SupplierAutocomplete';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
@@ -148,11 +149,11 @@ const disabledReason = useMemo(() => {
 };
     }
 
-    const handleSupplierSearch = async () => {
-        if (!supplierId) {
-            setSupplier(supplierId, '');
-            return;
-        }
+    const handleSupplierSearch = async (idToSearch = supplierId) => {
+    if (!idToSearch) {
+        setSupplier(idToSearch, '');
+        return;
+    }
         try {
             const partnerRef = doc(db, 'partners', supplierId.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
@@ -333,36 +334,34 @@ const disabledReason = useMemo(() => {
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-                        <label>Ngày nhập</label>
-                        <input type="text" value={formatDate(new Date())} readOnly style={{backgroundColor: '#f0f0f0'}} />
-                    </div>
-                    <div className="form-group">
-                        <label>Mã Nhà Cung Cấp (*)</label>
-                        <input 
-                            list="suppliers-list"
-                            type="text" 
-                            placeholder="Nhập hoặc chọn mã NCC..." 
-                            value={supplierId} 
-                            onChange={e => setSupplier(e.target.value.toUpperCase(), '')}
-                            onBlur={handleSupplierSearch}
-                        />
-                         <datalist id="suppliers-list">
-                            {allSuppliers.map(sup => (
-                                <option key={sup.id} value={sup.id}>
-                                    {sup.partnerName}
-                                </option>
-                            ))}
-                        </datalist>
-                    </div>
-                    <div className="form-group">
-                         <label>Tên Nhà Cung Cấp (*)</label>
-                         <input 
-                            type="text" 
-                            value={supplierName} 
-                            readOnly 
-                            style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
-                        />
-                    </div>
+            <label>Ngày nhập</label>
+            <input 
+                type="text" 
+                value={formatDate(new Date())} 
+                readOnly 
+                style={{backgroundColor: '#f0f0f0'}} 
+            />
+        </div>
+                    <div className="form-group" style={{ flex: 2 }}>
+        <label>Nhà Cung Cấp (*)</label>
+        <SupplierAutocomplete
+        value={supplierName || supplierId}
+        onSelect={({ id, name }) => {
+            setSupplier(id, name);
+            // Nếu người dùng chỉ gõ mà chưa chọn, ta cập nhật mã NCC bằng text họ gõ
+            if (!id && name) { 
+                setSupplier(name, '');
+            }
+        }}
+        // Thêm prop onBlur để chỉ tìm kiếm khi người dùng bấm ra ngoài
+        onBlur={() => {
+            // Chỉ tìm kiếm nếu chưa có mã NCC được chọn từ danh sách
+            if (!supplierId && supplierName) {
+                handleSupplierSearch(supplierName);
+            }
+        }}
+    />
+</div>
                 </div>
                 <div className="form-group">
                     <label>Diễn giải</label>

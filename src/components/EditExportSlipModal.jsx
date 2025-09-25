@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiXCircle } from 'react-icons/fi';
+import { FiXCircle, FiPlusCircle, FiCalendar } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
@@ -59,6 +59,25 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
         setSlipData({ ...slipData, items: newItems });
     };
 
+    const addNewRow = () => {
+        const newRow = {
+            id: Date.now(), // Tạo một ID tạm thời duy nhất
+            productId: '',
+            productName: '',
+            lotNumber: '',
+            unit: '',
+            packaging: '',
+            quantityToExport: '',
+            notes: '',
+            quantityRemaining: 0 // Mặc định tồn kho là 0 cho dòng mới
+        };
+
+        setSlipData(prev => ({
+            ...prev,
+            items: [...prev.items, newRow]
+        }));
+    };
+
     // === ĐÃ DI CHUYỂN RA NGOÀI ĐÚNG VỊ TRÍ ===
     const handleSaveChanges = () => {
         const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
@@ -95,14 +114,17 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                 <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
                     <div className="form-row">
                         <div className="form-group">
-                            <label>Ngày xuất (*)</label>
-                            <input 
-                                type="date"
-                                value={dateToInputValue(slipData.exportDate)}
-                                onChange={(e) => handleInfoChange('exportDate', e.target.value)}
-                                min={new Date().toISOString().split('T')[0]}
-                            />
-                        </div>
+    <label>Ngày xuất (*)</label>
+    <div className="date-input-wrapper">
+        <input 
+            type="date"
+            value={dateToInputValue(slipData.exportDate)}
+            onChange={(e) => handleInfoChange('exportDate', e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+        />
+        <FiCalendar className="date-input-icon" />
+    </div>
+</div>
                         <div className="form-group">
                             <label>Khách hàng</label>
                             <input type="text" value={slipData.customer} readOnly disabled />
@@ -118,6 +140,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                     </div>
                 </div>
 
+                <div className="modal-body">
                 <h3>Chi tiết hàng hóa</h3>
                 <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 1.5fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
                     <div className="grid-header">Mã hàng</div>
@@ -153,8 +176,12 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                         </React.Fragment>
                     ))}
                 </div>
-
+        </div>
+        
                 <div className="modal-actions">
+                    <button type="button" onClick={addNewRow} className="btn-secondary">
+                Thêm dòng
+            </button>
                     <button type="button" onClick={onClose} className="btn-secondary">Đóng</button>
                     <button type="button" onClick={handleSaveChanges} className="btn-primary">Lưu thay đổi</button>
                 </div>

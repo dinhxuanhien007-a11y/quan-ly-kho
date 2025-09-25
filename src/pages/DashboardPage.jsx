@@ -1,5 +1,6 @@
 // src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { 
     getDashboardStats, 
     getRecentCompletedImports, 
@@ -17,6 +18,10 @@ import Spinner from '../components/Spinner';
 import '../styles/Dashboard.css';
 import { Link } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
+import { doc, getDoc } from 'firebase/firestore'; // Thêm getDoc và doc
+import { db } from '../firebaseConfig'; // Thêm db
+import ViewImportSlipModal from '../components/ViewImportSlipModal'; // Thêm modal phiếu nhập
+import ViewExportSlipModal from '../components/ViewExportSlipModal'; // Thêm modal phiếu xuất
 
 const DashboardPage = () => {
     const [stats, setStats] = useState({});
@@ -26,6 +31,36 @@ const DashboardPage = () => {
     const [pendingImports, setPendingImports] = useState([]);
     const [pendingExports, setPendingExports] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // --- BẮT ĐẦU THÊM CODE MỚI ---
+    const [viewModal, setViewModal] = useState({ isOpen: false, slip: null, type: '' });
+
+    const handleViewSlip = async (slipId, slipType) => {
+        const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
+        toast.info("Đang tải chi tiết phiếu...");
+        try {
+            const docRef = doc(db, collectionName, slipId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                setViewModal({ 
+                    isOpen: true, 
+                    slip: { id: docSnap.id, ...docSnap.data() }, 
+                    type: slipType 
+                });
+            } else {
+                toast.error("Không tìm thấy chi tiết của phiếu này.");
+            }
+        } catch (error) {
+            toast.error("Lỗi khi tải chi tiết phiếu.");
+            console.error(error);
+        }
+    };
+
+    const closeViewModal = () => {
+        setViewModal({ isOpen: false, slip: null, type: '' });
+    };
+    // --- KẾT THÚC THÊM CODE MỚI ---
 
     useEffect(() => {
         const fetchData = async () => {
@@ -62,7 +97,7 @@ const DashboardPage = () => {
         fetchData();
     }, []);
 
-    const PendingList = ({ title, tickets, type }) => (
+    const PendingList = ({ title, tickets, type, onView }) => ( // Thêm "onView"
         <div className="card">
             <h3>{title} ({tickets.length})</h3>
             {loading ? (
@@ -81,13 +116,16 @@ const DashboardPage = () => {
                             {tickets.map(ticket => (
                                 <tr key={ticket.id}>
                                     <td>
-                                        <Link to={`/${type}s`} className="table-link">{ticket.id}</Link>
-                                    </td>
-                                    <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
-                                    <td>{formatDate(ticket.createdAt)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
+                        {/* THAY THẾ <Link> BẰNG <button> */}
+                        <button onClick={() => onView(ticket.id, type)} className="btn-link table-link">
+                            {ticket.id}
+                        </button>
+                    </td>
+                    <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
+                    <td>{formatDate(ticket.createdAt)}</td>
+                </tr>
+            ))}
+        </tbody>
                     </table>
                 </div>
             ) : (
@@ -98,6 +136,14 @@ const DashboardPage = () => {
 
     return (
         <div className="dashboard-container">
+            {/* --- BẮT ĐẦU THÊM CODE MỚI --- */}
+        {viewModal.isOpen && viewModal.type === 'import' && (
+            <ViewImportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
+        )}
+        {viewModal.isOpen && viewModal.type === 'export' && (
+            <ViewExportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
+        )}
+        {/* --- KẾT THÚC THÊM CODE MỚI --- */}
             <div className="dashboard-header">
                 <h1>Tổng Quan</h1>
             </div>
@@ -117,14 +163,14 @@ const DashboardPage = () => {
                     </div>
                     
                     <div className="table-grid">
-                        <PendingList title="Phiếu Nhập Chờ Xử Lý" tickets={pendingImports} type="import" />
-                        <PendingList title="Phiếu Xuất Chờ Xử Lý" tickets={pendingExports} type="export" />
-                    </div>
+    <PendingList title="Phiếu Nhập Chờ Xử Lý" tickets={pendingImports} type="import" onView={handleViewSlip} />
+    <PendingList title="Phiếu Xuất Chờ Xử Lý" tickets={pendingExports} type="export" onView={handleViewSlip} />
+</div>
 
                     <div className="table-grid">
-                        <RecentActivityList title="Phiếu Nhập Vừa Hoàn Tất" items={recentImports} type="import" isLoading={loading} />
-                        <RecentActivityList title="Phiếu Xuất Vừa Hoàn Tất" items={recentExports} type="export" isLoading={loading} />
-                    </div>
+    <RecentActivityList title="Phiếu Nhập Vừa Hoàn Tất" items={recentImports} type="import" isLoading={loading} onView={handleViewSlip} />
+    <RecentActivityList title="Phiếu Xuất Vừa Hoàn Tất" items={recentExports} type="export" isLoading={loading} onView={handleViewSlip} />
+</div>
                 </div>
             )}
         </div>

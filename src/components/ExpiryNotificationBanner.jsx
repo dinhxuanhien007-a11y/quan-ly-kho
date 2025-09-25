@@ -13,29 +13,23 @@ const ExpiryNotificationBanner = () => {
     const [isProcessing, setIsProcessing] = useState(null); // Lưu ID của notif đang xử lý
 
     useEffect(() => {
-        // Chỉ lắng nghe khi user đã đăng nhập
-        const unsubscribeAuth = auth.onAuthStateChanged(user => {
-            if (user) {
-                const q = query(collection(db, "notifications"), where("status", "==", "UNCONFIRMED"));
-                
-                const unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
-                    const activeNotifs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setNotifications(activeNotifs);
-                }, (error) => {
-                    console.error("Lỗi khi lắng nghe cảnh báo: ", error);
-                    toast.error("Không thể tải danh sách cảnh báo.");
-                });
+    // Vì component này chỉ được render khi user là 'owner',
+    // chúng ta có thể tự tin rằng mình có quyền đọc dữ liệu.
+    const q = query(collection(db, "notifications"), where("status", "==", "UNCONFIRMED"));
+    
+    const unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
+        const activeNotifs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setNotifications(activeNotifs);
+    }, (error) => {
+        // Vẫn giữ lại để bắt các lỗi permission thật sự
+        console.error("Lỗi khi lắng nghe cảnh báo:", error);
+    });
 
-                // Trả về hàm dọn dẹp cho snapshot listener
-                return () => unsubscribeSnapshot();
-            } else {
-                setNotifications([]); // Xóa cảnh báo nếu user đăng xuất
-            }
-        });
-
-        // Trả về hàm dọn dẹp cho auth listener
-        return () => unsubscribeAuth();
-    }, []);
+    // Khi component bị gỡ bỏ (khi đăng xuất), chỉ cần ngắt kết nối snapshot.
+    return () => {
+        unsubscribeSnapshot();
+    };
+}, []); // Mảng rỗng đảm bảo effect này chỉ chạy một lần khi component được tạo.
 
     const handleConfirm = async (notificationId, lotId) => {
         setIsProcessing(notificationId);

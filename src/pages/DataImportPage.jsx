@@ -129,7 +129,7 @@ const processData = async (data) => {
                             storageTemp: productData.storageTemp,
                             team: productData.team,
                             manufacturer: productData.manufacturer,
-                            supplier: 'Tồn đầu kỳ',
+                            supplierName: 'Tồn đầu kỳ',
                             notes: String(row.notes || '').trim()
                         };
                         batch.set(inventoryRef, inventoryData);

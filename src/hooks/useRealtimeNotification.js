@@ -30,12 +30,14 @@ export const useRealtimeNotification = (baseQuery) => {
             }
 
             const newestDoc = snapshot.docs[0].data();
-            const newestTimestamp = newestDoc.createdAt;
+const newestTimestamp = newestDoc.createdAt;
 
-            // Chỉ hiển thị thông báo nếu có document mới thật sự
-            if (lastSeenTimestampRef.current && newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis()) {
-                setHasNewData(true);
-            }
+// KIỂM TRA ĐẦY ĐỦ: Timestamp phải hợp lệ VÀ thay đổi này không phải từ client hiện tại
+if (lastSeenTimestampRef.current && newestTimestamp && typeof newestTimestamp.toMillis === 'function') {
+    if (newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis() && !snapshot.metadata.hasPendingWrites) {
+        setHasNewData(true);
+    }
+}
         }, (error) => {
             console.error("Lỗi khi lắng nghe dữ liệu real-time:", error);
         });

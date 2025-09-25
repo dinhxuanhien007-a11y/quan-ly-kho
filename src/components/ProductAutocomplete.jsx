@@ -6,21 +6,22 @@ import { db } from '../firebaseConfig';
 import styles from './Autocomplete.module.css';
 import { FiChevronDown } from 'react-icons/fi';
 
-const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
+const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
+    const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
-    
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-
-    // MỚI: State để theo dõi mục đang được chọn bằng bàn phím
     const [activeIndex, setActiveIndex] = useState(-1);
     
     const containerRef = useRef(null);
     const inputRef = useRef(null);
-    const suggestionsRef = useRef(null); // Ref cho danh sách ul
+    const suggestionsRef = useRef(null);
+
+    useEffect(() => {
+        setInputValue(value);
+    }, [value]);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -50,8 +51,54 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+    
+    useEffect(() => {
+        if (suggestionsRef.current && activeIndex >= 0) {
+            const activeItem = suggestionsRef.current.children[activeIndex];
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [activeIndex]);
 
-    // MỚI: Logic xử lý bàn phím
+    const handleSuggestionClick = useCallback((product) => {
+        setInputValue(product.id);
+        if (onSelect) {
+            onSelect(product);
+        }
+        setShowSuggestions(false);
+        setActiveIndex(-1);
+    }, [onSelect]);
+
+    const handleInputChange = useCallback((e) => {
+        const newInputValue = e.target.value.toUpperCase();
+        setInputValue(newInputValue);
+        
+        if (onChange) {
+            onChange(newInputValue);
+        }
+
+        setActiveIndex(-1);
+        if (newInputValue.length > 0) {
+            const filteredSuggestions = allProducts.filter(p =>
+                p.id.toUpperCase().includes(newInputValue)
+            );
+            setSuggestions(filteredSuggestions);
+        } else {
+            setSuggestions(allProducts.slice(0, 10));
+        }
+        setShowSuggestions(true);
+    }, [allProducts, onChange]);
+
+    const handleInputBlur = useCallback(() => {
+        setTimeout(() => {
+            setShowSuggestions(false);
+            if (onBlur) {
+                onBlur();
+            }
+        }, 150);
+    }, [onBlur]);
+    
     const handleKeyDown = useCallback((e) => {
         if (showSuggestions && suggestions.length > 0) {
             if (e.key === 'ArrowDown') {
@@ -64,93 +111,49 @@ const ProductAutocomplete = ({ value, onSelect, onChange, onBlur }) => {
                 e.preventDefault();
                 if (activeIndex >= 0) {
                     handleSuggestionClick(suggestions[activeIndex]);
+                } else {
+                    if (onBlur) onBlur();
+                    setShowSuggestions(false);
                 }
             } else if (e.key === 'Escape') {
                 setShowSuggestions(false);
             }
         }
-    }, [activeIndex, suggestions, showSuggestions]);
-
-    useEffect(() => {
-        if (suggestionsRef.current && activeIndex >= 0) {
-            const activeItem = suggestionsRef.current.children[activeIndex];
-            if (activeItem) {
-                activeItem.scrollIntoView({ block: 'nearest' });
-            }
-        }
-    }, [activeIndex]);
-
-    const handleInputChange = (e) => {
-        const inputValue = e.target.value.toUpperCase();
-        onChange(inputValue);
-        setActiveIndex(-1); // Reset active index khi gõ
-
-        if (inputValue.length > 0) {
-            const filteredSuggestions = allProducts.filter(product =>
-                product.id.toUpperCase().includes(inputValue)
-            );
-            setSuggestions(filteredSuggestions);
-        } else {
-            setSuggestions(allProducts.slice(0, 10)); // Hiển thị một vài gợi ý khi trống
-        }
-        setShowSuggestions(true);
-    };
-
-    const handleSuggestionClick = (product) => {
-        onSelect(product);
-        setShowSuggestions(false);
-        setActiveIndex(-1);
-    };
-
-    const handleInputBlur = () => {
-        setTimeout(() => {
-            setShowSuggestions(false);
-            if (onBlur) onBlur();
-        }, 150); // Delay để sự kiện click trên suggestion kịp xử lý
-    };
+    }, [activeIndex, suggestions, showSuggestions, onBlur, handleSuggestionClick]);
     
     const SuggestionsPortal = () => createPortal(
-    <ul
-        ref={suggestionsRef}
-        className={styles.suggestionsList}
-        style={{
-            // Chúng ta không cần định vị bằng top, left nữa
-            // chỉ cần width để đảm bảo nó khớp với input
-            width: `${inputRef.current.offsetWidth}px`,
-        }}
-    >
-        {isLoading && <li className={styles.feedback}>Đang tải...</li>}
-        {error && <li className={styles.feedback}>{error}</li>}
-        {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>Không tìm thấy kết quả</li>}
-        
-        {!isLoading && !error && suggestions.map((product, index) => (
-            <li 
-                key={product.id} 
-                className={index === activeIndex ? styles.activeSuggestion : ''}
-                onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }}
-            >
-                <strong>{product.id}</strong> - <span>{product.productName}</span>
-            </li>
-        ))}
-    </ul>,
-    // Đặt portal vào container Autocomplete
-    containerRef.current
-);
+        <ul ref={suggestionsRef} className={styles.suggestionsList} style={{ width: `${inputRef.current?.offsetWidth}px` }}>
+            {isLoading && <li className={styles.feedback}>Đang tải...</li>}
+            {error && <li className={styles.feedback}>{error}</li>}
+            {!isLoading && !error && suggestions.length === 0 && <li className={styles.feedback}>Không tìm thấy kết quả</li>}
+            
+            {!isLoading && !error && suggestions.map((product, index) => (
+                <li 
+                    key={product.id} 
+                    className={index === activeIndex ? styles.activeSuggestion : ''}
+                    onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(product); }}
+                >
+                    <strong>{product.id}</strong> - <span>{product.productName}</span>
+                </li>
+            ))}
+        </ul>,
+        containerRef.current
+    );
 
     return (
         <div className={styles.autocompleteContainer} ref={containerRef}>
             <input
                 ref={inputRef}
                 type="text"
-                value={value}
+                value={inputValue}
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
-                onKeyDown={handleKeyDown} // <-- MỚI: Gắn sự kiện bàn phím
+                onKeyDown={handleKeyDown}
                 placeholder="Nhập Mã hàng..."
                 onFocus={handleInputChange}
             />
             <FiChevronDown className={styles.arrowIcon} />
-            {showSuggestions && <SuggestionsPortal />}
+            {showSuggestions && containerRef.current && <SuggestionsPortal />}
         </div>
     );
 };

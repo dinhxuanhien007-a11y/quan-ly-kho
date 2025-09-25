@@ -98,6 +98,7 @@ const AddUnlistedItemModal = ({ onClose, onAddItem }) => {
             manufacturer: manufacturer,
             team: team,
         });
+        onClose();
     };
     
     const handleExpiryDateBlur = (e) => {
