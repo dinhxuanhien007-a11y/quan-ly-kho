@@ -1,7 +1,7 @@
 // src/services/dashboardService.js
 import { collection, getDocs, query, where, orderBy, limit, Timestamp, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, parseDateString } from '../utils/dateUtils';
 
 // --- BẮT ĐẦU THÊM LẠI CÁC HÀM BỊ THIẾU ---
 
@@ -201,7 +201,7 @@ export const getSalesAnalytics = async (filters = {}) => {
  * @param {string} productId - Mã hàng cần truy vấn.
  * @returns {Promise<object>} - Dữ liệu thẻ kho đã xử lý.
  */
-export const getProductLedger = async (productId) => {
+export const getProductLedger = async (productId, lotNumberFilter, startDate, endDate) => {
     if (!productId) {
         throw new Error("Mã hàng không được để trống.");
     }
@@ -209,18 +209,36 @@ export const getProductLedger = async (productId) => {
     const upperProductId = productId.toUpperCase().trim();
     let transactions = [];
 
-    // Lấy tất cả các lô hàng (bao gồm tồn đầu kỳ và các lần nhập)
-    const allLotsQuery = query(
-        collection(db, 'inventory_lots'),
-        where('productId', '==', upperProductId)
-    );
+    // --- LỌC PHIẾU NHẬP ---
+    let importConstraints = [where('productId', '==', upperProductId)];
+    if (lotNumberFilter) { // <-- THÊM ĐIỀU KIỆN LỌC SỐ LÔ
+        importConstraints.push(where('lotNumber', '==', lotNumberFilter));
+    }
+    if (startDate) {
+        importConstraints.push(where("importDate", ">=", Timestamp.fromDate(new Date(startDate))));
+    }
+    if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        importConstraints.push(where("importDate", "<=", Timestamp.fromDate(endOfDay)));
+    }
 
-    // Lấy tất cả các phiếu xuất đã hoàn thành
-    const exportQuery = query(
-        collection(db, 'export_tickets'),
+    // --- LỌC PHIẾU XUẤT ---
+    let exportConstraints = [
         where('status', '==', 'completed'),
         where('productIds', 'array-contains', upperProductId)
-    );
+    ];
+    if (startDate) {
+        exportConstraints.push(where("createdAt", ">=", Timestamp.fromDate(new Date(startDate))));
+    }
+    if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        exportConstraints.push(where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
+    }
+
+    const allLotsQuery = query(collection(db, 'inventory_lots'), ...importConstraints);
+    const exportQuery = query(collection(db, 'export_tickets'), ...exportConstraints);
 
     const [allLotsSnap, exportSnap] = await Promise.all([
         getDocs(allLotsQuery),
@@ -243,7 +261,8 @@ export const getProductLedger = async (productId) => {
             importQty: Number(lot.quantityImported),
             exportQty: 0,
             lotNumber: lot.lotNumber,
-            expiryDate: lot.expiryDate ? formatDate(lot.expiryDate) : ''
+            expiryDate: lot.expiryDate ? formatDate(lot.expiryDate) : '',
+            expiryDateObject: lot.expiryDate
         });
     });
 
@@ -251,7 +270,8 @@ export const getProductLedger = async (productId) => {
     exportSnap.forEach(doc => {
         const slip = doc.data();
         slip.items.forEach(item => {
-            if (item.productId === upperProductId) {
+            // THÊM ĐIỀU KIỆN LỌC SỐ LÔ KHI DUYỆT QUA CÁC MỤC TRONG PHIẾU XUẤT
+            if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
                 transactions.push({
                     date: slip.createdAt.toDate(),
                     docId: doc.id,
@@ -261,7 +281,8 @@ export const getProductLedger = async (productId) => {
                     importQty: 0,
                     exportQty: Number(item.quantityToExport || item.quantityExported),
                     lotNumber: item.lotNumber,
-                    expiryDate: item.expiryDate
+                    expiryDate: item.expiryDate,
+                    expiryDateObject: parseDateString(item.expiryDate)
                 });
             }
         });
