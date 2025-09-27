@@ -201,122 +201,170 @@ export const getSalesAnalytics = async (filters = {}) => {
  * @param {string} productId - Mã hàng cần truy vấn.
  * @returns {Promise<object>} - Dữ liệu thẻ kho đã xử lý.
  */
+// src/services/dashboardService.js
+
+// src/services/dashboardService.js
+
+// src/services/dashboardService.js
+
+// src/services/dashboardService.js
+
+// src/services/dashboardService.js
+
+// src/services/dashboardService.js
+
+// src/services/dashboardService.js
+
 export const getProductLedger = async (productId, lotNumberFilter, startDate, endDate) => {
     if (!productId) {
         throw new Error("Mã hàng không được để trống.");
     }
 
     const upperProductId = productId.toUpperCase().trim();
+    const startDateObj = startDate ? new Date(startDate) : null;
+    let openingBalance = 0;
+
+    // --- BƯỚC 1: TÍNH TỒN ĐẦU KỲ ---
+    const cutoffDate = startDateObj ? Timestamp.fromDate(startDateObj) : null;
+
+    if (cutoffDate) {
+        // Lấy TẤT CẢ các lần nhập kho trước ngày bắt đầu, không phân biệt NCC
+        const openingImportsQuery = query(
+            collection(db, 'inventory_lots'),
+            where('productId', '==', upperProductId),
+            where("importDate", "<", cutoffDate)
+        );
+        const openingExportsQuery = query(
+            collection(db, 'export_tickets'),
+            where('status', '==', 'completed'),
+            where('productIds', 'array-contains', upperProductId),
+            where("createdAt", "<", cutoffDate)
+        );
+
+        const [openingImportsSnap, openingExportsSnap] = await Promise.all([
+            getDocs(openingImportsQuery),
+            getDocs(openingExportsQuery)
+        ]);
+
+        const totalImportedBefore = openingImportsSnap.docs.reduce((sum, doc) => {
+            const lot = doc.data();
+            return (!lotNumberFilter || lot.lotNumber === lotNumberFilter) ? sum + lot.quantityImported : sum;
+        }, 0);
+        
+        let totalExportedBefore = 0;
+        openingExportsSnap.forEach(doc => {
+            doc.data().items.forEach(item => {
+                if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
+                    totalExportedBefore += Number(item.quantityToExport || item.quantityExported);
+                }
+            });
+        });
+        openingBalance = totalImportedBefore - totalExportedBefore;
+    }
+
+    // --- BƯỚC 2: LẤY CÁC GIAO DỊCH TRONG KỲ ---
     let transactions = [];
 
-    // --- LỌC PHIẾU NHẬP ---
-    let importConstraints = [where('productId', '==', upperProductId)];
-    if (lotNumberFilter) { // <-- THÊM ĐIỀU KIỆN LỌC SỐ LÔ
-        importConstraints.push(where('lotNumber', '==', lotNumberFilter));
-    }
-    if (startDate) {
-        importConstraints.push(where("importDate", ">=", Timestamp.fromDate(new Date(startDate))));
-    }
+    // Tạo các điều kiện lọc chung
+    const dateFiltersCreatedAt = [];
+    if (startDate) dateFiltersCreatedAt.push(where("createdAt", ">=", Timestamp.fromDate(new Date(startDate))));
     if (endDate) {
         const endOfDay = new Date(endDate);
         endOfDay.setHours(23, 59, 59, 999);
-        importConstraints.push(where("importDate", "<=", Timestamp.fromDate(endOfDay)));
+        dateFiltersCreatedAt.push(where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
     }
 
-    // --- LỌC PHIẾU XUẤT ---
-    let exportConstraints = [
-        where('status', '==', 'completed'),
-        where('productIds', 'array-contains', upperProductId)
+    const lotDateFilters = [];
+    if (startDate) lotDateFilters.push(where("importDate", ">=", Timestamp.fromDate(new Date(startDate))));
+    if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        lotDateFilters.push(where("importDate", "<=", Timestamp.fromDate(endOfDay)));
+    }
+    
+    // Lọc phiếu nhập và xuất từ tickets
+    const importQuery = query(collection(db, 'import_tickets'), where('status', '==', 'completed'), where('productIds', 'array-contains', upperProductId), ...dateFiltersCreatedAt);
+    const exportQuery = query(collection(db, 'export_tickets'), where('status', '==', 'completed'), where('productIds', 'array-contains', upperProductId), ...dateFiltersCreatedAt);
+    
+    // Lọc Tồn Đầu Kỳ từ inventory_lots, kiểm tra cả 2 biến thể tên và 2 biến thể giá trị
+    const baseLotConstraints = [where('productId', '==', upperProductId)];
+    if(lotNumberFilter) baseLotConstraints.push(where('lotNumber', '==', lotNumberFilter));
+    
+    const tdkQueries = [
+        query(collection(db, 'inventory_lots'), ...baseLotConstraints, where('supplierName', '==', 'Tồn đầu kỳ'), ...lotDateFilters),
+        query(collection(db, 'inventory_lots'), ...baseLotConstraints, where('supplierName', '==', 'Tồn kho đầu kỳ'), ...lotDateFilters),
+        query(collection(db, 'inventory_lots'), ...baseLotConstraints, where('supplier', '==', 'Tồn đầu kỳ'), ...lotDateFilters),
+        query(collection(db, 'inventory_lots'), ...baseLotConstraints, where('supplier', '==', 'Tồn kho đầu kỳ'), ...lotDateFilters),
     ];
-    if (startDate) {
-        exportConstraints.push(where("createdAt", ">=", Timestamp.fromDate(new Date(startDate))));
-    }
-    if (endDate) {
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        exportConstraints.push(where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
-    }
 
-    const allLotsQuery = query(collection(db, 'inventory_lots'), ...importConstraints);
-    const exportQuery = query(collection(db, 'export_tickets'), ...exportConstraints);
-
-    const [allLotsSnap, exportSnap] = await Promise.all([
-        getDocs(allLotsQuery),
-        getDocs(exportQuery)
+    const [importSnap, exportSnap, ...tdkSnaps] = await Promise.all([
+        getDocs(importQuery),
+        getDocs(exportQuery),
+        ...tdkQueries.map(q => getDocs(q))
     ]);
 
-    // Xử lý tất cả các lần nhập kho
-    allLotsSnap.forEach(doc => {
-        const lot = doc.data();
-        // SỬA LẠI: Kiểm tra cả `supplier` và `supplierName`
-        const isOpeningStock = lot.supplierName === 'Tồn đầu kỳ' || lot.supplier === 'Tồn đầu kỳ';
-        
-        transactions.push({
-            date: lot.importDate.toDate(),
-            docId: doc.id,
-            isLot: true,
-            type: 'NHẬP',
-            // SỬA LẠI: Dùng biến isOpeningStock để xác định description
-            description: isOpeningStock ? 'Nhập tồn kho đầu kỳ' : `Nhập từ: ${lot.supplierName || lot.supplier || '(Không rõ)'}`,
-            importQty: Number(lot.quantityImported),
-            exportQty: 0,
-            lotNumber: lot.lotNumber,
-            expiryDate: lot.expiryDate ? formatDate(lot.expiryDate) : '',
-            expiryDateObject: lot.expiryDate
+    // Xử lý các lần nhập kho từ phiêú
+    importSnap.forEach(doc => {
+        const slip = doc.data();
+        slip.items.forEach(item => {
+            if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
+                transactions.push({
+                    date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'NHẬP',
+                    description: `Nhập từ: ${slip.supplierName}`, importQty: Number(item.quantity), exportQty: 0,
+                    lotNumber: item.lotNumber, expiryDate: item.expiryDate, expiryDateObject: parseDateString(item.expiryDate)
+                });
+            }
         });
     });
 
-    // Xử lý tất cả các lần xuất kho
+    // Xử lý các lần nhập "Tồn (kho) đầu kỳ"
+    tdkSnaps.forEach(snap => {
+        snap.forEach(doc => {
+            const lot = doc.data();
+            // Chỉ thêm vào giao dịch nếu nó chưa được tính vào tồn đầu kỳ.
+            if (!startDateObj) {
+                transactions.push({
+                    date: lot.importDate.toDate(), docId: `(Tồn đầu kỳ - Lô ${doc.id.substring(0,5)})`, isTicket: false, 
+                    type: 'NHẬP', description: `Nhập từ: ${lot.supplierName || lot.supplier}`, importQty: Number(lot.quantityImported),
+                    exportQty: 0, lotNumber: lot.lotNumber, expiryDate: lot.expiryDate ? formatDate(lot.expiryDate) : '',
+                    expiryDateObject: lot.expiryDate
+                });
+            }
+        });
+    });
+
+    // Xử lý các lần xuất kho
     exportSnap.forEach(doc => {
         const slip = doc.data();
         slip.items.forEach(item => {
-            // THÊM ĐIỀU KIỆN LỌC SỐ LÔ KHI DUYỆT QUA CÁC MỤC TRONG PHIẾU XUẤT
             if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
                 transactions.push({
-                    date: slip.createdAt.toDate(),
-                    docId: doc.id,
-                    isTicket: true,
-                    type: 'XUẤT',
-                    description: `Xuất cho: ${slip.customer}`,
-                    importQty: 0,
+                    date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'XUẤT',
+                    description: `Xuất cho: ${slip.customer}`, importQty: 0,
                     exportQty: Number(item.quantityToExport || item.quantityExported),
-                    lotNumber: item.lotNumber,
-                    expiryDate: item.expiryDate,
+                    lotNumber: item.lotNumber, expiryDate: item.expiryDate,
                     expiryDateObject: parseDateString(item.expiryDate)
                 });
             }
         });
     });
 
-    // Sắp xếp tất cả giao dịch theo ngày tháng
     transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-    // --- LOGIC TÍNH TOÁN CUỐI CÙNG ---
-    let openingBalance = 0;
-    let totalImport = 0;
-    let totalExport = 0;
-    let currentBalance = 0;
-
-    const openingTxns = transactions.filter(tx => tx.description === 'Nhập tồn kho đầu kỳ');
-    openingBalance = openingTxns.reduce((sum, tx) => sum + tx.importQty, 0);
-
-    const inPeriodImports = transactions.filter(tx => tx.type === 'NHẬP' && tx.description !== 'Nhập tồn kho đầu kỳ');
-    totalImport = inPeriodImports.reduce((sum, tx) => sum + tx.importQty, 0);
-
-    const inPeriodExports = transactions.filter(tx => tx.type === 'XUẤT');
-    totalExport = inPeriodExports.reduce((sum, tx) => sum + tx.exportQty, 0);
     
+    // --- BƯỚC 3: TÍNH TOÁN SỐ DƯ ---
+    const totalImport = transactions.reduce((sum, tx) => sum + tx.importQty, 0);
+    const totalExport = transactions.reduce((sum, tx) => sum + tx.exportQty, 0);
+
+    let currentBalance = openingBalance;
     const ledgerRows = [];
-    currentBalance = 0;
+
     transactions.forEach(tx => {
         currentBalance += (tx.importQty - tx.exportQty);
         ledgerRows.push({ ...tx, balance: currentBalance });
     });
 
     return {
-        openingBalance,
-        totalImport,
-        totalExport,
+        openingBalance, totalImport, totalExport,
         closingBalance: currentBalance,
         rows: ledgerRows
     };

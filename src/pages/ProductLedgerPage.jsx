@@ -35,8 +35,7 @@ const handleSubmit = (e) => {
 };
 
     // THÊM CÁC STATE VÀ HÀM MỚI DƯỚI ĐÂY
-    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const [selectedSlip, setSelectedSlip] = useState(null);
+    const [viewModalData, setViewModalData] = useState({ isOpen: false, slip: null, type: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(15); // Số dòng mỗi trang
     const [paginatedRows, setPaginatedRows] = useState([]);
@@ -84,26 +83,28 @@ const handleSubmit = (e) => {
 }, [ledgerData]);
 
     const openViewModal = async (slipId, slipType) => {
-        const collectionName = slipType === 'NHẬP' ? 'import_tickets' : 'export_tickets';
-        try {
-            const docRef = doc(db, collectionName, slipId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                setSelectedSlip({ id: docSnap.id, ...docSnap.data() });
-                setIsViewModalOpen(true);
-            } else {
-                toast.error("Không tìm thấy chi tiết của phiếu này.");
-            }
-        } catch (error) {
-            toast.error("Lỗi khi tải chi tiết phiếu.");
-            console.error(error);
+    const collectionName = slipType === 'NHẬP' ? 'import_tickets' : 'export_tickets';
+    try {
+        const docRef = doc(db, collectionName, slipId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            setViewModalData({
+                isOpen: true,
+                slip: { id: docSnap.id, ...docSnap.data() },
+                type: slipType
+            });
+        } else {
+            toast.error("Không tìm thấy chi tiết của phiếu này.");
         }
-    };
+    } catch (error) {
+        toast.error("Lỗi khi tải chi tiết phiếu.");
+        console.error(error);
+    }
+};
 
-    const closeViewModal = () => {
-        setIsViewModalOpen(false);
-        setSelectedSlip(null);
-    };
+const closeViewModal = () => {
+    setViewModalData({ isOpen: false, slip: null, type: '' });
+};
 
     const handleSearch = async () => {
     const term = filters.productId.trim();
@@ -173,11 +174,12 @@ return (
             <h1>Sổ chi tiết Vật tư (Thẻ kho)</h1>
         </div>
 
-        {isViewModalOpen && selectedSlip && (
-            selectedSlip.supplierName ? 
-            <ViewImportSlipModal slip={selectedSlip} onClose={closeViewModal} /> :
-            <ViewExportSlipModal slip={selectedSlip} onClose={closeViewModal} />
-        )}
+        {viewModalData.isOpen && viewModalData.type === 'NHẬP' && (
+    <ViewImportSlipModal slip={viewModalData.slip} onClose={closeViewModal} />
+)}
+{viewModalData.isOpen && viewModalData.type === 'XUẤT' && (
+    <ViewExportSlipModal slip={viewModalData.slip} onClose={closeViewModal} />
+)}
 
         <div className="form-section">
             <DateRangePresets onPresetSelect={(startDate, endDate) => {
