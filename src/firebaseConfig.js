@@ -21,4 +21,4 @@ const auth = getAuth(app);
 const functions = getFunctions(app);
 
 // Xuất ra các dịch vụ để sử dụng trong toàn bộ ứng dụng
-export { db, auth, functions };
+export { db, auth, functions, app };

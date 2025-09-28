@@ -4,11 +4,11 @@ import { exportStocktakeToPDF } from '../utils/pdfUtils';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc, documentId } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc, documentId, Timestamp } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
@@ -301,20 +301,45 @@ const StocktakeSessionPage = () => {
     };
 
     const handleAdjustInventory = async () => {
-        setConfirmModal({ isOpen: false });
-        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
-        if (itemsToAdjust.length === 0) {
-            return toast.warn("Vui lòng chọn mục để điều chỉnh.");
-        }
-        try {
-            const batch = writeBatch(db);
-            const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
-            for (const item of itemsToAdjust) {
-                const finalCountedQty = item.countedQty ?? 0;
-                if (!item.isNew) {
-                    const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
-                    batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
-                }
+        setConfirmModal({ isOpen: false });
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
+        if (itemsToAdjust.length === 0) {
+            return toast.warn("Vui lòng chọn mục để điều chỉnh.");
+        }
+        try {
+            const batch = writeBatch(db);
+            const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
+            for (const item of itemsToAdjust) {
+                const finalCountedQty = item.countedQty ?? 0;
+                
+                // KIỂM TRA NẾU KHÔNG PHẢI LÀ HÀNG MỚI (LOGIC CŨ)
+                if (!item.isNew) {
+                    const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
+                    batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
+                }
+                // LOGIC MỚI: NẾU LÀ HÀNG MỚI, TẠO MỘT LÔ TỒN KHO MỚI
+                else {
+                    const expiryDateObj = parseDateString(item.expiryDate);
+                    const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
+                    const newInventoryLotRef = doc(collection(db, 'inventory_lots'));
+                    const newLotData = {
+                        productId: item.productId,
+                        productName: item.productName,
+                        lotNumber: item.lotNumber,
+                        expiryDate: expiryTimestamp,
+                        importDate: serverTimestamp(),
+                        quantityImported: finalCountedQty,
+                        quantityRemaining: finalCountedQty,
+                        unit: item.unit,
+                        packaging: item.packaging,
+                        storageTemp: item.storageTemp,
+                        team: item.team,
+                        manufacturer: item.manufacturer,
+                        supplierName: `Kiểm kê - ${sessionData.name}`,
+                        notes: item.notes || `Thêm mới từ phiên kiểm kê ${sessionId}`
+                    };
+                    batch.set(newInventoryLotRef, newLotData);
+                }
                 const newAdjustmentRef = doc(adjustmentsCollectionRef);
                 batch.set(newAdjustmentRef, {
                     createdAt: serverTimestamp(), stocktakeId: sessionId, productId: item.productId,
@@ -531,7 +556,7 @@ const StocktakeSessionPage = () => {
                         <>
                             <table className="products-table discrepancy-table">
                                  <thead>
-                            _         <tr>
+                                     <tr>
                                         <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
                                          <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
                                         <th>Tồn hệ thống</th><th>Tồn thực tế</th><th>Chênh lệch</th>

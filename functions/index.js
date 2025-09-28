@@ -370,3 +370,71 @@ exports.updateProductSummary = onDocumentWritten("/inventory_lots/{lotId}", asyn
 
   return null;
 });
+
+// Dán đoạn mã này vào cuối file functions/index.js
+
+// =================================================================
+// === HÀM MỚI: NHẬN DẠNG GIỌNG NÓI (SPEECH-TO-TEXT) ===
+// =================================================================
+const speech = require("@google-cloud/speech");
+
+// Khởi tạo client cho Speech-to-Text một lần duy nhất
+const speechClient = new speech.SpeechClient();
+
+/**
+ * Hàm 8 (Mới): Cloud Function được gọi từ client để nhận dạng giọng nói.
+ * Nhận một chuỗi audio base64, gửi đến Google Speech-to-Text API,
+ * và trả về kết quả dưới dạng văn bản.
+ */
+exports.transcribeAudio = onCall({
+    region: "asia-southeast1", // Chọn khu vực gần Việt Nam để có tốc độ tốt nhất
+    // secrets: ["GOOGLE_APPLICATION_CREDENTIALS"] // Nếu cần xác thực phức tạp hơn
+}, async (request) => {
+    // Lấy dữ liệu âm thanh dưới dạng base64 từ client
+    const audioBytes = request.data.audioData;
+
+    if (!audioBytes) {
+        throw new HttpsError(
+            "invalid-argument",
+            "Yêu cầu không chứa dữ liệu âm thanh.",
+        );
+    }
+
+    const audio = {
+        content: audioBytes,
+    };
+
+    // Cấu hình nhận dạng giọng nói cho Tiếng Việt
+    const config = {
+        encoding: "WEBM_OPUS", // Định dạng audio phổ biến trên web khi ghi âm từ trình duyệt
+        sampleRateHertz: 48000, // Tần số mẫu chuẩn
+        languageCode: "vi-VN",   // Ngôn ngữ Tiếng Việt
+        model: "default",      // Mô hình nhận dạng tiêu chuẩn
+    };
+
+    const apiRequest = {
+        audio: audio,
+        config: config,
+    };
+
+    try {
+        // Gửi yêu cầu đến Google Cloud Speech-to-Text API
+        const [response] = await speechClient.recognize(apiRequest);
+        const transcription = response.results
+            .map((result) => result.alternatives[0].transcript)
+            .join("\n");
+
+        logger.log(`Kết quả nhận dạng: ${transcription}`);
+        
+        // Trả kết quả về cho client
+        return { transcript: transcription };
+
+    } catch (error) {
+        logger.error("LỖI Speech-to-Text:", error);
+        throw new HttpsError(
+            "internal",
+            "Đã xảy ra lỗi khi xử lý âm thanh.",
+            error,
+        );
+    }
+});
