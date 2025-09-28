@@ -10,7 +10,6 @@ import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
 import MobileInventoryPage from '../pages/MobileInventoryPage';
 import companyLogo from '../assets/logo.png'; // Di chuyển import logo đến đây
-import { FiPrinter } from 'react-icons/fi'; // Thêm import cho icon In
 
 const ViewerLayout = () => {
     const { role: userRole } = useAuth();
@@ -21,15 +20,6 @@ const ViewerLayout = () => {
 
     const toggleCalculator = () => {
         setIsCalculatorVisible(prev => !prev);
-    };
-
-    // Di chuyển hàm handlePrint ra layout cha
-    const handlePrint = () => {
-        const pageNameToPrint = viewMode === 'detail' ? 'ChiTiet' : 'TongHop';
-        const originalTitle = document.title;
-        document.title = `BaoCao_TonKho_${pageNameToPrint}_${new Date().toLocaleDateString('vi-VN')}`;
-        window.print();
-        document.title = originalTitle;
     };
 
     const dynamicTitle = useMemo(() => {
@@ -95,12 +85,6 @@ const ViewerLayout = () => {
 
                 {/* --- Khu vực bên phải --- */}
                 <div className="viewer-header-right">
-                    {(userRole === 'owner' || userRole === 'admin') && (
-                        <button onClick={handlePrint} className="btn-secondary">
-                            <FiPrinter style={{marginRight: '5px'}} />
-                            In Báo Cáo
-                        </button>
-                    )}
                 </div>
             </div>
 

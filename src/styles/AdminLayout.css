@@ -1108,6 +1108,204 @@ tbody tr.selected-row td {
     flex: 1; /* Buộc mỗi nút chiếm một phần không gian bằng nhau */
 }
 
+.ledger-summary-sticky {
+  position: sticky;
+  top: var(--header-height); /* Dính vào dưới thanh menu chính */
+  background-color: var(--bg-color); /* Đảm bảo có nền để không bị nội dung khác đè lên */
+  z-index: 999; /* Luôn nổi trên các phần tử khác */
+  padding-top: 20px;
+  margin-top: -20px; /* Bù lại padding để không tạo khoảng trống thừa */
+}
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.empty-state-container {
+  text-align: center;
+  padding: 40px 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  margin-top: 20px;
+  color: #6c757d;
+}
+
+.empty-state-container svg {
+  font-size: 48px;
+  margin-bottom: 15px;
+  color: #adb5bd;
+}
+
+.empty-state-container h4 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  color: #495057;
+}
+
+.empty-state-container p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.products-table thead th button {
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.products-table thead th button:hover {
+  color: var(--primary-color);
+}
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+.searched-lot-highlight td {
+    background-color: #d1e7dd !important; /* Một màu xanh lá cây nhạt */
+    font-weight: 500;
+}
+
+/* src/styles/AdminLayout.css */
+
+.latest-transaction-highlight td {
+    background-color: #e6fffa !important;
+    border-top: 2px solid #00bfa5 !important;
+}
+
+/* ==========================================================================
+   CSS CHO MODAL (POP-UP)
+   ========================================================================== */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  max-width: 1300px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  outline: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #888;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-body {
+  flex-grow: 1;
+  overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
+}
+
+.modal-footer {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px; /* Tạo khoảng cách giữa các nút */
+}
+
+/* src/styles/AdminLayout.css */
+
+/* src/styles/AdminLayout.css */
+
+/* --- Căn chỉnh Grid cho Form Nhập/Xuất chi tiết --- */
+.item-details-grid {
+  display: grid;
+  gap: 8px 16px; /* Khoảng cách giữa các ô (dọc 8px, ngang 16px) */
+  align-items: stretch; /* Căn các phần tử cho đều chiều cao */
+}
+
+.grid-header {
+  font-weight: bold;
+  font-size: 13px;
+  color: #555;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #eee;
+  text-align: center; /* Căn giữa tiêu đề */
+}
+
+.grid-cell {
+  display: flex;
+  flex-direction: column; /* Sắp xếp các phần tử trong ô theo chiều dọc */
+  justify-content: center; /* Căn giữa các phần tử trong ô */
+  min-width: 0;
+}
+
+/* Đảm bảo các ô input, select... chiếm toàn bộ chiều rộng của ô chứa nó */
+.grid-cell input,
+.grid-cell textarea,
+.grid-cell select,
+.grid-cell .autocomplete-wrapper,
+.grid-cell .selected-lot-view {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box; /* Quan trọng để padding không làm vỡ layout */
+}
+
+/* Căn lại chữ trong input */
+.grid-cell input, .grid-cell textarea {
+    text-align: center;
+}
+
+.grid-cell textarea {
+    resize: vertical;
+    min-height: 38px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+/* src/styles/AdminLayout.css */
+
+/* --- Sửa lỗi chiều cao cho component Autocomplete --- */
+.autocomplete-wrapper input {
+  height: 100%;
+  box-sizing: border-box;
+}
+
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */
 @media (max-width: 768px) {
   /* Phần này áp dụng cho cả 2 bảng:

@@ -1,4 +1,6 @@
 // src/pages/StocktakeSessionPage.jsx
+import { FiPrinter } from 'react-icons/fi';
+import { exportStocktakeToPDF } from '../utils/pdfUtils';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
@@ -398,6 +400,38 @@ const StocktakeSessionPage = () => {
         fetchFirstPage();
     };
 
+    // Dán vào file: src/pages/StocktakeSessionPage.jsx
+
+    const handleExportPDF = async () => {
+        const session = useStocktakeStore.getState().sessionData;
+        if (!session) {
+            toast.warn("Chưa có dữ liệu phiên để xuất file PDF.");
+            return;
+        }
+        
+        toast.info("Đang tải toàn bộ dữ liệu để tạo file PDF...");
+        try {
+            const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+            
+            // --- THAY ĐỔI TẠI ĐÂY: Sắp xếp theo 'productId' ---
+            const q = query(itemsRef, orderBy('productId')); 
+            
+            const querySnapshot = await getDocs(q);
+            const allItems = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            if (allItems.length === 0) {
+                toast.warn("Phiên kiểm kê này không có sản phẩm nào để xuất ra file.");
+                return;
+            }
+
+            await exportStocktakeToPDF(session, allItems);
+
+        } catch (error) {
+            console.error("Lỗi khi xuất PDF phiếu kiểm kê:", error);
+            toast.error("Đã xảy ra lỗi khi tạo file PDF.");
+        }
+    };
+
     return (
         <div className="stocktake-session-page-container">
             <ConfirmationModal 
@@ -412,11 +446,16 @@ const StocktakeSessionPage = () => {
             {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
 
             <div className="page-header">
-                <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
-                <div>
-                    {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">Hoàn tất đếm</button>)}
-                </div>
-            </div>
+    <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
+    <div className="header-actions"> {/* <-- Bọc các nút vào div này */}
+        {/* --- THÊM NÚT NÀY VÀO ĐÂY --- */}
+        <button onClick={handleExportPDF} className="btn-secondary">
+            <FiPrinter style={{ marginRight: '5px' }} />
+            Xuất PDF Kiểm kê
+        </button>
+        {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">Hoàn tất đếm</button>)}
+    </div>
+</div>
 
             {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
                  <div className="form-section">

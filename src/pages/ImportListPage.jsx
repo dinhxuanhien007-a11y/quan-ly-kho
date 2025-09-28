@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc } from 'firebase/firestore';
 import { FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
@@ -171,7 +171,51 @@ const ImportListPage = () => {
     // === KẾT THÚC HÀM XỬ LÝ TRUNG TÂM MỚI ===
 
     const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
-    const openViewModal = (slip) => { setSelectedSlip(slip); setIsViewModalOpen(true); };
+    // src/pages/ImportListPage.jsx
+
+    const openViewModal = async (slip) => {
+        try {
+            toast.info("Đang tải chi tiết phiếu...");
+            const docRef = doc(db, 'import_tickets', slip.id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const slipData = { id: docSnap.id, ...docSnap.data() };
+
+                // --- BẮT ĐẦU LÀM GIÀU DỮ LIỆU ---
+                const productPromises = slipData.items.map(item => getDoc(doc(db, 'products', item.productId)));
+                const productSnapshots = await Promise.all(productPromises);
+                
+                const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                    if (docSn.exists()) {
+                        acc[docSn.id] = docSn.data();
+                    }
+                    return acc;
+                }, {});
+
+                const enrichedItems = slipData.items.map(item => {
+                    const details = productDetailsMap[item.productId] || {};
+                    return {
+                        ...item,
+                        unit: details.unit || '',
+                        specification: details.packaging || '',
+                        storageTemp: details.storageTemp || '',
+                    };
+                });
+
+                const enrichedSlip = { ...slipData, items: enrichedItems };
+                // --- KẾT THÚC LÀM GIÀU DỮ LIỆU ---
+
+                setSelectedSlip(enrichedSlip);
+                setIsViewModalOpen(true);
+            } else {
+                toast.error("Không tìm thấy phiếu nhập này nữa.");
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải chi tiết phiếu nhập:", error);
+            toast.error("Đã xảy ra lỗi khi tải chi tiết phiếu.");
+        }
+    };
     
     return (
         <div>

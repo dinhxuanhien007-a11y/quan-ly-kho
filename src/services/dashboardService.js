@@ -215,7 +215,8 @@ export const getSalesAnalytics = async (filters = {}) => {
 
 // src/services/dashboardService.js
 
-export const getProductLedger = async (productId, lotNumberFilter, startDate, endDate) => {
+export const getProductLedger = async (productId, lotNumberFilter, startDate, endDate, partnerName) => { // <-- Thêm partnerName vào tham số
+    // ... (code cũ giữ nguyên đến phần xử lý giao dịch)
     if (!productId) {
         throw new Error("Mã hàng không được để trống.");
     }
@@ -349,23 +350,36 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
         });
     });
 
-    transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // --- BẮT ĐẦU THÊM LOGIC LỌC MỚI ---
+    let finalTransactions = transactions;
+    if (partnerName && partnerName.trim() !== '') {
+        const normalizedPartnerName = partnerName.trim().toLowerCase();
+        finalTransactions = transactions.filter(tx => 
+            tx.description.toLowerCase().includes(normalizedPartnerName)
+        );
+    }
+    // --- KẾT THÚC LOGIC LỌC MỚI ---
+
+    // Sắp xếp lại sau khi đã lọc
+    finalTransactions.sort((a, b) => a.date.getTime() - b.date.getTime());
     
-    // --- BƯỚC 3: TÍNH TOÁN SỐ DƯ ---
-    const totalImport = transactions.reduce((sum, tx) => sum + tx.importQty, 0);
-    const totalExport = transactions.reduce((sum, tx) => sum + tx.exportQty, 0);
+    // Tính toán lại các giá trị tổng dựa trên dữ liệu đã lọc
+    const totalImport = finalTransactions.reduce((sum, tx) => sum + tx.importQty, 0);
+    const totalExport = finalTransactions.reduce((sum, tx) => sum + tx.exportQty, 0);
 
     let currentBalance = openingBalance;
     const ledgerRows = [];
 
-    transactions.forEach(tx => {
+    finalTransactions.forEach(tx => {
         currentBalance += (tx.importQty - tx.exportQty);
         ledgerRows.push({ ...tx, balance: currentBalance });
     });
 
     return {
-        openingBalance, totalImport, totalExport,
+        openingBalance, 
+        totalImport, // Trả về tổng đã lọc
+        totalExport, // Trả về tổng đã lọc
         closingBalance: currentBalance,
         rows: ledgerRows
     };
-};
+};    

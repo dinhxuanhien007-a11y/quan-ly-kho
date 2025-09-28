@@ -119,7 +119,51 @@ const ExportListPage = () => {
     }
   };
 
-  const openViewModal = (slip) => { setSelectedSlip(slip); setIsViewModalOpen(true); };
+  // src/pages/ExportListPage.jsx
+
+    const openViewModal = async (slip) => {
+        try {
+            toast.info("Đang tải chi tiết phiếu...");
+            const docRef = doc(db, 'export_tickets', slip.id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const slipData = { id: docSnap.id, ...docSnap.data() };
+
+                // --- BẮT ĐẦU LÀM GIÀU DỮ LIỆU ---
+                const productPromises = slipData.items.map(item => getDoc(doc(db, 'products', item.productId)));
+                const productSnapshots = await Promise.all(productPromises);
+                
+                const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                    if (docSn.exists()) {
+                        acc[docSn.id] = docSn.data();
+                    }
+                    return acc;
+                }, {});
+
+                const enrichedItems = slipData.items.map(item => {
+                    const details = productDetailsMap[item.productId] || {};
+                    return {
+                        ...item,
+                        unit: details.unit || '',
+                        specification: details.packaging || '', // Sửa 'specification' thành 'packaging'
+                        storageTemp: details.storageTemp || '',
+                    };
+                });
+
+                const enrichedSlip = { ...slipData, items: enrichedItems };
+                // --- KẾT THÚC LÀM GIÀU DỮ LIỆU ---
+
+                setSelectedSlip(enrichedSlip);
+                setIsViewModalOpen(true);
+            } else {
+                toast.error("Không tìm thấy phiếu xuất này nữa.");
+            }
+        } catch (error) {
+            console.error("Lỗi khi tải chi tiết phiếu xuất:", error);
+            toast.error("Đã xảy ra lỗi khi tải chi tiết phiếu.");
+        }
+    };
   
   const openEditModal = async (slip) => {
     const slipWithDetails = JSON.parse(JSON.stringify(slip));

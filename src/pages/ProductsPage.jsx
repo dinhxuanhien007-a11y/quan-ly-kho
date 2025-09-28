@@ -43,12 +43,12 @@ const ProductsPage = () => {
     reset,
   } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-  const { hasNewData, setHasNewData } = useRealtimeNotification(baseQuery, products, page, searchTerm);
+  const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
-  const handleRefresh = () => {
-      dismissNewData();
-      reset();
-  };
+    const handleRefresh = () => {
+        dismissNewData(); // <-- Sử dụng dismissNewData thay vì setHasNewData
+        reset();
+    };
 
   const handleProductAdded = () => {
     setIsAddModalOpen(false);

@@ -1,45 +1,57 @@
 // src/components/ViewExportSlipModal.jsx
 import React from 'react';
+import Modal from 'react-modal';
 import { formatDate } from '../utils/dateUtils';
-import StatusBadge from './StatusBadge';
+import { formatNumber } from '../utils/numberUtils';
+import { FiX, FiPrinter } from 'react-icons/fi';
+import { exportExportSlipToPDF } from '../utils/pdfUtils';
+import { toast } from 'react-toastify';
+
+Modal.setAppElement('#root');
 
 const ViewExportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
-    const hasNotes = slip.items.some(item => item.notes && item.notes.trim() !== '');
-    const handlePrint = () => {
-        window.print();
+
+    // --- CÔNG CỤ CHẨN ĐOÁN ---
+    console.log("Dữ liệu Phiếu Xuất được truyền vào Modal:", slip);
+    
+    const handleExportPDF = async () => {
+        toast.info("Đang tạo file PDF...");
+        try {
+            await exportExportSlipToPDF(slip);
+        } catch (error) {
+            console.error("Lỗi khi xuất PDF phiếu xuất:", error);
+            toast.error("Đã xảy ra lỗi khi tạo file PDF.");
+        }
     };
+
     return (
-        <div className="modal-backdrop">
-            <div className="modal-content printable-area export-slip" style={{ width: '90vw', maxWidth: '1200px' }}>
-                <h2>Chi Tiết Phiếu Xuất Kho</h2>
-                
-                <div className="compact-info-grid">
-                    <div><label>ID Phiếu</label><p><strong>{slip.id}</strong></p></div>
-                    <div><label>Khách hàng</label><p><strong>{slip.customer}</strong></p></div>
-                    <div><label>Ngày tạo</label>
-                        <p><strong>{formatDate(slip.createdAt)}</strong></p>
+        <Modal isOpen={true} onRequestClose={onClose} className="modal" overlayClassName="overlay" contentLabel="Chi tiết Phiếu Xuất">
+            <div className="modal-header">
+                <h2>Chi tiết Phiếu Xuất Kho</h2>
+                <button onClick={onClose} className="close-button"><FiX /></button>
+            </div>
+            <div className="modal-body">
+                <div id="slip-content">
+                    <div className="slip-info">
+                        <p><strong>Mã phiếu:</strong> {slip.id}</p>
+                        <p><strong>Ngày xuất:</strong> {slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'Không có'}</p>
+                        <p><strong>Khách hàng:</strong> {slip.customer || ''}</p>
+                        <p><strong>Ghi chú:</strong> {slip.notes || 'Không có'}</p>
                     </div>
-                    <div><label>Trạng thái</label><p><StatusBadge status={slip.status} /></p></div>
-                    <div className="info-description"><label>Diễn giải</label><p><em>{slip.description || '(Không có)'}</em></p></div>
-                </div>
-                
- 
-                <div className="modal-body">
-                    <h3 style={{marginTop: '10px'}}>Chi tiết hàng hóa</h3>
-                    <div className="table-container" style={{maxHeight: 'none', border: 'none'}}>
+                    <div className="table-container">
                         <table className="products-table">
                             <thead>
                                 <tr>
                                     <th>Mã hàng</th>
-                                    <th>Tên hàng</th>
+                                    <th>Tên sản phẩm</th>
                                     <th>Số lô</th>
                                     <th>HSD</th>
                                     <th>ĐVT</th>
                                     <th>Quy cách</th>
-                                    <th>SL xuất</th>
+                                    <th>Số lượng</th>
+                                    <th>Ghi chú</th>
                                     <th>Nhiệt độ BQ</th>
-                                    {hasNotes && <th>Ghi chú</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -48,26 +60,31 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.productId}</td>
                                         <td>{item.productName}</td>
                                         <td>{item.lotNumber}</td>
-                                        <td>{item.expiryDate || '(Không có)'}</td>
+                                        <td>{item.expiryDate}</td>
                                         <td>{item.unit}</td>
-                                        <td>{item.packaging}</td>
-                                        <td>{item.quantityToExport || item.quantityExported}</td>
+                                        {/* SỬA LỖI: Sử dụng optional chaining để hiển thị an toàn */}
+                                        <td>{item?.specification || ''}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
+                                        </td>
+                                        <td>{item.notes || ''}</td>
                                         <td>{item.storageTemp}</td>
-                                        {hasNotes && <td>{item.notes}</td>}
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 </div>
-
-                <div className="modal-actions">
-                    <button type="button" onClick={handlePrint} className="btn-secondary">In Phiếu</button>
-                    <button type="button" onClick={onClose} className="btn-primary">Đóng</button>
-                </div>
             </div>
-        </div>
+            <div className="modal-footer">
+                <button onClick={handleExportPDF} className="btn-primary">
+                    <FiPrinter style={{ marginRight: '5px' }} />
+                    Xuất PDF
+                </button>
+                <button onClick={onClose} className="btn-secondary">Đóng</button>
+            </div>
+        </Modal>
     );
 };
 
-export default React.memo(ViewExportSlipModal);
+export default ViewExportSlipModal;
