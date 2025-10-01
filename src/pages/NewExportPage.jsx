@@ -116,21 +116,30 @@ const NewExportPage = () => {
         setTimeout(() => lotSelectRefs.current[index]?.focus(), 100);
     };
     
-    const handleLotSelection = (index, selectedLotId) => {
-        const currentItem = items[index];
-        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
-        if (selectedLot) {
-          replaceItem(index, {
-              selectedLotId: selectedLotId,
-              lotNumber: selectedLot.lotNumber,
-              expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
-              quantityRemaining: selectedLot.quantityRemaining,
-              displayLotText: selectedLot.lotNumber || '(Trống)'
-          });
-        } else {
-           replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
-        }
-    };
+    // src/pages/NewExportPage.jsx
+
+const handleLotSelection = (index, selectedLotId) => {
+    const currentItem = items[index];
+    const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+
+    if (selectedLot) {
+        replaceItem(index, {
+            selectedLotId: selectedLotId,
+            lotNumber: selectedLot.lotNumber,
+            expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
+            quantityRemaining: selectedLot.quantityRemaining,
+            displayLotText: selectedLot.lotNumber || '(Trống)',
+
+            // ===== THÊM 3 DÒNG NÀY VÀO =====
+            unit: selectedLot.unit || '',
+            packaging: selectedLot.packaging || '',
+            storageTemp: selectedLot.storageTemp || '',
+            // =================================
+        });
+    } else {
+        replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '', unit: '', packaging: '', storageTemp: '' });
+    }
+};
     
     const handleRemoveRowWithConfirmation = (index) => {
         if (items.length <= 1) return;

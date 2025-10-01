@@ -64,8 +64,10 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
         
         if (inputValue.length > 0) {
             const normalizedInput = normalizeString(inputValue);
+            const upperCaseInput = inputValue.toUpperCase();
             const filteredSuggestions = allCustomers.filter(customer =>
-                normalizeString(customer.partnerName).includes(normalizedInput)
+                normalizeString(customer.partnerName).includes(normalizedInput) || 
+    customer.id.toUpperCase().includes(upperCaseInput)
             );
             setSuggestions(filteredSuggestions);
         } else {

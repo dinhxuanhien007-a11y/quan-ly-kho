@@ -68,8 +68,10 @@ const SupplierAutocomplete = ({ value, onSelect }) => {
         
         if (inputValue.length > 0) {
             const normalizedInput = normalizeString(inputValue);
+            const upperCaseInput = inputValue.toUpperCase();
             const filteredSuggestions = allSuppliers.filter(supplier =>
-                normalizeString(supplier.partnerName).includes(normalizedInput)
+                normalizeString(supplier.partnerName).includes(normalizedInput) || 
+    supplier.id.toUpperCase().includes(upperCaseInput)
             );
             setSuggestions(filteredSuggestions);
         } else {

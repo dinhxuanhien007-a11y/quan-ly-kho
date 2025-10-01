@@ -489,35 +489,29 @@ const handleExpiryDateBlur = (index, value) => {
                     </React.Fragment>
                 ))}
             </div>
-            
+
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
+            
             <div className="page-actions">
                 <button 
-    onClick={handleSaveSlip} 
-    className="btn-secondary" 
-    disabled={isSaving || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'}
->
-    {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}
-</button>
-<button 
-    onClick={promptForDirectImport} 
-    className="btn-primary" 
-    disabled={isSaving || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'Nhập hàng và cập nhật tồn kho ngay lập tức'}
->
-    {isSaving ? 'Đang xử lý...' : 'Nhập Kho Trực Tiếp'}
-</button>
+                    onClick={handleSaveSlip} 
+                    className="btn-secondary" 
+                    disabled={isSaving || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'}
+                >
+                    {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}
+                </button>
+                
                 <button 
                     onClick={promptForDirectImport} 
                     className="btn-primary" 
                     disabled={isSaving || !isSlipValid}
-                    title={!isSlipValid ? disabledReason : 'Nhập hàng và cập nhật tồn kho ngay lập tức'} // <-- THÊM DÒNG NÀY
+                    title={!isSlipValid ? disabledReason : 'Nhập hàng và cập nhật tồn kho ngay lập tức'}
                 >
                     {isSaving ? 'Đang xử lý...' : 'Nhập Kho Trực Tiếp'}
                 </button>
             </div>
-        </div>
+        </div> // <-- Đây là thẻ </div> đóng lại toàn bộ trang
     );
 };
 
