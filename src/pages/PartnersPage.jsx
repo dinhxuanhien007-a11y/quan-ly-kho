@@ -12,6 +12,7 @@ import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { PAGE_SIZE } from '../constants';
 import { normalizeString } from '../utils/stringUtils'; // <-- THÊM DÒNG NÀY
 import HighlightText from '../components/HighlightText';
+import { useSearchParams } from 'react-router-dom';
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -24,6 +25,14 @@ const PartnersPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState(null); // null: không tìm kiếm, []: tìm không thấy, [...]: kết quả
     const [isSearching, setIsSearching] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    useEffect(() => {
+        const termFromUrl = searchParams.get('search');
+        if (termFromUrl) {
+            setSearchTerm(termFromUrl);
+        }
+    }, [searchParams]);
 
     const baseQuery = useMemo(() => {
         return query(collection(db, "partners"), orderBy(documentId()));

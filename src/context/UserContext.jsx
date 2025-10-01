@@ -9,7 +9,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [userRole, setUserRole] = useState(null);
+    const [role, setRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -18,14 +18,14 @@ export const AuthProvider = ({ children }) => {
                 const userDocRef = doc(db, 'users', currentUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
-                    setUserRole(userDocSnap.data().role);
+                    setRole(userDocSnap.data().role);
                 } else {
-                    setUserRole(null);
+                    setRole(null);
                 }
                 setUser(currentUser);
             } else {
                 setUser(null);
-                setUserRole(null);
+                setRole(null);
             }
             setLoading(false);
         });
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
-        userRole,
+        role,
         loading,
     };
 

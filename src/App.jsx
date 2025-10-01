@@ -16,28 +16,31 @@ import ErrorBoundary from './components/ErrorBoundary';
 import loginStyles from './components/LoginPage.module.css';
 
 const AppRoutes = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, role, loading } = useAuth(); // Sửa userRole thành role cho nhất quán
+
   if (loading) {
-    return null; 
+    return null;
   }
 
+  if (!user) {
+    return (
+      <div className={loginStyles.loginPageWrapper}>
+        <LoginPage />
+      </div>
+    );
+  }
+
+  // Logic điều hướng sau khi đã đăng nhập
   return (
-    <>
-      {user ? (
-        <Routes>
-          {userRole === 'owner' ? (
-            <Route path="/*" element={<AdminLayout />} />
-          ) : (
-            <Route path="/*" element={<Navigate to="/view" />} />
-          )}
-          <Route path="/view/*" element={<ViewerLayout />} />
-        </Routes>
+    <Routes>
+      {role === 'owner' ? (
+        // Nếu là owner, cho phép truy cập tất cả các trang quản trị
+        <Route path="/*" element={<AdminLayout />} />
       ) : (
-        <div className={loginStyles.loginPageWrapper}>
-          <LoginPage />
-        </div>
+        // Nếu là các vai trò khác, chỉ cho phép truy cập ViewerLayout
+        <Route path="/*" element={<ViewerLayout />} />
       )}
-    </>
+    </Routes>
   );
 };
 

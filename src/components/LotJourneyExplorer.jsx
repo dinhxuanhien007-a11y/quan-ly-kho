@@ -14,7 +14,7 @@ const processDataForFlow = (importRecords, exportHistory, totalRemaining) => {
 
     const masterInfo = importRecords[0];
     const totalImported = importRecords.reduce((sum, rec) => sum + rec.quantityImported, 0);
-    const supplierName = masterInfo.supplier || 'Không rõ';
+    const supplierName = masterInfo.supplierName || 'Không rõ';
     initialNodes.push({
         id: 'supplier-node',
         data: { label: `Nhà Cung Cấp: ${supplierName}`, type: 'supplier', name: supplierName },

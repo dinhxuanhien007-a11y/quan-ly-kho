@@ -21,15 +21,18 @@ import ExpiryNotificationBanner from './ExpiryNotificationBanner';
 import ImportSlipCounter from './ImportSlipCounter';
 import ExportSlipCounter from './ExportSlipCounter';
 import ViewerLayout from './ViewerLayout';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/UserContext';
 import FloatingToolsModal from './FloatingToolsModal'; 
 import { FiGrid } from 'react-icons/fi';
 import SalesAnalyticsPage from '../pages/SalesAnalyticsPage'; // Thêm import
 import ProductLedgerPage from '../pages/ProductLedgerPage';
+import { usePresence } from '../hooks/usePresence';
 
 const AdminLayout = () => {
   const location = useLocation();
-  const { role } = useAuth();
+  const { role, user } = useAuth(); // Lấy cả `role` và `user`
+  
+  usePresence(); // <-- Gọi hook mới ở đây để báo trạng thái online
   
   const [isToolsModalVisible, setIsToolsModalVisible] = useState(false);
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);

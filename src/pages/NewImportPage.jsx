@@ -171,9 +171,33 @@ const disabledReason = useMemo(() => {
         }
     };
 
-    const handleExpiryDateBlur = (index, value) => {
-        updateItem(index, 'expiryDate', formatExpiryDate(value));
-    };
+    // src/pages/NewImportPage.jsx
+
+const handleExpiryDateBlur = (index, value) => {
+    // 1. Luôn định dạng lại chuỗi người dùng nhập để đảm bảo tính nhất quán
+    const formattedValue = formatExpiryDate(value);
+    updateItem(index, 'expiryDate', formattedValue);
+
+    // 2. Nếu giá trị sau khi định dạng là rỗng hoặc "N/A" thì không cần cảnh báo
+    if (!formattedValue || formattedValue.toUpperCase() === 'N/A') {
+        return;
+    }
+
+    // 3. Chuyển chuỗi đã định dạng thành đối tượng Date để so sánh
+    const expiryDateObject = parseDateString(formattedValue);
+
+    // 4. Nếu là một ngày hợp lệ, tiến hành so sánh
+    if (expiryDateObject) {
+        const today = new Date();
+        // Đặt giờ, phút, giây về 0 để chỉ so sánh ngày, không so sánh thời gian
+        today.setHours(0, 0, 0, 0); 
+
+        // 5. Nếu ngày hết hạn nhỏ hơn ngày hôm nay, hiển thị cảnh báo
+        if (expiryDateObject < today) {
+            toast.warn(`Cảnh báo: Hạn sử dụng "${formattedValue}" của mặt hàng ở dòng ${index + 1} đã ở trong quá khứ.`);
+        }
+    }
+};
 
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
@@ -469,13 +493,21 @@ const disabledReason = useMemo(() => {
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">
                 <button 
-                    onClick={handleSaveSlip} 
-                    className="btn-secondary" 
-                    disabled={isSaving || !isSlipValid}
-                    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'} // <-- THÊM DÒNG NÀY
-                >
-                    {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}
-                </button>
+    onClick={handleSaveSlip} 
+    className="btn-secondary" 
+    disabled={isSaving || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'}
+>
+    {isSaving ? 'Đang lưu...' : 'Lưu Tạm'}
+</button>
+<button 
+    onClick={promptForDirectImport} 
+    className="btn-primary" 
+    disabled={isSaving || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'Nhập hàng và cập nhật tồn kho ngay lập tức'}
+>
+    {isSaving ? 'Đang xử lý...' : 'Nhập Kho Trực Tiếp'}
+</button>
                 <button 
                     onClick={promptForDirectImport} 
                     className="btn-primary" 

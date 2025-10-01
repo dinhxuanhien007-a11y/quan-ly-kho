@@ -1,9 +1,12 @@
 // src/components/EditImportSlipModal.jsx
+import { db } from '../firebaseConfig';
 import React, { useState, useRef, useEffect } from 'react';
 import { FiPlusCircle, FiXCircle, FiCalendar } from 'react-icons/fi';
 import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify'; 
 import { z } from 'zod'; // <-- IMPORT ZOD
+import { doc, getDoc } from 'firebase/firestore';
+import ProductAutocomplete from './ProductAutocomplete';
 
 // <-- ĐỊNH NGHĨA SCHEMA XÁC THỰC -->
 const importItemSchema = z.object({
@@ -80,13 +83,51 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
     setSlipData({ ...slipData, items: updatedItems });
 };
 
+// NÂNG CẤP: Hàm tìm kiếm sản phẩm cho dòng mới
+    const handleProductSearch = async (index, productOrId) => {
+        if (!productOrId) return;
+
+        const productId = (typeof productOrId === 'object' ? productOrId.id : String(productOrId)).trim().toUpperCase();
+        if (!productId) return;
+
+        try {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+            
+            const updatedItems = [...slipData.items];
+
+            if (productSnap.exists()) {
+                const productData = productSnap.data();
+                updatedItems[index] = {
+                    ...updatedItems[index],
+                    productId: productId,
+                    productName: productData.productName,
+                    unit: productData.unit,
+                    packaging: productData.packaging,
+                    storageTemp: productData.storageTemp,
+                    team: productData.team,
+                    manufacturer: productData.manufacturer,
+                };
+            } else {
+                toast.warn(`Không tìm thấy sản phẩm với mã: ${productId}`);
+                updatedItems[index].productName = ''; // Xóa tên SP nếu không tìm thấy
+            }
+            setSlipData(prev => ({ ...prev, items: updatedItems }));
+
+        } catch (error) {
+            console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+            toast.error("Đã xảy ra lỗi khi tìm sản phẩm.");
+        }
+    };
+
   const addNewRow = () => {
     const newItems = [
       ...slipData.items,
       {
         id: Date.now(),
         productId: '', productName: '', lotNumber: '', expiryDate: '',
-        unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: ''
+        unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '',
+        isNew: true
       }
     ];
     setSlipData({ ...slipData, items: newItems });
@@ -173,13 +214,23 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
           {slipData.items.map((item, index) => (
             <React.Fragment key={index}>
               <div className="grid-cell">
-                <input 
-                    type="text" 
-                    value={item.productId} 
-                    onChange={e => handleItemChange(index, 'productId', e.target.value)} 
-                    ref={index === slipData.items.length - 1 ? lastInputRef : null}
-                />
-              </div>
+                {/* NÂNG CẤP: DÙNG ProductAutocomplete CHO DÒNG MỚI */}
+                                    {item.isNew ? (
+                                        <ProductAutocomplete
+                                            value={item.productId}
+                                            onChange={(value) => handleItemChange(index, 'productId', value.toUpperCase())}
+                                            onSelect={(product) => handleProductSearch(index, product)}
+                                            onBlur={() => handleProductSearch(index, item.productId)}
+                                        />
+                                    ) : (
+                                        <input 
+                                            type="text" 
+                                            value={item.productId} 
+                                            readOnly 
+                                            title="Không thể sửa Mã hàng đã có."
+                                        />
+                                    )}
+                                </div>
               <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
               <div className="grid-cell"><input type="text" value={item.lotNumber} onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} /></div>
               <div className="grid-cell">

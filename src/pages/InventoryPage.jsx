@@ -21,7 +21,7 @@ import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 // <-- THAY ĐỔI 2: Xóa toàn bộ hàm getRowColorByExpiry ở đây
 
 const InventoryPage = ({ pageTitle }) => {
-    const { userRole } = useAuth();
+    const { role: userRole } = useAuth();
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);

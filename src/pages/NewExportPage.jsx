@@ -1,4 +1,5 @@
 // src/pages/NewExportPage.jsx
+
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
@@ -30,19 +31,16 @@ const exportSlipSchema = z.object({
 
 const NewExportPage = () => {
     const {
-        customerId, customerName, description, items, exportDate,
-        setCustomer, setDescription, setExportDate, addNewItemRow, removeItemRow, updateItem,
-        replaceItem, resetSlip
+        customerId, customerName, description, items,
+        setCustomer, setDescription, addNewItemRow, removeItemRow, updateItem,
+        replaceItem, handleProductSearchResult, resetSlip
     } = useExportSlipStore();
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const [allCustomers, setAllCustomers] = useState([]);
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
     
     const lotSelectRefs = useRef([]);
-    const lastInputRef = useRef(null);
-    const today = new Date().toISOString().split('T')[0];
 
     const isSlipValid = useMemo(() => {
         const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
@@ -52,34 +50,16 @@ const NewExportPage = () => {
         return hasCustomer && hasValidItem;
     }, [customerId, customerName, items]);
 
-    // === BẮT ĐẦU THÊM MỚI ===
-const disabledReason = useMemo(() => {
-    if (isSlipValid) return '';
-    if (!customerId.trim() || !customerName.trim()) {
-        return 'Vui lòng chọn Khách Hàng.';
-    }
-    if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
-        return 'Vui lòng thêm ít nhất một sản phẩm hợp lệ (đã chọn lô và có số lượng).';
-    }
-    return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
-}, [isSlipValid, customerId, customerName, items]);
-// === KẾT THÚC THÊM MỚI ===
-
-    useEffect(() => {
-        if (lastInputRef.current) {
-            lastInputRef.current.focus();
+    const disabledReason = useMemo(() => {
+        if (isSlipValid) return '';
+        if (!customerId.trim() || !customerName.trim()) {
+            return 'Vui lòng chọn Khách Hàng.';
         }
-    }, [items.length]);
-
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
-            const querySnapshot = await getDocs(q);
-            const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setAllCustomers(customerList);
-        };
-        fetchCustomers();
-    }, []);
+        if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
+            return 'Vui lòng thêm ít nhất một sản phẩm hợp lệ (đã chọn lô và có số lượng).';
+        }
+        return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
+    }, [isSlipValid, customerId, customerName, items]);
 
     const handleCustomerSearch = async (idToSearch) => { 
         if (!idToSearch) {
@@ -87,7 +67,6 @@ const disabledReason = useMemo(() => {
             return;
         }
         try {
-            // SỬA LẠI: Dùng idToSearch thay vì customerId
             const partnerRef = doc(db, 'partners', idToSearch.toUpperCase()); 
             const partnerSnap = await getDoc(partnerRef);
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
@@ -102,57 +81,39 @@ const disabledReason = useMemo(() => {
         }
     };
 
+    // HÀM TÌM KIẾM SẢN PHẨM MỚI (CHỈ GỌI STORE)
     const handleProductSearch = async (index, productOrId) => {
-        if (!productOrId) return;
-        replaceItem(index, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, isOutOfStock: false });
-        let productData;
-        let productIdToSearch;
+        if (!productOrId) {
+            handleProductSearchResult(index, null);
+            return;
+        };
+
+        let productData = null;
         if (typeof productOrId === 'object' && productOrId !== null) {
             productData = productOrId;
-            productIdToSearch = productOrId.id;
-            updateItem(index, 'productId', productIdToSearch);
-        } else {
-            productIdToSearch = String(productOrId).trim().toUpperCase();
-            if (!productIdToSearch) return;
-            const productRef = doc(db, 'products', productIdToSearch);
-            const productSnap = await getDoc(productRef);
-            if (!productSnap.exists()) {
-                toast.warn(`Không tìm thấy sản phẩm với mã: ${productIdToSearch}`);
+        } 
+        else {
+            const productId = String(productOrId).trim().toUpperCase();
+            if (!productId) {
+                handleProductSearchResult(index, null); // Xóa dữ liệu dòng nếu productId rỗng
                 return;
+            };
+            try {
+                const productRef = doc(db, 'products', productId);
+                const productSnap = await getDoc(productRef);
+                if (productSnap.exists()) {
+                    productData = { id: productSnap.id, ...productSnap.data() };
+                } else {
+                    toast.warn(`Không tìm thấy sản phẩm với mã: ${productId}`);
+                }
+            } catch (error) {
+                console.error("Lỗi khi tìm sản phẩm:", error);
+                toast.error("Đã xảy ra lỗi khi tìm kiếm sản phẩm.");
             }
-            productData = { id: productSnap.id, ...productSnap.data() };
         }
-        replaceItem(index, {
-            productName: productData.productName,
-            unit: productData.unit,
-            packaging: productData.packaging,
-            storageTemp: productData.storageTemp,
-        });
-        try {
-            const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productIdToSearch), where("quantityRemaining", ">", 0));
-            const lotsSnapshot = await getDocs(lotsQuery);
-            if (lotsSnapshot.empty) {
-                updateItem(index, 'isOutOfStock', true);
-            } else {
-                const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                foundLots.sort((a, b) => {
-                    const aHasExpiry = a.expiryDate && a.expiryDate.toDate;
-                    const bHasExpiry = b.expiryDate && b.expiryDate.toDate;
-                    if (!aHasExpiry && !bHasExpiry) return 0;
-                    if (!aHasExpiry) return 1;
-                    if (!bHasExpiry) return -1;
-                    return a.expiryDate.toDate() - b.expiryDate.toDate();
-                });
-                replaceItem(index, {
-                    availableLots: foundLots,
-                    isOutOfStock: false,
-                });
-                setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
-            }
-        } catch (error) {
-            console.error("Lỗi khi tìm kiếm lô hàng:", error);
-            toast.error("Đã có lỗi xảy ra khi tìm kiếm lô hàng.");
-        }
+        
+        handleProductSearchResult(index, productData); 
+        setTimeout(() => lotSelectRefs.current[index]?.focus(), 100);
     };
     
     const handleLotSelection = (index, selectedLotId) => {
@@ -164,7 +125,7 @@ const disabledReason = useMemo(() => {
               lotNumber: selectedLot.lotNumber,
               expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
               quantityRemaining: selectedLot.quantityRemaining,
-              displayLotText: selectedLot.lotNumber
+              displayLotText: selectedLot.lotNumber || '(Trống)'
           });
         } else {
            replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
@@ -185,44 +146,61 @@ const disabledReason = useMemo(() => {
     };
 
     const getValidSlipData = () => {
-        const dateObject = new Date(exportDate.replace(/-/g, '/'));
-        const formattedDate = formatDate(dateObject);
-        const validItems = items.filter(item => item.productId && item.selectedLotId && item.quantityToExport);
-        const slipToValidate = {
-            customerId: customerId.trim(),
-            customerName: customerName.trim(),
-            items: validItems
-        };
-        const validationResult = exportSlipSchema.safeParse(slipToValidate);
-        if (!validationResult.success) {
-            toast.warn(validationResult.error.issues[0].message);
+        const formattedDate = formatDate(new Date());
+        const validItemsInput = items.filter(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0);
+        if (validItemsInput.length === 0) {
+            toast.warn("Phiếu xuất phải có ít nhất một mặt hàng hợp lệ.");
             return null;
         }
+
+        const finalItems = [];
+        let allProductIds = new Set();
+
+        for (const item of validItemsInput) {
+            let quantityToDistribute = Number(item.quantityToExport);
+            const selectedAggregatedLot = item.availableLots.find(lot => lot.id === item.selectedLotId);
+
+            if (!selectedAggregatedLot || quantityToDistribute <= 0) continue;
+
+            const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+
+            for (const originalLot of originalLotsSorted) {
+                if (quantityToDistribute <= 0) break;
+                const quantityFromThisLot = Math.min(quantityToDistribute, originalLot.quantityRemaining);
+                
+                finalItems.push({
+                    productId: item.productId,
+                    productName: item.productName,
+                    lotId: originalLot.id,
+                    lotNumber: originalLot.lotNumber,
+                    expiryDate: originalLot.expiryDate ? formatDate(originalLot.expiryDate) : '',
+                    unit: item.unit,
+                    packaging: item.packaging,
+                    storageTemp: item.storageTemp || '',
+                    quantityToExport: quantityFromThisLot,
+                    notes: item.notes || ''
+                });
+                quantityToDistribute -= quantityFromThisLot;
+            }
+            allProductIds.add(item.productId);
+        }
+
+        if(finalItems.length === 0){
+            toast.warn("Không có mặt hàng nào hợp lệ để xuất.");
+            return null;
+        }
+
         return {
             exportDate: formattedDate, 
             customerId: customerId.toUpperCase(), 
             customer: customerName,
             description, 
-            items: validationResult.data.items.map(item => {
-                const fullItemData = items.find(i => i.selectedLotId === item.selectedLotId);
-                return {
-                    productId: item.productId,
-                    productName: fullItemData?.productName || '',
-                    lotId: item.selectedLotId,
-                    lotNumber: fullItemData?.lotNumber || '',
-                    expiryDate: fullItemData?.expiryDate || '',
-                    unit: fullItemData?.unit || '',
-                    packaging: fullItemData?.packaging || '',
-                    storageTemp: fullItemData?.storageTemp || '',
-                    quantityToExport: item.quantityToExport,
-                    notes: fullItemData?.notes || ''
-                }
-            }), 
-            productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
+            items: finalItems, 
+            productIds: Array.from(allProductIds),
             createdAt: serverTimestamp()
         };
     };
-
+    
     const handleSaveDraft = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -397,21 +375,21 @@ const disabledReason = useMemo(() => {
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             <div className="page-actions">
                 <button 
-                    onClick={handleSaveDraft} 
-                    className="btn-secondary" 
-                    disabled={isProcessing || !isSlipValid}
-                     title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'} // <-- THÊM DÒNG NÀY
-                >
-                    {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
-                </button>
-                <button 
-                    onClick={promptForDirectExport} 
-                    className="btn-primary" 
-                    disabled={isProcessing || !isSlipValid}
-                    title={!isSlipValid ? disabledReason : 'Xuất hàng và cập nhật tồn kho ngay lập tức'} // <-- THÊM DÒNG NÀY
-                >
-                    {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}
-                </button>
+    onClick={handleSaveDraft} 
+    className="btn-secondary" 
+    disabled={isProcessing || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'}
+>
+    {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
+</button>
+<button 
+    onClick={promptForDirectExport} 
+    className="btn-primary" 
+    disabled={isProcessing || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'Xuất hàng và cập nhật tồn kho ngay lập tức'}
+>
+    {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}
+</button>
             </div>
         </div>
     );

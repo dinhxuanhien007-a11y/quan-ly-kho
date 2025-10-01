@@ -49,7 +49,7 @@ const getLotItemColorClass = (expiryDate) => {
 };
 
 const InventorySummaryPage = ({ pageTitle }) => {
-    const { userRole } = useAuth();
+    const { role: userRole } = useAuth();
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -281,7 +281,24 @@ const InventorySummaryPage = ({ pageTitle }) => {
             );
             const lotsSnapshot = await getDocs(lotsQuery);
             const lots = lotsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            setLotDetails(prev => ({ ...prev, [productId]: lots }));
+            // --- LOGIC GỘP LÔ BẮT ĐẦU TỪ ĐÂY ---
+            const lotAggregator = new Map();
+
+            for (const lot of lots) {
+                const lotKey = lot.lotNumber || 'KHONG_CO_LO';
+
+                if (lotAggregator.has(lotKey)) {
+                    // Nếu lô đã có, cộng dồn số lượng
+                    const existingLot = lotAggregator.get(lotKey);
+                    existingLot.quantityRemaining += lot.quantityRemaining;
+                } else {
+                    // Nếu lô chưa có, thêm mới vào Map
+                    // Tạo một bản sao để không làm thay đổi dữ liệu gốc
+                    lotAggregator.set(lotKey, { ...lot });
+                }
+            }
+            const aggregatedLots = Array.from(lotAggregator.values());
+setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots })); // <-- Sửa "lots" thành "aggregatedLots"
         } catch (error) {
             console.error("Lỗi khi tải chi tiết lô:", error);
             setLotDetails(prev => ({ ...prev, [productId]: [] }));
@@ -293,7 +310,11 @@ const InventorySummaryPage = ({ pageTitle }) => {
     };
 
     const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
-    const handlePrevPage = () => { fetchData('first'); };
+    const handlePrevPage = () => {
+    // Luôn quay về trang đầu tiên, là cách hoạt động đơn giản và ổn định nhất
+    // với cursor-based pagination của Firestore khi chỉ tiến tới.
+    fetchData('first'); 
+};
     const handleFilterChange = (type, value = '') => { if (activeFilter.type === type && activeFilter.value === value) { setActiveFilter({ type: 'none', value: '' }); } else { setActiveFilter({ type, value }); } };
     
     const handlePrint = async () => {
@@ -437,7 +458,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                     {!searchTerm && (
                         <div className="pagination-controls">
                             <button onClick={handlePrevPage} disabled={page <= 1}>
-                                <FiChevronLeft /> Trang Trước
+                                <FiChevronLeft /> Về Trang Đầu
                             </button>
                             <span>Trang {page}</span>
                             <button onClick={handleNextPage} disabled={isLastPage}>

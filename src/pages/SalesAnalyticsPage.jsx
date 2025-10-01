@@ -1,19 +1,20 @@
 // src/pages/SalesAnalyticsPage.jsx
-import { Line, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title } from 'chart.js';
+
+import { Line, Pie, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title, BarElement } from 'chart.js';
 import DateRangePresets from '../components/DateRangePresets';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getSalesAnalytics } from '../services/dashboardService';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
-import { FiCalendar } from 'react-icons/fi';
-// THÊM MỚI: Import các hàm của Firestore để lấy danh sách khách hàng
+import { FiCalendar, FiArrowUp, FiArrowDown, FiXCircle } from 'react-icons/fi';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
-
+import ProductAutocomplete from '../components/ProductAutocomplete';
+import { getElementAtEvent } from 'react-chartjs-2';
 
 // Đăng ký các thành phần của ChartJS
 ChartJS.register(
@@ -24,32 +25,42 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
-    ArcElement
+    ArcElement,
+    BarElement
 );
 
 const SalesAnalyticsPage = () => {
+    // === CÁC STATE CƠ BẢN ===
     const [filters, setFilters] = useState({
         startDate: '',
         endDate: '',
-        customerId: '', 
+        customerId: '',
         customerName: '',
-        productId: ''
+        productId: '',
+        team: 'all'
     });
     const [results, setResults] = useState([]);
     const [summary, setSummary] = useState({ totalQuantity: 0, totalSlips: 0 });
     const [loading, setLoading] = useState(false);
-    
-    // THÊM MỚI: State để lưu danh sách khách hàng cho dropdown
-    const [allCustomers, setAllCustomers] = useState([]);
+    const chartRef = useRef();
 
-    // THÊM MỚI: useEffect để lấy danh sách khách hàng một lần khi component được tải
+    // NÂNG CẤP 1: STATE CHO TƯƠNG TÁC SÂU (DRILL-DOWN)
+    const [drillDownFilter, setDrillDownFilter] = useState({ type: null, value: null });
+
+    // NÂNG CẤP 2: STATE CHO TÙY CHỈNH TOP N
+    const [topN, setTopN] = useState(5);
+
+    // NÂNG CẤP 3: STATE CHO PHÂN TRANG BẢNG DỮ LIỆU
+    const [currentPage, setCurrentPage] = useState(1);
+    const ROWS_PER_PAGE = 20;
+
+    // Lấy danh sách khách hàng (không đổi)
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
                 const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
                 const querySnapshot = await getDocs(q);
                 const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().partnerName }));
-                setAllCustomers(customerList);
             } catch (error) {
                 console.error("Lỗi khi tải danh sách khách hàng:", error);
                 toast.error("Không thể tải danh sách khách hàng.");
@@ -57,23 +68,32 @@ const SalesAnalyticsPage = () => {
         };
         fetchCustomers();
     }, []);
+    
+    // NÂNG CẤP 1: XỬ LÝ DỮ LIỆU SAU KHI ĐÃ LỌC DRILL-DOWN (NẾU CÓ)
+    const filteredResults = useMemo(() => {
+        if (!drillDownFilter.value) {
+            return results;
+        }
+        if (drillDownFilter.type === 'customer') {
+            return results.filter(row => row.customer === drillDownFilter.value);
+        }
+        return results;
+    }, [results, drillDownFilter]);
 
-    // THÊM MỚI: Xử lý dữ liệu để tìm top khách hàng và sản phẩm
+    // === CÁC HÀM TÍNH TOÁN DỮ LIỆU (useMemo) ===
     const topStats = useMemo(() => {
-        if (!results || results.length === 0) return { topCustomers: [], topProducts: [] };
-
-        // Top khách hàng
-        const salesByCustomer = results.reduce((acc, row) => {
+        if (!filteredResults || filteredResults.length === 0) return { topCustomers: [], topProducts: [] };
+        
+        const salesByCustomer = filteredResults.reduce((acc, row) => {
             acc[row.customer] = (acc[row.customer] || 0) + Number(row.quantityExported);
             return acc;
         }, {});
         const topCustomers = Object.entries(salesByCustomer)
             .sort(([, qtyA], [, qtyB]) => qtyB - qtyA)
-            .slice(0, 3)
+            .slice(0, topN) // NÂNG CẤP 2: Sử dụng topN
             .map(([name, quantity]) => ({ name, quantity }));
 
-        // Top sản phẩm
-        const salesByProduct = results.reduce((acc, row) => {
+        const salesByProduct = filteredResults.reduce((acc, row) => {
             if (!acc[row.productName]) {
                 acc[row.productName] = { quantity: 0, unit: row.unit };
             }
@@ -82,16 +102,15 @@ const SalesAnalyticsPage = () => {
         }, {});
         const topProducts = Object.entries(salesByProduct)
             .sort(([, dataA], [, dataB]) => dataB.quantity - dataA.quantity)
-            .slice(0, 3)
+            .slice(0, topN) // NÂNG CẤP 2: Sử dụng topN
             .map(([name, data]) => ({ name, ...data }));
 
         return { topCustomers, topProducts };
-    }, [results]);
+    }, [filteredResults, topN]);
 
-    // Xử lý dữ liệu cho biểu đồ đường (giữ nguyên)
     const lineChartData = useMemo(() => {
-        if (!results || results.length === 0) return null;
-        const salesByDate = results.reduce((acc, row) => {
+        if (!filteredResults || filteredResults.length === 0) return null;
+        const salesByDate = filteredResults.reduce((acc, row) => {
             const date = formatDate(row.exportDate);
             acc[date] = (acc[date] || 0) + Number(row.quantityExported);
             return acc;
@@ -106,12 +125,11 @@ const SalesAnalyticsPage = () => {
                 backgroundColor: 'rgba(75, 192, 192, 0.5)',
             }],
         };
-    }, [results]);
+    }, [filteredResults]);
 
-    // Xử lý dữ liệu cho biểu đồ tròn (giữ nguyên)
     const pieChartData = useMemo(() => {
-        if (!results || results.length === 0) return null;
-        const salesByCustomer = results.reduce((acc, row) => {
+        if (!filteredResults || filteredResults.length === 0) return null;
+        const salesByCustomer = filteredResults.reduce((acc, row) => {
             acc[row.customer] = (acc[row.customer] || 0) + Number(row.quantityExported);
             return acc;
         }, {});
@@ -123,9 +141,8 @@ const SalesAnalyticsPage = () => {
                 backgroundColor: ['rgba(255, 99, 132, 0.7)','rgba(54, 162, 235, 0.7)','rgba(255, 206, 86, 0.7)','rgba(75, 192, 192, 0.7)','rgba(153, 102, 255, 0.7)','rgba(255, 159, 64, 0.7)',],
             }],
         };
-    }, [results]);
+    }, [filteredResults]);
 
-    // THÊM MỚI: Tùy chọn để cải thiện giao diện biểu đồ
     const chartOptions = {
         plugins: {
             title: { display: true, font: { size: 16 } },
@@ -135,16 +152,80 @@ const SalesAnalyticsPage = () => {
         maintainAspectRatio: false
     };
 
+    const [sortConfig, setSortConfig] = useState({ key: 'exportDate', direction: 'descending' });
+
+    const sortedResults = useMemo(() => {
+        let sortableItems = [...filteredResults];
+        if (sortConfig.key !== null) {
+            sortableItems.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                if (sortConfig.key === 'exportDate') {
+                    aValue = a.exportDate.toMillis();
+                    bValue = b.exportDate.toMillis();
+                }
+                
+                if (sortConfig.key === 'quantityExported') {
+                    aValue = Number(aValue);
+                    bValue = Number(bValue);
+                }
+
+                if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [filteredResults, sortConfig]);
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+        setCurrentPage(1); // Reset về trang 1 khi sắp xếp
+    };
+
+    const SortIndicator = ({ columnKey }) => {
+        if (sortConfig.key !== columnKey) return null;
+        return sortConfig.direction === 'ascending' ? <FiArrowUp /> : <FiArrowDown />;
+    };
+
+    const barChartData = useMemo(() => {
+        if (topStats.topProducts.length === 0) return null;
+        const reversedTopProducts = [...topStats.topProducts].reverse();
+        return {
+            labels: reversedTopProducts.map(p => p.name),
+            datasets: [{
+                label: 'Số lượng đã bán',
+                data: reversedTopProducts.map(p => p.quantity),
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 1
+            }]
+        };
+    }, [topStats.topProducts]);
+
+    const barChartOptions = {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: `Top ${topN} Sản phẩm Bán chạy`, font: { size: 16 } },
+        }
+    };
+
+    const paginatedResults = useMemo(() => {
+        const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+        return sortedResults.slice(startIndex, startIndex + ROWS_PER_PAGE);
+    }, [currentPage, sortedResults]);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleSearch(filters);
-        }
     };
 
     const handlePresetSelect = (startDate, endDate) => {
@@ -155,6 +236,8 @@ const SalesAnalyticsPage = () => {
 
     const handleSearch = async (currentFilters = filters) => {
         setLoading(true);
+        setDrillDownFilter({ type: null, value: null });
+        setCurrentPage(1);
         try {
             const data = await getSalesAnalytics(currentFilters);
             setResults(data);
@@ -166,6 +249,21 @@ const SalesAnalyticsPage = () => {
             toast.error("Đã xảy ra lỗi khi tải báo cáo.");
         } finally {
             setLoading(false);
+        }
+    };
+    
+    const handleChartClick = (event) => {
+        if (!chartRef.current) return;
+        const element = getElementAtEvent(chartRef.current, event);
+        if (!element.length) return;
+
+        const { index } = element[0];
+        const clickedLabel = pieChartData.labels[index];
+        
+        if (clickedLabel) {
+            setDrillDownFilter({ type: 'customer', value: clickedLabel });
+            setCurrentPage(1);
+            toast.info(`Đã lọc theo khách hàng: ${clickedLabel}`);
         }
     };
 
@@ -193,21 +291,33 @@ const SalesAnalyticsPage = () => {
                         </div>
                     </div>
                 </div>
-                {/* THÊM MỚI: Hàng bộ lọc thứ 2 */}
-                <div className="form-row" style={{marginTop: '15px'}}>
-                    <div className="form-group">
-    <label>Khách hàng (Tùy chọn)</label>
-    <CustomerAutocomplete
-        value={filters.customerName || ''} // Hiển thị tên khách hàng
-        onSelect={({ id, name }) => setFilters(prev => ({ ...prev, customerId: id, customerName: name }))}
-    />
-</div>
-                    <div className="form-group">
-                        <label>Mã hàng (Tùy chọn)</label>
-                        <input type="text" name="productId" placeholder="Nhập mã hàng để lọc..." value={filters.productId} onChange={handleFilterChange} onKeyDown={handleKeyDown}/>
+                <div className="form-row" style={{marginTop: '15px', alignItems: 'flex-end'}}>
+                    <div className="form-group" style={{flex: 1.5}}>
+                        <label>Khách hàng (Tùy chọn)</label>
+                        <CustomerAutocomplete
+                            value={filters.customerName || ''}
+                            onSelect={({ id, name }) => setFilters(prev => ({ ...prev, customerId: id, customerName: name }))}
+                        />
+                    </div>
+                    <div className="form-group" style={{flex: 1.5}}>
+                        <label>Sản phẩm (Tùy chọn)</label>
+                        <ProductAutocomplete
+                            value={filters.productId}
+                            onSelect={(product) => setFilters(prev => ({ ...prev, productId: product.id }))}
+                            onChange={(value) => setFilters(prev => ({ ...prev, productId: value }))}
+                        />
+                    </div>
+                    <div className="form-group" style={{flex: 1}}>
+                        <label>Team (Tùy chọn)</label>
+                        <select name="team" value={filters.team} onChange={handleFilterChange}>
+                            <option value="all">Tất cả Team</option>
+                            <option value="MED">MED</option>
+                            <option value="BIO">BIO</option>
+                            <option value="Spare Part">Spare Part</option>
+                        </select>
                     </div>
                 </div>
-                <div className="page-actions" style={{ justifyContent: 'flex-start' }}>
+                <div className="page-actions" style={{ justifyContent: 'flex-start', marginTop: '15px' }}>
                     <button onClick={() => handleSearch(filters)} className="btn-primary" disabled={loading}>
                         {loading ? 'Đang tải...' : 'Xem Báo cáo'}
                     </button>
@@ -216,6 +326,17 @@ const SalesAnalyticsPage = () => {
 
             {loading ? <Spinner /> : (
                 <>
+                    {drillDownFilter.value && (
+                        <div className="inline-warning" style={{justifyContent: 'space-between', marginBottom: '15px', backgroundColor: '#e7f3ff', color: '#004085'}}>
+                            <span>
+                                <strong>Đang lọc theo {drillDownFilter.type === 'customer' && 'khách hàng'}:</strong> {drillDownFilter.value}
+                            </span>
+                            <button onClick={() => setDrillDownFilter({ type: null, value: null })} className="btn-icon" title="Bỏ lọc" style={{color: '#004085'}}>
+                                <FiXCircle />
+                            </button>
+                        </div>
+                    )}
+
                     <div className="stats-grid" style={{ marginBottom: '20px' }}>
                         <div className="stat-card">
                             <div className="stat-card-info"><h4>Tổng số Phiếu xuất</h4><p>{summary.totalSlips}</p></div>
@@ -225,34 +346,39 @@ const SalesAnalyticsPage = () => {
                         </div>
                     </div>
 
-                    {/* THÊM MỚI: Hiển thị Top 3 */}
                     {results.length > 0 && (
-                         <div className="table-grid" style={{ marginBottom: '20px' }}>
+                        <div className="table-grid" style={{ marginBottom: '20px' }}>
                             <div className="card">
-                                <h3>Top 3 Khách hàng</h3>
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                    <h3>Top {topN} Khách hàng</h3>
+                                    <select value={topN} onChange={e => setTopN(Number(e.target.value))} style={{padding: '5px', borderColor: '#ccc', borderRadius: '4px'}}>
+                                        <option value="3">Top 3</option>
+                                        <option value="5">Top 5</option>
+                                        <option value="10">Top 10</option>
+                                    </select>
+                                </div>
                                 <ul className="recent-activity-list">
                                     {topStats.topCustomers.map(c => <li key={c.name}><span>{c.name}</span><span>{formatNumber(c.quantity)}</span></li>)}
                                 </ul>
                             </div>
-                            <div className="card">
-                                <h3>Top 3 Sản phẩm Bán chạy</h3>
-                                <ul className="recent-activity-list">
-                                    {topStats.topProducts.map(p => <li key={p.name}><span>{p.name}</span><span>{formatNumber(p.quantity)} {p.unit}</span></li>)}
-                                </ul>
-                            </div>
+                            {barChartData && (
+                                <div className="card" style={{height: '300px'}}>
+                                    <Bar data={barChartData} options={barChartOptions} />
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {results.length > 0 && (
                         <div className="chart-grid" style={{ marginBottom: '20px' }}>
                             {lineChartData && (
-                                <div className="card">
-                                    <Line key={JSON.stringify(results)} data={lineChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Xu hướng xuất kho theo thời gian'}}}} />
+                                <div className="card" style={{height: '400px'}}>
+                                    <Line data={lineChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Xu hướng xuất kho theo thời gian'}}}} />
                                 </div>
                             )}
                             {pieChartData && (
-                                <div className="card">
-                                    <Pie key={JSON.stringify(results) + 'pie'} data={pieChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Tỷ trọng xuất kho theo Khách hàng'}}}} />
+                                <div className="card" style={{height: '400px'}}>
+                                    <Pie ref={chartRef} data={pieChartData} onClick={handleChartClick} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Tỷ trọng theo Khách hàng (Click để lọc)'}}}} />
                                 </div>
                             )}
                         </div>
@@ -262,28 +388,46 @@ const SalesAnalyticsPage = () => {
                         <table className="products-table">
                             <thead>
                                 <tr>
-                                    <th>Ngày xuất</th><th>Khách hàng</th><th>Mã hàng</th>
-                                    <th>Tên hàng</th><th>Số lô</th><th>Số lượng</th>
+                                    <th><button onClick={() => requestSort('exportDate')}>Ngày xuất <SortIndicator columnKey="exportDate" /></button></th>
+                                    <th><button onClick={() => requestSort('customer')}>Khách hàng <SortIndicator columnKey="customer" /></button></th>
+                                    <th><button onClick={() => requestSort('productId')}>Mã hàng <SortIndicator columnKey="productId" /></button></th>
+                                    <th><button onClick={() => requestSort('productName')}>Tên hàng <SortIndicator columnKey="productName" /></button></th>
+                                    <th><button onClick={() => requestSort('lotNumber')}>Số lô <SortIndicator columnKey="lotNumber" /></button></th>
+                                    <th><button onClick={() => requestSort('quantityExported')}>Số lượng <SortIndicator columnKey="quantityExported" /></button></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {results.length > 0 ? results.map((row, index) => (
+                                {paginatedResults.length > 0 ? paginatedResults.map((row, index) => (
                                     <tr key={`${row.slipId}-${index}`}>
                                         <td>{formatDate(row.exportDate)}</td>
                                         <td style={{textAlign: 'left'}}>{row.customer}</td>
                                         <td>{row.productId}</td>
                                         <td style={{textAlign: 'left'}}>{row.productName}</td>
                                         <td>{row.lotNumber || '(Không có)'}</td>
-                                        <td>{formatNumber(row.quantityExported)} {row.unit}</td>
+                                        <td style={{fontWeight: 'bold'}}>{formatNumber(row.quantityExported)} {row.unit}</td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="6" style={{textAlign: 'center'}}>Không có dữ liệu hoặc vui lòng nhấn "Xem Báo cáo".</td>
+                                        <td colSpan="6" style={{textAlign: 'center'}}>
+                                            {results.length > 0 ? 'Không có dữ liệu cho trang này.' : 'Không có dữ liệu hoặc vui lòng nhấn "Xem Báo cáo".'}
+                                        </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+
+                    {sortedResults.length > ROWS_PER_PAGE && (
+                        <div className="pagination-controls">
+                            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>
+                                <FiChevronLeft /> Trang Trước
+                            </button>
+                            <span>Trang {currentPage} / {Math.ceil(sortedResults.length / ROWS_PER_PAGE)}</span>
+                            <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage * ROWS_PER_PAGE >= sortedResults.length}>
+                                Trang Tiếp <FiChevronRight />
+                            </button>
+                        </div>
+                    )}
                 </>
             )}
         </div>

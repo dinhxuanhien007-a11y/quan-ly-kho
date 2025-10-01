@@ -145,6 +145,8 @@ export const getChartData = async () => {
  * @param {object} filters - Đối tượng chứa các bộ lọc { startDate, endDate, customerId, productId }.
  * @returns {Promise<Array>} - Một mảng chứa các dòng dữ liệu đã được xử lý.
  */
+// src/services/dashboardService.js
+
 export const getSalesAnalytics = async (filters = {}) => {
     let salesQuery = query(
         collection(db, 'export_tickets'),
@@ -164,9 +166,24 @@ export const getSalesAnalytics = async (filters = {}) => {
     if (filters.customerId) {
         salesQuery = query(salesQuery, where("customerId", "==", filters.customerId));
     }
-    // SỬA LẠI: BẬT BỘ LỌC CHO PRODUCT ID
     if (filters.productId && filters.productId.trim() !== '') {
         salesQuery = query(salesQuery, where("productIds", "array-contains", filters.productId.trim()));
+    }
+
+    // --- LOGIC LỌC THEO TEAM ---
+    if (filters.team && filters.team !== 'all') {
+        const productsByTeamQuery = query(collection(db, 'products'), where("team", "==", filters.team));
+        const productsSnapshot = await getDocs(productsByTeamQuery);
+        const productIdsInTeam = productsSnapshot.docs.map(doc => doc.id);
+
+        if (productIdsInTeam.length > 0) {
+            // Firestore v10 không hỗ trợ `array-contains-any` kết hợp với các toán tử bất bình đẳng khác.
+            // Do đó, chúng ta sẽ lọc trên client-side sau khi lấy dữ liệu.
+            // Để tối ưu, nếu có thể, bạn nên thêm trường `teams` vào export_tickets.
+            // Tạm thời, chúng ta sẽ không thêm bộ lọc này vào query chính.
+        } else {
+            return []; // Nếu không có sản phẩm nào thuộc team, trả về mảng rỗng
+        }
     }
 
     const querySnapshot = await getDocs(salesQuery);
@@ -176,10 +193,15 @@ export const getSalesAnalytics = async (filters = {}) => {
     querySnapshot.forEach(doc => {
         const slip = doc.data();
         slip.items.forEach(item => {
-            // SỬA LẠI: NẾU CÓ LỌC THEO MÃ HÀNG, CHỈ LẤY ĐÚNG MẶT HÀNG ĐÓ
+            // Lọc sản phẩm trong trường hợp có cả bộ lọc team và sản phẩm
             if (filters.productId && filters.productId.trim() !== '' && item.productId !== filters.productId.trim()) {
-                return; // Bỏ qua các mặt hàng không khớp
+                return;
             }
+            // Lọc team trên client-side
+            if (filters.team && filters.team !== 'all' && item.team !== filters.team) {
+                return;
+            }
+            
             detailedRows.push({
                 slipId: doc.id,
                 exportDate: slip.createdAt,
@@ -188,11 +210,11 @@ export const getSalesAnalytics = async (filters = {}) => {
                 productName: item.productName,
                 lotNumber: item.lotNumber,
                 quantityExported: item.quantityToExport || item.quantityExported,
-                unit: item.unit
+                unit: item.unit,
+                team: item.team // Đảm bảo trường team được trả về
             });
         });
     });
-
     return detailedRows;
 };
 

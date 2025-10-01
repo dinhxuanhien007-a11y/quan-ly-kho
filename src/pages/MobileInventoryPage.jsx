@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { db, app } from '../firebaseConfig'; 
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import { FiSearch, FiAlertCircle, FiMic } from 'react-icons/fi';
 import styles from '../styles/MobileInventoryPage.module.css';

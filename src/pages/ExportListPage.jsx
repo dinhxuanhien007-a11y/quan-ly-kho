@@ -1,7 +1,8 @@
 // src/pages/ExportListPage.jsx
+
 import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp } from 'firebase/firestore'; // Thêm where, Timestamp
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
@@ -14,42 +15,99 @@ import { formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import NewDataNotification from '../components/NewDataNotification';
+// NÂNG CẤP 1: Import các component cần thiết cho bộ lọc
+import DateRangePresets from '../components/DateRangePresets';
+import CustomerAutocomplete from '../components/CustomerAutocomplete';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+// src/pages/ExportListPage.jsx
 
 const ExportListPage = () => {
-  const [selectedSlip, setSelectedSlip] = useState(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'Xác nhận' });
+    const [selectedSlip, setSelectedSlip] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'Xác nhận' });
+    const [isProcessing, setIsProcessing] = useState(false);
 
-  const baseQuery = useMemo(() => query(collection(db, 'export_tickets'), orderBy("createdAt", "desc")), []);
-  
-  const {
-    documents: exportSlips,
-    loading,
-    isLastPage,
-    page,
-    nextPage,
-    prevPage,
-    reset
-  } = useFirestorePagination(baseQuery, PAGE_SIZE);
+    // NÂNG CẤP 1: State để quản lý các giá trị của bộ lọc
+    const [filters, setFilters] = useState({
+        startDate: null, // Sửa thành null
+        endDate: null,   // Sửa thành null
+        customer: { id: '', name: '' },
+        status: 'all',
+    });
 
-  const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+    // NÂNG CẤP 1: Xây dựng câu truy vấn động dựa trên bộ lọc
+    const baseQuery = useMemo(() => {
+        let q = query(collection(db, 'export_tickets'), orderBy("createdAt", "desc"));
 
-  const handleRefresh = () => {
-    dismissNewData(); // <-- Đặt lại trạng thái của notification
-    reset();          // <-- Tải lại dữ liệu từ trang đầu
-  };
+        if (filters.startDate) {
+            q = query(q, where("createdAt", ">=", Timestamp.fromDate(new Date(filters.startDate))));
+        }
+        if (filters.endDate) {
+            const endOfDay = new Date(filters.endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            q = query(q, where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
+        }
+        if (filters.customer.id) {
+            q = query(q, where("customerId", "==", filters.customer.id));
+        }
+        if (filters.status && filters.status !== 'all') {
+            q = query(q, where("status", "==", filters.status));
+        }
+        
+        return q;
+    }, [filters]);
 
-  const handleConfirmExport = async (slip) => {
+    const {
+        documents: exportSlips,
+        loading,
+        isLastPage,
+        page,
+        nextPage,
+        prevPage,
+        reset
+    } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+    // NÂNG CẤP 1: TÍNH TOÁN CÁC SỐ LIỆU TÓM TẮT
+    const summaryStats = useMemo(() => {
+        if (loading || !exportSlips) {
+            return { total: '...', pending: '...', completed: '...', cancelled: '...' };
+        }
+        const pending = exportSlips.filter(s => s.status === 'pending').length;
+        const completed = exportSlips.filter(s => s.status === 'completed').length;
+        const cancelled = exportSlips.filter(s => s.status === 'cancelled').length;
+        
+        return {
+            total: exportSlips.length,
+            pending,
+            completed,
+            cancelled
+        };
+    }, [exportSlips, loading]);
+
+    const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+
+    const handleRefresh = () => {
+        dismissNewData();
+        reset();
+    };
+
+// src/pages/ExportListPage.jsx
+
+// THAY THẾ HÀM CŨ BẰNG HÀM NÀY:
+const handleConfirmExport = async (slip) => {
+    setIsProcessing(true); // Báo cho hệ thống biết là đang xử lý
     try {
       for (const item of slip.items) {
         const lotRef = doc(db, 'inventory_lots', item.lotId);
         const lotSnap = await getDoc(lotRef);
         if (lotSnap.exists()) {
-          const currentQuantity = lotSnap.data().quantityRemaining;
+         const currentQuantity = lotSnap.data().quantityRemaining;
           const newQuantityRemaining = currentQuantity - (item.quantityToExport || item.quantityExported);
           if (newQuantityRemaining < 0) {
             toast.error(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ để xuất.`);
+            setIsProcessing(false); // Dừng xử lý nếu có lỗi
             return;
           }
           await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
@@ -63,11 +121,14 @@ const ExportListPage = () => {
       console.error("Lỗi khi xác nhận xuất kho: ", error);
       toast.error('Đã xảy ra lỗi khi xác nhận.');
     } finally {
+        setIsProcessing(false); // Luôn tắt trạng thái xử lý khi xong
         setConfirmModal({ isOpen: false });
     }
-  };
+};
 
-  const handleCancelSlip = async (slip) => {
+// THAY THẾ HÀM CŨ BẰNG HÀM NÀY (để đồng bộ):
+const handleCancelSlip = async (slip) => {
+    setIsProcessing(true); // Báo cho hệ thống biết là đang xử lý
     try {
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'cancelled' });
@@ -77,9 +138,10 @@ const ExportListPage = () => {
       console.error("Lỗi khi hủy phiếu: ", error);
       toast.error('Đã xảy ra lỗi khi hủy phiếu.');
     } finally {
-        setConfirmModal({ isOpen: false });
+       setIsProcessing(false); // Luôn tắt trạng thái xử lý khi xong
+       setConfirmModal({ isOpen: false });
     }
-  };
+};
 
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
@@ -99,7 +161,15 @@ const ExportListPage = () => {
     }
   };
 
-  const promptAction = (action, slip) => {
+const handleFilterChange = (filterName, value) => {
+        setFilters(prev => ({ ...prev, [filterName]: value }));
+    };
+
+    const handlePresetSelect = (startDate, endDate) => {
+        setFilters(prev => ({ ...prev, startDate, endDate }));
+    };
+
+const promptAction = (action, slip) => {
     if (action === 'confirm') {
         setConfirmModal({
             isOpen: true,
@@ -188,8 +258,8 @@ const ExportListPage = () => {
       toast.error("Không thể lấy dữ liệu tồn kho mới nhất.");
     }
   };
-  
-  return (
+
+return (
     <div>
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
@@ -198,6 +268,7 @@ const ExportListPage = () => {
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal({ isOpen: false })}
         confirmText={confirmModal.confirmText}
+        isConfirming={isProcessing}
       />
       {isEditModalOpen && ( <EditExportSlipModal slip={selectedSlip} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveSlipChanges} /> )}
       {isViewModalOpen && ( <ViewExportSlipModal slip={selectedSlip} onClose={() => setIsViewModalOpen(false)} /> )}
@@ -205,17 +276,93 @@ const ExportListPage = () => {
       <div className="page-header">
         <h1>Danh sách Phiếu Xuất Kho</h1>
       </div>
+{/* NÂNG CẤP 1: KHU VỰC BỘ LỌC */}
+            <div className="form-section">
+                <DateRangePresets onPresetSelect={handlePresetSelect} />
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>Từ ngày</label>
+                        {/* NÂNG CẤP GIAO DIỆN: Thay thế input bằng DatePicker */}
+                        <DatePicker
+                            selected={filters.startDate}
+                            onChange={(date) => handleFilterChange('startDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chọn ngày bắt đầu"
+                            className="search-input"
+                            isClearable
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Đến ngày</label>
+                        {/* NÂNG CẤP GIAO DIỆN: Thay thế input bằng DatePicker */}
+                        <DatePicker
+                            selected={filters.endDate}
+                            onChange={(date) => handleFilterChange('endDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chọn ngày kết thúc"
+                            className="search-input"
+                            isClearable
+                        />
+                    </div>
+                </div>
+                <div className="form-row" style={{ marginTop: '15px' }}>
+                    <div className="form-group">
+                        <label>Khách hàng</label>
+                        <CustomerAutocomplete 
+                            value={filters.customer.name}
+                            onSelect={(customer) => handleFilterChange('customer', customer)}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Trạng thái</label>
+                        <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}>
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="pending">Đang chờ</option>
+                            <option value="completed">Hoàn thành</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-      <NewDataNotification
-        isVisible={hasNewData}
-        onRefresh={handleRefresh}
-        message="Có phiếu xuất mới!"
-      />
+            {/* NÂNG CẤP 1: HIỂN THỊ CÁC THẺ THỐNG KÊ */}
+            <div className="stats-grid" style={{ marginBottom: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Tổng Số Phiếu (trang này)</h4>
+                        <p>{summaryStats.total}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Đang Chờ Xử Lý</h4>
+                        <p style={{ color: '#ffc107' }}>{summaryStats.pending}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Đã Hoàn Thành</h4>
+                        <p style={{ color: '#28a745' }}>{summaryStats.completed}</p>
+                    </div>
+                </div>
+                 <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Đã Hủy</h4>
+                        <p style={{ color: '#6c757d' }}>{summaryStats.cancelled}</p>
+                    </div>
+                </div>
+            </div>
 
-      {loading ? <Spinner /> : (
-        <>
-            <table className="products-table list-page-table">
-                <thead>
+            <NewDataNotification
+                isVisible={hasNewData}
+                onRefresh={handleRefresh}
+                message="Có phiếu xuất mới!"
+            />
+
+            {loading ? <Spinner /> : (
+                <>
+                    <table className="products-table list-page-table">
+<thead>
                 <tr>
                     <th>Ngày tạo</th>
                     <th>Khách hàng / Nơi nhận</th>
@@ -225,15 +372,14 @@ const ExportListPage = () => {
                 </tr>
                 </thead>
                 <tbody>
-                {exportSlips.length > 0 ? (
-                    exportSlips.map(slip => (
-                    <tr key={slip.id}>
-                        <td>{formatDate(slip.createdAt)}</td>
-                        <td>{slip.customer}</td>
-                        <td>{slip.description}</td>
-                        <td><StatusBadge status={slip.status} /></td>
-                        <td>
-                            <div className="action-buttons">
+{exportSlips.length > 0 ? exportSlips.map(slip => (
+                                <tr key={slip.id}>
+                                    <td>{formatDate(slip.createdAt)}</td>
+                                    <td>{slip.customer}</td>
+                                    <td>{slip.description}</td>
+                                    <td><StatusBadge status={slip.status} /></td>
+                                    <td>
+<div className="action-buttons">
                                 <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
                                     <FiEye />
                                 </button>
@@ -253,16 +399,14 @@ const ExportListPage = () => {
                             </div>
                         </td>
                     </tr>
-                    ))
-                ) : (
-                    <tr>
-                        <td colSpan="5" style={{ textAlign: 'center' }}>Chưa có phiếu xuất kho nào.</td>
-                    </tr>
-                )}
-                </tbody>
-            </table>
-
-            <div className="pagination-controls">
+)) : (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center' }}>Không tìm thấy phiếu xuất nào khớp với điều kiện.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+<div className="pagination-controls">
                 <button onClick={prevPage} disabled={page <= 1 || loading}>
                     <FiChevronLeft /> Trang Trước
                 </button>
@@ -272,9 +416,9 @@ const ExportListPage = () => {
                 </button>
             </div>
         </>
-      )}
-    </div>
-  );
+)}
+        </div>
+    );
 };
 
 export default ExportListPage;

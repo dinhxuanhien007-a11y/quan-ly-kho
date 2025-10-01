@@ -95,7 +95,7 @@ export const exportImportSlipToPDF = async (slip) => {
     doc.text(slip.supplierName || '', 40, 36);
     
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Ghi chú: ${slip.notes || 'Không có'}`, 14, 42);
+    doc.text(`Ghi chú: ${slip.description || 'Không có'}`, 14, 42);
 
     const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Số lượng', 'Ghi chú', 'Team']];
     const body = enrichedItems.map(item => [
@@ -105,7 +105,7 @@ export const exportImportSlipToPDF = async (slip) => {
     ]);
 
     autoTable(doc, {
-        head: head, body: body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 },
+        head: head, body: body, startY: 50, theme: 'grid', margin: { left: 10, right: 10 },
         // Yêu cầu 1 & 2: Căn giữa mặc định
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
@@ -160,7 +160,7 @@ export const exportExportSlipToPDF = async (slip) => {
     doc.text(slip.customer || '', 36, 36);
     
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Ghi chú: ${slip.notes || 'Không có'}`, 14, 42);
+    doc.text(`Ghi chú: ${slip.description || 'Không có'}`, 14, 42);
 
     const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Số lượng', 'Ghi chú', 'Nhiệt độ BQ']];
     const body = enrichedItems.map(item => [
@@ -170,26 +170,25 @@ export const exportExportSlipToPDF = async (slip) => {
         item.notes || '', item.storageTemp
     ]);
 
+    // File: src/utils/pdfUtils.js (bên trong hàm exportExportSlipToPDF)
+
     autoTable(doc, {
-        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 },
-        // Yêu cầu 1 & 2: Căn giữa mặc định
+        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 }, // <-- THAY ĐỔI Ở ĐÂY
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
-        // Yêu cầu 3: Điều chỉnh độ rộng cột
         columnStyles: {
-            0: { cellWidth: 31 },  // Mã hàng
-            1: { cellWidth: 71, halign: 'left' }, // Tên sản phẩm (rộng, căn trái)
-            2: { cellWidth: 31 },  // Số lô
-            3: { cellWidth: 26 },  // HSD (hẹp)
-            4: { cellWidth: 18 },  // ĐVT (hẹp)
-            5: { cellWidth: 35 },  // Quy cách (hẹp)
-            6: { cellWidth: 25 },  // Số lượng (hẹp)
-            7: { cellWidth: 'auto' }, // Ghi chú (tự động co giãn)
-            8: { cellWidth: 25 },  // Nhiệt độ BQ (hẹp)
+            0: { cellWidth: 31 },
+            1: { cellWidth: 71, halign: 'left' },
+            2: { cellWidth: 31 },
+            3: { cellWidth: 26 },
+            4: { cellWidth: 18 },
+            5: { cellWidth: 35 },
+            6: { cellWidth: 25 },
+            7: { cellWidth: 'auto' },
+            8: { cellWidth: 25 },
         },
-        // Yêu cầu 4: Tô đậm các ô được chỉ định
         didParseCell: function (data) {
-            const boldColumns = [0, 2, 6]; // Mã hàng, Số lô, Số lượng
+            const boldColumns = [0, 2, 6];
             if (data.section === 'body' && boldColumns.includes(data.column.index)) {
                 data.cell.styles.fontStyle = 'bold';
             }
@@ -241,7 +240,7 @@ export const exportStocktakeToPDF = async (session, items) => {
         body: body,
         startY: 40,
         theme: 'grid',
-        margin: { left: 1, right: 1 },
+        margin: { left: 10, right: 10 },
         styles: { font: 'Roboto-Regular', fontSize: 11, valign: 'middle', halign: 'center' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255 },
         // --- SỬA LỖI: Cập nhật lại chỉ số các cột ---

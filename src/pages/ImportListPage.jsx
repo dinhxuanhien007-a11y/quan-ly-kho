@@ -1,5 +1,7 @@
+// src/pages/ImportListPage.jsx
+
 import React, { useState, useMemo } from 'react';
-import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc, where } from 'firebase/firestore'; // Thêm "where"
 import { FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
@@ -13,25 +15,49 @@ import { parseDateString, formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import NewDataNotification from '../components/NewDataNotification';
+// NÂNG CẤP 1: Import các component cần thiết cho bộ lọc
+import DateRangePresets from '../components/DateRangePresets';
+import SupplierAutocomplete from '../components/SupplierAutocomplete';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const ImportListPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedSlip, setSelectedSlip] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    
-    // === BẮT ĐẦU THAY ĐỔI CẤU TRÚC STATE ===
-    const [confirmModal, setConfirmModal] = useState({ 
-        isOpen: false, 
-        item: null, 
-        title: '', 
-        message: '', 
-        confirmText: '', 
-        action: null // Thêm 'action' để biết cần làm gì
-    });
-    // === KẾT THÚC THAY ĐỔI CẤU TRÚC STATE ===
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null, title: '', message: '', confirmText: '', action: null });
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const baseQuery = useMemo(() => query(collection(db, 'import_tickets'), orderBy("createdAt", "desc")), []);
-    
+    // NÂNG CẤP 1: State để quản lý các giá trị của bộ lọc
+    const [filters, setFilters] = useState({
+        startDate: null, // Sửa thành null để tương thích với DatePicker
+        endDate: null,   // Sửa thành null
+        supplier: { id: '', name: '' },
+        status: 'all',
+    });
+
+    // NÂNG CẤP 1: Xây dựng câu truy vấn động dựa trên bộ lọc
+    const baseQuery = useMemo(() => {
+        let q = query(collection(db, 'import_tickets'), orderBy("createdAt", "desc"));
+
+        if (filters.startDate) {
+            q = query(q, where("createdAt", ">=", Timestamp.fromDate(new Date(filters.startDate))));
+        }
+        if (filters.endDate) {
+            const endOfDay = new Date(filters.endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            q = query(q, where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
+        }
+        if (filters.supplier.id) {
+            q = query(q, where("supplierId", "==", filters.supplier.id));
+        }
+        if (filters.status && filters.status !== 'all') {
+            q = query(q, where("status", "==", filters.status));
+        }
+
+        return q;
+    }, [filters]); // Chạy lại khi bộ lọc thay đổi
+
     const { 
         documents: importSlips, 
         loading, 
@@ -42,6 +68,21 @@ const ImportListPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
+    // NÂNG CẤP 1: TÍNH TOÁN CÁC SỐ LIỆU TÓM TẮT
+    const summaryStats = useMemo(() => {
+        if (loading || !importSlips) {
+            return { total: '...', pending: '...', completed: '...' };
+        }
+        const pending = importSlips.filter(s => s.status === 'pending').length;
+        const completed = importSlips.filter(s => s.status === 'completed').length;
+        
+        return {
+            total: importSlips.length,
+            pending,
+            completed
+        };
+    }, [importSlips, loading]);
+
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
     const handleRefresh = () => {
@@ -49,8 +90,9 @@ const ImportListPage = () => {
         reset();
     };
 
-    const handleConfirmImport = async (slipToConfirm) => {
+const handleConfirmImport = async (slipToConfirm) => {
         if (!slipToConfirm) return;
+        setIsProcessing(true);
         const slip = slipToConfirm;
         
         try {
@@ -69,6 +111,7 @@ const ImportListPage = () => {
                 const importTimestamp = importDateObject ? Timestamp.fromDate(importDateObject) : Timestamp.now();
 
                 const newLotData = {
+                    importTicketId: slip.id,
                     importDate: importTimestamp,
                     productId: item.productId,
                     productName: item.productName,
@@ -95,7 +138,9 @@ const ImportListPage = () => {
         } catch (error) {
             console.error("Lỗi khi xác nhận nhập kho: ", error);
             toast.error('Đã xảy ra lỗi khi xác nhận nhập kho.');
-        }
+        } finally {
+        setIsProcessing(false); // <-- TẮT TRẠNG THÁI XỬ LÝ KHI XONG
+    }
     };
 
     const handleSaveSlipChanges = async (updatedSlip) => {
@@ -115,8 +160,8 @@ const ImportListPage = () => {
             toast.error('Đã xảy ra lỗi khi cập nhật.');
         }
     };
-    
-    const handleDeleteSlip = async (slipToDelete) => {
+
+const handleDeleteSlip = async (slipToDelete) => {
         if (!slipToDelete) return;
         
         toast.info(`Đang xóa phiếu nhập...`);
@@ -131,8 +176,15 @@ const ImportListPage = () => {
         }
     };
 
-    // === BẮT ĐẦU CẬP NHẬT CÁC HÀM prompt... ===
-    const promptForConfirm = (slip) => {
+const handleFilterChange = (filterName, value) => {
+        setFilters(prev => ({ ...prev, [filterName]: value }));
+    };
+
+    const handlePresetSelect = (startDate, endDate) => {
+        setFilters(prev => ({ ...prev, startDate, endDate }));
+    };
+
+const promptForConfirm = (slip) => {
         setConfirmModal({
             isOpen: true,
             item: slip,
@@ -216,8 +268,8 @@ const ImportListPage = () => {
             toast.error("Đã xảy ra lỗi khi tải chi tiết phiếu.");
         }
     };
-    
-    return (
+
+return (
         <div>
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}
@@ -234,6 +286,76 @@ const ImportListPage = () => {
                 <h1>Danh sách Phiếu Nhập Kho</h1>
             </div>
 
+{/* NÂNG CẤP 1: KHU VỰC BỘ LỌC */}
+            <div className="form-section">
+                <DateRangePresets onPresetSelect={handlePresetSelect} />
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>Từ ngày</label>
+                        {/* NÂNG CẤP GIAO DIỆN: Thay thế input bằng DatePicker */}
+                        <DatePicker
+                            selected={filters.startDate}
+                            onChange={(date) => handleFilterChange('startDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chọn ngày bắt đầu"
+                            className="search-input" // Tái sử dụng style có sẵn
+                            isClearable
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Đến ngày</label>
+                        {/* NÂNG CẤP GIAO DIỆN: Thay thế input bằng DatePicker */}
+                        <DatePicker
+                            selected={filters.endDate}
+                            onChange={(date) => handleFilterChange('endDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chọn ngày kết thúc"
+                            className="search-input" // Tái sử dụng style có sẵn
+                            isClearable
+                        />
+                    </div>
+                </div>
+                <div className="form-row" style={{ marginTop: '15px' }}>
+                    <div className="form-group">
+                        <label>Nhà cung cấp</label>
+                        <SupplierAutocomplete 
+                            value={filters.supplier.name}
+                            onSelect={(supplier) => handleFilterChange('supplier', supplier)}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Trạng thái</label>
+                        <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}>
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="pending">Đang chờ</option>
+                            <option value="completed">Hoàn thành</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* NÂNG CẤP 1: HIỂN THỊ CÁC THẺ THỐNG KÊ */}
+            <div className="stats-grid" style={{ marginBottom: '20px' }}>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Tổng Số Phiếu (trang này)</h4>
+                        <p>{summaryStats.total}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Đang Chờ Xử Lý</h4>
+                        <p style={{ color: '#ffc107' }}>{summaryStats.pending}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Đã Hoàn Thành</h4>
+                        <p style={{ color: '#28a745' }}>{summaryStats.completed}</p>
+                    </div>
+                </div>
+            </div>
+
             <NewDataNotification
                 isVisible={hasNewData}
                 onRefresh={handleRefresh}
@@ -243,7 +365,7 @@ const ImportListPage = () => {
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table list-page-table">
-                        <thead>
+<thead>
                             <tr>
                                 <th>Ngày tạo</th>
                                 <th>Nhà cung cấp</th>
@@ -253,14 +375,14 @@ const ImportListPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {importSlips.map(slip => (
+{importSlips.length > 0 ? importSlips.map(slip => (
                                 <tr key={slip.id}>
-                                    <td>{formatDate(slip.createdAt)}</td>
+                                   <td>{formatDate(slip.createdAt)}</td>
                                     <td>{slip.supplierName}</td>
                                     <td>{slip.description}</td>
                                     <td><StatusBadge status={slip.status} /></td>
                                     <td>
-                                        <div className="action-buttons">
+<div className="action-buttons">
                                             <button className="btn-icon btn-view" title="Xem chi tiết" onClick={() => openViewModal(slip)}>
                                                 <FiEye />
                                             </button>
@@ -272,19 +394,27 @@ const ImportListPage = () => {
                                                     <button className="btn-icon btn-delete" title="Xóa phiếu" onClick={() => promptForDelete(slip)}>
                                                         <FiTrash2 />
                                                     </button>
-                                                    <button className="btn-icon btn-confirm" title="Xác nhận nhập kho" onClick={() => promptForConfirm(slip)}>
-                                                        <FiCheckCircle />
-                                                    </button>
+                                                    <button 
+    className="btn-icon btn-confirm" 
+    title="Xác nhận nhập kho" 
+    onClick={() => promptForConfirm(slip)}
+    disabled={isProcessing} // <-- THÊM DÒNG NÀY
+>
+    <FiCheckCircle />
+</button>
                                                 </>
                                             )}
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+)) : (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center' }}>Không tìm thấy phiếu nhập nào khớp với điều kiện.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
-
-                    <div className="pagination-controls">
+<div className="pagination-controls">
                         <button onClick={prevPage} disabled={page <= 1 || loading}>
                             <FiChevronLeft /> Trang Trước
                         </button>
@@ -294,7 +424,7 @@ const ImportListPage = () => {
                         </button>
                     </div>
                 </>
-            )}
+ )}
         </div>
     );
 };

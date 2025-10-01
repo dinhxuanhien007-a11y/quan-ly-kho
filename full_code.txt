@@ -887,15 +887,18 @@ import ExpiryNotificationBanner from './ExpiryNotificationBanner';
 import ImportSlipCounter from './ImportSlipCounter';
 import ExportSlipCounter from './ExportSlipCounter';
 import ViewerLayout from './ViewerLayout';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/UserContext';
 import FloatingToolsModal from './FloatingToolsModal'; 
 import { FiGrid } from 'react-icons/fi';
 import SalesAnalyticsPage from '../pages/SalesAnalyticsPage'; // ThÃªm import
 import ProductLedgerPage from '../pages/ProductLedgerPage';
+import { usePresence } from '../hooks/usePresence';
 
 const AdminLayout = () => {
   const location = useLocation();
-  const { role } = useAuth();
+  const { role, user } = useAuth(); // Láº¥y cáº£ `role` vÃ  `user`
+  
+  usePresence(); // <-- Gá»i hook má»›i á»Ÿ Ä‘Ã¢y Ä‘á»ƒ bÃ¡o tráº¡ng thÃ¡i online
   
   const [isToolsModalVisible, setIsToolsModalVisible] = useState(false);
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
@@ -1547,10 +1550,17 @@ export default EditAllowedUserModal;
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
 
 
+// src/components/EditExportSlipModal.jsx
+
 import React, { useState } from 'react';
-import { FiXCircle, FiPlusCircle, FiCalendar } from 'react-icons/fi';
+import { FiXCircle, FiCalendar } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import ProductAutocomplete from './ProductAutocomplete';
+import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
+import { formatNumber } from '../utils/numberUtils';
 
 const exportItemSchema = z.object({
   quantityToExport: z.preprocess(
@@ -1563,7 +1573,15 @@ const exportItemSchema = z.object({
 });
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
-    const [slipData, setSlipData] = useState({ ...slip });
+    const [slipData, setSlipData] = useState(() => ({
+        ...slip,
+        items: slip.items.map(item => ({ 
+            ...item, 
+            isNew: false, 
+            availableLots: [],
+            isOutOfStock: false 
+        }))
+    }));
 
     const dateToInputValue = (dateStr) => {
         if (!dateStr || dateStr.split('/').length !== 3) return '';
@@ -1584,8 +1602,8 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
         const updatedItems = [...slipData.items];
         if (field === 'quantityToExport') {
             const numericValue = Number(value);
-            const originalExportedQty = slip.items[index].quantityToExport || slip.items[index].quantityExported;
-            const availableStock = updatedItems[index].quantityRemaining + originalExportedQty;
+            const originalExportedQty = slip.items[index]?.quantityToExport || slip.items[index]?.quantityExported || 0;
+            const availableStock = (updatedItems[index].quantityRemaining || 0) + originalExportedQty;
             
             if (numericValue < 0) return;
 
@@ -1598,36 +1616,97 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
         } else {
             updatedItems[index][field] = value;
         }
+        setSlipData(prev => ({ ...prev, items: updatedItems }));
+    };
+    
+    const handleProductSearch = async (index, productOrId) => {
+        if (!productOrId) return;
+        const productId = (typeof productOrId === 'object' ? productOrId.id : String(productOrId)).trim().toUpperCase();
+        if (!productId) return;
         
-        setSlipData({ ...slipData, items: updatedItems });
+        const updatedItems = [...slipData.items];
+        const currentItem = { ...updatedItems[index] };
+
+        try {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+
+            if (!productSnap.exists()) {
+                toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+                return;
+            }
+
+            const productData = productSnap.data();
+            currentItem.productId = productId;
+            currentItem.productName = productData.productName;
+            currentItem.unit = productData.unit;
+            currentItem.packaging = productData.packaging;
+
+            const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
+            const lotsSnapshot = await getDocs(lotsQuery);
+
+            if (lotsSnapshot.empty) {
+                currentItem.isOutOfStock = true;
+                currentItem.availableLots = [];
+            } else {
+                const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                foundLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+                currentItem.isOutOfStock = false;
+                currentItem.availableLots = foundLots;
+            }
+            
+            updatedItems[index] = currentItem;
+            setSlipData(prev => ({ ...prev, items: updatedItems }));
+
+        } catch (error) {
+            console.error("Lá»—i khi tÃ¬m sáº£n pháº©m/lÃ´ hÃ ng:", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m.");
+        }
+    };
+    
+    const handleLotSelection = (index, selectedLotId) => {
+        const updatedItems = [...slipData.items];
+        const currentItem = { ...updatedItems[index] };
+        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+
+        if (selectedLot) {
+            currentItem.lotNumber = selectedLot.lotNumber;
+            currentItem.lotId = selectedLot.id;
+            currentItem.quantityRemaining = selectedLot.quantityRemaining;
+        } else {
+            currentItem.lotNumber = '';
+            currentItem.lotId = '';
+            currentItem.quantityRemaining = 0;
+        }
+        updatedItems[index] = currentItem;
+        setSlipData(prev => ({ ...prev, items: updatedItems }));
     };
 
-    // === ÄÃƒ DI CHUYá»‚N RA NGOÃ€I ÄÃšNG Vá»Š TRÃ ===
+    const addNewRow = () => {
+        setSlipData(prev => ({
+            ...prev,
+            items: [...prev.items, {
+                id: Date.now(),
+                productId: '',
+                productName: '',
+                lotNumber: '',
+                unit: '',
+                packaging: '',
+                quantityToExport: '',
+                notes: '',
+                quantityRemaining: 0,
+                isNew: true,
+                availableLots: [],
+                isOutOfStock: false
+            }]
+        }));
+    };
+
     const removeRow = (indexToRemove) => {
         const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
         setSlipData({ ...slipData, items: newItems });
     };
 
-    const addNewRow = () => {
-        const newRow = {
-            id: Date.now(), // Táº¡o má»™t ID táº¡m thá»i duy nháº¥t
-            productId: '',
-            productName: '',
-            lotNumber: '',
-            unit: '',
-            packaging: '',
-            quantityToExport: '',
-            notes: '',
-            quantityRemaining: 0 // Máº·c Ä‘á»‹nh tá»“n kho lÃ  0 cho dÃ²ng má»›i
-        };
-
-        setSlipData(prev => ({
-            ...prev,
-            items: [...prev.items, newRow]
-        }));
-    };
-
-    // === ÄÃƒ DI CHUYá»‚N RA NGOÃ€I ÄÃšNG Vá»Š TRÃ ===
     const handleSaveChanges = () => {
         const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
         
@@ -1659,21 +1738,20 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
         <div className="modal-backdrop">
             <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
                 <h2>Chá»‰nh sá»­a Phiáº¿u Xuáº¥t Kho (ID: {slipData.id})</h2>
-
+                
                 <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
                     <div className="form-row">
                         <div className="form-group">
-    <label>NgÃ y xuáº¥t (*)</label>
-    <div className="date-input-wrapper">
-        <input 
-            type="date"
-            value={dateToInputValue(slipData.exportDate)}
-            onChange={(e) => handleInfoChange('exportDate', e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-        />
-        <FiCalendar className="date-input-icon" />
-    </div>
-</div>
+                            <label>NgÃ y xuáº¥t (*)</label>
+                            <div className="date-input-wrapper">
+                                <input 
+                                    type="date"
+                                    value={dateToInputValue(slipData.exportDate)}
+                                    onChange={(e) => handleInfoChange('exportDate', e.target.value)}
+                                />
+                                <FiCalendar className="date-input-icon" />
+                            </div>
+                        </div>
                         <div className="form-group">
                             <label>KhÃ¡ch hÃ ng</label>
                             <input type="text" value={slipData.customer} readOnly disabled />
@@ -1690,47 +1768,78 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                 </div>
 
                 <div className="modal-body">
-                <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
-                <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 1.5fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-                    <div className="grid-header">MÃ£ hÃ ng</div>
-                    <div className="grid-header">TÃªn hÃ ng</div>
-                    <div className="grid-header">Sá»‘ lÃ´</div>
-                    <div className="grid-header">ÄVT</div>
-                    <div className="grid-header">Quy cÃ¡ch</div>
-                    <div className="grid-header">SL Xuáº¥t (*)</div>
-                    <div className="grid-header">Ghi chÃº</div>
-                    <div className="grid-header">Thao tÃ¡c</div>
+                    <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
+                    <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+                        <div className="grid-header">MÃ£ hÃ ng</div>
+                        <div className="grid-header">TÃªn hÃ ng</div>
+                        <div className="grid-header">Sá»‘ lÃ´</div>
+                        <div className="grid-header">ÄVT</div>
+                        <div className="grid-header">Quy cÃ¡ch</div>
+                        <div className="grid-header">SL Xuáº¥t (*)</div>
+                        <div className="grid-header">Ghi chÃº</div>
+                        <div className="grid-header">Thao tÃ¡c</div>
 
-                    {slipData.items.map((item, index) => (
-                        <React.Fragment key={item.id || index}>
-                            <div className="grid-cell"><input type="text" value={item.productId} readOnly title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng á»Ÿ Ä‘Ã¢y" /></div>
-                            <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-                            <div className="grid-cell"><input type="text" value={item.lotNumber || '(KhÃ´ng cÃ³)'} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng á»Ÿ Ä‘Ã¢y" /></div>
-                            <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                            <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-                            <div className="grid-cell">
-                                <input 
-                                    type="number"
-                                    step="any"
-                                    value={item.quantityToExport} 
-                                    onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} 
-                                />
-                            </div>
-                            <div className="grid-cell"><textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
-                            <div className="grid-cell">
-                                <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
-                                    <FiXCircle />
-                                </button>
-                            </div>
-                        </React.Fragment>
-                    ))}
+                        {slipData.items.map((item, index) => (
+                            <React.Fragment key={item.id || index}>
+                                <div className="grid-cell">
+                                    {item.isNew ? (
+                                        <ProductAutocomplete
+                                            value={item.productId}
+                                            onChange={(value) => handleItemChange(index, 'productId', value.toUpperCase())}
+                                            onSelect={(product) => handleProductSearch(index, product)}
+                                            onBlur={() => handleProductSearch(index, item.productId)}
+                                        />
+                                    ) : (
+                                        <input type="text" value={item.productId} readOnly title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng Ä‘Ã£ cÃ³." />
+                                    )}
+                                </div>
+                                <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+                                <div className="grid-cell">
+                                    {item.isNew ? (
+                                        item.isOutOfStock ? (
+                                            <span style={{color: 'red'}}>Háº¿t hÃ ng</span>
+                                        ) : (
+                                            <select
+                                                value={item.lotId || ''}
+                                                onChange={e => handleLotSelection(index, e.target.value)}
+                                                disabled={!item.availableLots || item.availableLots.length === 0}
+                                                style={{width: '100%'}}
+                                            >
+                                                <option value="">-- Chá»n lÃ´ --</option>
+                                                {item.availableLots.map(lot => (
+                                                    <option key={lot.id} value={lot.id}>
+                                                        {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(Trá»‘ng)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )
+                                    ) : (
+                                        <input type="text" value={item.lotNumber || '(KhÃ´ng cÃ³)'} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng Ä‘Ã£ cÃ³." />
+                                    )}
+                                </div>
+                                <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+                                <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                                <div className="grid-cell">
+                                    <input 
+                                        type="number"
+                                        step="any"
+                                        value={item.quantityToExport} 
+                                        onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} 
+                                    />
+                                </div>
+                                <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+                                <div className="grid-cell">
+                                    <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
+                                        <FiXCircle />
+                                    </button>
+                                </div>
+                            </React.Fragment>
+                        ))}
+                    </div>
                 </div>
-        </div>
-        
+                
                 <div className="modal-actions">
-                    <button type="button" onClick={addNewRow} className="btn-secondary">
-                ThÃªm dÃ²ng
-            </button>
+                    <button type="button" onClick={addNewRow} className="btn-secondary">ThÃªm dÃ²ng</button>
                     <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
                     <button type="button" onClick={handleSaveChanges} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
                 </div>
@@ -1747,11 +1856,14 @@ export default EditExportSlipModal;
 
 
 // src/components/EditImportSlipModal.jsx
+import { db } from '../firebaseConfig';
 import React, { useState, useRef, useEffect } from 'react';
 import { FiPlusCircle, FiXCircle, FiCalendar } from 'react-icons/fi';
 import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify'; 
 import { z } from 'zod'; // <-- IMPORT ZOD
+import { doc, getDoc } from 'firebase/firestore';
+import ProductAutocomplete from './ProductAutocomplete';
 
 // <-- Äá»ŠNH NGHÄ¨A SCHEMA XÃC THá»°C -->
 const importItemSchema = z.object({
@@ -1828,13 +1940,51 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
     setSlipData({ ...slipData, items: updatedItems });
 };
 
+// NÃ‚NG Cáº¤P: HÃ m tÃ¬m kiáº¿m sáº£n pháº©m cho dÃ²ng má»›i
+    const handleProductSearch = async (index, productOrId) => {
+        if (!productOrId) return;
+
+        const productId = (typeof productOrId === 'object' ? productOrId.id : String(productOrId)).trim().toUpperCase();
+        if (!productId) return;
+
+        try {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+            
+            const updatedItems = [...slipData.items];
+
+            if (productSnap.exists()) {
+                const productData = productSnap.data();
+                updatedItems[index] = {
+                    ...updatedItems[index],
+                    productId: productId,
+                    productName: productData.productName,
+                    unit: productData.unit,
+                    packaging: productData.packaging,
+                    storageTemp: productData.storageTemp,
+                    team: productData.team,
+                    manufacturer: productData.manufacturer,
+                };
+            } else {
+                toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+                updatedItems[index].productName = ''; // XÃ³a tÃªn SP náº¿u khÃ´ng tÃ¬m tháº¥y
+            }
+            setSlipData(prev => ({ ...prev, items: updatedItems }));
+
+        } catch (error) {
+            console.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m:", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m sáº£n pháº©m.");
+        }
+    };
+
   const addNewRow = () => {
     const newItems = [
       ...slipData.items,
       {
         id: Date.now(),
         productId: '', productName: '', lotNumber: '', expiryDate: '',
-        unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: ''
+        unit: '', packaging: '', quantity: '', notes: '', storageTemp: '', team: '',
+        isNew: true
       }
     ];
     setSlipData({ ...slipData, items: newItems });
@@ -1921,13 +2071,23 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
           {slipData.items.map((item, index) => (
             <React.Fragment key={index}>
               <div className="grid-cell">
-                <input 
-                    type="text" 
-                    value={item.productId} 
-                    onChange={e => handleItemChange(index, 'productId', e.target.value)} 
-                    ref={index === slipData.items.length - 1 ? lastInputRef : null}
-                />
-              </div>
+                {/* NÃ‚NG Cáº¤P: DÃ™NG ProductAutocomplete CHO DÃ’NG Má»šI */}
+                                    {item.isNew ? (
+                                        <ProductAutocomplete
+                                            value={item.productId}
+                                            onChange={(value) => handleItemChange(index, 'productId', value.toUpperCase())}
+                                            onSelect={(product) => handleProductSearch(index, product)}
+                                            onBlur={() => handleProductSearch(index, item.productId)}
+                                        />
+                                    ) : (
+                                        <input 
+                                            type="text" 
+                                            value={item.productId} 
+                                            readOnly 
+                                            title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng Ä‘Ã£ cÃ³."
+                                        />
+                                    )}
+                                </div>
               <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
               <div className="grid-cell"><input type="text" value={item.lotNumber} onChange={e => handleItemChange(index, 'lotNumber', e.target.value)} /></div>
               <div className="grid-cell">
@@ -3261,7 +3421,7 @@ const processDataForFlow = (importRecords, exportHistory, totalRemaining) => {
 
     const masterInfo = importRecords[0];
     const totalImported = importRecords.reduce((sum, rec) => sum + rec.quantityImported, 0);
-    const supplierName = masterInfo.supplier || 'KhÃ´ng rÃµ';
+    const supplierName = masterInfo.supplierName || 'KhÃ´ng rÃµ';
     initialNodes.push({
         id: 'supplier-node',
         data: { label: `NhÃ  Cung Cáº¥p: ${supplierName}`, type: 'supplier', name: supplierName },
@@ -3367,28 +3527,14 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { toast } from 'react-toastify';
 import { 
-    FiGrid, 
-    FiArchive, 
-    FiFilePlus,
-    FiFileMinus,
-    FiClipboard, 
-    FiFileText, 
-    FiShare2, 
-    FiCheckSquare,
-    FiUsers,
-    FiUpload,
-    FiSettings,
-    FiLogOut,
-    FiBookOpen,
-    FiBarChart2,
-    FiBook
+    FiGrid, FiArchive, FiFilePlus, FiFileMinus, FiClipboard, 
+    FiFileText, FiShare2, FiCheckSquare, FiUsers, FiUpload, 
+    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
-import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
     const navigate = useNavigate();
-    const { role } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -3401,100 +3547,87 @@ const Navbar = () => {
         }
     };
     
-    const hasRole = (roles) => roles.includes(role);
-
     return (
         <nav className="top-navbar">
             <div className="navbar-brand">
                 <h3>Kho PT Biomed</h3>
             </div>
             <ul className="nav-items">
-                {/* === NÃšT LUÃ”N HIá»‚N THá»Š CHO Táº¤T Cáº¢ VAI TRÃ’ === */}
+                {/* NÃºt xem kho dÃ nh cho Táº¤T Cáº¢ VAI TRÃ’ */}
                 <li>
-                  <NavLink to="/view" title="Xem Sá»• CÃ¡i Tá»“n Kho">
-                    <FiBookOpen className="nav-icon" />
-                  </NavLink>
+                    <NavLink to="/view" title="Xem Sá»• CÃ¡i Tá»“n Kho">
+                        <FiBookOpen className="nav-icon" />
+                    </NavLink>
                 </li>
           
-                {/* === Báº®T Äáº¦U THAY Äá»”I: Chá»‰ Owner má»›i tháº¥y cÃ¡c nÃºt quáº£n trá»‹ === */}
+                {/* CÃ¡c nÃºt nÃ y bÃ¢y giá» chá»‰ hiá»ƒn thá»‹ cho OWNER vÃ¬ Navbar chá»‰ náº±m trong AdminLayout */}
+                <li>
+                    <NavLink to="/dashboard" title="Báº£ng Ä‘iá»u khiá»ƒn">
+                        <FiGrid className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/products" title="Quáº£n lÃ½ hÃ ng hÃ³a (Danh má»¥c)">
+                        <FiArchive className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/lot-trace" title="Truy váº¿t lÃ´ hÃ ng">
+                        <FiShare2 className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/product-ledger" title="Sá»• chi tiáº¿t Váº­t tÆ° (Tháº» kho)">
+                        <FiBook className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/imports" title="Danh sÃ¡ch Phiáº¿u Nháº­p">
+                        <FiClipboard className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/exports" title="Danh sÃ¡ch Phiáº¿u Xuáº¥t">
+                        <FiFileText className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/partners" title="Quáº£n lÃ½ Äá»‘i tÃ¡c">
+                        <FiUsers className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/users" title="Quáº£n lÃ½ User">
+                        <FiSettings className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/new-import" title="Táº¡o Phiáº¿u Nháº­p">
+                        <FiFilePlus className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/new-export" title="Táº¡o Phiáº¿u Xuáº¥t">
+                        <FiFileMinus className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/stocktakes" title="Kiá»ƒm KÃª Kho">
+                        <FiCheckSquare className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/sales-analytics" title="BÃ¡o cÃ¡o & PhÃ¢n tÃ­ch">
+                        <FiBarChart2 className="nav-icon" />
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink to="/import-data" title="Import Dá»¯ Liá»‡u">
+                        <FiUpload className="nav-icon" />
+                    </NavLink>
+                </li>
                 
-                {/* NÃºt Dashboard (vá»‹ trÃ­ thá»© 2) */}
-                {hasRole(['owner']) && (
-                    <li>
-                        <NavLink to="/" title="Báº£ng Ä‘iá»u khiá»ƒn">
-                            <FiGrid className="nav-icon" />
-                        </NavLink>
-                    </li>
-                )}
-
-                {/* CÃ¡c nÃºt quáº£n lÃ½ chung */}
-                {hasRole(['owner']) && (
-                    <>
-                        <li>
-                            <NavLink to="/products" title="Quáº£n lÃ½ hÃ ng hÃ³a (Danh má»¥c)">
-                                <FiArchive className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/lot-trace" title="Truy váº¿t lÃ´ hÃ ng">
-                                <FiShare2 className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                        <NavLink to="/product-ledger" title="Sá»• chi tiáº¿t Váº­t tÆ° (Tháº» kho)">
-                            <FiBook className="nav-icon" />
-                        </NavLink>
-                    </li>
-                        <li>
-                            <NavLink to="/imports" title="Danh sÃ¡ch Phiáº¿u Nháº­p">
-                                <FiClipboard className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/exports" title="Danh sÃ¡ch Phiáº¿u Xuáº¥t">
-                                <FiFileText className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/partners" title="Quáº£n lÃ½ Äá»‘i tÃ¡c">
-                                <FiUsers className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/users" title="Quáº£n lÃ½ User">
-                                <FiSettings className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/new-import" title="Táº¡o Phiáº¿u Nháº­p">
-                                <FiFilePlus className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/new-export" title="Táº¡o Phiáº¿u Xuáº¥t">
-                                <FiFileMinus className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/stocktakes" title="Kiá»ƒm KÃª Kho">
-                                <FiCheckSquare className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/sales-analytics" title="BÃ¡o cÃ¡o & PhÃ¢n tÃ­ch">
-                                <FiBarChart2 className="nav-icon" />
-                            </NavLink>
-                        </li>
-                        <li>
-                            <NavLink to="/import-data" title="Import Dá»¯ Liá»‡u">
-                                <FiUpload className="nav-icon" />
-                            </NavLink>
-                        </li>
-                    </>
-                )}
-                {/* === Káº¾T THÃšC THAY Äá»”I === */}
-                
-                {/* === NÃšT ÄÄ‚NG XUáº¤T (LUÃ”N HIá»‚N THá»Š) === */}
+                {/* NÃºt Ä‘Äƒng xuáº¥t */}
                 <li>
                     <a href="#" onClick={handleLogout} title="ÄÄƒng xuáº¥t">
                         <FiLogOut className="nav-icon" />
@@ -4716,17 +4849,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/UserContext';
 import { useResponsive } from '../hooks/useResponsive';
 import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
 import MobileInventoryPage from '../pages/MobileInventoryPage';
-import companyLogo from '../assets/logo.png'; // Di chuyá»ƒn import logo Ä‘áº¿n Ä‘Ã¢y
+import companyLogo from '../assets/logo.png';
+import { usePresence } from '../hooks/usePresence'; // Import hook
 
 const ViewerLayout = () => {
-    const { role: userRole } = useAuth();
+    // Sá»­a láº¡i: Gá»i useAuth má»™t láº§n duy nháº¥t Ä‘á»ƒ láº¥y táº¥t cáº£ thÃ´ng tin cáº§n thiáº¿t
+    const { role, user } = useAuth();
+    
+    // Gá»i hook usePresence Ä‘á»ƒ bÃ¡o danh tráº¡ng thÃ¡i online
+    usePresence();
+
     const isMobile = useResponsive();
-    const canViewDetail = userRole === 'admin' || userRole === 'owner';
+    const canViewDetail = role === 'admin' || role === 'owner';
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
@@ -4735,7 +4874,7 @@ const ViewerLayout = () => {
     };
 
     const dynamicTitle = useMemo(() => {
-        switch (userRole) {
+        switch (role) {
             case 'owner':
             case 'admin':
                 return 'INVENTORY';
@@ -4746,7 +4885,7 @@ const ViewerLayout = () => {
             default:
                 return 'Kho - PT Biomed';
         }
-    }, [userRole]);
+    }, [role]);
 
     useEffect(() => {
         document.title = dynamicTitle;
@@ -4768,39 +4907,35 @@ const ViewerLayout = () => {
 
     return (
         <div className="viewer-layout-container">
-            {/* --- THANH HEADER THá»NG NHáº¤T Má»šI --- */}
             <div className="viewer-header">
-                {/* --- Khu vá»±c bÃªn trÃ¡i --- */}
                 <div className="viewer-header-left">
-                    {userRole === 'owner' && (
-                        <Link to="/" className="btn-secondary" style={{ textDecoration: 'none' }}>
+                    {role === 'owner' && (
+                        <Link to="/dashboard" className="btn-back">
                             &larr; Quay láº¡i Trang Quáº£n Trá»‹
                         </Link>
                     )}
                     {canViewDetail && (
-                        <div className="view-toggle">
-                            <button onClick={() => setViewMode('summary')} className={viewMode === 'summary' ? 'btn-primary' : 'btn-secondary'} style={{width: 'auto'}}>
+                         <div className="filter-group">
+                            <button onClick={() => setViewMode('summary')} className={`view-toggle-btn ${viewMode === 'summary' ? 'active' : ''}`}>
                                 Xem Tá»•ng Há»£p
                             </button>
-                            <button onClick={() => setViewMode('detail')} className={viewMode === 'detail' ? 'btn-primary' : 'btn-secondary'} style={{width: 'auto'}}>
+                            <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
                                 Xem Chi Tiáº¿t
                             </button>
                         </div>
                     )}
                 </div>
 
-                {/* --- Khu vá»±c trung tÃ¢m (Logo vÃ  TiÃªu Ä‘á») --- */}
                 <div className="viewer-header-center">
                     <img src={companyLogo} alt="Logo CÃ´ng ty" className="header-logo" />
                     <h1>{dynamicTitle}</h1>
                 </div>
 
-                {/* --- Khu vá»±c bÃªn pháº£i --- */}
                 <div className="viewer-header-right">
+                    {/* CÃ³ thá»ƒ thÃªm nÃºt Ä‘Äƒng xuáº¥t á»Ÿ Ä‘Ã¢y náº¿u cáº§n */}
                 </div>
             </div>
 
-            {/* --- PHáº¦N Ná»˜I DUNG CHÃNH --- */}
             <div className="viewer-main-content">
                 {(viewMode === 'detail' && canViewDetail) 
                     ? <InventoryPage />
@@ -4808,7 +4943,6 @@ const ViewerLayout = () => {
                 }
             </div>
 
-            {/* NÃºt mÃ¡y tÃ­nh giá»¯ nguyÃªn */}
             <button className="floating-toggle-btn" onClick={toggleCalculator} title="Má»Ÿ mÃ¡y tÃ­nh (CÃ³ thá»ƒ dÃ¹ng bÃ n phÃ­m)">
                 <MdCalculate />
             </button>
@@ -5027,7 +5161,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [userRole, setUserRole] = useState(null);
+    const [role, setRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -5036,14 +5170,14 @@ export const AuthProvider = ({ children }) => {
                 const userDocRef = doc(db, 'users', currentUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
-                    setUserRole(userDocSnap.data().role);
+                    setRole(userDocSnap.data().role);
                 } else {
-                    setUserRole(null);
+                    setRole(null);
                 }
                 setUser(currentUser);
             } else {
                 setUser(null);
-                setUserRole(null);
+                setRole(null);
             }
             setLoading(false);
         });
@@ -5053,7 +5187,7 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
-        userRole,
+        role,
         loading,
     };
 
@@ -5072,44 +5206,6 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
     return useContext(AuthContext);
 };
-
-
-
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useAuth.js ---
-
-
-// src/hooks/useAuth.js
-
-import { useState, useEffect } from 'react';
-import { auth } from '../firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
-
-export const useAuth = () => {
-    const [user, setUser] = useState(null);
-    const [role, setRole] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                // Láº¥y token chá»©a custom claims (vai trÃ²) Ä‘á»ƒ xÃ¡c thá»±c quyá»n
-                const idTokenResult = await currentUser.getIdTokenResult();
-                setUser(currentUser);
-                setRole(idTokenResult.claims.role || null); // GÃ¡n vai trÃ² tá»« token
-            } else {
-                setUser(null);
-                setRole(null);
-            }
-            setLoading(false);
-        });
-
-        // Dá»n dáº¹p listener khi component unmount
-        return () => unsubscribe();
-    }, []);
-
-    return { user, role, loading };
-};
-
 
 
 
@@ -5295,6 +5391,63 @@ describe('Hook: useFirestorePagination', () => {
         expect(result.current.page).toBe(1);
     });
 });
+
+
+
+--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\usePresence.js ---
+
+
+// src/hooks/usePresence.js
+
+import { useEffect } from 'react';
+import { useAuth } from '../context/UserContext';
+import { rtdb } from '../firebaseConfig';
+import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database';
+
+export const usePresence = () => {
+    const { user } = useAuth();
+
+    useEffect(() => {
+        console.log('usePresence hook is running for user:', user);
+        
+        if (!user) {
+            return; // Dá»«ng náº¿u ngÆ°á»i dÃ¹ng chÆ°a Ä‘Äƒng nháº­p
+        }
+
+        // ÄÆ°á»ng dáº«n Ä‘áº¿n tráº¡ng thÃ¡i cá»§a user trong RTDB
+        const userStatusRef = ref(rtdb, '/status/' + user.uid);
+
+        // Tham chiáº¿u Ä‘áº·c biá»‡t Ä‘á»ƒ kiá»ƒm tra káº¿t ná»‘i
+        const presenceRef = ref(rtdb, '.info/connected');
+
+        const unsubscribe = onValue(presenceRef, (snap) => {
+            // Náº¿u máº¥t káº¿t ná»‘i, server sáº½ khÃ´ng cháº¡y Ä‘oáº¡n code nÃ y
+            if (snap.val() === false) {
+                return;
+            }
+
+            // Thiáº¿t láº­p hÃ nh Ä‘á»™ng Sáº¼ Ä‘Æ°á»£c thá»±c hiá»‡n khi client máº¥t káº¿t ná»‘i
+            // ÄÃ¢y lÃ  bÆ°á»›c quan trá»ng nháº¥t
+            onDisconnect(userStatusRef).set({
+                isOnline: false,
+                last_changed: serverTimestamp(),
+            }).catch((err) => {
+                console.error('Could not establish onDisconnect handler', err);
+            });
+
+            // Äáº·t tráº¡ng thÃ¡i online khi client káº¿t ná»‘i thÃ nh cÃ´ng
+            set(userStatusRef, {
+                isOnline: true,
+                last_changed: serverTimestamp(),
+            });
+        });
+
+        return () => {
+            unsubscribe(); // Dá»n dáº¹p listener khi component unmount
+        };
+
+    }, [user]); // Cháº¡y láº¡i effect nÃ y khi user thay Ä‘á»•i (Ä‘Äƒng nháº­p/Ä‘Äƒng xuáº¥t)
+};
 
 
 
@@ -5946,9 +6099,10 @@ export default DataImportPage;
 
 
 // src/pages/ExportListPage.jsx
+
 import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp } from 'firebase/firestore'; // ThÃªm where, Timestamp
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
@@ -5961,33 +6115,83 @@ import { formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import NewDataNotification from '../components/NewDataNotification';
+// NÃ‚NG Cáº¤P 1: Import cÃ¡c component cáº§n thiáº¿t cho bá»™ lá»c
+import DateRangePresets from '../components/DateRangePresets';
+import CustomerAutocomplete from '../components/CustomerAutocomplete';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const ExportListPage = () => {
-  const [selectedSlip, setSelectedSlip] = useState(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'XÃ¡c nháº­n' });
+    const [selectedSlip, setSelectedSlip] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'XÃ¡c nháº­n' });
 
-  const baseQuery = useMemo(() => query(collection(db, 'export_tickets'), orderBy("createdAt", "desc")), []);
-  
-  const {
-    documents: exportSlips,
-    loading,
-    isLastPage,
-    page,
-    nextPage,
-    prevPage,
-    reset
-  } = useFirestorePagination(baseQuery, PAGE_SIZE);
+    // NÃ‚NG Cáº¤P 1: State Ä‘á»ƒ quáº£n lÃ½ cÃ¡c giÃ¡ trá»‹ cá»§a bá»™ lá»c
+    const [filters, setFilters] = useState({
+        startDate: null, // Sá»­a thÃ nh null
+        endDate: null,   // Sá»­a thÃ nh null
+        customer: { id: '', name: '' },
+        status: 'all',
+    });
 
-  const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+    // NÃ‚NG Cáº¤P 1: XÃ¢y dá»±ng cÃ¢u truy váº¥n Ä‘á»™ng dá»±a trÃªn bá»™ lá»c
+    const baseQuery = useMemo(() => {
+        let q = query(collection(db, 'export_tickets'), orderBy("createdAt", "desc"));
 
-  const handleRefresh = () => {
-    dismissNewData(); // <-- Äáº·t láº¡i tráº¡ng thÃ¡i cá»§a notification
-    reset();          // <-- Táº£i láº¡i dá»¯ liá»‡u tá»« trang Ä‘áº§u
-  };
+        if (filters.startDate) {
+            q = query(q, where("createdAt", ">=", Timestamp.fromDate(new Date(filters.startDate))));
+        }
+        if (filters.endDate) {
+            const endOfDay = new Date(filters.endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            q = query(q, where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
+        }
+        if (filters.customer.id) {
+            q = query(q, where("customerId", "==", filters.customer.id));
+        }
+        if (filters.status && filters.status !== 'all') {
+            q = query(q, where("status", "==", filters.status));
+        }
+        
+        return q;
+    }, [filters]);
 
-  const handleConfirmExport = async (slip) => {
+    const {
+        documents: exportSlips,
+        loading,
+        isLastPage,
+        page,
+        nextPage,
+        prevPage,
+        reset
+    } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+    // NÃ‚NG Cáº¤P 1: TÃNH TOÃN CÃC Sá» LIá»†U TÃ“M Táº®T
+    const summaryStats = useMemo(() => {
+        if (loading || !exportSlips) {
+            return { total: '...', pending: '...', completed: '...', cancelled: '...' };
+        }
+        const pending = exportSlips.filter(s => s.status === 'pending').length;
+        const completed = exportSlips.filter(s => s.status === 'completed').length;
+        const cancelled = exportSlips.filter(s => s.status === 'cancelled').length;
+        
+        return {
+            total: exportSlips.length,
+            pending,
+            completed,
+            cancelled
+        };
+    }, [exportSlips, loading]);
+
+    const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+
+    const handleRefresh = () => {
+        dismissNewData();
+        reset();
+    };
+
+const handleConfirmExport = async (slip) => {
     try {
       for (const item of slip.items) {
         const lotRef = doc(db, 'inventory_lots', item.lotId);
@@ -6046,7 +6250,15 @@ const ExportListPage = () => {
     }
   };
 
-  const promptAction = (action, slip) => {
+const handleFilterChange = (filterName, value) => {
+        setFilters(prev => ({ ...prev, [filterName]: value }));
+    };
+
+    const handlePresetSelect = (startDate, endDate) => {
+        setFilters(prev => ({ ...prev, startDate, endDate }));
+    };
+
+const promptAction = (action, slip) => {
     if (action === 'confirm') {
         setConfirmModal({
             isOpen: true,
@@ -6135,8 +6347,8 @@ const ExportListPage = () => {
       toast.error("KhÃ´ng thá»ƒ láº¥y dá»¯ liá»‡u tá»“n kho má»›i nháº¥t.");
     }
   };
-  
-  return (
+
+return (
     <div>
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
@@ -6152,17 +6364,93 @@ const ExportListPage = () => {
       <div className="page-header">
         <h1>Danh sÃ¡ch Phiáº¿u Xuáº¥t Kho</h1>
       </div>
+{/* NÃ‚NG Cáº¤P 1: KHU Vá»°C Bá»˜ Lá»ŒC */}
+            <div className="form-section">
+                <DateRangePresets onPresetSelect={handlePresetSelect} />
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>Tá»« ngÃ y</label>
+                        {/* NÃ‚NG Cáº¤P GIAO DIá»†N: Thay tháº¿ input báº±ng DatePicker */}
+                        <DatePicker
+                            selected={filters.startDate}
+                            onChange={(date) => handleFilterChange('startDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chá»n ngÃ y báº¯t Ä‘áº§u"
+                            className="search-input"
+                            isClearable
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Äáº¿n ngÃ y</label>
+                        {/* NÃ‚NG Cáº¤P GIAO DIá»†N: Thay tháº¿ input báº±ng DatePicker */}
+                        <DatePicker
+                            selected={filters.endDate}
+                            onChange={(date) => handleFilterChange('endDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chá»n ngÃ y káº¿t thÃºc"
+                            className="search-input"
+                            isClearable
+                        />
+                    </div>
+                </div>
+                <div className="form-row" style={{ marginTop: '15px' }}>
+                    <div className="form-group">
+                        <label>KhÃ¡ch hÃ ng</label>
+                        <CustomerAutocomplete 
+                            value={filters.customer.name}
+                            onSelect={(customer) => handleFilterChange('customer', customer)}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Tráº¡ng thÃ¡i</label>
+                        <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}>
+                            <option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</option>
+                            <option value="pending">Äang chá»</option>
+                            <option value="completed">HoÃ n thÃ nh</option>
+                            <option value="cancelled">ÄÃ£ há»§y</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-      <NewDataNotification
-        isVisible={hasNewData}
-        onRefresh={handleRefresh}
-        message="CÃ³ phiáº¿u xuáº¥t má»›i!"
-      />
+            {/* NÃ‚NG Cáº¤P 1: HIá»‚N THá»Š CÃC THáºº THá»NG KÃŠ */}
+            <div className="stats-grid" style={{ marginBottom: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Tá»•ng Sá»‘ Phiáº¿u (trang nÃ y)</h4>
+                        <p>{summaryStats.total}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Äang Chá» Xá»­ LÃ½</h4>
+                        <p style={{ color: '#ffc107' }}>{summaryStats.pending}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>ÄÃ£ HoÃ n ThÃ nh</h4>
+                        <p style={{ color: '#28a745' }}>{summaryStats.completed}</p>
+                    </div>
+                </div>
+                 <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>ÄÃ£ Há»§y</h4>
+                        <p style={{ color: '#6c757d' }}>{summaryStats.cancelled}</p>
+                    </div>
+                </div>
+            </div>
 
-      {loading ? <Spinner /> : (
-        <>
-            <table className="products-table list-page-table">
-                <thead>
+            <NewDataNotification
+                isVisible={hasNewData}
+                onRefresh={handleRefresh}
+                message="CÃ³ phiáº¿u xuáº¥t má»›i!"
+            />
+
+            {loading ? <Spinner /> : (
+                <>
+                    <table className="products-table list-page-table">
+<thead>
                 <tr>
                     <th>NgÃ y táº¡o</th>
                     <th>KhÃ¡ch hÃ ng / NÆ¡i nháº­n</th>
@@ -6172,15 +6460,14 @@ const ExportListPage = () => {
                 </tr>
                 </thead>
                 <tbody>
-                {exportSlips.length > 0 ? (
-                    exportSlips.map(slip => (
-                    <tr key={slip.id}>
-                        <td>{formatDate(slip.createdAt)}</td>
-                        <td>{slip.customer}</td>
-                        <td>{slip.description}</td>
-                        <td><StatusBadge status={slip.status} /></td>
-                        <td>
-                            <div className="action-buttons">
+{exportSlips.length > 0 ? exportSlips.map(slip => (
+                                <tr key={slip.id}>
+                                    <td>{formatDate(slip.createdAt)}</td>
+                                    <td>{slip.customer}</td>
+                                    <td>{slip.description}</td>
+                                    <td><StatusBadge status={slip.status} /></td>
+                                    <td>
+<div className="action-buttons">
                                 <button className="btn-icon btn-view" title="Xem chi tiáº¿t" onClick={() => openViewModal(slip)}>
                                     <FiEye />
                                 </button>
@@ -6200,16 +6487,14 @@ const ExportListPage = () => {
                             </div>
                         </td>
                     </tr>
-                    ))
-                ) : (
-                    <tr>
-                        <td colSpan="5" style={{ textAlign: 'center' }}>ChÆ°a cÃ³ phiáº¿u xuáº¥t kho nÃ o.</td>
-                    </tr>
-                )}
-                </tbody>
-            </table>
-
-            <div className="pagination-controls">
+)) : (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center' }}>KhÃ´ng tÃ¬m tháº¥y phiáº¿u xuáº¥t nÃ o khá»›p vá»›i Ä‘iá»u kiá»‡n.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+<div className="pagination-controls">
                 <button onClick={prevPage} disabled={page <= 1 || loading}>
                     <FiChevronLeft /> Trang TrÆ°á»›c
                 </button>
@@ -6219,9 +6504,9 @@ const ExportListPage = () => {
                 </button>
             </div>
         </>
-      )}
-    </div>
-  );
+)}
+        </div>
+    );
 };
 
 export default ExportListPage;
@@ -6231,8 +6516,10 @@ export default ExportListPage;
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ImportListPage.jsx ---
 
 
+// src/pages/ImportListPage.jsx
+
 import React, { useState, useMemo } from 'react';
-import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc, where } from 'firebase/firestore'; // ThÃªm "where"
 import { FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
@@ -6246,25 +6533,49 @@ import { parseDateString, formatDate } from '../utils/dateUtils';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import NewDataNotification from '../components/NewDataNotification';
+// NÃ‚NG Cáº¤P 1: Import cÃ¡c component cáº§n thiáº¿t cho bá»™ lá»c
+import DateRangePresets from '../components/DateRangePresets';
+import SupplierAutocomplete from '../components/SupplierAutocomplete';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const ImportListPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedSlip, setSelectedSlip] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    
-    // === Báº®T Äáº¦U THAY Äá»”I Cáº¤U TRÃšC STATE ===
-    const [confirmModal, setConfirmModal] = useState({ 
-        isOpen: false, 
-        item: null, 
-        title: '', 
-        message: '', 
-        confirmText: '', 
-        action: null // ThÃªm 'action' Ä‘á»ƒ biáº¿t cáº§n lÃ m gÃ¬
-    });
-    // === Káº¾T THÃšC THAY Äá»”I Cáº¤U TRÃšC STATE ===
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null, title: '', message: '', confirmText: '', action: null });
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const baseQuery = useMemo(() => query(collection(db, 'import_tickets'), orderBy("createdAt", "desc")), []);
-    
+    // NÃ‚NG Cáº¤P 1: State Ä‘á»ƒ quáº£n lÃ½ cÃ¡c giÃ¡ trá»‹ cá»§a bá»™ lá»c
+    const [filters, setFilters] = useState({
+        startDate: null, // Sá»­a thÃ nh null Ä‘á»ƒ tÆ°Æ¡ng thÃ­ch vá»›i DatePicker
+        endDate: null,   // Sá»­a thÃ nh null
+        supplier: { id: '', name: '' },
+        status: 'all',
+    });
+
+    // NÃ‚NG Cáº¤P 1: XÃ¢y dá»±ng cÃ¢u truy váº¥n Ä‘á»™ng dá»±a trÃªn bá»™ lá»c
+    const baseQuery = useMemo(() => {
+        let q = query(collection(db, 'import_tickets'), orderBy("createdAt", "desc"));
+
+        if (filters.startDate) {
+            q = query(q, where("createdAt", ">=", Timestamp.fromDate(new Date(filters.startDate))));
+        }
+        if (filters.endDate) {
+            const endOfDay = new Date(filters.endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            q = query(q, where("createdAt", "<=", Timestamp.fromDate(endOfDay)));
+        }
+        if (filters.supplier.id) {
+            q = query(q, where("supplierId", "==", filters.supplier.id));
+        }
+        if (filters.status && filters.status !== 'all') {
+            q = query(q, where("status", "==", filters.status));
+        }
+
+        return q;
+    }, [filters]); // Cháº¡y láº¡i khi bá»™ lá»c thay Ä‘á»•i
+
     const { 
         documents: importSlips, 
         loading, 
@@ -6275,6 +6586,21 @@ const ImportListPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
+    // NÃ‚NG Cáº¤P 1: TÃNH TOÃN CÃC Sá» LIá»†U TÃ“M Táº®T
+    const summaryStats = useMemo(() => {
+        if (loading || !importSlips) {
+            return { total: '...', pending: '...', completed: '...' };
+        }
+        const pending = importSlips.filter(s => s.status === 'pending').length;
+        const completed = importSlips.filter(s => s.status === 'completed').length;
+        
+        return {
+            total: importSlips.length,
+            pending,
+            completed
+        };
+    }, [importSlips, loading]);
+
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
     const handleRefresh = () => {
@@ -6282,8 +6608,9 @@ const ImportListPage = () => {
         reset();
     };
 
-    const handleConfirmImport = async (slipToConfirm) => {
+const handleConfirmImport = async (slipToConfirm) => {
         if (!slipToConfirm) return;
+        setIsProcessing(true);
         const slip = slipToConfirm;
         
         try {
@@ -6302,6 +6629,7 @@ const ImportListPage = () => {
                 const importTimestamp = importDateObject ? Timestamp.fromDate(importDateObject) : Timestamp.now();
 
                 const newLotData = {
+                    importTicketId: slip.id,
                     importDate: importTimestamp,
                     productId: item.productId,
                     productName: item.productName,
@@ -6328,7 +6656,9 @@ const ImportListPage = () => {
         } catch (error) {
             console.error("Lá»—i khi xÃ¡c nháº­n nháº­p kho: ", error);
             toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n nháº­p kho.');
-        }
+        } finally {
+        setIsProcessing(false); // <-- Táº®T TRáº NG THÃI Xá»¬ LÃ KHI XONG
+    }
     };
 
     const handleSaveSlipChanges = async (updatedSlip) => {
@@ -6348,8 +6678,8 @@ const ImportListPage = () => {
             toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
         }
     };
-    
-    const handleDeleteSlip = async (slipToDelete) => {
+
+const handleDeleteSlip = async (slipToDelete) => {
         if (!slipToDelete) return;
         
         toast.info(`Äang xÃ³a phiáº¿u nháº­p...`);
@@ -6364,8 +6694,15 @@ const ImportListPage = () => {
         }
     };
 
-    // === Báº®T Äáº¦U Cáº¬P NHáº¬T CÃC HÃ€M prompt... ===
-    const promptForConfirm = (slip) => {
+const handleFilterChange = (filterName, value) => {
+        setFilters(prev => ({ ...prev, [filterName]: value }));
+    };
+
+    const handlePresetSelect = (startDate, endDate) => {
+        setFilters(prev => ({ ...prev, startDate, endDate }));
+    };
+
+const promptForConfirm = (slip) => {
         setConfirmModal({
             isOpen: true,
             item: slip,
@@ -6449,8 +6786,8 @@ const ImportListPage = () => {
             toast.error("ÄÃ£ xáº£y ra lá»—i khi táº£i chi tiáº¿t phiáº¿u.");
         }
     };
-    
-    return (
+
+return (
         <div>
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}
@@ -6467,6 +6804,76 @@ const ImportListPage = () => {
                 <h1>Danh sÃ¡ch Phiáº¿u Nháº­p Kho</h1>
             </div>
 
+{/* NÃ‚NG Cáº¤P 1: KHU Vá»°C Bá»˜ Lá»ŒC */}
+            <div className="form-section">
+                <DateRangePresets onPresetSelect={handlePresetSelect} />
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>Tá»« ngÃ y</label>
+                        {/* NÃ‚NG Cáº¤P GIAO DIá»†N: Thay tháº¿ input báº±ng DatePicker */}
+                        <DatePicker
+                            selected={filters.startDate}
+                            onChange={(date) => handleFilterChange('startDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chá»n ngÃ y báº¯t Ä‘áº§u"
+                            className="search-input" // TÃ¡i sá»­ dá»¥ng style cÃ³ sáºµn
+                            isClearable
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Äáº¿n ngÃ y</label>
+                        {/* NÃ‚NG Cáº¤P GIAO DIá»†N: Thay tháº¿ input báº±ng DatePicker */}
+                        <DatePicker
+                            selected={filters.endDate}
+                            onChange={(date) => handleFilterChange('endDate', date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Chá»n ngÃ y káº¿t thÃºc"
+                            className="search-input" // TÃ¡i sá»­ dá»¥ng style cÃ³ sáºµn
+                            isClearable
+                        />
+                    </div>
+                </div>
+                <div className="form-row" style={{ marginTop: '15px' }}>
+                    <div className="form-group">
+                        <label>NhÃ  cung cáº¥p</label>
+                        <SupplierAutocomplete 
+                            value={filters.supplier.name}
+                            onSelect={(supplier) => handleFilterChange('supplier', supplier)}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Tráº¡ng thÃ¡i</label>
+                        <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}>
+                            <option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</option>
+                            <option value="pending">Äang chá»</option>
+                            <option value="completed">HoÃ n thÃ nh</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* NÃ‚NG Cáº¤P 1: HIá»‚N THá»Š CÃC THáºº THá»NG KÃŠ */}
+            <div className="stats-grid" style={{ marginBottom: '20px' }}>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Tá»•ng Sá»‘ Phiáº¿u (trang nÃ y)</h4>
+                        <p>{summaryStats.total}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>Äang Chá» Xá»­ LÃ½</h4>
+                        <p style={{ color: '#ffc107' }}>{summaryStats.pending}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-card-info">
+                        <h4>ÄÃ£ HoÃ n ThÃ nh</h4>
+                        <p style={{ color: '#28a745' }}>{summaryStats.completed}</p>
+                    </div>
+                </div>
+            </div>
+
             <NewDataNotification
                 isVisible={hasNewData}
                 onRefresh={handleRefresh}
@@ -6476,7 +6883,7 @@ const ImportListPage = () => {
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table list-page-table">
-                        <thead>
+<thead>
                             <tr>
                                 <th>NgÃ y táº¡o</th>
                                 <th>NhÃ  cung cáº¥p</th>
@@ -6486,14 +6893,14 @@ const ImportListPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {importSlips.map(slip => (
+{importSlips.length > 0 ? importSlips.map(slip => (
                                 <tr key={slip.id}>
-                                    <td>{formatDate(slip.createdAt)}</td>
+                                   <td>{formatDate(slip.createdAt)}</td>
                                     <td>{slip.supplierName}</td>
                                     <td>{slip.description}</td>
                                     <td><StatusBadge status={slip.status} /></td>
                                     <td>
-                                        <div className="action-buttons">
+<div className="action-buttons">
                                             <button className="btn-icon btn-view" title="Xem chi tiáº¿t" onClick={() => openViewModal(slip)}>
                                                 <FiEye />
                                             </button>
@@ -6505,19 +6912,27 @@ const ImportListPage = () => {
                                                     <button className="btn-icon btn-delete" title="XÃ³a phiáº¿u" onClick={() => promptForDelete(slip)}>
                                                         <FiTrash2 />
                                                     </button>
-                                                    <button className="btn-icon btn-confirm" title="XÃ¡c nháº­n nháº­p kho" onClick={() => promptForConfirm(slip)}>
-                                                        <FiCheckCircle />
-                                                    </button>
+                                                    <button 
+    className="btn-icon btn-confirm" 
+    title="XÃ¡c nháº­n nháº­p kho" 
+    onClick={() => promptForConfirm(slip)}
+    disabled={isProcessing} // <-- THÃŠM DÃ’NG NÃ€Y
+>
+    <FiCheckCircle />
+</button>
                                                 </>
                                             )}
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+)) : (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center' }}>KhÃ´ng tÃ¬m tháº¥y phiáº¿u nháº­p nÃ o khá»›p vá»›i Ä‘iá»u kiá»‡n.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
-
-                    <div className="pagination-controls">
+<div className="pagination-controls">
                         <button onClick={prevPage} disabled={page <= 1 || loading}>
                             <FiChevronLeft /> Trang TrÆ°á»›c
                         </button>
@@ -6527,12 +6942,13 @@ const ImportListPage = () => {
                         </button>
                     </div>
                 </>
-            )}
+ )}
         </div>
     );
 };
 
 export default ImportListPage;
+
 
 
 
@@ -6562,7 +6978,7 @@ import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 // <-- THAY Äá»”I 2: XÃ³a toÃ n bá»™ hÃ m getRowColorByExpiry á»Ÿ Ä‘Ã¢y
 
 const InventoryPage = ({ pageTitle }) => {
-    const { userRole } = useAuth();
+    const { role: userRole } = useAuth();
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
@@ -6774,7 +7190,7 @@ const getLotItemColorClass = (expiryDate) => {
 };
 
 const InventorySummaryPage = ({ pageTitle }) => {
-    const { userRole } = useAuth();
+    const { role: userRole } = useAuth();
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -7006,7 +7422,24 @@ const InventorySummaryPage = ({ pageTitle }) => {
             );
             const lotsSnapshot = await getDocs(lotsQuery);
             const lots = lotsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            setLotDetails(prev => ({ ...prev, [productId]: lots }));
+            // --- LOGIC Gá»˜P LÃ” Báº®T Äáº¦U Tá»ª ÄÃ‚Y ---
+            const lotAggregator = new Map();
+
+            for (const lot of lots) {
+                const lotKey = lot.lotNumber || 'KHONG_CO_LO';
+
+                if (lotAggregator.has(lotKey)) {
+                    // Náº¿u lÃ´ Ä‘Ã£ cÃ³, cá»™ng dá»“n sá»‘ lÆ°á»£ng
+                    const existingLot = lotAggregator.get(lotKey);
+                    existingLot.quantityRemaining += lot.quantityRemaining;
+                } else {
+                    // Náº¿u lÃ´ chÆ°a cÃ³, thÃªm má»›i vÃ o Map
+                    // Táº¡o má»™t báº£n sao Ä‘á»ƒ khÃ´ng lÃ m thay Ä‘á»•i dá»¯ liá»‡u gá»‘c
+                    lotAggregator.set(lotKey, { ...lot });
+                }
+            }
+            const aggregatedLots = Array.from(lotAggregator.values());
+setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots })); // <-- Sá»­a "lots" thÃ nh "aggregatedLots"
         } catch (error) {
             console.error("Lá»—i khi táº£i chi tiáº¿t lÃ´:", error);
             setLotDetails(prev => ({ ...prev, [productId]: [] }));
@@ -7018,7 +7451,11 @@ const InventorySummaryPage = ({ pageTitle }) => {
     };
 
     const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
-    const handlePrevPage = () => { fetchData('first'); };
+    const handlePrevPage = () => {
+    // LuÃ´n quay vá» trang Ä‘áº§u tiÃªn, lÃ  cÃ¡ch hoáº¡t Ä‘á»™ng Ä‘Æ¡n giáº£n vÃ  á»•n Ä‘á»‹nh nháº¥t
+    // vá»›i cursor-based pagination cá»§a Firestore khi chá»‰ tiáº¿n tá»›i.
+    fetchData('first'); 
+};
     const handleFilterChange = (type, value = '') => { if (activeFilter.type === type && activeFilter.value === value) { setActiveFilter({ type: 'none', value: '' }); } else { setActiveFilter({ type, value }); } };
     
     const handlePrint = async () => {
@@ -7162,7 +7599,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                     {!searchTerm && (
                         <div className="pagination-controls">
                             <button onClick={handlePrevPage} disabled={page <= 1}>
-                                <FiChevronLeft /> Trang TrÆ°á»›c
+                                <FiChevronLeft /> Vá» Trang Äáº§u
                             </button>
                             <span>Trang {page}</span>
                             <button onClick={handleNextPage} disabled={isLastPage}>
@@ -7184,7 +7621,9 @@ export default InventorySummaryPage;
 
 
 // src/pages/LotTracePage.jsx
+
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import {
   collection,
@@ -7192,11 +7631,15 @@ import {
   where,
   getDocs,
   orderBy,
+  doc,
+  getDoc
 } from 'firebase/firestore';
 import LotJourneyExplorer from '../components/LotJourneyExplorer';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import Spinner from '../components/Spinner';
+import ViewImportSlipModal from '../components/ViewImportSlipModal';
+import ViewExportSlipModal from '../components/ViewExportSlipModal';
 
 const LotTracePage = () => {
   const [lotNumber, setLotNumber] = useState('');
@@ -7205,7 +7648,10 @@ const LotTracePage = () => {
   const [exportHistory, setExportHistory] = useState([]);
   const [searchAttempted, setSearchAttempted] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [totalRemaining, setTotalRemaining] = useState(0); 
+  const [totalRemaining, setTotalRemaining] = useState(0);
+
+  // NÃ‚NG Cáº¤P 1: State Ä‘á»ƒ quáº£n lÃ½ modal xem chi tiáº¿t
+  const [viewModal, setViewModal] = useState({ isOpen: false, slip: null, type: '' });
 
   const handleTrace = async () => {
     if (!lotNumber) {
@@ -7221,57 +7667,29 @@ const LotTracePage = () => {
     try {
       let lotQuery;
       const searchTerm = lotNumber.trim();
-
-      // Náº¾U ngÆ°á»i dÃ¹ng nháº­p "null", "none", hoáº·c "khongcolo" (khÃ´ng phÃ¢n biá»‡t hoa thÆ°á»ng)
-      // thÃ¬ tÃ¬m nhá»¯ng lÃ´ cÃ³ lotNumber lÃ  null.
       if (['null', 'none', 'khongcolo'].includes(searchTerm.toLowerCase())) {
-        lotQuery = query(
-          collection(db, 'inventory_lots'),
-          where('lotNumber', '==', null), // TÃ¬m kiáº¿m giÃ¡ trá»‹ null
-          orderBy('importDate', 'asc')
-        );
+        lotQuery = query(collection(db, 'inventory_lots'), where('lotNumber', '==', null), orderBy('importDate', 'asc'));
       } else {
-        // Náº¿u khÃ´ng, tÃ¬m kiáº¿m theo sá»‘ lÃ´ chÃ­nh xÃ¡c nhÆ° cÅ©.
-        lotQuery = query(
-          collection(db, 'inventory_lots'),
-          where('lotNumber', '==', searchTerm),
-          orderBy('importDate', 'asc')
-        );
+        lotQuery = query(collection(db, 'inventory_lots'), where('lotNumber', '==', searchTerm), orderBy('importDate', 'asc'));
       }
       
       const lotSnapshot = await getDocs(lotQuery);
-
       if (lotSnapshot.empty) {
         setIsLoading(false);
         return;
       }
 
-      const foundImports = lotSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const foundImports = lotSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setImportRecords(foundImports);
 
-      const adjustmentsQuery = query(
-        collection(db, 'inventory_adjustments'),
-        where('lotNumber', '==', lotNumber.trim()),
-        orderBy('createdAt', 'desc')
-      );
-      const adjustmentsSnapshot = await getDocs(adjustmentsQuery);
-      const latestAdjustment = adjustmentsSnapshot.docs[0]?.data();
-
+      // Láº¥y lá»‹ch sá»­ xuáº¥t kho
       const history = [];
-      const exportsQuery = query(
-        collection(db, 'export_tickets'),
-        orderBy('createdAt', 'asc'),
-      );
+      const exportsQuery = query(collection(db, 'export_tickets'), where('status', '==', 'completed'), orderBy('createdAt', 'asc'));
       const exportsSnapshot = await getDocs(exportsQuery);
 
       exportsSnapshot.forEach((doc) => {
         const ticket = doc.data();
-        const exportedItem = ticket.items.find(
-          (item) => item.lotNumber === lotNumber.trim(),
-        );
+        const exportedItem = ticket.items.find((item) => item.lotNumber === lotNumber.trim());
         if (exportedItem) {
           history.push({
             ticketId: doc.id,
@@ -7282,18 +7700,9 @@ const LotTracePage = () => {
         }
       });
       setExportHistory(history);
-
-      if (latestAdjustment) {
-        foundImports[foundImports.length - 1].quantityRemaining = latestAdjustment.quantityAfter;
-        setTotalRemaining(latestAdjustment.quantityAfter);
-        toast.info(`Tá»“n kho Ä‘Ã£ Ä‘Æ°á»£c Ä‘iá»u chá»‰nh. Tá»“n kho hiá»‡n táº¡i: ${latestAdjustment.quantityAfter}`);
-      } else {
-        const totalRemainingFromImports = foundImports.reduce(
-          (sum, record) => sum + record.quantityRemaining,
-          0,
-        );
-        setTotalRemaining(totalRemainingFromImports);
-      }
+      
+      const totalRemainingFromImports = foundImports.reduce((sum, record) => sum + record.quantityRemaining, 0);
+      setTotalRemaining(totalRemainingFromImports);
 
     } catch (error) {
       console.error('Lá»—i khi truy váº¿t lÃ´ hÃ ng: ', error);
@@ -7303,144 +7712,213 @@ const LotTracePage = () => {
     }
   };
 
-  const handleNodeClick = (event, node) => {
-    setSelectedNode(node.data);
+  // NÃ‚NG Cáº¤P 1: HÃ m Ä‘á»ƒ má»Ÿ modal xem chi tiáº¿t phiáº¿u
+  const handleViewSlip = async (slipId, slipType) => {
+    const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
+    toast.info("Äang táº£i chi tiáº¿t phiáº¿u...");
+    try {
+        const docRef = doc(db, collectionName, slipId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const slipData = { id: docSnap.id, ...docSnap.data() };
+            // LÃ m giÃ u dá»¯ liá»‡u sáº£n pháº©m Ä‘á»ƒ hiá»ƒn thá»‹ Ä‘áº§y Ä‘á»§ trong modal
+            const productPromises = slipData.items.map(item => getDoc(doc(db, 'products', item.productId)));
+            const productSnapshots = await Promise.all(productPromises);
+            const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                if (docSn.exists()) acc[docSn.id] = docSn.data();
+                return acc;
+            }, {});
+            const enrichedItems = slipData.items.map(item => {
+                const details = productDetailsMap[item.productId] || {};
+                return { ...item, unit: details.unit || '', specification: details.packaging || '', storageTemp: details.storageTemp || '' };
+            });
+
+            setViewModal({ 
+                isOpen: true, 
+                slip: { ...slipData, items: enrichedItems }, 
+                type: slipType 
+            });
+        } else {
+            toast.error("KhÃ´ng tÃ¬m tháº¥y chi tiáº¿t cá»§a phiáº¿u nÃ y.");
+        }
+    } catch (error) {
+        toast.error("Lá»—i khi táº£i chi tiáº¿t phiáº¿u.");
+        console.error(error);
+    }
   };
-  const handlePaneClick = () => {
-    setSelectedNode(null);
-  };
-  const filteredExportHistory = selectedNode && selectedNode.type === 'customer'
+  
+  const closeViewModal = () => setViewModal({ isOpen: false, slip: null, type: '' });
+  const handleNodeClick = (event, node) => setSelectedNode(node.data);
+  const handlePaneClick = () => setSelectedNode(null);
+
+  const filteredExportHistory = selectedNode && selectedNode.type === 'customer' 
     ? exportHistory.filter(item => item.customer === selectedNode.name)
     : exportHistory;
 
   const masterInfo = importRecords.length > 0 ? importRecords[0] : null;
-  const totalImported = importRecords.reduce(
-    (sum, record) => sum + record.quantityImported,
-    0,
-  );
-  
+  const totalImported = importRecords.reduce((sum, record) => sum + record.quantityImported, 0);
+
   return (
     <div>
-      <div className="page-header">
-        <h1>Truy Váº¿t LÃ´ HÃ ng</h1>
-      </div>
+        {/* NÃ‚NG Cáº¤P 1: Render cÃ¡c modal */}
+        {viewModal.isOpen && viewModal.type === 'import' && (
+            <ViewImportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
+        )}
+        {viewModal.isOpen && viewModal.type === 'export' && (
+            <ViewExportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
+        )}
 
-      <div className="form-section">
-        <div className="form-group">
-          <label>Nháº­p Sá»‘ LÃ´ Cáº§n Truy Váº¿t</label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input
-              type="text"
-              value={lotNumber}
-              onChange={(e) => setLotNumber(e.target.value)}
-              placeholder="VÃ­ dá»¥: 4523468"
-              onKeyDown={(e) => e.key === 'Enter' && handleTrace()}
-              style={{ flexGrow: 1 }}
-            />
-            <button
-              onClick={handleTrace}
-              className="btn-primary"
-              disabled={isLoading}
-              style={{ width: 'auto' }}
-            >
-              {isLoading ? 'Äang tÃ¬m...' : 'Truy váº¿t'}
-            </button>
-          </div>
+        <div className="page-header">
+            <h1>Truy Váº¿t LÃ´ HÃ ng</h1>
         </div>
-      </div>
 
-      {isLoading && <Spinner />}
-
-      {!isLoading && searchAttempted && importRecords.length === 0 && (
         <div className="form-section">
-          <h4>KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin cho sá»‘ lÃ´ "{lotNumber}"</h4>
-        </div>
-      )}
-
-      {!isLoading && importRecords.length > 0 && (
-        <div>
-          <div className="form-section">
-            <h3 style={{ marginTop: 0 }}>HÃ nh TrÃ¬nh LÃ´ HÃ ng: {masterInfo.lotNumber}</h3>
-            <LotJourneyExplorer
-              importRecords={importRecords}
-              exportHistory={exportHistory}
-              totalRemaining={totalRemaining}
-              onNodeClick={handleNodeClick}
-              onPaneClick={handlePaneClick}
-            />
-          </div>
-
-          <div className="form-section">
-            <h3 style={{ marginTop: 0 }}>ThÃ´ng Tin Chung & TÃ³m Táº¯t</h3>
-            <div className="compact-info-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-              <div><label>MÃ£ hÃ ng</label><p><strong>{masterInfo.productId}</strong></p></div>
-              <div><label>TÃªn hÃ ng</label><p>{masterInfo.productName}</p></div>
-              <div><label>NhÃ  cung cáº¥p (láº§n nháº­p Ä‘áº§u)</label><p>{masterInfo.supplier || '(khÃ´ng cÃ³)'}</p></div>
-              <div><label>ÄVT</label><p>{masterInfo.unit}</p></div>
-              <div><label>Quy cÃ¡ch</label><p>{masterInfo.packaging}</p></div>
-              <div><label>Sá»‘ lÃ´</label><p><strong>{masterInfo.lotNumber || '(KhÃ´ng cÃ³)'}</strong></p></div>
-              <div><label>HSD</label><p><strong>{masterInfo.expiryDate ? formatDate(masterInfo.expiryDate) : '(KhÃ´ng cÃ³)'}</strong></p></div>
-              <div><label>Tá»•ng Ä‘Ã£ nháº­p</label><p style={{color: 'blue', fontSize: '18px'}}><strong>{totalImported}</strong></p></div>
-              <div><label>Tá»•ng cÃ²n láº¡i</label><p style={{color: 'green', fontSize: '18px'}}><strong>{totalRemaining}</strong></p></div>
+            <div className="form-group">
+              <label>Nháº­p Sá»‘ LÃ´ Cáº§n Truy Váº¿t</label>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="text"
+                  value={lotNumber}
+                  onChange={(e) => setLotNumber(e.target.value)}
+                  placeholder="VÃ­ dá»¥: 4523468 hoáº·c 'khÃ´ng cÃ³ lÃ´'"
+                  onKeyDown={(e) => e.key === 'Enter' && handleTrace()}
+                  style={{ flexGrow: 1 }}
+                />
+                <button
+                  onClick={handleTrace}
+                  className="btn-primary"
+                  disabled={isLoading}
+                  style={{ width: 'auto' }}
+                >
+                  {isLoading ? 'Äang tÃ¬m...' : 'Truy váº¿t'}
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div className="form-section">
-            <h3 style={{ marginTop: 0 }}>Chi Tiáº¿t CÃ¡c Láº§n Nháº­p Kho</h3>
-            <table className="products-table list-page-table">
-              <thead>
-                <tr>
-                  <th>NgÃ y nháº­p</th>
-                  <th>NhÃ  cung cáº¥p</th>
-                  <th>Sá»‘ lÆ°á»£ng nháº­p</th>
-                  <th>SL cÃ²n láº¡i cá»§a láº§n nháº­p</th>
-                </tr>
-              </thead>
-              <tbody>
-                {importRecords.map((record) => (
-                  <tr key={record.id}>
-                    <td>{formatDate(record.importDate)}</td>
-                    <td>{record.supplier || '(khÃ´ng cÃ³)'}</td>
-                    <td>{record.quantityImported}</td>
-                    <td>{record.quantityRemaining}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="form-section">
-            <h3 style={{ marginTop: 0 }}>
-              {selectedNode && selectedNode.type === 'customer' 
-                ? `Lá»‹ch Sá»­ Xuáº¥t Kho cho: ${selectedNode.name}`
-                : 'ToÃ n Bá»™ Lá»‹ch Sá»­ Xuáº¥t Kho'
-              }
-            </h3>
-            {filteredExportHistory.length > 0 ? (
-              <table className="products-table list-page-table">
-                <thead>
-                  <tr>
-                    <th>NgÃ y xuáº¥t</th>
-                    <th>ID Phiáº¿u xuáº¥t</th>
-                    <th>KhÃ¡ch hÃ ng</th>
-                    <th>Sá»‘ lÆ°á»£ng Ä‘Ã£ xuáº¥t</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExportHistory.map((item) => (
-                    <tr key={item.ticketId}>
-                      <td>{formatDate(item.exportDate)}</td>
-                      <td>{item.ticketId}</td>
-                      <td>{item.customer}</td>
-                      <td>{item.quantityExported}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (<p>LÃ´ hÃ ng nÃ y chÆ°a Ä‘Æ°á»£c xuáº¥t kho láº§n nÃ o.</p>)}
-          </div>
         </div>
-      )}
+
+        {isLoading && <Spinner />}
+
+        {!isLoading && searchAttempted && importRecords.length === 0 && (
+            <div className="form-section">
+                <h4>KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin cho sá»‘ lÃ´ "{lotNumber}"</h4>
+            </div>
+        )}
+
+        {!isLoading && importRecords.length > 0 && (
+            <div>
+                <div className="form-section">
+                    <h3 style={{ marginTop: 0 }}>HÃ nh TrÃ¬nh LÃ´ HÃ ng: {masterInfo.lotNumber || '(KhÃ´ng cÃ³ lÃ´)'}</h3>
+                    <LotJourneyExplorer
+                        importRecords={importRecords}
+                        exportHistory={exportHistory}
+                        totalRemaining={totalRemaining}
+                        onNodeClick={handleNodeClick}
+                        onPaneClick={handlePaneClick}
+                    />
+                </div>
+
+                <div className="form-section">
+                    <h3 style={{ marginTop: 0 }}>ThÃ´ng Tin Chung & TÃ³m Táº¯t</h3>
+                    <div className="compact-info-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                        <div><label>MÃ£ hÃ ng</label><p><strong>{masterInfo.productId}</strong></p></div>
+                        <div><label>TÃªn hÃ ng</label><p>{masterInfo.productName}</p></div>
+                        <div>
+                            <label>NhÃ  cung cáº¥p (láº§n nháº­p Ä‘áº§u)</label>
+                            <p>
+                                <Link to={`/partners`} className="table-link">
+                                    {masterInfo.supplierName || '(khÃ´ng cÃ³)'}
+                                </Link>
+                            </p>
+                        </div>
+                        <div><label>ÄVT</label><p>{masterInfo.unit}</p></div>
+                        <div><label>Quy cÃ¡ch</label><p>{masterInfo.packaging}</p></div>
+                        <div><label>Sá»‘ lÃ´</label><p><strong>{masterInfo.lotNumber || '(KhÃ´ng cÃ³)'}</strong></p></div>
+                        <div><label>HSD</label><p><strong>{masterInfo.expiryDate ? formatDate(masterInfo.expiryDate) : '(KhÃ´ng cÃ³)'}</strong></p></div>
+                        <div><label>Tá»•ng Ä‘Ã£ nháº­p</label><p style={{color: 'blue', fontSize: '18px'}}><strong>{totalImported}</strong></p></div>
+                        <div><label>Tá»•ng cÃ²n láº¡i</label><p style={{color: 'green', fontSize: '18px'}}><strong>{totalRemaining}</strong></p></div>
+                    </div>
+                </div>
+
+                <div className="form-section">
+                    <h3 style={{ marginTop: 0 }}>Chi Tiáº¿t CÃ¡c Láº§n Nháº­p Kho</h3>
+                    <table className="products-table list-page-table">
+                        <thead>
+                            <tr>
+                                <th>NgÃ y nháº­p</th>
+                                <th>NhÃ  cung cáº¥p</th>
+                                <th>Sá»‘ lÆ°á»£ng nháº­p</th>
+                                <th>SL cÃ²n láº¡i cá»§a láº§n nháº­p</th>
+                                <th>ID Phiáº¿u Nháº­p Gá»‘c</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {importRecords.map((record) => (
+                                <tr key={record.id}>
+                                    <td>{formatDate(record.importDate)}</td>
+                                    <td>
+    <Link to={`/partners?search=${record.supplierName || ''}`} className="table-link">
+        {record.supplierName || '(khÃ´ng cÃ³)'}
+    </Link>
+</td>
+                                    <td>{record.quantityImported}</td>
+                                    <td>{record.quantityRemaining}</td>
+                                    {/* THÃŠM Dá»® LIá»†U CHO Cá»˜T Má»šI */}
+                                    <td>
+                                        {record.importTicketId ? (
+                                            <button onClick={() => handleViewSlip(record.importTicketId, 'import')} className="btn-link table-link">
+                                                {record.importTicketId}
+                                            </button>
+                                        ) : (
+                                            <span style={{ color: '#888' }}>(Tá»“n Ä‘áº§u ká»³)</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="form-section">
+                    <h3 style={{ marginTop: 0 }}>
+                        {selectedNode && selectedNode.type === 'customer' 
+                            ? `Lá»‹ch Sá»­ Xuáº¥t Kho cho: ${selectedNode.name}`
+                            : 'ToÃ n Bá»™ Lá»‹ch Sá»­ Xuáº¥t Kho'
+                        }
+                    </h3>
+                    {filteredExportHistory.length > 0 ? (
+                        <table className="products-table list-page-table">
+                            <thead>
+                                <tr>
+                                    <th>NgÃ y xuáº¥t</th>
+                                    <th>ID Phiáº¿u xuáº¥t</th>
+                                    <th>KhÃ¡ch hÃ ng</th>
+                                    <th>Sá»‘ lÆ°á»£ng Ä‘Ã£ xuáº¥t</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredExportHistory.map((item) => (
+                                    <tr key={item.ticketId}>
+                                        <td>{formatDate(item.exportDate)}</td>
+                                        <td>
+                                            <button onClick={() => handleViewSlip(item.ticketId, 'export')} className="btn-link table-link">
+                                                {item.ticketId}
+                                            </button>
+                                        </td>
+                                        <td>
+    <Link to={`/partners?search=${item.customer || ''}`} className="table-link">
+        {item.customer}
+    </Link>
+</td>
+                                        <td>{item.quantityExported}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (<p>LÃ´ hÃ ng nÃ y chÆ°a Ä‘Æ°á»£c xuáº¥t kho láº§n nÃ o.</p>)}
+                </div>
+            </div>
+        )}
     </div>
   );
 };
@@ -7457,7 +7935,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { db, app } from '../firebaseConfig'; 
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import { FiSearch, FiAlertCircle, FiMic } from 'react-icons/fi';
 import styles from '../styles/MobileInventoryPage.module.css';
@@ -7688,6 +8166,7 @@ export default MobileInventoryPage;
 
 
 // src/pages/NewExportPage.jsx
+
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
@@ -7719,19 +8198,16 @@ const exportSlipSchema = z.object({
 
 const NewExportPage = () => {
     const {
-        customerId, customerName, description, items, exportDate,
-        setCustomer, setDescription, setExportDate, addNewItemRow, removeItemRow, updateItem,
-        replaceItem, resetSlip
+        customerId, customerName, description, items,
+        setCustomer, setDescription, addNewItemRow, removeItemRow, updateItem,
+        replaceItem, handleProductSearchResult, resetSlip
     } = useExportSlipStore();
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const [allCustomers, setAllCustomers] = useState([]);
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
     
     const lotSelectRefs = useRef([]);
-    const lastInputRef = useRef(null);
-    const today = new Date().toISOString().split('T')[0];
 
     const isSlipValid = useMemo(() => {
         const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
@@ -7741,34 +8217,16 @@ const NewExportPage = () => {
         return hasCustomer && hasValidItem;
     }, [customerId, customerName, items]);
 
-    // === Báº®T Äáº¦U THÃŠM Má»šI ===
-const disabledReason = useMemo(() => {
-    if (isSlipValid) return '';
-    if (!customerId.trim() || !customerName.trim()) {
-        return 'Vui lÃ²ng chá»n KhÃ¡ch HÃ ng.';
-    }
-    if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
-        return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m há»£p lá»‡ (Ä‘Ã£ chá»n lÃ´ vÃ  cÃ³ sá»‘ lÆ°á»£ng).';
-    }
-    return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
-}, [isSlipValid, customerId, customerName, items]);
-// === Káº¾T THÃšC THÃŠM Má»šI ===
-
-    useEffect(() => {
-        if (lastInputRef.current) {
-            lastInputRef.current.focus();
+    const disabledReason = useMemo(() => {
+        if (isSlipValid) return '';
+        if (!customerId.trim() || !customerName.trim()) {
+            return 'Vui lÃ²ng chá»n KhÃ¡ch HÃ ng.';
         }
-    }, [items.length]);
-
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
-            const querySnapshot = await getDocs(q);
-            const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setAllCustomers(customerList);
-        };
-        fetchCustomers();
-    }, []);
+        if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
+            return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m há»£p lá»‡ (Ä‘Ã£ chá»n lÃ´ vÃ  cÃ³ sá»‘ lÆ°á»£ng).';
+        }
+        return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
+    }, [isSlipValid, customerId, customerName, items]);
 
     const handleCustomerSearch = async (idToSearch) => { 
         if (!idToSearch) {
@@ -7776,7 +8234,6 @@ const disabledReason = useMemo(() => {
             return;
         }
         try {
-            // Sá»¬A Láº I: DÃ¹ng idToSearch thay vÃ¬ customerId
             const partnerRef = doc(db, 'partners', idToSearch.toUpperCase()); 
             const partnerSnap = await getDoc(partnerRef);
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
@@ -7791,57 +8248,39 @@ const disabledReason = useMemo(() => {
         }
     };
 
+    // HÃ€M TÃŒM KIáº¾M Sáº¢N PHáº¨M Má»šI (CHá»ˆ Gá»ŒI STORE)
     const handleProductSearch = async (index, productOrId) => {
-        if (!productOrId) return;
-        replaceItem(index, { productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, isOutOfStock: false });
-        let productData;
-        let productIdToSearch;
+        if (!productOrId) {
+            handleProductSearchResult(index, null);
+            return;
+        };
+
+        let productData = null;
         if (typeof productOrId === 'object' && productOrId !== null) {
             productData = productOrId;
-            productIdToSearch = productOrId.id;
-            updateItem(index, 'productId', productIdToSearch);
-        } else {
-            productIdToSearch = String(productOrId).trim().toUpperCase();
-            if (!productIdToSearch) return;
-            const productRef = doc(db, 'products', productIdToSearch);
-            const productSnap = await getDoc(productRef);
-            if (!productSnap.exists()) {
-                toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productIdToSearch}`);
+        } 
+        else {
+            const productId = String(productOrId).trim().toUpperCase();
+            if (!productId) {
+                handleProductSearchResult(index, null); // XÃ³a dá»¯ liá»‡u dÃ²ng náº¿u productId rá»—ng
                 return;
+            };
+            try {
+                const productRef = doc(db, 'products', productId);
+                const productSnap = await getDoc(productRef);
+                if (productSnap.exists()) {
+                    productData = { id: productSnap.id, ...productSnap.data() };
+                } else {
+                    toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+                }
+            } catch (error) {
+                console.error("Lá»—i khi tÃ¬m sáº£n pháº©m:", error);
+                toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m.");
             }
-            productData = { id: productSnap.id, ...productSnap.data() };
         }
-        replaceItem(index, {
-            productName: productData.productName,
-            unit: productData.unit,
-            packaging: productData.packaging,
-            storageTemp: productData.storageTemp,
-        });
-        try {
-            const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productIdToSearch), where("quantityRemaining", ">", 0));
-            const lotsSnapshot = await getDocs(lotsQuery);
-            if (lotsSnapshot.empty) {
-                updateItem(index, 'isOutOfStock', true);
-            } else {
-                const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                foundLots.sort((a, b) => {
-                    const aHasExpiry = a.expiryDate && a.expiryDate.toDate;
-                    const bHasExpiry = b.expiryDate && b.expiryDate.toDate;
-                    if (!aHasExpiry && !bHasExpiry) return 0;
-                    if (!aHasExpiry) return 1;
-                    if (!bHasExpiry) return -1;
-                    return a.expiryDate.toDate() - b.expiryDate.toDate();
-                });
-                replaceItem(index, {
-                    availableLots: foundLots,
-                    isOutOfStock: false,
-                });
-                setTimeout(() => lotSelectRefs.current[index]?.focus(), 0);
-            }
-        } catch (error) {
-            console.error("Lá»—i khi tÃ¬m kiáº¿m lÃ´ hÃ ng:", error);
-            toast.error("ÄÃ£ cÃ³ lá»—i xáº£y ra khi tÃ¬m kiáº¿m lÃ´ hÃ ng.");
-        }
+        
+        handleProductSearchResult(index, productData); 
+        setTimeout(() => lotSelectRefs.current[index]?.focus(), 100);
     };
     
     const handleLotSelection = (index, selectedLotId) => {
@@ -7853,7 +8292,7 @@ const disabledReason = useMemo(() => {
               lotNumber: selectedLot.lotNumber,
               expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
               quantityRemaining: selectedLot.quantityRemaining,
-              displayLotText: selectedLot.lotNumber
+              displayLotText: selectedLot.lotNumber || '(Trá»‘ng)'
           });
         } else {
            replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
@@ -7874,44 +8313,61 @@ const disabledReason = useMemo(() => {
     };
 
     const getValidSlipData = () => {
-        const dateObject = new Date(exportDate.replace(/-/g, '/'));
-        const formattedDate = formatDate(dateObject);
-        const validItems = items.filter(item => item.productId && item.selectedLotId && item.quantityToExport);
-        const slipToValidate = {
-            customerId: customerId.trim(),
-            customerName: customerName.trim(),
-            items: validItems
-        };
-        const validationResult = exportSlipSchema.safeParse(slipToValidate);
-        if (!validationResult.success) {
-            toast.warn(validationResult.error.issues[0].message);
+        const formattedDate = formatDate(new Date());
+        const validItemsInput = items.filter(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0);
+        if (validItemsInput.length === 0) {
+            toast.warn("Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.");
             return null;
         }
+
+        const finalItems = [];
+        let allProductIds = new Set();
+
+        for (const item of validItemsInput) {
+            let quantityToDistribute = Number(item.quantityToExport);
+            const selectedAggregatedLot = item.availableLots.find(lot => lot.id === item.selectedLotId);
+
+            if (!selectedAggregatedLot || quantityToDistribute <= 0) continue;
+
+            const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+
+            for (const originalLot of originalLotsSorted) {
+                if (quantityToDistribute <= 0) break;
+                const quantityFromThisLot = Math.min(quantityToDistribute, originalLot.quantityRemaining);
+                
+                finalItems.push({
+                    productId: item.productId,
+                    productName: item.productName,
+                    lotId: originalLot.id,
+                    lotNumber: originalLot.lotNumber,
+                    expiryDate: originalLot.expiryDate ? formatDate(originalLot.expiryDate) : '',
+                    unit: item.unit,
+                    packaging: item.packaging,
+                    storageTemp: item.storageTemp || '',
+                    quantityToExport: quantityFromThisLot,
+                    notes: item.notes || ''
+                });
+                quantityToDistribute -= quantityFromThisLot;
+            }
+            allProductIds.add(item.productId);
+        }
+
+        if(finalItems.length === 0){
+            toast.warn("KhÃ´ng cÃ³ máº·t hÃ ng nÃ o há»£p lá»‡ Ä‘á»ƒ xuáº¥t.");
+            return null;
+        }
+
         return {
             exportDate: formattedDate, 
             customerId: customerId.toUpperCase(), 
             customer: customerName,
             description, 
-            items: validationResult.data.items.map(item => {
-                const fullItemData = items.find(i => i.selectedLotId === item.selectedLotId);
-                return {
-                    productId: item.productId,
-                    productName: fullItemData?.productName || '',
-                    lotId: item.selectedLotId,
-                    lotNumber: fullItemData?.lotNumber || '',
-                    expiryDate: fullItemData?.expiryDate || '',
-                    unit: fullItemData?.unit || '',
-                    packaging: fullItemData?.packaging || '',
-                    storageTemp: fullItemData?.storageTemp || '',
-                    quantityToExport: item.quantityToExport,
-                    notes: fullItemData?.notes || ''
-                }
-            }), 
-            productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
+            items: finalItems, 
+            productIds: Array.from(allProductIds),
             createdAt: serverTimestamp()
         };
     };
-
+    
     const handleSaveDraft = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -8086,21 +8542,21 @@ const disabledReason = useMemo(() => {
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             <div className="page-actions">
                 <button 
-                    onClick={handleSaveDraft} 
-                    className="btn-secondary" 
-                    disabled={isProcessing || !isSlipValid}
-                     title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'} // <-- THÃŠM DÃ’NG NÃ€Y
-                >
-                    {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
-                </button>
-                <button 
-                    onClick={promptForDirectExport} 
-                    className="btn-primary" 
-                    disabled={isProcessing || !isSlipValid}
-                    title={!isSlipValid ? disabledReason : 'Xuáº¥t hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'} // <-- THÃŠM DÃ’NG NÃ€Y
-                >
-                    {isProcessing ? 'Äang xá»­ lÃ½...' : 'Xuáº¥t Kho Trá»±c Tiáº¿p'}
-                </button>
+    onClick={handleSaveDraft} 
+    className="btn-secondary" 
+    disabled={isProcessing || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'}
+>
+    {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
+</button>
+<button 
+    onClick={promptForDirectExport} 
+    className="btn-primary" 
+    disabled={isProcessing || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'Xuáº¥t hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'}
+>
+    {isProcessing ? 'Äang xá»­ lÃ½...' : 'Xuáº¥t Kho Trá»±c Tiáº¿p'}
+</button>
             </div>
         </div>
     );
@@ -8286,9 +8742,33 @@ const disabledReason = useMemo(() => {
         }
     };
 
-    const handleExpiryDateBlur = (index, value) => {
-        updateItem(index, 'expiryDate', formatExpiryDate(value));
-    };
+    // src/pages/NewImportPage.jsx
+
+const handleExpiryDateBlur = (index, value) => {
+    // 1. LuÃ´n Ä‘á»‹nh dáº¡ng láº¡i chuá»—i ngÆ°á»i dÃ¹ng nháº­p Ä‘á»ƒ Ä‘áº£m báº£o tÃ­nh nháº¥t quÃ¡n
+    const formattedValue = formatExpiryDate(value);
+    updateItem(index, 'expiryDate', formattedValue);
+
+    // 2. Náº¿u giÃ¡ trá»‹ sau khi Ä‘á»‹nh dáº¡ng lÃ  rá»—ng hoáº·c "N/A" thÃ¬ khÃ´ng cáº§n cáº£nh bÃ¡o
+    if (!formattedValue || formattedValue.toUpperCase() === 'N/A') {
+        return;
+    }
+
+    // 3. Chuyá»ƒn chuá»—i Ä‘Ã£ Ä‘á»‹nh dáº¡ng thÃ nh Ä‘á»‘i tÆ°á»£ng Date Ä‘á»ƒ so sÃ¡nh
+    const expiryDateObject = parseDateString(formattedValue);
+
+    // 4. Náº¿u lÃ  má»™t ngÃ y há»£p lá»‡, tiáº¿n hÃ nh so sÃ¡nh
+    if (expiryDateObject) {
+        const today = new Date();
+        // Äáº·t giá», phÃºt, giÃ¢y vá» 0 Ä‘á»ƒ chá»‰ so sÃ¡nh ngÃ y, khÃ´ng so sÃ¡nh thá»i gian
+        today.setHours(0, 0, 0, 0); 
+
+        // 5. Náº¿u ngÃ y háº¿t háº¡n nhá» hÆ¡n ngÃ y hÃ´m nay, hiá»ƒn thá»‹ cáº£nh bÃ¡o
+        if (expiryDateObject < today) {
+            toast.warn(`Cáº£nh bÃ¡o: Háº¡n sá»­ dá»¥ng "${formattedValue}" cá»§a máº·t hÃ ng á»Ÿ dÃ²ng ${index + 1} Ä‘Ã£ á»Ÿ trong quÃ¡ khá»©.`);
+        }
+    }
+};
 
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
@@ -8584,13 +9064,21 @@ const disabledReason = useMemo(() => {
             <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             <div className="page-actions">
                 <button 
-                    onClick={handleSaveSlip} 
-                    className="btn-secondary" 
-                    disabled={isSaving || !isSlipValid}
-                    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'} // <-- THÃŠM DÃ’NG NÃ€Y
-                >
-                    {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
-                </button>
+    onClick={handleSaveSlip} 
+    className="btn-secondary" 
+    disabled={isSaving || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'}
+>
+    {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
+</button>
+<button 
+    onClick={promptForDirectImport} 
+    className="btn-primary" 
+    disabled={isSaving || !isSlipValid}
+    title={!isSlipValid ? disabledReason : 'Nháº­p hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'}
+>
+    {isSaving ? 'Äang xá»­ lÃ½...' : 'Nháº­p Kho Trá»±c Tiáº¿p'}
+</button>
                 <button 
                     onClick={promptForDirectImport} 
                     className="btn-primary" 
@@ -8625,6 +9113,7 @@ import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { PAGE_SIZE } from '../constants';
 import { normalizeString } from '../utils/stringUtils'; // <-- THÃŠM DÃ’NG NÃ€Y
 import HighlightText from '../components/HighlightText';
+import { useSearchParams } from 'react-router-dom';
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -8637,6 +9126,14 @@ const PartnersPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState(null); // null: khÃ´ng tÃ¬m kiáº¿m, []: tÃ¬m khÃ´ng tháº¥y, [...]: káº¿t quáº£
     const [isSearching, setIsSearching] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    useEffect(() => {
+        const termFromUrl = searchParams.get('search');
+        if (termFromUrl) {
+            setSearchTerm(termFromUrl);
+        }
+    }, [searchParams]);
 
     const baseQuery = useMemo(() => {
         return query(collection(db, "partners"), orderBy(documentId()));
@@ -9790,21 +10287,22 @@ describe('Page: ProductsPage', () => {
 
 
 // src/pages/SalesAnalyticsPage.jsx
-import { Line, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title } from 'chart.js';
+
+import { Line, Pie, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title, BarElement } from 'chart.js';
 import DateRangePresets from '../components/DateRangePresets';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getSalesAnalytics } from '../services/dashboardService';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
-import { FiCalendar } from 'react-icons/fi';
-// THÃŠM Má»šI: Import cÃ¡c hÃ m cá»§a Firestore Ä‘á»ƒ láº¥y danh sÃ¡ch khÃ¡ch hÃ ng
+import { FiCalendar, FiArrowUp, FiArrowDown, FiXCircle } from 'react-icons/fi';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
-
+import ProductAutocomplete from '../components/ProductAutocomplete';
+import { getElementAtEvent } from 'react-chartjs-2';
 
 // ÄÄƒng kÃ½ cÃ¡c thÃ nh pháº§n cá»§a ChartJS
 ChartJS.register(
@@ -9815,32 +10313,42 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
-    ArcElement
+    ArcElement,
+    BarElement
 );
 
 const SalesAnalyticsPage = () => {
+    // === CÃC STATE CÆ  Báº¢N ===
     const [filters, setFilters] = useState({
         startDate: '',
         endDate: '',
-        customerId: '', 
+        customerId: '',
         customerName: '',
-        productId: ''
+        productId: '',
+        team: 'all'
     });
     const [results, setResults] = useState([]);
     const [summary, setSummary] = useState({ totalQuantity: 0, totalSlips: 0 });
     const [loading, setLoading] = useState(false);
-    
-    // THÃŠM Má»šI: State Ä‘á»ƒ lÆ°u danh sÃ¡ch khÃ¡ch hÃ ng cho dropdown
-    const [allCustomers, setAllCustomers] = useState([]);
+    const chartRef = useRef();
 
-    // THÃŠM Má»šI: useEffect Ä‘á»ƒ láº¥y danh sÃ¡ch khÃ¡ch hÃ ng má»™t láº§n khi component Ä‘Æ°á»£c táº£i
+    // NÃ‚NG Cáº¤P 1: STATE CHO TÆ¯Æ NG TÃC SÃ‚U (DRILL-DOWN)
+    const [drillDownFilter, setDrillDownFilter] = useState({ type: null, value: null });
+
+    // NÃ‚NG Cáº¤P 2: STATE CHO TÃ™Y CHá»ˆNH TOP N
+    const [topN, setTopN] = useState(5);
+
+    // NÃ‚NG Cáº¤P 3: STATE CHO PHÃ‚N TRANG Báº¢NG Dá»® LIá»†U
+    const [currentPage, setCurrentPage] = useState(1);
+    const ROWS_PER_PAGE = 20;
+
+    // Láº¥y danh sÃ¡ch khÃ¡ch hÃ ng (khÃ´ng Ä‘á»•i)
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
                 const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
                 const querySnapshot = await getDocs(q);
                 const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().partnerName }));
-                setAllCustomers(customerList);
             } catch (error) {
                 console.error("Lá»—i khi táº£i danh sÃ¡ch khÃ¡ch hÃ ng:", error);
                 toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch khÃ¡ch hÃ ng.");
@@ -9848,23 +10356,32 @@ const SalesAnalyticsPage = () => {
         };
         fetchCustomers();
     }, []);
+    
+    // NÃ‚NG Cáº¤P 1: Xá»¬ LÃ Dá»® LIá»†U SAU KHI ÄÃƒ Lá»ŒC DRILL-DOWN (Náº¾U CÃ“)
+    const filteredResults = useMemo(() => {
+        if (!drillDownFilter.value) {
+            return results;
+        }
+        if (drillDownFilter.type === 'customer') {
+            return results.filter(row => row.customer === drillDownFilter.value);
+        }
+        return results;
+    }, [results, drillDownFilter]);
 
-    // THÃŠM Má»šI: Xá»­ lÃ½ dá»¯ liá»‡u Ä‘á»ƒ tÃ¬m top khÃ¡ch hÃ ng vÃ  sáº£n pháº©m
+    // === CÃC HÃ€M TÃNH TOÃN Dá»® LIá»†U (useMemo) ===
     const topStats = useMemo(() => {
-        if (!results || results.length === 0) return { topCustomers: [], topProducts: [] };
-
-        // Top khÃ¡ch hÃ ng
-        const salesByCustomer = results.reduce((acc, row) => {
+        if (!filteredResults || filteredResults.length === 0) return { topCustomers: [], topProducts: [] };
+        
+        const salesByCustomer = filteredResults.reduce((acc, row) => {
             acc[row.customer] = (acc[row.customer] || 0) + Number(row.quantityExported);
             return acc;
         }, {});
         const topCustomers = Object.entries(salesByCustomer)
             .sort(([, qtyA], [, qtyB]) => qtyB - qtyA)
-            .slice(0, 3)
+            .slice(0, topN) // NÃ‚NG Cáº¤P 2: Sá»­ dá»¥ng topN
             .map(([name, quantity]) => ({ name, quantity }));
 
-        // Top sáº£n pháº©m
-        const salesByProduct = results.reduce((acc, row) => {
+        const salesByProduct = filteredResults.reduce((acc, row) => {
             if (!acc[row.productName]) {
                 acc[row.productName] = { quantity: 0, unit: row.unit };
             }
@@ -9873,16 +10390,15 @@ const SalesAnalyticsPage = () => {
         }, {});
         const topProducts = Object.entries(salesByProduct)
             .sort(([, dataA], [, dataB]) => dataB.quantity - dataA.quantity)
-            .slice(0, 3)
+            .slice(0, topN) // NÃ‚NG Cáº¤P 2: Sá»­ dá»¥ng topN
             .map(([name, data]) => ({ name, ...data }));
 
         return { topCustomers, topProducts };
-    }, [results]);
+    }, [filteredResults, topN]);
 
-    // Xá»­ lÃ½ dá»¯ liá»‡u cho biá»ƒu Ä‘á»“ Ä‘Æ°á»ng (giá»¯ nguyÃªn)
     const lineChartData = useMemo(() => {
-        if (!results || results.length === 0) return null;
-        const salesByDate = results.reduce((acc, row) => {
+        if (!filteredResults || filteredResults.length === 0) return null;
+        const salesByDate = filteredResults.reduce((acc, row) => {
             const date = formatDate(row.exportDate);
             acc[date] = (acc[date] || 0) + Number(row.quantityExported);
             return acc;
@@ -9897,12 +10413,11 @@ const SalesAnalyticsPage = () => {
                 backgroundColor: 'rgba(75, 192, 192, 0.5)',
             }],
         };
-    }, [results]);
+    }, [filteredResults]);
 
-    // Xá»­ lÃ½ dá»¯ liá»‡u cho biá»ƒu Ä‘á»“ trÃ²n (giá»¯ nguyÃªn)
     const pieChartData = useMemo(() => {
-        if (!results || results.length === 0) return null;
-        const salesByCustomer = results.reduce((acc, row) => {
+        if (!filteredResults || filteredResults.length === 0) return null;
+        const salesByCustomer = filteredResults.reduce((acc, row) => {
             acc[row.customer] = (acc[row.customer] || 0) + Number(row.quantityExported);
             return acc;
         }, {});
@@ -9914,9 +10429,8 @@ const SalesAnalyticsPage = () => {
                 backgroundColor: ['rgba(255, 99, 132, 0.7)','rgba(54, 162, 235, 0.7)','rgba(255, 206, 86, 0.7)','rgba(75, 192, 192, 0.7)','rgba(153, 102, 255, 0.7)','rgba(255, 159, 64, 0.7)',],
             }],
         };
-    }, [results]);
+    }, [filteredResults]);
 
-    // THÃŠM Má»šI: TÃ¹y chá»n Ä‘á»ƒ cáº£i thiá»‡n giao diá»‡n biá»ƒu Ä‘á»“
     const chartOptions = {
         plugins: {
             title: { display: true, font: { size: 16 } },
@@ -9926,16 +10440,80 @@ const SalesAnalyticsPage = () => {
         maintainAspectRatio: false
     };
 
+    const [sortConfig, setSortConfig] = useState({ key: 'exportDate', direction: 'descending' });
+
+    const sortedResults = useMemo(() => {
+        let sortableItems = [...filteredResults];
+        if (sortConfig.key !== null) {
+            sortableItems.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                if (sortConfig.key === 'exportDate') {
+                    aValue = a.exportDate.toMillis();
+                    bValue = b.exportDate.toMillis();
+                }
+                
+                if (sortConfig.key === 'quantityExported') {
+                    aValue = Number(aValue);
+                    bValue = Number(bValue);
+                }
+
+                if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [filteredResults, sortConfig]);
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+        setCurrentPage(1); // Reset vá» trang 1 khi sáº¯p xáº¿p
+    };
+
+    const SortIndicator = ({ columnKey }) => {
+        if (sortConfig.key !== columnKey) return null;
+        return sortConfig.direction === 'ascending' ? <FiArrowUp /> : <FiArrowDown />;
+    };
+
+    const barChartData = useMemo(() => {
+        if (topStats.topProducts.length === 0) return null;
+        const reversedTopProducts = [...topStats.topProducts].reverse();
+        return {
+            labels: reversedTopProducts.map(p => p.name),
+            datasets: [{
+                label: 'Sá»‘ lÆ°á»£ng Ä‘Ã£ bÃ¡n',
+                data: reversedTopProducts.map(p => p.quantity),
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 1
+            }]
+        };
+    }, [topStats.topProducts]);
+
+    const barChartOptions = {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: `Top ${topN} Sáº£n pháº©m BÃ¡n cháº¡y`, font: { size: 16 } },
+        }
+    };
+
+    const paginatedResults = useMemo(() => {
+        const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+        return sortedResults.slice(startIndex, startIndex + ROWS_PER_PAGE);
+    }, [currentPage, sortedResults]);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleSearch(filters);
-        }
     };
 
     const handlePresetSelect = (startDate, endDate) => {
@@ -9946,6 +10524,8 @@ const SalesAnalyticsPage = () => {
 
     const handleSearch = async (currentFilters = filters) => {
         setLoading(true);
+        setDrillDownFilter({ type: null, value: null });
+        setCurrentPage(1);
         try {
             const data = await getSalesAnalytics(currentFilters);
             setResults(data);
@@ -9957,6 +10537,21 @@ const SalesAnalyticsPage = () => {
             toast.error("ÄÃ£ xáº£y ra lá»—i khi táº£i bÃ¡o cÃ¡o.");
         } finally {
             setLoading(false);
+        }
+    };
+    
+    const handleChartClick = (event) => {
+        if (!chartRef.current) return;
+        const element = getElementAtEvent(chartRef.current, event);
+        if (!element.length) return;
+
+        const { index } = element[0];
+        const clickedLabel = pieChartData.labels[index];
+        
+        if (clickedLabel) {
+            setDrillDownFilter({ type: 'customer', value: clickedLabel });
+            setCurrentPage(1);
+            toast.info(`ÄÃ£ lá»c theo khÃ¡ch hÃ ng: ${clickedLabel}`);
         }
     };
 
@@ -9984,21 +10579,33 @@ const SalesAnalyticsPage = () => {
                         </div>
                     </div>
                 </div>
-                {/* THÃŠM Má»šI: HÃ ng bá»™ lá»c thá»© 2 */}
-                <div className="form-row" style={{marginTop: '15px'}}>
-                    <div className="form-group">
-    <label>KhÃ¡ch hÃ ng (TÃ¹y chá»n)</label>
-    <CustomerAutocomplete
-        value={filters.customerName || ''} // Hiá»ƒn thá»‹ tÃªn khÃ¡ch hÃ ng
-        onSelect={({ id, name }) => setFilters(prev => ({ ...prev, customerId: id, customerName: name }))}
-    />
-</div>
-                    <div className="form-group">
-                        <label>MÃ£ hÃ ng (TÃ¹y chá»n)</label>
-                        <input type="text" name="productId" placeholder="Nháº­p mÃ£ hÃ ng Ä‘á»ƒ lá»c..." value={filters.productId} onChange={handleFilterChange} onKeyDown={handleKeyDown}/>
+                <div className="form-row" style={{marginTop: '15px', alignItems: 'flex-end'}}>
+                    <div className="form-group" style={{flex: 1.5}}>
+                        <label>KhÃ¡ch hÃ ng (TÃ¹y chá»n)</label>
+                        <CustomerAutocomplete
+                            value={filters.customerName || ''}
+                            onSelect={({ id, name }) => setFilters(prev => ({ ...prev, customerId: id, customerName: name }))}
+                        />
+                    </div>
+                    <div className="form-group" style={{flex: 1.5}}>
+                        <label>Sáº£n pháº©m (TÃ¹y chá»n)</label>
+                        <ProductAutocomplete
+                            value={filters.productId}
+                            onSelect={(product) => setFilters(prev => ({ ...prev, productId: product.id }))}
+                            onChange={(value) => setFilters(prev => ({ ...prev, productId: value }))}
+                        />
+                    </div>
+                    <div className="form-group" style={{flex: 1}}>
+                        <label>Team (TÃ¹y chá»n)</label>
+                        <select name="team" value={filters.team} onChange={handleFilterChange}>
+                            <option value="all">Táº¥t cáº£ Team</option>
+                            <option value="MED">MED</option>
+                            <option value="BIO">BIO</option>
+                            <option value="Spare Part">Spare Part</option>
+                        </select>
                     </div>
                 </div>
-                <div className="page-actions" style={{ justifyContent: 'flex-start' }}>
+                <div className="page-actions" style={{ justifyContent: 'flex-start', marginTop: '15px' }}>
                     <button onClick={() => handleSearch(filters)} className="btn-primary" disabled={loading}>
                         {loading ? 'Äang táº£i...' : 'Xem BÃ¡o cÃ¡o'}
                     </button>
@@ -10007,6 +10614,17 @@ const SalesAnalyticsPage = () => {
 
             {loading ? <Spinner /> : (
                 <>
+                    {drillDownFilter.value && (
+                        <div className="inline-warning" style={{justifyContent: 'space-between', marginBottom: '15px', backgroundColor: '#e7f3ff', color: '#004085'}}>
+                            <span>
+                                <strong>Äang lá»c theo {drillDownFilter.type === 'customer' && 'khÃ¡ch hÃ ng'}:</strong> {drillDownFilter.value}
+                            </span>
+                            <button onClick={() => setDrillDownFilter({ type: null, value: null })} className="btn-icon" title="Bá» lá»c" style={{color: '#004085'}}>
+                                <FiXCircle />
+                            </button>
+                        </div>
+                    )}
+
                     <div className="stats-grid" style={{ marginBottom: '20px' }}>
                         <div className="stat-card">
                             <div className="stat-card-info"><h4>Tá»•ng sá»‘ Phiáº¿u xuáº¥t</h4><p>{summary.totalSlips}</p></div>
@@ -10016,34 +10634,39 @@ const SalesAnalyticsPage = () => {
                         </div>
                     </div>
 
-                    {/* THÃŠM Má»šI: Hiá»ƒn thá»‹ Top 3 */}
                     {results.length > 0 && (
-                         <div className="table-grid" style={{ marginBottom: '20px' }}>
+                        <div className="table-grid" style={{ marginBottom: '20px' }}>
                             <div className="card">
-                                <h3>Top 3 KhÃ¡ch hÃ ng</h3>
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                    <h3>Top {topN} KhÃ¡ch hÃ ng</h3>
+                                    <select value={topN} onChange={e => setTopN(Number(e.target.value))} style={{padding: '5px', borderColor: '#ccc', borderRadius: '4px'}}>
+                                        <option value="3">Top 3</option>
+                                        <option value="5">Top 5</option>
+                                        <option value="10">Top 10</option>
+                                    </select>
+                                </div>
                                 <ul className="recent-activity-list">
                                     {topStats.topCustomers.map(c => <li key={c.name}><span>{c.name}</span><span>{formatNumber(c.quantity)}</span></li>)}
                                 </ul>
                             </div>
-                            <div className="card">
-                                <h3>Top 3 Sáº£n pháº©m BÃ¡n cháº¡y</h3>
-                                <ul className="recent-activity-list">
-                                    {topStats.topProducts.map(p => <li key={p.name}><span>{p.name}</span><span>{formatNumber(p.quantity)} {p.unit}</span></li>)}
-                                </ul>
-                            </div>
+                            {barChartData && (
+                                <div className="card" style={{height: '300px'}}>
+                                    <Bar data={barChartData} options={barChartOptions} />
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {results.length > 0 && (
                         <div className="chart-grid" style={{ marginBottom: '20px' }}>
                             {lineChartData && (
-                                <div className="card">
-                                    <Line key={JSON.stringify(results)} data={lineChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Xu hÆ°á»›ng xuáº¥t kho theo thá»i gian'}}}} />
+                                <div className="card" style={{height: '400px'}}>
+                                    <Line data={lineChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Xu hÆ°á»›ng xuáº¥t kho theo thá»i gian'}}}} />
                                 </div>
                             )}
                             {pieChartData && (
-                                <div className="card">
-                                    <Pie key={JSON.stringify(results) + 'pie'} data={pieChartData} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Tá»· trá»ng xuáº¥t kho theo KhÃ¡ch hÃ ng'}}}} />
+                                <div className="card" style={{height: '400px'}}>
+                                    <Pie ref={chartRef} data={pieChartData} onClick={handleChartClick} options={{...chartOptions, plugins: {...chartOptions.plugins, title: {...chartOptions.plugins.title, text: 'Tá»· trá»ng theo KhÃ¡ch hÃ ng (Click Ä‘á»ƒ lá»c)'}}}} />
                                 </div>
                             )}
                         </div>
@@ -10053,28 +10676,46 @@ const SalesAnalyticsPage = () => {
                         <table className="products-table">
                             <thead>
                                 <tr>
-                                    <th>NgÃ y xuáº¥t</th><th>KhÃ¡ch hÃ ng</th><th>MÃ£ hÃ ng</th>
-                                    <th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th><th>Sá»‘ lÆ°á»£ng</th>
+                                    <th><button onClick={() => requestSort('exportDate')}>NgÃ y xuáº¥t <SortIndicator columnKey="exportDate" /></button></th>
+                                    <th><button onClick={() => requestSort('customer')}>KhÃ¡ch hÃ ng <SortIndicator columnKey="customer" /></button></th>
+                                    <th><button onClick={() => requestSort('productId')}>MÃ£ hÃ ng <SortIndicator columnKey="productId" /></button></th>
+                                    <th><button onClick={() => requestSort('productName')}>TÃªn hÃ ng <SortIndicator columnKey="productName" /></button></th>
+                                    <th><button onClick={() => requestSort('lotNumber')}>Sá»‘ lÃ´ <SortIndicator columnKey="lotNumber" /></button></th>
+                                    <th><button onClick={() => requestSort('quantityExported')}>Sá»‘ lÆ°á»£ng <SortIndicator columnKey="quantityExported" /></button></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {results.length > 0 ? results.map((row, index) => (
+                                {paginatedResults.length > 0 ? paginatedResults.map((row, index) => (
                                     <tr key={`${row.slipId}-${index}`}>
                                         <td>{formatDate(row.exportDate)}</td>
                                         <td style={{textAlign: 'left'}}>{row.customer}</td>
                                         <td>{row.productId}</td>
                                         <td style={{textAlign: 'left'}}>{row.productName}</td>
                                         <td>{row.lotNumber || '(KhÃ´ng cÃ³)'}</td>
-                                        <td>{formatNumber(row.quantityExported)} {row.unit}</td>
+                                        <td style={{fontWeight: 'bold'}}>{formatNumber(row.quantityExported)} {row.unit}</td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="6" style={{textAlign: 'center'}}>KhÃ´ng cÃ³ dá»¯ liá»‡u hoáº·c vui lÃ²ng nháº¥n "Xem BÃ¡o cÃ¡o".</td>
+                                        <td colSpan="6" style={{textAlign: 'center'}}>
+                                            {results.length > 0 ? 'KhÃ´ng cÃ³ dá»¯ liá»‡u cho trang nÃ y.' : 'KhÃ´ng cÃ³ dá»¯ liá»‡u hoáº·c vui lÃ²ng nháº¥n "Xem BÃ¡o cÃ¡o".'}
+                                        </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+
+                    {sortedResults.length > ROWS_PER_PAGE && (
+                        <div className="pagination-controls">
+                            <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>
+                                <FiChevronLeft /> Trang TrÆ°á»›c
+                            </button>
+                            <span>Trang {currentPage} / {Math.ceil(sortedResults.length / ROWS_PER_PAGE)}</span>
+                            <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage * ROWS_PER_PAGE >= sortedResults.length}>
+                                Trang Tiáº¿p <FiChevronRight />
+                            </button>
+                        </div>
+                    )}
                 </>
             )}
         </div>
@@ -10339,11 +10980,11 @@ import { exportStocktakeToPDF } from '../utils/pdfUtils';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc, documentId } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc, documentId, Timestamp } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
@@ -10636,20 +11277,45 @@ const StocktakeSessionPage = () => {
 Â  Â  };
 
 Â  Â  const handleAdjustInventory = async () => {
-Â  Â  Â  Â  setConfirmModal({ isOpen: false });
-Â  Â  Â  Â  const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
-Â  Â  Â  Â  if (itemsToAdjust.length === 0) {
-Â  Â  Â  Â  Â  Â  return toast.warn("Vui lÃ²ng chá»n má»¥c Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
-Â  Â  Â  Â  }
-Â  Â  Â  Â  try {
-Â  Â  Â  Â  Â  Â  const batch = writeBatch(db);
-Â  Â  Â  Â  Â  Â  const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
-Â  Â  Â  Â  Â  Â  for (const item of itemsToAdjust) {
-Â  Â  Â  Â  Â  Â  Â  Â  const finalCountedQty = item.countedQty ?? 0;
-Â  Â  Â  Â  Â  Â  Â  Â  if (!item.isNew) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
-Â  Â  Â  Â  Â  Â  Â  Â  }
+        setConfirmModal({ isOpen: false });
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
+        if (itemsToAdjust.length === 0) {
+            return toast.warn("Vui lÃ²ng chá»n má»¥c Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
+        }
+        try {
+            const batch = writeBatch(db);
+            const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
+            for (const item of itemsToAdjust) {
+                const finalCountedQty = item.countedQty ?? 0;
+                
+                // KIá»‚M TRA Náº¾U KHÃ”NG PHáº¢I LÃ€ HÃ€NG Má»šI (LOGIC CÅ¨)
+                if (!item.isNew) {
+                    const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
+                    batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
+                }
+                // LOGIC Má»šI: Náº¾U LÃ€ HÃ€NG Má»šI, Táº O Má»˜T LÃ” Tá»’N KHO Má»šI
+                else {
+                    const expiryDateObj = parseDateString(item.expiryDate);
+                    const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
+                    const newInventoryLotRef = doc(collection(db, 'inventory_lots'));
+                    const newLotData = {
+                        productId: item.productId,
+                        productName: item.productName,
+                        lotNumber: item.lotNumber,
+                        expiryDate: expiryTimestamp,
+                        importDate: serverTimestamp(),
+                        quantityImported: finalCountedQty,
+                        quantityRemaining: finalCountedQty,
+                        unit: item.unit,
+                        packaging: item.packaging,
+                        storageTemp: item.storageTemp,
+                        team: item.team,
+                        manufacturer: item.manufacturer,
+                        supplierName: `Kiá»ƒm kÃª - ${sessionData.name}`,
+                        notes: item.notes || `ThÃªm má»›i tá»« phiÃªn kiá»ƒm kÃª ${sessionId}`
+                    };
+                    batch.set(newInventoryLotRef, newLotData);
+                }
 Â  Â  Â  Â  Â  Â  Â  Â  const newAdjustmentRef = doc(adjustmentsCollectionRef);
 Â  Â  Â  Â  Â  Â  Â  Â  batch.set(newAdjustmentRef, {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  createdAt: serverTimestamp(), stocktakeId: sessionId, productId: item.productId,
@@ -10866,7 +11532,7 @@ const StocktakeSessionPage = () => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <table className="products-table discrepancy-table">
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <thead>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  _ Â  Â  Â  Â  <tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â   Â  Â  Â  Â  <tr>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>ChÃªnh lá»‡ch</th>
@@ -10905,149 +11571,238 @@ export default StocktakeSessionPage;
 
 
 // src/pages/UsersPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore'; 
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { db, rtdb } from '../firebaseConfig';
+import { ref, onValue } from 'firebase/database';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Spinner from '../components/Spinner';
 import { FiPlus, FiTrash2, FiEdit } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import ConfirmationModal from '../components/ConfirmationModal';
+import EditAllowedUserModal from '../components/EditAllowedUserModal';
 import AddAllowedUserModal from '../components/AddAllowedUserModal';
-import EditAllowedUserModal from '../components/EditAllowedUserModal'; // <-- 1. Import modal má»›i
+import HighlightText from '../components/HighlightText';
+
+// Component con Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i Online/Offline
+const PresenceIndicator = ({ status }) => {
+    if (!status) {
+        return <span style={{ color: '#888', fontStyle: 'italic' }}>ChÆ°a tá»«ng hoáº¡t Ä‘á»™ng</span>;
+    }
+
+    if (status.isOnline) {
+        return <span style={{ color: '#28a745', fontWeight: 'bold' }}>â— Online</span>;
+    }
+
+    const lastChanged = new Date(status.last_changed);
+    const now = new Date();
+    const diffSeconds = Math.round((now - lastChanged) / 1000);
+
+    if (diffSeconds < 60) return "vÃ i giÃ¢y trÆ°á»›c";
+    const diffMinutes = Math.round(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes} phÃºt trÆ°á»›c`;
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} giá» trÆ°á»›c`;
+    const diffDays = Math.round(diffHours / 24);
+    return `${diffDays} ngÃ y trÆ°á»›c`;
+};
+
+// Component con Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i KÃ­ch hoáº¡t/Chá»
+const UserStatus = ({ status }) => {
+    if (status === 'ÄÃ£ kÃ­ch hoáº¡t') {
+        return <span className="status-badge status-completed">{status}</span>;
+    }
+    return <span className="status-badge status-pending">{status}</span>;
+};
 
 const UsersPage = () => {
-  const [allowedUsers, setAllowedUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+    const [allUsers, setAllUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [userToEdit, setUserToEdit] = useState(null);
+    const [presenceData, setPresenceData] = useState({});
 
-  // --- 2. ThÃªm state cho viá»‡c chá»‰nh sá»­a ---
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [userToEdit, setUserToEdit] = useState(null);
+    // Láº¯ng nghe tráº¡ng thÃ¡i hoáº¡t Ä‘á»™ng tá»« Realtime Database
+    useEffect(() => {
+        const statusRef = ref(rtdb, 'status/');
+        const unsubscribe = onValue(statusRef, (snapshot) => {
+            const data = snapshot.val();
+            setPresenceData(data || {});
+        });
 
-  const fetchAllowedUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const q = query(collection(db, "allowlist"), orderBy("addedAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAllowedUsers(list);
-    } catch (error) {
-      console.error("Lá»—i khi táº£i danh sÃ¡ch cho phÃ©p: ", error);
-      toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch cho phÃ©p.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return () => unsubscribe(); // Há»§y láº¯ng nghe khi component unmount
+    }, []);
 
-  useEffect(() => {
-    fetchAllowedUsers();
-  }, [fetchAllowedUsers]);
-  
-  // --- 3. HÃ m Ä‘á»ƒ má»Ÿ modal chá»‰nh sá»­a ---
-  const openEditModal = (user) => {
-    setUserToEdit(user);
-    setIsEditModalOpen(true);
-  };
+    // Táº£i vÃ  há»£p nháº¥t dá»¯ liá»‡u tá»« Firestore
+    const fetchAndMergeUsers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const allowlistQuery = query(collection(db, "allowlist"), orderBy("addedAt", "desc"));
+            const allowlistSnapshot = await getDocs(allowlistQuery);
+            const allowlist = allowlistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  const handleDelete = async (user) => {
-    setConfirmModal({ isOpen: false });
-    toast.info(`Äang xÃ³a ${user.email}...`);
-    try {
-        const functions = getFunctions();
-        const deleteFunc = httpsCallable(functions, 'deleteUserAndAllowlist');
-        // Cáº§n tÃ¬m UID tÆ°Æ¡ng á»©ng náº¿u cÃ³ Ä‘á»ƒ xÃ³a triá»‡t Ä‘á»ƒ
-        // Logic nÃ y cÃ³ thá»ƒ Ä‘Æ°á»£c cáº£i thiá»‡n thÃªm, nhÆ°ng hiá»‡n táº¡i sáº½ xÃ³a khá»i allowlist trÆ°á»›c
-        await deleteFunc({ email: user.email });
-        toast.success(`ÄÃ£ xÃ³a ${user.email} khá»i danh sÃ¡ch.`);
-        fetchAllowedUsers();
-    } catch (error) {
-        console.error("Lá»—i khi xÃ³a:", error);
-        toast.error(error.message);
-    }
-  };
+            const usersQuery = query(collection(db, "users"));
+            const usersSnapshot = await getDocs(usersQuery);
+            const usersMap = new Map(usersSnapshot.docs.map(doc => [doc.data().email, { uid: doc.id, ...doc.data() }]));
 
-  const promptForDelete = (user) => {
-    setConfirmModal({
-        isOpen: true,
-        title: "XÃ¡c nháº­n xÃ³a?",
-        message: `Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a ${user.email} khá»i danh sÃ¡ch Ä‘Æ°á»£c phÃ©p truy cáº­p khÃ´ng?`,
-        onConfirm: () => handleDelete(user),
-        confirmText: "Váº«n xÃ³a",
-        confirmButtonType: 'danger'
-    });
-  };
+            const mergedUsers = allowlist.map(allowedUser => {
+                const registeredUser = usersMap.get(allowedUser.email);
+                return {
+                    ...allowedUser,
+                    uid: registeredUser?.uid || null,
+                    createdAt: registeredUser?.createdAt?.toDate().toLocaleDateString('vi-VN') || 'N/A',
+                    status: registeredUser ? 'ÄÃ£ kÃ­ch hoáº¡t' : 'Chá» kÃ­ch hoáº¡t',
+                };
+            });
+            setAllUsers(mergedUsers);
+        } catch (error) {
+            console.error("Lá»—i khi táº£i vÃ  há»£p nháº¥t danh sÃ¡ch ngÆ°á»i dÃ¹ng: ", error);
+            toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch ngÆ°á»i dÃ¹ng.");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  return (
-    <div>
-      <ConfirmationModal {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
-      {isAddModalOpen && <AddAllowedUserModal onClose={() => setIsAddModalOpen(false)} onUserAdded={fetchAllowedUsers} />}
-      {/* --- 4. Render modal chá»‰nh sá»­a --- */}
-      {isEditModalOpen && <EditAllowedUserModal onClose={() => setIsEditModalOpen(false)} onUserUpdated={fetchAllowedUsers} userToEdit={userToEdit} />}
+    useEffect(() => {
+        fetchAndMergeUsers();
+    }, [fetchAndMergeUsers]);
+    
+    // Lá»c danh sÃ¡ch user dá»±a trÃªn tá»« khÃ³a tÃ¬m kiáº¿m
+    const filteredUsers = useMemo(() => {
+        if (!searchTerm) return allUsers;
+        return allUsers.filter(user => 
+            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (user.uid && user.uid.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [searchTerm, allUsers]);
 
-      <div className="page-header">
-        <h1>Quáº£n lÃ½ Quyá»n Truy cáº­p</h1>
-        <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
-            <FiPlus style={{ marginRight: '5px' }} />
-            ThÃªm Email
-        </button>
-      </div>
+    const openEditModal = (user) => {
+        setUserToEdit(user);
+        setIsEditModalOpen(true);
+    };
+
+    const handleDelete = async (user) => {
+        setConfirmModal({ isOpen: false });
+        toast.info(`Äang xÃ³a ${user.email}...`);
+        try {
+            const functions = getFunctions();
+            const deleteFunc = httpsCallable(functions, 'deleteUserAndAllowlist');
+            await deleteFunc({ email: user.email });
+            toast.success(`ÄÃ£ xÃ³a ${user.email} khá»i há»‡ thá»‘ng.`);
+            fetchAndMergeUsers();
+        } catch (error) {
+            console.error("Lá»—i khi xÃ³a:", error);
+            toast.error(error.message);
+        }
+    };
+
+    const promptForDelete = (user) => {
+        let message = `Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a ${user.email} khá»i danh sÃ¡ch Ä‘Æ°á»£c phÃ©p truy cáº­p khÃ´ng?`;
+        if (user.status === 'ÄÃ£ kÃ­ch hoáº¡t') {
+            message += " HÃ nh Ä‘á»™ng nÃ y cÅ©ng sáº½ xÃ³a tÃ i khoáº£n ngÆ°á»i dÃ¹ng tÆ°Æ¡ng á»©ng khá»i há»‡ thá»‘ng.";
+        }
+        setConfirmModal({
+            isOpen: true,
+            title: "XÃ¡c nháº­n xÃ³a?",
+            message: message,
+            onConfirm: () => handleDelete(user),
+            confirmText: "Váº«n xÃ³a",
+        });
+    };
+
+    return (
+        <div>
+            <ConfirmationModal {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
+            {isAddModalOpen && <AddAllowedUserModal onClose={() => setIsAddModalOpen(false)} onUserAdded={fetchAndMergeUsers} />}
+            {isEditModalOpen && <EditAllowedUserModal onClose={() => setIsEditModalOpen(false)} onUserUpdated={fetchAndMergeUsers} userToEdit={userToEdit} />}
+
+            <div className="page-header">
+                <h1>Quáº£n lÃ½ NgÆ°á»i dÃ¹ng & Quyá»n Truy cáº­p</h1>
+                <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
+                    <FiPlus style={{ marginRight: '5px' }} />
+                    ThÃªm Email
+                </button>
+            </div>
       
-      <p>ÄÃ¢y lÃ  danh sÃ¡ch cÃ¡c email Ä‘Æ°á»£c phÃ©p Ä‘Äƒng nháº­p vÃ o há»‡ thá»‘ng báº±ng tÃ i khoáº£n Google cá»§a há».</p>
+            <p>ÄÃ¢y lÃ  danh sÃ¡ch cÃ¡c tÃ i khoáº£n Ä‘Æ°á»£c phÃ©p Ä‘Äƒng nháº­p báº±ng tÃ i khoáº£n Google vÃ  tráº¡ng thÃ¡i hoáº¡t Ä‘á»™ng cá»§a há».</p>
 
-      {loading ? <Spinner /> : (
-        <table className="products-table">
-          <thead>
-            <tr>
-              <th>Email</th> 
-              <th>Vai trÃ² (Role)</th>
-              <th>Thao tÃ¡c</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allowedUsers.length > 0 ? (
-              allowedUsers.map(user => (
-                <tr key={user.id}>
-                  <td><strong>{user.email}</strong></td>
-                  <td>
-                    <span className={`status-badge ${user.role === 'owner' ? 'status-completed' : (user.role === 'admin' ? 'status-pending' : 'status-cancelled')}`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                        {/* --- 5. ThÃªm nÃºt sá»­a vÃ  logic Ä‘iá»u kiá»‡n --- */}
-                        <button 
-                            className="btn-icon btn-edit" 
-                            title="Chá»‰nh sá»­a vai trÃ²"
-                            onClick={() => openEditModal(user)}
-                            disabled={user.role === 'owner'} // VÃ´ hiá»‡u hÃ³a nÃºt sá»­a cho owner
-                        >
-                            <FiEdit />
-                        </button>
-                        <button 
-                            className="btn-icon btn-delete" 
-                            title="XÃ³a quyá»n truy cáº­p" 
-                            onClick={() => promptForDelete(user)}
-                            disabled={user.role === 'owner'} // VÃ´ hiá»‡u hÃ³a nÃºt xÃ³a cho owner
-                        >
-                            <FiTrash2 />
-                        </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="3" style={{ textAlign: 'center' }}>ChÆ°a cÃ³ email nÃ o trong danh sÃ¡ch Ä‘Æ°á»£c phÃ©p.</td>
-              </tr>
+            <div className="controls-container" style={{justifyContent: 'flex-start'}}>
+                <div className="search-container" style={{maxWidth: '400px'}}>
+                    <input
+                        type="text"
+                        placeholder="TÃ¬m theo Email hoáº·c UID..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                    />
+                </div>
+            </div>
+
+            {loading ? <Spinner /> : (
+                <table className="products-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>UID</th>
+                            <th>Tráº¡ng thÃ¡i KÃ­ch hoáº¡t</th>
+                            <th>Tráº¡ng thÃ¡i Hoáº¡t Ä‘á»™ng</th>
+                            <th>Vai trÃ² (Role)</th>
+                            <th>Thao tÃ¡c</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredUsers.length > 0 ? (
+                            filteredUsers.map(user => (
+                                <tr key={user.id}>
+                                    <td><strong><HighlightText text={user.email} highlight={searchTerm} /></strong></td>
+                                    <td><HighlightText text={user.uid || 'N/A'} highlight={searchTerm} /></td>
+                                    <td><UserStatus status={user.status} /></td>
+                                    <td>
+                                        <PresenceIndicator status={presenceData[user.uid]} />
+                                    </td>
+                                    <td>
+                                        <span className={`status-badge ${user.role === 'owner' ? 'status-completed' : (user.role === 'admin' ? 'status-pending' : 'status-cancelled')}`}>
+                                            {user.role}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="action-buttons">
+                                            <button 
+                                                className="btn-icon btn-edit" 
+                                                title="Chá»‰nh sá»­a vai trÃ²"
+                                                onClick={() => openEditModal(user)}
+                                                disabled={user.role === 'owner'}
+                                            >
+                                                <FiEdit />
+                                            </button>
+                                            <button 
+                                                className="btn-icon btn-delete" 
+                                                title="XÃ³a quyá»n truy cáº­p vÃ  tÃ i khoáº£n" 
+                                                onClick={() => promptForDelete(user)}
+                                                disabled={user.role === 'owner'}
+                                            >
+                                                <FiTrash2 />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="6" style={{ textAlign: 'center' }}>
+                                    {searchTerm ? 'KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng nÃ o khá»›p vá»›i tá»« khÃ³a.' : 'ChÆ°a cÃ³ ngÆ°á»i dÃ¹ng nÃ o trong há»‡ thá»‘ng.'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             )}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
+        </div>
+    );
 };
 
 export default UsersPage;
@@ -11204,6 +11959,8 @@ export const getChartData = async () => {
  * @param {object} filters - Äá»‘i tÆ°á»£ng chá»©a cÃ¡c bá»™ lá»c { startDate, endDate, customerId, productId }.
  * @returns {Promise<Array>} - Má»™t máº£ng chá»©a cÃ¡c dÃ²ng dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½.
  */
+// src/services/dashboardService.js
+
 export const getSalesAnalytics = async (filters = {}) => {
     let salesQuery = query(
         collection(db, 'export_tickets'),
@@ -11223,9 +11980,24 @@ export const getSalesAnalytics = async (filters = {}) => {
     if (filters.customerId) {
         salesQuery = query(salesQuery, where("customerId", "==", filters.customerId));
     }
-    // Sá»¬A Láº I: Báº¬T Bá»˜ Lá»ŒC CHO PRODUCT ID
     if (filters.productId && filters.productId.trim() !== '') {
         salesQuery = query(salesQuery, where("productIds", "array-contains", filters.productId.trim()));
+    }
+
+    // --- LOGIC Lá»ŒC THEO TEAM ---
+    if (filters.team && filters.team !== 'all') {
+        const productsByTeamQuery = query(collection(db, 'products'), where("team", "==", filters.team));
+        const productsSnapshot = await getDocs(productsByTeamQuery);
+        const productIdsInTeam = productsSnapshot.docs.map(doc => doc.id);
+
+        if (productIdsInTeam.length > 0) {
+            // Firestore v10 khÃ´ng há»— trá»£ `array-contains-any` káº¿t há»£p vá»›i cÃ¡c toÃ¡n tá»­ báº¥t bÃ¬nh Ä‘áº³ng khÃ¡c.
+            // Do Ä‘Ã³, chÃºng ta sáº½ lá»c trÃªn client-side sau khi láº¥y dá»¯ liá»‡u.
+            // Äá»ƒ tá»‘i Æ°u, náº¿u cÃ³ thá»ƒ, báº¡n nÃªn thÃªm trÆ°á»ng `teams` vÃ o export_tickets.
+            // Táº¡m thá»i, chÃºng ta sáº½ khÃ´ng thÃªm bá»™ lá»c nÃ y vÃ o query chÃ­nh.
+        } else {
+            return []; // Náº¿u khÃ´ng cÃ³ sáº£n pháº©m nÃ o thuá»™c team, tráº£ vá» máº£ng rá»—ng
+        }
     }
 
     const querySnapshot = await getDocs(salesQuery);
@@ -11235,10 +12007,15 @@ export const getSalesAnalytics = async (filters = {}) => {
     querySnapshot.forEach(doc => {
         const slip = doc.data();
         slip.items.forEach(item => {
-            // Sá»¬A Láº I: Náº¾U CÃ“ Lá»ŒC THEO MÃƒ HÃ€NG, CHá»ˆ Láº¤Y ÄÃšNG Máº¶T HÃ€NG ÄÃ“
+            // Lá»c sáº£n pháº©m trong trÆ°á»ng há»£p cÃ³ cáº£ bá»™ lá»c team vÃ  sáº£n pháº©m
             if (filters.productId && filters.productId.trim() !== '' && item.productId !== filters.productId.trim()) {
-                return; // Bá» qua cÃ¡c máº·t hÃ ng khÃ´ng khá»›p
+                return;
             }
+            // Lá»c team trÃªn client-side
+            if (filters.team && filters.team !== 'all' && item.team !== filters.team) {
+                return;
+            }
+            
             detailedRows.push({
                 slipId: doc.id,
                 exportDate: slip.createdAt,
@@ -11247,11 +12024,11 @@ export const getSalesAnalytics = async (filters = {}) => {
                 productName: item.productName,
                 lotNumber: item.lotNumber,
                 quantityExported: item.quantityToExport || item.quantityExported,
-                unit: item.unit
+                unit: item.unit,
+                team: item.team // Äáº£m báº£o trÆ°á»ng team Ä‘Æ°á»£c tráº£ vá»
             });
         });
     });
-
     return detailedRows;
 };
 
@@ -11831,6 +12608,8 @@ describe('Service: stocktakeService', () => {
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'react-toastify';
+import { db } from '../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const useExportSlipStore = create(
     persist(
@@ -11839,7 +12618,7 @@ const useExportSlipStore = create(
             customerId: '',
             customerName: '',
             description: '',
-            exportDate: new Date().toISOString().split('T')[0], // Äá»‹nh dáº¡ng YYYY-MM-DD
+            exportDate: new Date().toISOString().split('T')[0],
             items: [{ 
                 id: Date.now(), 
                 productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
@@ -11850,8 +12629,70 @@ const useExportSlipStore = create(
 
             // === ACTIONS ===
             setCustomer: (id, name) => set({ customerId: id, customerName: name }),
-
             setDescription: (description) => set({ description }),
+
+            // HÃ€M TÃŒM KIáº¾M Sáº¢N PHáº¨M VÃ€ Gá»˜P LÃ” (PHIÃŠN Báº¢N HOÃ€N CHá»ˆNH)
+            handleProductSearchResult: (index, productData) => set(async (state) => {
+                const newItems = [...state.items];
+                const currentItem = { ...newItems[index] };
+
+                // LuÃ´n reset thÃ´ng tin lÃ´ trÆ°á»›c khi lÃ m báº¥t cá»© Ä‘iá»u gÃ¬ khÃ¡c
+                Object.assign(currentItem, {
+                    availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+                    expiryDate: '', quantityRemaining: 0, isOutOfStock: false, quantityToExport: ''
+                });
+
+                if (productData) { // Náº¿u tÃ¬m tháº¥y sáº£n pháº©m
+                    Object.assign(currentItem, {
+                        productId: productData.id,
+                        productName: productData.productName || '',
+                        unit: productData.unit || '',
+                        packaging: productData.packaging || '',
+                        storageTemp: productData.storageTemp || '',
+                    });
+                    
+                    try {
+                        const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
+                        const lotsSnapshot = await getDocs(lotsQuery);
+            
+                        if (lotsSnapshot.empty) {
+                            currentItem.isOutOfStock = true;
+                        } else {
+                            const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            
+                            const lotAggregator = new Map();
+                            for (const lot of foundLots) {
+                                const lotKey = lot.lotNumber || 'KHONG_CO_LO';
+                                if (lotAggregator.has(lotKey)) {
+                                    const existing = lotAggregator.get(lotKey);
+                                    existing.quantityRemaining += lot.quantityRemaining;
+                                    if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
+                                        existing.expiryDate = lot.expiryDate;
+                                    }
+                                    existing.originalLots.push(lot);
+                                } else {
+                                    lotAggregator.set(lotKey, { ...lot, id: lotKey, quantityRemaining: lot.quantityRemaining, originalLots: [lot] });
+                                }
+                            }
+                            
+                            const aggregatedLots = Array.from(lotAggregator.values());
+                            aggregatedLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+            
+                            currentItem.availableLots = aggregatedLots;
+                        }
+                    } catch (e) {
+                        console.error("Lá»—i khi tÃ¬m lÃ´ hÃ ng:", e);
+                        currentItem.isOutOfStock = true;
+                    }
+                } else { // Xá»­ lÃ½ khi khÃ´ng tÃ¬m tháº¥y sáº£n pháº©m hoáº·c xÃ³a tráº¯ng Ã´ tÃ¬m kiáº¿m
+                     Object.assign(currentItem, {
+                        productId: '', productName: '', unit: '', packaging: '', storageTemp: ''
+                    });
+                }
+                
+                newItems[index] = currentItem;
+                return { items: newItems };
+            }),
 
             addNewItemRow: () => set(state => ({
                 items: [
@@ -11876,24 +12717,17 @@ const useExportSlipStore = create(
                 const currentItem = { ...newItems[index] };
 
                 if (field === 'quantityToExport') {
-                    if (value === '') {
+                    const val = Number(value);
+                    if (value === '' || val < 0) {
                         currentItem[field] = '';
+                    } else if (val > currentItem.quantityRemaining) {
+                        toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
+                        currentItem[field] = currentItem.quantityRemaining;
                     } else {
-                        const val = Number(value);
-                        if (val < 0) return {};
-                        if (val > currentItem.quantityRemaining) {
-                            toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
-                            currentItem[field] = currentItem.quantityRemaining;
-                        } else {
-                            currentItem[field] = value;
-                        }
+                        currentItem[field] = value;
                     }
                 } else {
                     currentItem[field] = value;
-                }
-
-                if (field === 'productId') {
-                    currentItem.isOutOfStock = false;
                 }
 
                 newItems[index] = currentItem;
@@ -11920,7 +12754,7 @@ const useExportSlipStore = create(
             })
         }),
         {
-            name: 'export-slip-storage', // TÃªn Ä‘á»‹nh danh Ä‘á»ƒ lÆ°u trong localStorage
+            name: 'export-slip-storage',
         }
     )
 );
@@ -13470,6 +14304,70 @@ tbody tr.selected-row td {
   box-sizing: border-box;
 }
 
+/* src/styles/AdminLayout.css */
+
+/* --- NÃºt quay vá» trang quáº£n trá»‹ (kÃ­ch thÆ°á»›c nhá» hÆ¡n) --- */
+.btn-back {
+  background-color: #6c757d; /* Giá»¯ mÃ u xÃ¡m */
+  color: white;
+  border: none;
+  padding: 8px 12px; /* Giáº£m padding cho nÃºt nhá» láº¡i */
+  font-size: 14px;   /* Giáº£m cá»¡ chá»¯ */
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none; /* Äáº£m báº£o cho tháº» Link */
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+.btn-back:hover {
+  background-color: #5a6268;
+}
+
+/* --- NÃºt chuyá»ƒn Ä‘á»•i cháº¿ Ä‘á»™ xem (Xem Tá»•ng Há»£p / Chi Tiáº¿t) --- */
+.view-toggle-btn {
+  background-color: transparent;
+  border: 1px solid #adb5bd;
+  color: #495057;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.view-toggle-btn:hover {
+  background-color: #e9ecef;
+}
+/* Style cho nÃºt Ä‘ang Ä‘Æ°á»£c chá»n (active) */
+.view-toggle-btn.active {
+  background-color: var(--primary-color); /* MÃ u xanh dÆ°Æ¡ng chá»§ Ä‘áº¡o */
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* src/styles/AdminLayout.css */
+
+/* TÃ¹y chá»‰nh cho react-datepicker Ä‘á»ƒ giá»‘ng vá»›i cÃ¡c input khÃ¡c */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  /* TÃ¡i sá»­ dá»¥ng class cÃ³ sáºµn cá»§a báº¡n */
+  width: 100%;
+  padding: 10px 15px !important;
+  font-size: 14px;
+  border-radius: 20px !important;
+  border: 1px solid #dee2e6;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.react-datepicker__input-container input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
 /* --- CSS CHO GIAO DIá»†N RESPONSIVE TRÃŠN DI Äá»˜NG --- */
 @media (max-width: 768px) {
   /* Pháº§n nÃ y Ã¡p dá»¥ng cho cáº£ 2 báº£ng:
@@ -14868,7 +15766,7 @@ export const exportImportSlipToPDF = async (slip) => {
     doc.text(slip.supplierName || '', 40, 36);
     
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Ghi chÃº: ${slip.notes || 'KhÃ´ng cÃ³'}`, 14, 42);
+    doc.text(`Ghi chÃº: ${slip.description || 'KhÃ´ng cÃ³'}`, 14, 42);
 
     const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Sá»‘ lÆ°á»£ng', 'Ghi chÃº', 'Team']];
     const body = enrichedItems.map(item => [
@@ -14878,7 +15776,7 @@ export const exportImportSlipToPDF = async (slip) => {
     ]);
 
     autoTable(doc, {
-        head: head, body: body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 },
+        head: head, body: body, startY: 50, theme: 'grid', margin: { left: 10, right: 10 },
         // YÃªu cáº§u 1 & 2: CÄƒn giá»¯a máº·c Ä‘á»‹nh
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
@@ -14933,7 +15831,7 @@ export const exportExportSlipToPDF = async (slip) => {
     doc.text(slip.customer || '', 36, 36);
     
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Ghi chÃº: ${slip.notes || 'KhÃ´ng cÃ³'}`, 14, 42);
+    doc.text(`Ghi chÃº: ${slip.description || 'KhÃ´ng cÃ³'}`, 14, 42);
 
     const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Sá»‘ lÆ°á»£ng', 'Ghi chÃº', 'Nhiá»‡t Ä‘á»™ BQ']];
     const body = enrichedItems.map(item => [
@@ -14944,7 +15842,7 @@ export const exportExportSlipToPDF = async (slip) => {
     ]);
 
     autoTable(doc, {
-        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 },
+        head, body, startY: 50, theme: 'grid', margin: { left: 10, right: 10 },
         // YÃªu cáº§u 1 & 2: CÄƒn giá»¯a máº·c Ä‘á»‹nh
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
@@ -15014,7 +15912,7 @@ export const exportStocktakeToPDF = async (session, items) => {
         body: body,
         startY: 40,
         theme: 'grid',
-        margin: { left: 1, right: 1 },
+        margin: { left: 10, right: 10 },
         styles: { font: 'Roboto-Regular', fontSize: 11, valign: 'middle', halign: 'center' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255 },
         // --- Sá»¬A Lá»–I: Cáº­p nháº­t láº¡i chá»‰ sá»‘ cÃ¡c cá»™t ---
@@ -15188,28 +16086,31 @@ import ErrorBoundary from './components/ErrorBoundary';
 import loginStyles from './components/LoginPage.module.css';
 
 const AppRoutes = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, role, loading } = useAuth(); // Sá»­a userRole thÃ nh role cho nháº¥t quÃ¡n
+
   if (loading) {
-    return null; 
+    return null;
   }
 
+  if (!user) {
+    return (
+      <div className={loginStyles.loginPageWrapper}>
+        <LoginPage />
+      </div>
+    );
+  }
+
+  // Logic Ä‘iá»u hÆ°á»›ng sau khi Ä‘Ã£ Ä‘Äƒng nháº­p
   return (
-    <>
-      {user ? (
-        <Routes>
-          {userRole === 'owner' ? (
-            <Route path="/*" element={<AdminLayout />} />
-          ) : (
-            <Route path="/*" element={<Navigate to="/view" />} />
-          )}
-          <Route path="/view/*" element={<ViewerLayout />} />
-        </Routes>
+    <Routes>
+      {role === 'owner' ? (
+        // Náº¿u lÃ  owner, cho phÃ©p truy cáº­p táº¥t cáº£ cÃ¡c trang quáº£n trá»‹
+        <Route path="/*" element={<AdminLayout />} />
       ) : (
-        <div className={loginStyles.loginPageWrapper}>
-          <LoginPage />
-        </div>
+        // Náº¿u lÃ  cÃ¡c vai trÃ² khÃ¡c, chá»‰ cho phÃ©p truy cáº­p ViewerLayout
+        <Route path="/*" element={<ViewerLayout />} />
       )}
-    </>
+    </Routes>
   );
 };
 
@@ -15266,6 +16167,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
+import { getDatabase } from "firebase/database";
 
 // Äá»c thÃ´ng tin cáº¥u hÃ¬nh tá»« biáº¿n mÃ´i trÆ°á»ng
 const firebaseConfig = {
@@ -15274,7 +16176,8 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  databaseURL: "https://kho-ptbiomed-default-rtdb.asia-southeast1.firebasedatabase.app", // <-- THÃŠM DÃ’NG NÃ€Y
 };
 
 // Khá»Ÿi táº¡o cÃ¡c dá»‹ch vá»¥ Firebase
@@ -15282,9 +16185,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const functions = getFunctions(app);
+const rtdb = getDatabase(app); // <-- THÃŠM DÃ’NG NÃ€Y
 
-// Xuáº¥t ra cÃ¡c dá»‹ch vá»¥ Ä‘á»ƒ sá»­ dá»¥ng trong toÃ n bá»™ á»©ng dá»¥ng
-export { db, auth, functions, app };
+export { db, auth, functions, app, rtdb }; // <-- THÃŠM rtdb VÃ€O EXPORT
 
 
 

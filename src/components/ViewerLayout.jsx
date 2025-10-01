@@ -4,17 +4,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/UserContext';
 import { useResponsive } from '../hooks/useResponsive';
 import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
 import MobileInventoryPage from '../pages/MobileInventoryPage';
-import companyLogo from '../assets/logo.png'; // Di chuyển import logo đến đây
+import companyLogo from '../assets/logo.png';
+import { usePresence } from '../hooks/usePresence'; // Import hook
 
 const ViewerLayout = () => {
-    const { role: userRole } = useAuth();
+    // Sửa lại: Gọi useAuth một lần duy nhất để lấy tất cả thông tin cần thiết
+    const { role, user } = useAuth();
+    
+    // Gọi hook usePresence để báo danh trạng thái online
+    usePresence();
+
     const isMobile = useResponsive();
-    const canViewDetail = userRole === 'admin' || userRole === 'owner';
+    const canViewDetail = role === 'admin' || role === 'owner';
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
@@ -23,7 +29,7 @@ const ViewerLayout = () => {
     };
 
     const dynamicTitle = useMemo(() => {
-        switch (userRole) {
+        switch (role) {
             case 'owner':
             case 'admin':
                 return 'INVENTORY';
@@ -34,7 +40,7 @@ const ViewerLayout = () => {
             default:
                 return 'Kho - PT Biomed';
         }
-    }, [userRole]);
+    }, [role]);
 
     useEffect(() => {
         document.title = dynamicTitle;
@@ -56,39 +62,35 @@ const ViewerLayout = () => {
 
     return (
         <div className="viewer-layout-container">
-            {/* --- THANH HEADER THỐNG NHẤT MỚI --- */}
             <div className="viewer-header">
-                {/* --- Khu vực bên trái --- */}
                 <div className="viewer-header-left">
-                    {userRole === 'owner' && (
-                        <Link to="/" className="btn-secondary" style={{ textDecoration: 'none' }}>
+                    {role === 'owner' && (
+                        <Link to="/dashboard" className="btn-back">
                             &larr; Quay lại Trang Quản Trị
                         </Link>
                     )}
                     {canViewDetail && (
-                        <div className="view-toggle">
-                            <button onClick={() => setViewMode('summary')} className={viewMode === 'summary' ? 'btn-primary' : 'btn-secondary'} style={{width: 'auto'}}>
+                         <div className="filter-group">
+                            <button onClick={() => setViewMode('summary')} className={`view-toggle-btn ${viewMode === 'summary' ? 'active' : ''}`}>
                                 Xem Tổng Hợp
                             </button>
-                            <button onClick={() => setViewMode('detail')} className={viewMode === 'detail' ? 'btn-primary' : 'btn-secondary'} style={{width: 'auto'}}>
+                            <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
                                 Xem Chi Tiết
                             </button>
                         </div>
                     )}
                 </div>
 
-                {/* --- Khu vực trung tâm (Logo và Tiêu đề) --- */}
                 <div className="viewer-header-center">
                     <img src={companyLogo} alt="Logo Công ty" className="header-logo" />
                     <h1>{dynamicTitle}</h1>
                 </div>
 
-                {/* --- Khu vực bên phải --- */}
                 <div className="viewer-header-right">
+                    {/* Có thể thêm nút đăng xuất ở đây nếu cần */}
                 </div>
             </div>
 
-            {/* --- PHẦN NỘI DUNG CHÍNH --- */}
             <div className="viewer-main-content">
                 {(viewMode === 'detail' && canViewDetail) 
                     ? <InventoryPage />
@@ -96,7 +98,6 @@ const ViewerLayout = () => {
                 }
             </div>
 
-            {/* Nút máy tính giữ nguyên */}
             <button className="floating-toggle-btn" onClick={toggleCalculator} title="Mở máy tính (Có thể dùng bàn phím)">
                 <MdCalculate />
             </button>

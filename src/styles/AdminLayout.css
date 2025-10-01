@@ -1306,6 +1306,70 @@ tbody tr.selected-row td {
   box-sizing: border-box;
 }
 
+/* src/styles/AdminLayout.css */
+
+/* --- Nút quay về trang quản trị (kích thước nhỏ hơn) --- */
+.btn-back {
+  background-color: #6c757d; /* Giữ màu xám */
+  color: white;
+  border: none;
+  padding: 8px 12px; /* Giảm padding cho nút nhỏ lại */
+  font-size: 14px;   /* Giảm cỡ chữ */
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none; /* Đảm bảo cho thẻ Link */
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+.btn-back:hover {
+  background-color: #5a6268;
+}
+
+/* --- Nút chuyển đổi chế độ xem (Xem Tổng Hợp / Chi Tiết) --- */
+.view-toggle-btn {
+  background-color: transparent;
+  border: 1px solid #adb5bd;
+  color: #495057;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.view-toggle-btn:hover {
+  background-color: #e9ecef;
+}
+/* Style cho nút đang được chọn (active) */
+.view-toggle-btn.active {
+  background-color: var(--primary-color); /* Màu xanh dương chủ đạo */
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* src/styles/AdminLayout.css */
+
+/* Tùy chỉnh cho react-datepicker để giống với các input khác */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  /* Tái sử dụng class có sẵn của bạn */
+  width: 100%;
+  padding: 10px 15px !important;
+  font-size: 14px;
+  border-radius: 20px !important;
+  border: 1px solid #dee2e6;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.react-datepicker__input-container input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */
 @media (max-width: 768px) {
   /* Phần này áp dụng cho cả 2 bảng:
