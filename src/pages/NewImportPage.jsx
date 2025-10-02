@@ -2,7 +2,6 @@
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import SupplierAutocomplete from '../components/SupplierAutocomplete';
-// --- LỖI ĐÃ ĐƯỢC SỬA TẠI ĐÂY ---
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
@@ -15,6 +14,7 @@ import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useImportSlipStore from '../stores/importSlipStore';
 
+// --- PHẦN SCHEMAS GIỮ NGUYÊN ---
 const importItemSchema = z.object({
   id: z.number(),
   productId: z.string().min(1, "Mã hàng không được để trống."),
@@ -60,14 +60,12 @@ const NewImportPage = () => {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
 
-    // Refs cho các element cần focus
     const productInputRefs = useRef([]);
     const lotNumberInputRefs = useRef([]);
     const quantityInputRefs = useRef([]);
     const addRowButtonRef = useRef(null);
     const prevItemsLength = useRef(items.length);
 
-    // useEffect để tự động focus vào dòng mới
     useEffect(() => {
         if (items.length > prevItemsLength.current) {
             const lastIndex = items.length - 1;
@@ -248,12 +246,22 @@ const NewImportPage = () => {
         setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
     };
 
+    // --- BẮT ĐẦU THAY ĐỔI 1: Thêm các hàm xử lý onKeyDown ---
+    const handleLotNumberKeyDown = (e, index) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // Giả lập hành vi blur để trigger hàm checkExistingLot
+            e.target.blur(); 
+        }
+    };
+
     const handleQuantityKeyDown = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             addRowButtonRef.current?.focus();
         }
     };
+    // --- KẾT THÚC THAY ĐỔI 1 ---
 
     const handleNewProductCreated = (newData) => {
         const { index } = newProductModal;
@@ -431,12 +439,14 @@ const NewImportPage = () => {
                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            {/* --- BẮT ĐẦU THAY ĐỔI 2: Gán ref và onKeyDown cho ô Số lô --- */}
                             <input
                                 ref={el => lotNumberInputRefs.current[index] = el}
                                 type="text"
                                 value={item.lotNumber}
                                 onChange={e => updateItem(index, 'lotNumber', e.target.value)}
                                 onBlur={() => checkExistingLot(index)}
+                                onKeyDown={e => handleLotNumberKeyDown(e, index)}
                             />
                             {item.lotStatus === 'exists' && item.existingLotInfo && (
                                 <div className="existing-lot-info">
@@ -464,6 +474,7 @@ const NewImportPage = () => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
+                            {/* --- BẮT ĐẦU THAY ĐỔI 3: Gán ref và onKeyDown cho ô Số lượng --- */}
                             <input
                                 ref={el => quantityInputRefs.current[index] = el}
                                 type="text"
@@ -497,6 +508,7 @@ const NewImportPage = () => {
                 ))}
             </div>
 
+            {/* --- BẮT ĐẦU THAY ĐỔI 4: Gán ref cho nút Thêm dòng --- */}
             <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             
             <div className="page-actions">
