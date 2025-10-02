@@ -2177,11 +2177,11 @@ export default EditImportSlipModal;
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
+import { z } from 'zod';
 import { updatePartner } from '../services/partnerService';
-import { normalizeString } from '../utils/stringUtils'; // <-- THÃŠM DÃ’NG NÃ€Y
+// --- Lá»–I ÄÃƒ ÄÆ¯á»¢C Sá»¬A Táº I ÄÃ‚Y: ThÃªm 'generateKeywords' vÃ o import ---
+import { normalizeString, generateKeywords } from '../utils/stringUtils'; 
 
-// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
 const partnerSchema = z.object({
   partnerName: z.string().trim().min(1, { message: "TÃªn Äá»‘i tÃ¡c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
   partnerType: z.enum(['supplier', 'customer']),
@@ -2198,39 +2198,37 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
     };
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    const validationResult = partnerSchema.safeParse({
-        partnerName: partnerData.partnerName,
-        partnerType: partnerData.partnerType,
-    });
+        const validationResult = partnerSchema.safeParse({
+            partnerName: partnerData.partnerName,
+            partnerType: partnerData.partnerType,
+        });
 
-    if (!validationResult.success) {
-        toast.warn(validationResult.error.issues[0].message);
-        return;
-    }
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
+            return;
+        }
 
-    setIsSaving(true);
-    try {
-        // Láº¥y dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c validate
-        const dataToUpdate = validationResult.data;
+        setIsSaving(true);
+        try {
+            const dataToUpdate = validationResult.data;
 
-        // THÃŠM DÃ’NG NÃ€Y: Táº¡o trÆ°á»ng Ä‘Ã£ Ä‘Æ°á»£c chuáº©n hÃ³a
-        dataToUpdate.partnerNameNormalized = normalizeString(dataToUpdate.partnerName);
-        dataToUpdate.searchKeywords = generateKeywords(dataToUpdate.partnerName);
+            // Táº¡o cÃ¡c trÆ°á»ng tÃ¬m kiáº¿m
+            dataToUpdate.partnerNameNormalized = normalizeString(dataToUpdate.partnerName);
+            dataToUpdate.searchKeywords = generateKeywords(dataToUpdate.partnerName);
 
-        // Gá»­i dá»¯ liá»‡u má»›i (bao gá»“m cáº£ trÆ°á»ng Ä‘Ã£ chuáº©n hÃ³a) lÃªn service
-        await updatePartner(partnerToEdit.id, dataToUpdate);
+            await updatePartner(partnerToEdit.id, dataToUpdate);
 
-        toast.success('Cáº­p nháº­t thÃ´ng tin Ä‘á»‘i tÃ¡c thÃ nh cÃ´ng!');
-        onPartnerUpdated();
-    } catch (error) {
-        console.error("Lá»—i khi cáº­p nháº­t Ä‘á»‘i tÃ¡c: ", error);
-        toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
-    } finally {
-        setIsSaving(false);
-    }
-};
+            toast.success('Cáº­p nháº­t thÃ´ng tin Ä‘á»‘i tÃ¡c thÃ nh cÃ´ng!');
+            onPartnerUpdated();
+        } catch (error) {
+            console.error("Lá»—i khi cáº­p nháº­t Ä‘á»‘i tÃ¡c: ", error);
+            toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <div className="modal-backdrop">
@@ -8675,7 +8673,6 @@ export default NewExportPage;
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import SupplierAutocomplete from '../components/SupplierAutocomplete';
-// --- Lá»–I ÄÃƒ ÄÆ¯á»¢C Sá»¬A Táº I ÄÃ‚Y ---
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
@@ -8688,6 +8685,7 @@ import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useImportSlipStore from '../stores/importSlipStore';
 
+// --- PHáº¦N SCHEMAS GIá»® NGUYÃŠN ---
 const importItemSchema = z.object({
   id: z.number(),
   productId: z.string().min(1, "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng."),
@@ -8733,14 +8731,12 @@ const NewImportPage = () => {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
 
-    // Refs cho cÃ¡c element cáº§n focus
     const productInputRefs = useRef([]);
     const lotNumberInputRefs = useRef([]);
     const quantityInputRefs = useRef([]);
     const addRowButtonRef = useRef(null);
     const prevItemsLength = useRef(items.length);
 
-    // useEffect Ä‘á»ƒ tá»± Ä‘á»™ng focus vÃ o dÃ²ng má»›i
     useEffect(() => {
         if (items.length > prevItemsLength.current) {
             const lastIndex = items.length - 1;
@@ -8921,12 +8917,22 @@ const NewImportPage = () => {
         setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
     };
 
+    // --- Báº®T Äáº¦U THAY Äá»”I 1: ThÃªm cÃ¡c hÃ m xá»­ lÃ½ onKeyDown ---
+    const handleLotNumberKeyDown = (e, index) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // Giáº£ láº­p hÃ nh vi blur Ä‘á»ƒ trigger hÃ m checkExistingLot
+            e.target.blur(); 
+        }
+    };
+
     const handleQuantityKeyDown = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             addRowButtonRef.current?.focus();
         }
     };
+    // --- Káº¾T THÃšC THAY Äá»”I 1 ---
 
     const handleNewProductCreated = (newData) => {
         const { index } = newProductModal;
@@ -9104,12 +9110,14 @@ const NewImportPage = () => {
                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            {/* --- Báº®T Äáº¦U THAY Äá»”I 2: GÃ¡n ref vÃ  onKeyDown cho Ã´ Sá»‘ lÃ´ --- */}
                             <input
                                 ref={el => lotNumberInputRefs.current[index] = el}
                                 type="text"
                                 value={item.lotNumber}
                                 onChange={e => updateItem(index, 'lotNumber', e.target.value)}
                                 onBlur={() => checkExistingLot(index)}
+                                onKeyDown={e => handleLotNumberKeyDown(e, index)}
                             />
                             {item.lotStatus === 'exists' && item.existingLotInfo && (
                                 <div className="existing-lot-info">
@@ -9137,6 +9145,7 @@ const NewImportPage = () => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
+                            {/* --- Báº®T Äáº¦U THAY Äá»”I 3: GÃ¡n ref vÃ  onKeyDown cho Ã´ Sá»‘ lÆ°á»£ng --- */}
                             <input
                                 ref={el => quantityInputRefs.current[index] = el}
                                 type="text"
@@ -9170,6 +9179,7 @@ const NewImportPage = () => {
                 ))}
             </div>
 
+            {/* --- Báº®T Äáº¦U THAY Äá»”I 4: GÃ¡n ref cho nÃºt ThÃªm dÃ²ng --- */}
             <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             
             <div className="page-actions">

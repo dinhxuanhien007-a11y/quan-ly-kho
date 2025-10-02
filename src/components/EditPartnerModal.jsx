@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
+import { z } from 'zod';
 import { updatePartner } from '../services/partnerService';
-import { normalizeString } from '../utils/stringUtils'; // <-- THÊM DÒNG NÀY
+// --- LỖI ĐÃ ĐƯỢC SỬA TẠI ĐÂY: Thêm 'generateKeywords' vào import ---
+import { normalizeString, generateKeywords } from '../utils/stringUtils'; 
 
-// <-- ĐỊNH NGHĨA SCHEMA -->
 const partnerSchema = z.object({
   partnerName: z.string().trim().min(1, { message: "Tên Đối tác không được để trống." }),
   partnerType: z.enum(['supplier', 'customer']),
@@ -23,39 +23,37 @@ const EditPartnerModal = ({ onClose, onPartnerUpdated, partnerToEdit }) => {
     };
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    const validationResult = partnerSchema.safeParse({
-        partnerName: partnerData.partnerName,
-        partnerType: partnerData.partnerType,
-    });
+        const validationResult = partnerSchema.safeParse({
+            partnerName: partnerData.partnerName,
+            partnerType: partnerData.partnerType,
+        });
 
-    if (!validationResult.success) {
-        toast.warn(validationResult.error.issues[0].message);
-        return;
-    }
+        if (!validationResult.success) {
+            toast.warn(validationResult.error.issues[0].message);
+            return;
+        }
 
-    setIsSaving(true);
-    try {
-        // Lấy dữ liệu đã được validate
-        const dataToUpdate = validationResult.data;
+        setIsSaving(true);
+        try {
+            const dataToUpdate = validationResult.data;
 
-        // THÊM DÒNG NÀY: Tạo trường đã được chuẩn hóa
-        dataToUpdate.partnerNameNormalized = normalizeString(dataToUpdate.partnerName);
-        dataToUpdate.searchKeywords = generateKeywords(dataToUpdate.partnerName);
+            // Tạo các trường tìm kiếm
+            dataToUpdate.partnerNameNormalized = normalizeString(dataToUpdate.partnerName);
+            dataToUpdate.searchKeywords = generateKeywords(dataToUpdate.partnerName);
 
-        // Gửi dữ liệu mới (bao gồm cả trường đã chuẩn hóa) lên service
-        await updatePartner(partnerToEdit.id, dataToUpdate);
+            await updatePartner(partnerToEdit.id, dataToUpdate);
 
-        toast.success('Cập nhật thông tin đối tác thành công!');
-        onPartnerUpdated();
-    } catch (error) {
-        console.error("Lỗi khi cập nhật đối tác: ", error);
-        toast.error('Đã xảy ra lỗi khi cập nhật.');
-    } finally {
-        setIsSaving(false);
-    }
-};
+            toast.success('Cập nhật thông tin đối tác thành công!');
+            onPartnerUpdated();
+        } catch (error) {
+            console.error("Lỗi khi cập nhật đối tác: ", error);
+            toast.error('Đã xảy ra lỗi khi cập nhật.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <div className="modal-backdrop">
