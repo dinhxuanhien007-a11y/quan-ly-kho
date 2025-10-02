@@ -1053,34 +1053,60 @@ export default AdminLayout;
 
 
 // src/components/ConfirmationModal.jsx
-import React from 'react'; // <-- ThÃªm import React
+
+import React from 'react';
 import { FiAlertTriangle } from 'react-icons/fi';
 
-const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel, confirmText = 'XÃ¡c nháº­n', cancelText = 'Há»§y' }) => {
+const ConfirmationModal = ({ 
+    isOpen, 
+    title, 
+    message, 
+    onConfirm, 
+    onCancel, 
+    confirmText = 'XÃ¡c nháº­n', 
+    cancelText = 'Há»§y', 
+    isConfirming = false // ThÃªm prop má»›i vá»›i giÃ¡ trá»‹ máº·c Ä‘á»‹nh lÃ  false
+}) => {
     if (!isOpen) return null;
 
     return (
         <div className="modal-backdrop">
-            <div className="modal-content" style={{ width: '450px' }}>
+             <div className="modal-content" style={{ width: '450px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ color: '#f59e0b', fontSize: '32px' }}>
-                         <FiAlertTriangle />
+                          <FiAlertTriangle />
                     </div>
                     <div>
                         <h2 style={{ marginTop: 0, marginBottom: '10px' }}>{title}</h2>
-                        <p style={{ margin: 0 }}>{message}</p>
+                         <p style={{ margin: 0 }}>{message}</p>
                     </div>
                 </div>
                 <div className="modal-actions" style={{ marginTop: '25px' }}>
-                    <button type="button" onClick={onCancel} className="btn-secondary">{cancelText}</button>
-                    <button type="button" onClick={onConfirm} className="btn-primary" style={{ backgroundColor: '#dc3545' }}>{confirmText}</button>
+                    {/* NÃºt Há»§y cÅ©ng sáº½ bá»‹ vÃ´ hiá»‡u hÃ³a khi Ä‘ang xá»­ lÃ½ */}
+                    <button 
+                        type="button" 
+                        onClick={onCancel} 
+                        className="btn-secondary" 
+                        disabled={isConfirming}
+                    >
+                        {cancelText}
+                    </button>
+                    {/* NÃºt XÃ¡c nháº­n sáº½ thay Ä‘á»•i text vÃ  bá»‹ vÃ´ hiá»‡u hÃ³a */}
+                    <button 
+                        type="button" 
+                        onClick={onConfirm} 
+                        className="btn-primary" 
+                        style={{ backgroundColor: '#dc3545' }}
+                        disabled={isConfirming}
+                    >
+                        {isConfirming ? 'Äang xá»­ lÃ½...' : confirmText}
+                    </button>
                 </div>
             </div>
         </div>
     );
 };
 
-// <-- Bá»ŒC COMPONENT TRONG React.memo Äá»‚ Tá»I Æ¯U HIá»†U NÄ‚NG -->
 export default React.memo(ConfirmationModal);
 
 
@@ -1320,8 +1346,10 @@ const CustomerAutocomplete = ({ value, onSelect }) => {
         
         if (inputValue.length > 0) {
             const normalizedInput = normalizeString(inputValue);
+            const upperCaseInput = inputValue.toUpperCase();
             const filteredSuggestions = allCustomers.filter(customer =>
-                normalizeString(customer.partnerName).includes(normalizedInput)
+                normalizeString(customer.partnerName).includes(normalizedInput) || 
+    customer.id.toUpperCase().includes(upperCaseInput)
             );
             setSuggestions(filteredSuggestions);
         } else {
@@ -3772,14 +3800,17 @@ export default PartnerAutocomplete;
 
 
 // src/components/ProductAutocomplete.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// --- Báº®T Äáº¦U THAY Äá»”I 1: Import thÃªm forwardRef, useImperativeHandle ---
+import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, getDocs, query, orderBy, documentId } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import styles from './Autocomplete.module.css';
 import { FiChevronDown } from 'react-icons/fi';
 
-const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
+// --- Báº®T Äáº¦U THAY Äá»”I 2: Bá»c component báº±ng forwardRef ---
+const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange }, ref) => {
     const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
@@ -3791,6 +3822,14 @@ const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
     const containerRef = useRef(null);
     const inputRef = useRef(null);
     const suggestionsRef = useRef(null);
+
+    // --- Báº®T Äáº¦U THAY Äá»”I 3: Expose hÃ m focus cho component cha ---
+    useImperativeHandle(ref, () => ({
+        focus: () => {
+            inputRef.current.focus();
+        }
+    }));
+    // --- Káº¾T THÃšC THAY Äá»”I 3 ---
 
     useEffect(() => {
         setInputValue(value);
@@ -3926,10 +3965,11 @@ const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
                 onFocus={handleInputChange}
             />
             <FiChevronDown className={styles.arrowIcon} />
+            
             {showSuggestions && containerRef.current && <SuggestionsPortal />}
         </div>
     );
-};
+}); // --- Káº¾T THÃšC THAY Äá»”I 2 ---
 
 export default ProductAutocomplete;
 
@@ -4654,8 +4694,10 @@ const SupplierAutocomplete = ({ value, onSelect }) => {
         
         if (inputValue.length > 0) {
             const normalizedInput = normalizeString(inputValue);
+            const upperCaseInput = inputValue.toUpperCase();
             const filteredSuggestions = allSuppliers.filter(supplier =>
-                normalizeString(supplier.partnerName).includes(normalizedInput)
+                normalizeString(supplier.partnerName).includes(normalizedInput) || 
+    supplier.id.toUpperCase().includes(upperCaseInput)
             );
             setSuggestions(filteredSuggestions);
         } else {
@@ -5403,50 +5445,51 @@ import { useEffect } from 'react';
 import { useAuth } from '../context/UserContext';
 import { rtdb } from '../firebaseConfig';
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database';
+import { toast } from 'react-toastify'; // ThÃªm import toast
 
 export const usePresence = () => {
     const { user } = useAuth();
 
     useEffect(() => {
-        console.log('usePresence hook is running for user:', user);
-        
         if (!user) {
             return; // Dá»«ng náº¿u ngÆ°á»i dÃ¹ng chÆ°a Ä‘Äƒng nháº­p
         }
 
-        // ÄÆ°á»ng dáº«n Ä‘áº¿n tráº¡ng thÃ¡i cá»§a user trong RTDB
         const userStatusRef = ref(rtdb, '/status/' + user.uid);
-
-        // Tham chiáº¿u Ä‘áº·c biá»‡t Ä‘á»ƒ kiá»ƒm tra káº¿t ná»‘i
         const presenceRef = ref(rtdb, '.info/connected');
 
         const unsubscribe = onValue(presenceRef, (snap) => {
-            // Náº¿u máº¥t káº¿t ná»‘i, server sáº½ khÃ´ng cháº¡y Ä‘oáº¡n code nÃ y
             if (snap.val() === false) {
                 return;
             }
 
             // Thiáº¿t láº­p hÃ nh Ä‘á»™ng Sáº¼ Ä‘Æ°á»£c thá»±c hiá»‡n khi client máº¥t káº¿t ná»‘i
-            // ÄÃ¢y lÃ  bÆ°á»›c quan trá»ng nháº¥t
             onDisconnect(userStatusRef).set({
                 isOnline: false,
                 last_changed: serverTimestamp(),
             }).catch((err) => {
-                console.error('Could not establish onDisconnect handler', err);
+                // Ghi láº¡i lá»—i náº¿u khÃ´ng thá»ƒ thiáº¿t láº­p onDisconnect
+                console.error('Lá»—i khi thiáº¿t láº­p onDisconnect:', err);
             });
 
             // Äáº·t tráº¡ng thÃ¡i online khi client káº¿t ná»‘i thÃ nh cÃ´ng
             set(userStatusRef, {
                 isOnline: true,
                 last_changed: serverTimestamp(),
+            })
+            // ===== Báº®T Lá»–I á»ž ÄÃ‚Y =====
+            .catch((err) => {
+                // Ghi láº¡i lá»—i ra console vÃ  hiá»ƒn thá»‹ cho ngÆ°á»i dÃ¹ng
+                console.error('Lá»—i khi set tráº¡ng thÃ¡i online:', err);
+                toast.error(`KhÃ´ng thá»ƒ cáº­p nháº­t tráº¡ng thÃ¡i online: ${err.message}`);
             });
         });
 
         return () => {
-            unsubscribe(); // Dá»n dáº¹p listener khi component unmount
+            unsubscribe();
         };
 
-    }, [user]); // Cháº¡y láº¡i effect nÃ y khi user thay Ä‘á»•i (Ä‘Äƒng nháº­p/Ä‘Äƒng xuáº¥t)
+    }, [user]);
 };
 
 
@@ -6120,12 +6163,14 @@ import DateRangePresets from '../components/DateRangePresets';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+// src/pages/ExportListPage.jsx
 
 const ExportListPage = () => {
     const [selectedSlip, setSelectedSlip] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'XÃ¡c nháº­n' });
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // NÃ‚NG Cáº¤P 1: State Ä‘á»ƒ quáº£n lÃ½ cÃ¡c giÃ¡ trá»‹ cá»§a bá»™ lá»c
     const [filters, setFilters] = useState({
@@ -6191,16 +6236,21 @@ const ExportListPage = () => {
         reset();
     };
 
+// src/pages/ExportListPage.jsx
+
+// THAY THáº¾ HÃ€M CÅ¨ Báº°NG HÃ€M NÃ€Y:
 const handleConfirmExport = async (slip) => {
+    setIsProcessing(true); // BÃ¡o cho há»‡ thá»‘ng biáº¿t lÃ  Ä‘ang xá»­ lÃ½
     try {
       for (const item of slip.items) {
         const lotRef = doc(db, 'inventory_lots', item.lotId);
         const lotSnap = await getDoc(lotRef);
         if (lotSnap.exists()) {
-          const currentQuantity = lotSnap.data().quantityRemaining;
+         const currentQuantity = lotSnap.data().quantityRemaining;
           const newQuantityRemaining = currentQuantity - (item.quantityToExport || item.quantityExported);
           if (newQuantityRemaining < 0) {
             toast.error(`Lá»—i: Tá»“n kho cá»§a lÃ´ ${item.lotNumber} khÃ´ng Ä‘á»§ Ä‘á»ƒ xuáº¥t.`);
+            setIsProcessing(false); // Dá»«ng xá»­ lÃ½ náº¿u cÃ³ lá»—i
             return;
           }
           await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
@@ -6214,11 +6264,14 @@ const handleConfirmExport = async (slip) => {
       console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
       toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n.');
     } finally {
+        setIsProcessing(false); // LuÃ´n táº¯t tráº¡ng thÃ¡i xá»­ lÃ½ khi xong
         setConfirmModal({ isOpen: false });
     }
-  };
+};
 
-  const handleCancelSlip = async (slip) => {
+// THAY THáº¾ HÃ€M CÅ¨ Báº°NG HÃ€M NÃ€Y (Ä‘á»ƒ Ä‘á»“ng bá»™):
+const handleCancelSlip = async (slip) => {
+    setIsProcessing(true); // BÃ¡o cho há»‡ thá»‘ng biáº¿t lÃ  Ä‘ang xá»­ lÃ½
     try {
       const slipRef = doc(db, 'export_tickets', slip.id);
       await updateDoc(slipRef, { status: 'cancelled' });
@@ -6228,9 +6281,10 @@ const handleConfirmExport = async (slip) => {
       console.error("Lá»—i khi há»§y phiáº¿u: ", error);
       toast.error('ÄÃ£ xáº£y ra lá»—i khi há»§y phiáº¿u.');
     } finally {
-        setConfirmModal({ isOpen: false });
+       setIsProcessing(false); // LuÃ´n táº¯t tráº¡ng thÃ¡i xá»­ lÃ½ khi xong
+       setConfirmModal({ isOpen: false });
     }
-  };
+};
 
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
@@ -6357,6 +6411,7 @@ return (
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal({ isOpen: false })}
         confirmText={confirmModal.confirmText}
+        isConfirming={isProcessing}
       />
       {isEditModalOpen && ( <EditExportSlipModal slip={selectedSlip} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveSlipChanges} /> )}
       {isViewModalOpen && ( <ViewExportSlipModal slip={selectedSlip} onClose={() => setIsViewModalOpen(false)} /> )}
@@ -8165,12 +8220,10 @@ export default MobileInventoryPage;
 --- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
-// src/pages/NewExportPage.jsx
-
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
@@ -8181,22 +8234,24 @@ import { z } from 'zod';
 import useExportSlipStore from '../stores/exportSlipStore';
 
 const exportItemSchema = z.object({
-    productId: z.string().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
-    selectedLotId: z.string().min(1, { message: "Vui lÃ²ng chá»n má»™t lÃ´ hÃ ng." }),
-    quantityToExport: z.preprocess(
-        val => Number(val),
-        z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
-         .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
-    )
+  productId: z.string().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  selectedLotId: z.string().min(1, { message: "Vui lÃ²ng chá»n má»™t lÃ´ hÃ ng." }),
+  quantityToExport: z.preprocess(
+      val => Number(val),
+      z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
+       .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
+  )
 });
 
 const exportSlipSchema = z.object({
-    customerId: z.string().min(1, { message: "MÃ£ khÃ¡ch hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
-    customerName: z.string().min(1, { message: "KhÃ´ng tÃ¬m tháº¥y tÃªn khÃ¡ch hÃ ng tÆ°Æ¡ng á»©ng." }),
-    items: z.array(exportItemSchema).min(1, { message: "Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng." })
+  customerId: z.string().min(1, { message: "MÃ£ khÃ¡ch hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  customerName: z.string().min(1, { message: "KhÃ´ng tÃ¬m tháº¥y tÃªn khÃ¡ch hÃ ng tÆ°Æ¡ng á»©ng." }),
+  items: z.array(exportItemSchema).min(1, { message: "Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng." })
 });
 
+
 const NewExportPage = () => {
+    // Láº¥y state vÃ  actions tá»« store
     const {
         customerId, customerName, description, items,
         setCustomer, setDescription, addNewItemRow, removeItemRow, updateItem,
@@ -8206,8 +8261,28 @@ const NewExportPage = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
-    
+    const hasSelectedProduct = useRef(false);
+
+    // Refs cho cÃ¡c element cáº§n focus
     const lotSelectRefs = useRef([]);
+    const quantityInputRefs = useRef([]);
+    const addRowButtonRef = useRef(null);
+    const productInputRefs = useRef([]);
+    const prevItemsLength = useRef(items.length);
+
+    // useEffect Ä‘á»ƒ tá»± Ä‘á»™ng focus vÃ o dÃ²ng má»›i
+    useEffect(() => {
+        // Náº¿u sá»‘ lÆ°á»£ng dÃ²ng tÄƒng lÃªn (tá»©c lÃ  vá»«a thÃªm dÃ²ng má»›i)
+        if (items.length > prevItemsLength.current) {
+            const lastIndex = items.length - 1;
+            // Focus vÃ o Ã´ mÃ£ hÃ ng cá»§a dÃ²ng má»›i nháº¥t
+            if (productInputRefs.current[lastIndex]) {
+                productInputRefs.current[lastIndex].focus();
+            }
+        }
+        // Cáº­p nháº­t láº¡i sá»‘ lÆ°á»£ng dÃ²ng cÅ©
+        prevItemsLength.current = items.length;
+    }, [items.length]);
 
     const isSlipValid = useMemo(() => {
         const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
@@ -8225,6 +8300,7 @@ const NewExportPage = () => {
         if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
             return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m há»£p lá»‡ (Ä‘Ã£ chá»n lÃ´ vÃ  cÃ³ sá»‘ lÆ°á»£ng).';
         }
+        
         return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
     }, [isSlipValid, customerId, customerName, items]);
 
@@ -8248,57 +8324,65 @@ const NewExportPage = () => {
         }
     };
 
-    // HÃ€M TÃŒM KIáº¾M Sáº¢N PHáº¨M Má»šI (CHá»ˆ Gá»ŒI STORE)
     const handleProductSearch = async (index, productOrId) => {
-        if (!productOrId) {
-            handleProductSearchResult(index, null);
-            return;
-        };
-
-        let productData = null;
-        if (typeof productOrId === 'object' && productOrId !== null) {
-            productData = productOrId;
-        } 
-        else {
+        const findProductData = async () => {
+            if (!productOrId) return null;
+            if (typeof productOrId === 'object' && productOrId !== null) return productOrId;
             const productId = String(productOrId).trim().toUpperCase();
-            if (!productId) {
-                handleProductSearchResult(index, null); // XÃ³a dá»¯ liá»‡u dÃ²ng náº¿u productId rá»—ng
-                return;
-            };
+            if (!productId) return null;
             try {
                 const productRef = doc(db, 'products', productId);
                 const productSnap = await getDoc(productRef);
-                if (productSnap.exists()) {
-                    productData = { id: productSnap.id, ...productSnap.data() };
-                } else {
-                    toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
-                }
+                if (productSnap.exists()) return { id: productSnap.id, ...productSnap.data() };
+                toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+                return null;
             } catch (error) {
                 console.error("Lá»—i khi tÃ¬m sáº£n pháº©m:", error);
                 toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m.");
+                return null;
             }
+        };
+        const productData = await findProductData();
+        await handleProductSearchResult(index, productData);
+        if (lotSelectRefs.current[index]) {
+            lotSelectRefs.current[index].focus();
         }
-        
-        handleProductSearchResult(index, productData); 
-        setTimeout(() => lotSelectRefs.current[index]?.focus(), 100);
     };
     
     const handleLotSelection = (index, selectedLotId) => {
         const currentItem = items[index];
         const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
         if (selectedLot) {
-          replaceItem(index, {
-              selectedLotId: selectedLotId,
-              lotNumber: selectedLot.lotNumber,
-              expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
-              quantityRemaining: selectedLot.quantityRemaining,
-              displayLotText: selectedLot.lotNumber || '(Trá»‘ng)'
-          });
+            replaceItem(index, {
+                selectedLotId: selectedLotId, lotNumber: selectedLot.lotNumber,
+                expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
+                quantityRemaining: selectedLot.quantityRemaining,
+                displayLotText: selectedLot.lotNumber || '(Trá»‘ng)',
+                unit: selectedLot.unit || '', packaging: selectedLot.packaging || '',
+                storageTemp: selectedLot.storageTemp || '',
+            });
+
+            // Tá»± Ä‘á»™ng focus vÃ o Ã´ sá»‘ lÆ°á»£ng
+            setTimeout(() => {
+                if (quantityInputRefs.current[index]) {
+                    quantityInputRefs.current[index].focus();
+                }
+            }, 0); 
+
         } else {
-           replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
+            replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
         }
     };
-    
+
+    const handleQuantityKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); 
+            if (addRowButtonRef.current) {
+                addRowButtonRef.current.focus(); 
+            }
+        }
+    };
+
     const handleRemoveRowWithConfirmation = (index) => {
         if (items.length <= 1) return;
         setConfirmModal({
@@ -8311,7 +8395,7 @@ const NewExportPage = () => {
             }
         });
     };
-
+    
     const getValidSlipData = () => {
         const formattedDate = formatDate(new Date());
         const validItemsInput = items.filter(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0);
@@ -8349,6 +8433,7 @@ const NewExportPage = () => {
                 });
                 quantityToDistribute -= quantityFromThisLot;
             }
+            
             allProductIds.add(item.productId);
         }
 
@@ -8420,7 +8505,7 @@ const NewExportPage = () => {
             });
         }
     };
-    
+
     return (
         <div>
             <ConfirmationModal
@@ -8431,31 +8516,31 @@ const NewExportPage = () => {
                 onCancel={() => setConfirmModal({ isOpen: false })}
                 confirmText="XÃ¡c nháº­n"
             />
+            
             <h1>Táº¡o Phiáº¿u Xuáº¥t Kho</h1>
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-    <label>NgÃ y xuáº¥t</label>
-    <input 
-        type="text" 
-        value={formatDate(new Date())} 
-        readOnly 
-        style={{backgroundColor: '#f0f0f0'}} 
-    />
-</div>
+                        <label>NgÃ y xuáº¥t</label>
+                        <input 
+                            type="text" 
+                            value={formatDate(new Date())} 
+                            readOnly 
+                            style={{backgroundColor: '#f0f0f0'}} 
+                        />
+                    </div>
                     <div className="form-group" style={{ flex: 2 }}>
-        <label>KhÃ¡ch hÃ ng (*)</label>
-        <CustomerAutocomplete
-        value={customerName || customerId}
-        onSelect={({ id, name }) => {
-            setCustomer(id, name);
-            if (!id && name) { // Náº¿u ngÆ°á»i dÃ¹ng Ä‘ang gÃµ mÃ  chÆ°a chá»n
-                setCustomer(name, '');
-            }
-        }}
-    />
-</div>
-                    
+                        <label>KhÃ¡ch hÃ ng (*)</label>
+                        <CustomerAutocomplete
+                            value={customerName || customerId}
+                            onSelect={({ id, name }) => {
+                                setCustomer(id, name);
+                                if (!id && name) {
+                                    setCustomer(name, '');
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Diá»…n giáº£i</label>
@@ -8463,7 +8548,6 @@ const NewExportPage = () => {
                 </div>
             </div>
 
-            <h2>Chi Tiáº¿t HÃ ng HÃ³a Xuáº¥t Kho</h2>
             <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 0.5fr' }}>
                 <div className="grid-header">MÃ£ hÃ ng (*)</div>
                 <div className="grid-header">TÃªn hÃ ng</div>
@@ -8480,13 +8564,23 @@ const NewExportPage = () => {
                     <React.Fragment key={item.id}>
                         <div className="grid-cell">
                             <ProductAutocomplete
+                                ref={el => productInputRefs.current[index] = el}
                                 value={item.productId}
                                 onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
-                                onSelect={(product) => handleProductSearch(index, product)}
-                                onBlur={() => handleProductSearch(index, item.productId)}
+                                onSelect={(product) => {
+                                    hasSelectedProduct.current = true;
+                                    handleProductSearch(index, product);
+                                    setTimeout(() => { hasSelectedProduct.current = false; }, 150);
+                                }}
+                                onBlur={() => {
+                                    if (!hasSelectedProduct.current) {
+                                        handleProductSearch(index, item.productId);
+                                    }
+                                }}
                             />
                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             {item.isOutOfStock ? (
                                 <div className="inline-warning"><FiAlertCircle /><span>Sáº£n pháº©m Ä‘Ã£ háº¿t hÃ ng!</span></div>
@@ -8497,31 +8591,38 @@ const NewExportPage = () => {
                                 </div>
                             ) : (
                                 <select
-                                   ref={el => lotSelectRefs.current[index] = el}
+                                    ref={el => lotSelectRefs.current[index] = el}
                                     value={item.selectedLotId}
                                     onChange={e => handleLotSelection(index, e.target.value)}
-                                    disabled={item.availableLots.length === 0}
+                                    disabled={item.isFetchingLots || item.availableLots.length === 0}
                                     style={{width: '100%'}}
                                 >
-                                     <option value="">-- Chá»n lÃ´ tá»“n kho --</option>
+                                    {item.isFetchingLots 
+                                        ? <option value="">Äang táº£i lÃ´...</option>
+                                        : <option value="">-- Chá»n lÃ´ tá»“n kho --</option>
+                                    }
                                     {item.availableLots.map(lot => (
-    <option key={lot.id} value={lot.id}>
-        {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
-    </option>
-))}
+                                        <option key={lot.id} value={lot.id}>
+                                            {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
+                                        </option>
+                                    ))}
                                 </select>
                             )}
                         </div>
+                
                         <div className="grid-cell"><input type="text" value={item.expiryDate} readOnly /></div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                        
                         <div className="grid-cell">
                             <input
+                                ref={el => quantityInputRefs.current[index] = el}
                                 type="text"
                                 inputMode="numeric"
                                 value={focusedInputIndex === index ? item.quantityToExport : formatNumber(item.quantityToExport)}
                                 onFocus={() => setFocusedInputIndex(index)}
                                 onBlur={() => setFocusedInputIndex(null)}
+                                onKeyDown={handleQuantityKeyDown}
                                 onChange={e => {
                                     const rawValue = e.target.value;
                                     const parsedValue = parseFormattedNumber(rawValue);
@@ -8539,24 +8640,25 @@ const NewExportPage = () => {
                     </React.Fragment>
                 ))}
             </div>
-            <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
+            <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
+            
             <div className="page-actions">
                 <button 
-    onClick={handleSaveDraft} 
-    className="btn-secondary" 
-    disabled={isProcessing || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'}
->
-    {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
-</button>
-<button 
-    onClick={promptForDirectExport} 
-    className="btn-primary" 
-    disabled={isProcessing || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'Xuáº¥t hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'}
->
-    {isProcessing ? 'Äang xá»­ lÃ½...' : 'Xuáº¥t Kho Trá»±c Tiáº¿p'}
-</button>
+                    onClick={handleSaveDraft} 
+                    className="btn-secondary" 
+                    disabled={isProcessing || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'}
+                >
+                    {isProcessing ? 'Äang xá»­ lÃ½...' : 'LÆ°u NhÃ¡p'}
+                </button>
+                <button 
+                    onClick={promptForDirectExport} 
+                    className="btn-primary" 
+                    disabled={isProcessing || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Xuáº¥t hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'}
+                >
+                    {isProcessing ? 'Äang xá»­ lÃ½...' : 'Xuáº¥t Kho Trá»±c Tiáº¿p'}
+                </button>
             </div>
         </div>
     );
@@ -8573,7 +8675,8 @@ export default NewExportPage;
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import SupplierAutocomplete from '../components/SupplierAutocomplete';
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+// --- Lá»–I ÄÃƒ ÄÆ¯á»¢C Sá»¬A Táº I ÄÃ‚Y ---
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
 import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
@@ -8603,7 +8706,6 @@ const importItemSchema = z.object({
   ),
   expiryDate: z.string().refine(val => {
       const trimmedVal = val.trim();
-      // Há»£p lá»‡ náº¿u: Ä‘á»ƒ trá»‘ng, HOáº¶C lÃ  'N/A', HOáº¶C lÃ  ngÃ y há»£p lá»‡
       return trimmedVal === '' || trimmedVal.toUpperCase() === 'N/A' || parseDateString(trimmedVal) !== null;
   }, {
       message: "Háº¡n sá»­ dá»¥ng khÃ´ng há»£p lá»‡ (cáº§n Ä‘á»‹nh dáº¡ng dd/mm/yyyy hoáº·c Ä‘á»ƒ trá»‘ng)."
@@ -8615,6 +8717,7 @@ const importSlipSchema = z.object({
     supplierName: z.string().min(1, "KhÃ´ng tÃ¬m tháº¥y tÃªn nhÃ  cung cáº¥p."),
     items: z.array(importItemSchema).min(1, "Phiáº¿u nháº­p pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.")
 });
+
 
 const NewImportPage = () => {
     const {
@@ -8628,11 +8731,27 @@ const NewImportPage = () => {
     const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const [allSuppliers, setAllSuppliers] = useState([]);
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
-    
-    const lastInputRef = useRef(null);
 
+    // Refs cho cÃ¡c element cáº§n focus
+    const productInputRefs = useRef([]);
+    const lotNumberInputRefs = useRef([]);
+    const quantityInputRefs = useRef([]);
+    const addRowButtonRef = useRef(null);
+    const prevItemsLength = useRef(items.length);
+
+    // useEffect Ä‘á»ƒ tá»± Ä‘á»™ng focus vÃ o dÃ²ng má»›i
+    useEffect(() => {
+        if (items.length > prevItemsLength.current) {
+            const lastIndex = items.length - 1;
+            if (productInputRefs.current[lastIndex]) {
+                productInputRefs.current[lastIndex].focus();
+            }
+        }
+        prevItemsLength.current = items.length;
+    }, [items.length]);
+
+    
     const isSlipValid = useMemo(() => {
         const hasSupplier = supplierId.trim() !== '' && supplierName.trim() !== '';
         const hasValidItem = items.some(
@@ -8641,35 +8760,16 @@ const NewImportPage = () => {
         return hasSupplier && hasValidItem;
     }, [supplierId, supplierName, items]);
 
-    // === Báº®T Äáº¦U THÃŠM Má»šI ===
-const disabledReason = useMemo(() => {
-    if (isSlipValid) return '';
-    if (!supplierId.trim() || !supplierName.trim()) {
-        return 'Vui lÃ²ng chá»n NhÃ  Cung Cáº¥p.';
-    }
-    if (!items.some(item => item.productId && Number(item.quantity) > 0)) {
-        return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m vá»›i sá»‘ lÆ°á»£ng há»£p lá»‡.';
-    }
-    return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
-}, [isSlipValid, supplierId, supplierName, items]);
-// === Káº¾T THÃšC THÃŠM Má»šI ===
-
-    useEffect(() => {
-        if (lastInputRef.current) {
-            lastInputRef.current.focus();
+    const disabledReason = useMemo(() => {
+        if (isSlipValid) return '';
+        if (!supplierId.trim() || !supplierName.trim()) {
+            return 'Vui lÃ²ng chá»n NhÃ  Cung Cáº¥p.';
         }
-    }, [items.length]);
-
-    useEffect(() => {
-        const fetchSuppliers = async () => {
-            const q = query(collection(db, "partners"), where("partnerType", "==", "supplier"));
-            const querySnapshot = await getDocs(q);
-            const supplierList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setAllSuppliers(supplierList);
-        };
-        
-        fetchSuppliers();
-    }, []);
+        if (!items.some(item => item.productId && Number(item.quantity) > 0)) {
+            return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m vá»›i sá»‘ lÆ°á»£ng há»£p lá»‡.';
+        }
+        return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
+    }, [isSlipValid, supplierId, supplierName, items]);
 
     const handleRemoveRow = (index) => {
         if (items.length <= 1) return;
@@ -8711,64 +8811,55 @@ const disabledReason = useMemo(() => {
         }
 
         return {
-    ...validationResult.data,
-    importDate: formatDate(new Date(importDate)), // Sá»­ dá»¥ng trá»±c tiáº¿p importDate tá»« store
-    description,
-    productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
-    status: '',
-    createdAt: serverTimestamp()
-};
+            ...validationResult.data,
+            importDate: formatDate(new Date(importDate)),
+            description,
+            productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
+            status: '',
+            createdAt: serverTimestamp()
+        };
     }
-
+    
     const handleSupplierSearch = async (idToSearch = supplierId) => {
-    if (!idToSearch) {
-        setSupplier(idToSearch, '');
-        return;
-    }
+        if (!idToSearch) {
+            setSupplier(idToSearch, '');
+            return;
+        }
         try {
-            const partnerRef = doc(db, 'partners', supplierId.toUpperCase());
+            const partnerRef = doc(db, 'partners', idToSearch.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
             
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'supplier') {
-                setSupplier(supplierId, partnerSnap.data().partnerName);
+                setSupplier(idToSearch, partnerSnap.data().partnerName);
             } else {
-                setSupplier(supplierId, '');
-                toast.error(`KhÃ´ng tÃ¬m tháº¥y NhÃ  cung cáº¥p vá»›i mÃ£ "${supplierId}"`);
+                setSupplier(idToSearch, '');
+                toast.error(`KhÃ´ng tÃ¬m tháº¥y NhÃ  cung cáº¥p vá»›i mÃ£ "${idToSearch}"`);
             }
         } catch (error) {
             console.error("Lá»—i khi tÃ¬m nhÃ  cung cáº¥p:", error);
             toast.error("KhÃ´ng thá»ƒ Ä‘á»c dá»¯ liá»‡u NCC. Kiá»ƒm tra Console (F12)!"); 
-            setSupplier(supplierId, '');
+            setSupplier(idToSearch, '');
         }
     };
+    
+    const handleExpiryDateBlur = (index, value) => {
+        const formattedValue = formatExpiryDate(value);
+        updateItem(index, 'expiryDate', formattedValue);
 
-    // src/pages/NewImportPage.jsx
-
-const handleExpiryDateBlur = (index, value) => {
-    // 1. LuÃ´n Ä‘á»‹nh dáº¡ng láº¡i chuá»—i ngÆ°á»i dÃ¹ng nháº­p Ä‘á»ƒ Ä‘áº£m báº£o tÃ­nh nháº¥t quÃ¡n
-    const formattedValue = formatExpiryDate(value);
-    updateItem(index, 'expiryDate', formattedValue);
-
-    // 2. Náº¿u giÃ¡ trá»‹ sau khi Ä‘á»‹nh dáº¡ng lÃ  rá»—ng hoáº·c "N/A" thÃ¬ khÃ´ng cáº§n cáº£nh bÃ¡o
-    if (!formattedValue || formattedValue.toUpperCase() === 'N/A') {
-        return;
-    }
-
-    // 3. Chuyá»ƒn chuá»—i Ä‘Ã£ Ä‘á»‹nh dáº¡ng thÃ nh Ä‘á»‘i tÆ°á»£ng Date Ä‘á»ƒ so sÃ¡nh
-    const expiryDateObject = parseDateString(formattedValue);
-
-    // 4. Náº¿u lÃ  má»™t ngÃ y há»£p lá»‡, tiáº¿n hÃ nh so sÃ¡nh
-    if (expiryDateObject) {
-        const today = new Date();
-        // Äáº·t giá», phÃºt, giÃ¢y vá» 0 Ä‘á»ƒ chá»‰ so sÃ¡nh ngÃ y, khÃ´ng so sÃ¡nh thá»i gian
-        today.setHours(0, 0, 0, 0); 
-
-        // 5. Náº¿u ngÃ y háº¿t háº¡n nhá» hÆ¡n ngÃ y hÃ´m nay, hiá»ƒn thá»‹ cáº£nh bÃ¡o
-        if (expiryDateObject < today) {
-            toast.warn(`Cáº£nh bÃ¡o: Háº¡n sá»­ dá»¥ng "${formattedValue}" cá»§a máº·t hÃ ng á»Ÿ dÃ²ng ${index + 1} Ä‘Ã£ á»Ÿ trong quÃ¡ khá»©.`);
+        if (!formattedValue || formattedValue.toUpperCase() === 'N/A') {
+            return;
         }
-    }
-};
+
+        const expiryDateObject = parseDateString(formattedValue);
+
+        if (expiryDateObject) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); 
+            if (expiryDateObject < today) {
+                toast.warn(`Cáº£nh bÃ¡o: Háº¡n sá»­ dá»¥ng "${formattedValue}" cá»§a máº·t hÃ ng á»Ÿ dÃ²ng ${index + 1} Ä‘Ã£ á»Ÿ trong quÃ¡ khá»©.`);
+            }
+        }
+    };
 
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
@@ -8785,8 +8876,10 @@ const handleExpiryDateBlur = (index, value) => {
             if (!querySnapshot.empty) {
                 const existingLotData = querySnapshot.docs[0].data();
                 handleLotCheckResult(index, existingLotData, true);
+                setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
             } else {
                 handleLotCheckResult(index, null, false);
+                setNewLotModal({ isOpen: true, index: index });
             }
         } catch (error) {
             console.error("Lá»—i khi kiá»ƒm tra lÃ´ tá»“n táº¡i: ", error);
@@ -8796,27 +8889,42 @@ const handleExpiryDateBlur = (index, value) => {
     const handleProductSearch = async (index, productOrId) => {
         if (!productOrId) return;
 
+        let productData = null;
         if (typeof productOrId === 'object' && productOrId !== null) {
-            handleProductSearchResult(index, productOrId, true);
-            updateItem(index, 'productId', productOrId.id);
-            return;
+            productData = productOrId;
+        } else {
+            const productId = String(productOrId).trim().toUpperCase();
+            if (!productId) return;
+            try {
+                const productRef = doc(db, 'products', productId);
+                const productSnap = await getDoc(productRef);
+                if (productSnap.exists()) {
+                    productData = { id: productSnap.id, ...productSnap.data() };
+                }
+            } catch (error) {
+                console.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m:", error);
+                toast.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m!");
+            }
         }
 
-        const productId = String(productOrId).trim().toUpperCase();
-        if (!productId) return;
+        handleProductSearchResult(index, productData, !!productData);
+        if (productData) {
+            updateItem(index, 'productId', productData.id);
+            setTimeout(() => lotNumberInputRefs.current[index]?.focus(), 0);
+        }
+    };
 
-        try {
-            const productRef = doc(db, 'products', productId);
-            const productSnap = await getDoc(productRef);
+    const handleNewLotDeclared = (expiry) => {
+        const { index } = newLotModal;
+        declareNewLot(index, expiry);
+        setNewLotModal({ isOpen: false, index: -1 });
+        setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
+    };
 
-            if (productSnap.exists()) {
-                handleProductSearchResult(index, { id: productSnap.id, ...productSnap.data() }, true);
-            } else {
-                handleProductSearchResult(index, null, false);
-            }
-        } catch (error) {
-            console.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m:", error);
-            toast.error("Lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m!");
+    const handleQuantityKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addRowButtonRef.current?.focus();
         }
     };
 
@@ -8869,7 +8977,7 @@ const handleExpiryDateBlur = (index, value) => {
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
-                    supplier: slipData.supplierName,
+                    supplierName: slipData.supplierName,
                 };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
@@ -8921,7 +9029,7 @@ const handleExpiryDateBlur = (index, value) => {
                     productName={items[newLotModal.index].productName}
                     lotNumber={items[newLotModal.index].lotNumber}
                     onClose={() => setNewLotModal({ isOpen: false, index: -1 })}
-                    onSave={(expiry) => declareNewLot(newLotModal.index, expiry)}
+                    onSave={handleNewLotDeclared}
                 />
             )}
 
@@ -8929,34 +9037,31 @@ const handleExpiryDateBlur = (index, value) => {
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-            <label>NgÃ y nháº­p</label>
-            <input 
-                type="text" 
-                value={formatDate(new Date())} 
-                readOnly 
-                style={{backgroundColor: '#f0f0f0'}} 
-            />
-        </div>
+                        <label>NgÃ y nháº­p</label>
+                        <input 
+                            type="text" 
+                            value={formatDate(new Date())} 
+                            readOnly 
+                            style={{backgroundColor: '#f0f0f0'}} 
+                        />
+                    </div>
                     <div className="form-group" style={{ flex: 2 }}>
-        <label>NhÃ  Cung Cáº¥p (*)</label>
-        <SupplierAutocomplete
-        value={supplierName || supplierId}
-        onSelect={({ id, name }) => {
-            setSupplier(id, name);
-            // Náº¿u ngÆ°á»i dÃ¹ng chá»‰ gÃµ mÃ  chÆ°a chá»n, ta cáº­p nháº­t mÃ£ NCC báº±ng text há» gÃµ
-            if (!id && name) { 
-                setSupplier(name, '');
-            }
-        }}
-        // ThÃªm prop onBlur Ä‘á»ƒ chá»‰ tÃ¬m kiáº¿m khi ngÆ°á»i dÃ¹ng báº¥m ra ngoÃ i
-        onBlur={() => {
-            // Chá»‰ tÃ¬m kiáº¿m náº¿u chÆ°a cÃ³ mÃ£ NCC Ä‘Æ°á»£c chá»n tá»« danh sÃ¡ch
-            if (!supplierId && supplierName) {
-                handleSupplierSearch(supplierName);
-            }
-        }}
-    />
-</div>
+                        <label>NhÃ  Cung Cáº¥p (*)</label>
+                        <SupplierAutocomplete
+                            value={supplierName || supplierId}
+                            onSelect={({ id, name }) => {
+                                setSupplier(id, name);
+                                if (!id && name) { 
+                                    setSupplier(name, '');
+                                }
+                            }}
+                            onBlur={() => {
+                                if (!supplierId && supplierName) {
+                                    handleSupplierSearch(supplierName);
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Diá»…n giáº£i</label>
@@ -8981,6 +9086,7 @@ const handleExpiryDateBlur = (index, value) => {
                     <React.Fragment key={item.id}>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <ProductAutocomplete
+                                ref={el => productInputRefs.current[index] = el}
                                 value={item.productId}
                                 onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
                                 onSelect={(product) => handleProductSearch(index, product)}
@@ -8999,6 +9105,7 @@ const handleExpiryDateBlur = (index, value) => {
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
+                                ref={el => lotNumberInputRefs.current[index] = el}
                                 type="text"
                                 value={item.lotNumber}
                                 onChange={e => updateItem(index, 'lotNumber', e.target.value)}
@@ -9030,21 +9137,23 @@ const handleExpiryDateBlur = (index, value) => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            value={focusedInputIndex === index ? item.quantity : formatNumber(item.quantity)}
-                            onFocus={() => setFocusedInputIndex(index)}
-                            onBlur={() => setFocusedInputIndex(null)}
-                            onChange={e => {
-                                const rawValue = e.target.value;
-                                const parsedValue = rawValue.replace(',', '.');
-                                if (/^\d*\.?\d*$/.test(parsedValue) || parsedValue === '') {
-                                    updateItem(index, 'quantity', parsedValue);
-                                }
-                            }}
-                        />
-                    </div>
+                            <input
+                                ref={el => quantityInputRefs.current[index] = el}
+                                type="text"
+                                inputMode="numeric"
+                                value={focusedInputIndex === index ? item.quantity : formatNumber(item.quantity)}
+                                onFocus={() => setFocusedInputIndex(index)}
+                                onBlur={() => setFocusedInputIndex(null)}
+                                onKeyDown={handleQuantityKeyDown}
+                                onChange={e => {
+                                    const rawValue = e.target.value;
+                                    const parsedValue = rawValue.replace(',', '.');
+                                    if (/^\d*\.?\d*$/.test(parsedValue) || parsedValue === '') {
+                                        updateItem(index, 'quantity', parsedValue);
+                                    }
+                                }}
+                            />
+                        </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
                         <div className="grid-cell">
@@ -9060,30 +9169,24 @@ const handleExpiryDateBlur = (index, value) => {
                     </React.Fragment>
                 ))}
             </div>
+
+            <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             
-            <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             <div className="page-actions">
                 <button 
-    onClick={handleSaveSlip} 
-    className="btn-secondary" 
-    disabled={isSaving || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'}
->
-    {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
-</button>
-<button 
-    onClick={promptForDirectImport} 
-    className="btn-primary" 
-    disabled={isSaving || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'Nháº­p hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'}
->
-    {isSaving ? 'Äang xá»­ lÃ½...' : 'Nháº­p Kho Trá»±c Tiáº¿p'}
-</button>
+                    onClick={handleSaveSlip} 
+                    className="btn-secondary" 
+                    disabled={isSaving || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'LÆ°u phiáº¿u dÆ°á»›i dáº¡ng báº£n nhÃ¡p'}
+                >
+                    {isSaving ? 'Äang lÆ°u...' : 'LÆ°u Táº¡m'}
+                </button>
+                
                 <button 
                     onClick={promptForDirectImport} 
                     className="btn-primary" 
                     disabled={isSaving || !isSlipValid}
-                    title={!isSlipValid ? disabledReason : 'Nháº­p hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'} // <-- THÃŠM DÃ’NG NÃ€Y
+                    title={!isSlipValid ? disabledReason : 'Nháº­p hÃ ng vÃ  cáº­p nháº­t tá»“n kho ngay láº­p tá»©c'}
                 >
                     {isSaving ? 'Äang xá»­ lÃ½...' : 'Nháº­p Kho Trá»±c Tiáº¿p'}
                 </button>
@@ -11572,20 +11675,22 @@ export default StocktakeSessionPage;
 
 // src/pages/UsersPage.jsx
 
+// --- Báº®T Äáº¦U THAY Äá»”I 1: Import thÃªm cÃ¡c component vÃ  icon cáº§n thiáº¿t ---
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { db, rtdb } from '../firebaseConfig';
 import { ref, onValue } from 'firebase/database';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Spinner from '../components/Spinner';
-import { FiPlus, FiTrash2, FiEdit } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit, FiUsers, FiWifi } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditAllowedUserModal from '../components/EditAllowedUserModal';
 import AddAllowedUserModal from '../components/AddAllowedUserModal';
 import HighlightText from '../components/HighlightText';
+import StatCard from '../components/StatCard'; // ThÃªm StatCard
 
-// Component con Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i Online/Offline
+// Component con PresenceIndicator (giá»¯ nguyÃªn)
 const PresenceIndicator = ({ status }) => {
     if (!status) {
         return <span style={{ color: '#888', fontStyle: 'italic' }}>ChÆ°a tá»«ng hoáº¡t Ä‘á»™ng</span>;
@@ -11608,13 +11713,14 @@ const PresenceIndicator = ({ status }) => {
     return `${diffDays} ngÃ y trÆ°á»›c`;
 };
 
-// Component con Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i KÃ­ch hoáº¡t/Chá»
+// Component con UserStatus (giá»¯ nguyÃªn)
 const UserStatus = ({ status }) => {
     if (status === 'ÄÃ£ kÃ­ch hoáº¡t') {
         return <span className="status-badge status-completed">{status}</span>;
     }
     return <span className="status-badge status-pending">{status}</span>;
 };
+
 
 const UsersPage = () => {
     const [allUsers, setAllUsers] = useState([]);
@@ -11626,6 +11732,13 @@ const UsersPage = () => {
     const [userToEdit, setUserToEdit] = useState(null);
     const [presenceData, setPresenceData] = useState({});
 
+    // --- Báº®T Äáº¦U THAY Äá»”I 2: TÃ­nh toÃ¡n cÃ¡c chá»‰ sá»‘ thá»‘ng kÃª ---
+    const stats = useMemo(() => {
+        const totalUsers = allUsers.length;
+        const onlineUsers = Object.values(presenceData).filter(status => status && status.isOnline).length;
+        return { totalUsers, onlineUsers };
+    }, [allUsers, presenceData]);
+
     // Láº¯ng nghe tráº¡ng thÃ¡i hoáº¡t Ä‘á»™ng tá»« Realtime Database
     useEffect(() => {
         const statusRef = ref(rtdb, 'status/');
@@ -11634,7 +11747,7 @@ const UsersPage = () => {
             setPresenceData(data || {});
         });
 
-        return () => unsubscribe(); // Há»§y láº¯ng nghe khi component unmount
+        return () => unsubscribe();
     }, []);
 
     // Táº£i vÃ  há»£p nháº¥t dá»¯ liá»‡u tá»« Firestore
@@ -11726,6 +11839,22 @@ const UsersPage = () => {
                     <FiPlus style={{ marginRight: '5px' }} />
                     ThÃªm Email
                 </button>
+            </div>
+
+            {/* --- Báº®T Äáº¦U THAY Äá»”I 3: ThÃªm khu vá»±c thá»‘ng kÃª --- */}
+            <div className="stats-grid" style={{ marginBottom: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                <StatCard 
+                    icon={<FiUsers />} 
+                    title="Tá»•ng sá»‘ User" 
+                    value={loading ? '...' : stats.totalUsers} 
+                    isLoading={loading} 
+                />
+                <StatCard 
+                    icon={<FiWifi />} 
+                    title="Äang Online" 
+                    value={loading ? '...' : stats.onlineUsers} 
+                    isLoading={loading} 
+                />
             </div>
       
             <p>ÄÃ¢y lÃ  danh sÃ¡ch cÃ¡c tÃ i khoáº£n Ä‘Æ°á»£c phÃ©p Ä‘Äƒng nháº­p báº±ng tÃ i khoáº£n Google vÃ  tráº¡ng thÃ¡i hoáº¡t Ä‘á»™ng cá»§a há».</p>
@@ -12611,6 +12740,15 @@ import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
+const initialItemState = {
+    id: Date.now(),
+    productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
+    availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+    expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '',
+    isOutOfStock: false,
+    isFetchingLots: false
+};
+
 const useExportSlipStore = create(
     persist(
         (set, get) => ({
@@ -12619,139 +12757,123 @@ const useExportSlipStore = create(
             customerName: '',
             description: '',
             exportDate: new Date().toISOString().split('T')[0],
-            items: [{ 
-                id: Date.now(), 
-                productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
-                availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-                expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '',
-                isOutOfStock: false
-            }],
+            items: [{ ...initialItemState, id: Date.now() }],
 
             // === ACTIONS ===
             setCustomer: (id, name) => set({ customerId: id, customerName: name }),
             setDescription: (description) => set({ description }),
 
-            // HÃ€M TÃŒM KIáº¾M Sáº¢N PHáº¨M VÃ€ Gá»˜P LÃ” (PHIÃŠN Báº¢N HOÃ€N CHá»ˆNH)
-            handleProductSearchResult: (index, productData) => set(async (state) => {
-                const newItems = [...state.items];
-                const currentItem = { ...newItems[index] };
-
-                // LuÃ´n reset thÃ´ng tin lÃ´ trÆ°á»›c khi lÃ m báº¥t cá»© Ä‘iá»u gÃ¬ khÃ¡c
-                Object.assign(currentItem, {
-                    availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-                    expiryDate: '', quantityRemaining: 0, isOutOfStock: false, quantityToExport: ''
-                });
-
-                if (productData) { // Náº¿u tÃ¬m tháº¥y sáº£n pháº©m
-                    Object.assign(currentItem, {
-                        productId: productData.id,
-                        productName: productData.productName || '',
-                        unit: productData.unit || '',
-                        packaging: productData.packaging || '',
-                        storageTemp: productData.storageTemp || '',
-                    });
-                    
-                    try {
-                        const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
-                        const lotsSnapshot = await getDocs(lotsQuery);
-            
-                        if (lotsSnapshot.empty) {
-                            currentItem.isOutOfStock = true;
-                        } else {
-                            const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            
-                            const lotAggregator = new Map();
-                            for (const lot of foundLots) {
-                                const lotKey = lot.lotNumber || 'KHONG_CO_LO';
-                                if (lotAggregator.has(lotKey)) {
-                                    const existing = lotAggregator.get(lotKey);
-                                    existing.quantityRemaining += lot.quantityRemaining;
-                                    if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
-                                        existing.expiryDate = lot.expiryDate;
-                                    }
-                                    existing.originalLots.push(lot);
-                                } else {
-                                    lotAggregator.set(lotKey, { ...lot, id: lotKey, quantityRemaining: lot.quantityRemaining, originalLots: [lot] });
-                                }
-                            }
-                            
-                            const aggregatedLots = Array.from(lotAggregator.values());
-                            aggregatedLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
-            
-                            currentItem.availableLots = aggregatedLots;
-                        }
-                    } catch (e) {
-                        console.error("Lá»—i khi tÃ¬m lÃ´ hÃ ng:", e);
-                        currentItem.isOutOfStock = true;
-                    }
-                } else { // Xá»­ lÃ½ khi khÃ´ng tÃ¬m tháº¥y sáº£n pháº©m hoáº·c xÃ³a tráº¯ng Ã´ tÃ¬m kiáº¿m
-                     Object.assign(currentItem, {
-                        productId: '', productName: '', unit: '', packaging: '', storageTemp: ''
-                    });
-                }
-                
-                newItems[index] = currentItem;
-                return { items: newItems };
-            }),
-
-            addNewItemRow: () => set(state => ({
-                items: [
-                    ...state.items,
-                    { 
-                        id: Date.now(), 
-                        productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
-                        availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-                        expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '',
-                        isOutOfStock: false
-                    }
-                ]
-            })),
-
-            removeItemRow: (indexToRemove) => set(state => {
-                if (state.items.length <= 1) return {};
-                return { items: state.items.filter((_, index) => index !== indexToRemove) };
-            }),
-
             updateItem: (index, field, value) => set(state => {
-                const newItems = [...state.items];
-                const currentItem = { ...newItems[index] };
-
-                if (field === 'quantityToExport') {
-                    const val = Number(value);
-                    if (value === '' || val < 0) {
-                        currentItem[field] = '';
-                    } else if (val > currentItem.quantityRemaining) {
-                        toast.warn('Cáº£nh bÃ¡o: Sá»‘ lÆ°á»£ng xuáº¥t vÆ°á»£t quÃ¡ sá»‘ lÆ°á»£ng tá»“n!');
-                        currentItem[field] = currentItem.quantityRemaining;
-                    } else {
-                        currentItem[field] = value;
+                const newItems = state.items.map((item, i) => {
+                    if (i === index) {
+                        return { ...item, [field]: value };
                     }
-                } else {
-                    currentItem[field] = value;
-                }
-
-                newItems[index] = currentItem;
+                    return item;
+                });
                 return { items: newItems };
             }),
             
-            replaceItem: (index, newItemData) => set(state => {
-                const newItems = [...state.items];
-                newItems[index] = { ...newItems[index], ...newItemData };
-                return { items: newItems };
-            }),
+            // --- Báº®T Äáº¦U THAY Äá»”I ---
+            // ThÃªm "async" vÃ o trÆ°á»›c hÃ m
+            handleProductSearchResult: async (index, productData) => {
+                
+                // BÆ°á»›c 1: Cáº­p nháº­t UI ngay láº­p tá»©c Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i "Äang táº£i..."
+                set(state => ({
+                    items: state.items.map((item, i) => {
+                        if (i === index) {
+                            return {
+                                ...item,
+                                productId: productData ? productData.id : item.productId,
+                                productName: productData ? 'Äang táº£i...' : '',
+                                unit: '',
+                                packaging: '',
+                                storageTemp: '',
+                                availableLots: [],
+                                selectedLotId: '',
+                                lotNumber: '',
+                                displayLotText: '',
+                                expiryDate: '',
+                                quantityRemaining: 0,
+                                isOutOfStock: false,
+                                isFetchingLots: !!productData,
+                            };
+                        }
+                        return item;
+                    })
+                }));
 
-            resetSlip: () => set({
-                customerId: '',
-                customerName: '',
-                description: '',
-                items: [{ 
-                    id: Date.now(), 
-                    productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
-                    availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-                    expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '',
-                    isOutOfStock: false
-                }]
-            })
+                if (!productData) return;
+
+                // BÆ°á»›c 2: Báº¯t Ä‘áº§u tÃ¬m kiáº¿m dá»¯ liá»‡u tá»« server
+                try {
+                    const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
+                    const lotsSnapshot = await getDocs(lotsQuery);
+
+                    let finalLots = [];
+                    let outOfStock = false;
+                    
+                    if (lotsSnapshot.empty) {
+                        outOfStock = true;
+                    } else {
+                        const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        const lotAggregator = new Map();
+                        for (const lot of foundLots) {
+                            const lotKey = lot.lotNumber || 'KHONG_CO_LO';
+                            if (lotAggregator.has(lotKey)) {
+                                const existing = lotAggregator.get(lotKey);
+                                existing.quantityRemaining += lot.quantityRemaining;
+                                if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
+                                    existing.expiryDate = lot.expiryDate;
+                                }
+                                existing.originalLots.push(lot);
+                            } else {
+                                lotAggregator.set(lotKey, { ...lot, id: lotKey, quantityRemaining: lot.quantityRemaining, originalLots: [lot] });
+                            }
+                        }
+                        const aggregatedLots = Array.from(lotAggregator.values());
+                        aggregatedLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+                        finalLots = aggregatedLots;
+                    }
+
+                    // BÆ°á»›c 3: Cáº­p nháº­t UI láº§n cuá»‘i vá»›i dá»¯ liá»‡u Ä‘áº§y Ä‘á»§ Ä‘Ã£ tÃ¬m Ä‘Æ°á»£c
+                    set(state => ({
+                        items: state.items.map((item, i) => {
+                            if (i === index) {
+                                return {
+                                    ...item,
+                                    productName: productData.productName || '',
+                                    unit: productData.unit || '',
+                                    packaging: productData.packaging || '',
+                                    storageTemp: productData.storageTemp || '',
+                                    availableLots: finalLots,
+                                    isOutOfStock: outOfStock,
+                                    isFetchingLots: false,
+                                };
+                            }
+                            return item;
+                        })
+                    }));
+
+                } catch (e) {
+                    console.error("Lá»—i khi tÃ¬m lÃ´ hÃ ng:", e);
+                    toast.error("Lá»—i khi táº£i danh sÃ¡ch lÃ´ hÃ ng.");
+                    set(state => ({
+                        items: state.items.map((item, i) => {
+                            if (i === index) {
+                                return { ...item, isOutOfStock: true, productName: 'Lá»—i táº£i dá»¯ liá»‡u', isFetchingLots: false };
+                            }
+                            return item;
+                        })
+                    }));
+                }
+            },
+            // --- Káº¾T THÃšC THAY Äá»”I ---
+            
+            // CÃ¡c hÃ m cÃ²n láº¡i giá»¯ nguyÃªn
+            addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
+            removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
+            replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
+            resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ ...initialItemState, id: Date.now() }] })
         }),
         {
             name: 'export-slip-storage',
@@ -15841,26 +15963,25 @@ export const exportExportSlipToPDF = async (slip) => {
         item.notes || '', item.storageTemp
     ]);
 
+    // File: src/utils/pdfUtils.js (bÃªn trong hÃ m exportExportSlipToPDF)
+
     autoTable(doc, {
-        head, body, startY: 50, theme: 'grid', margin: { left: 10, right: 10 },
-        // YÃªu cáº§u 1 & 2: CÄƒn giá»¯a máº·c Ä‘á»‹nh
+        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 }, // <-- THAY Äá»”I á»ž ÄÃ‚Y
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
-        // YÃªu cáº§u 3: Äiá»u chá»‰nh Ä‘á»™ rá»™ng cá»™t
         columnStyles: {
-            0: { cellWidth: 31 },  // MÃ£ hÃ ng
-            1: { cellWidth: 71, halign: 'left' }, // TÃªn sáº£n pháº©m (rá»™ng, cÄƒn trÃ¡i)
-            2: { cellWidth: 31 },  // Sá»‘ lÃ´
-            3: { cellWidth: 26 },  // HSD (háº¹p)
-            4: { cellWidth: 18 },  // ÄVT (háº¹p)
-            5: { cellWidth: 35 },  // Quy cÃ¡ch (háº¹p)
-            6: { cellWidth: 25 },  // Sá»‘ lÆ°á»£ng (háº¹p)
-            7: { cellWidth: 'auto' }, // Ghi chÃº (tá»± Ä‘á»™ng co giÃ£n)
-            8: { cellWidth: 25 },  // Nhiá»‡t Ä‘á»™ BQ (háº¹p)
+            0: { cellWidth: 31 },
+            1: { cellWidth: 71, halign: 'left' },
+            2: { cellWidth: 31 },
+            3: { cellWidth: 26 },
+            4: { cellWidth: 18 },
+            5: { cellWidth: 35 },
+            6: { cellWidth: 25 },
+            7: { cellWidth: 'auto' },
+            8: { cellWidth: 25 },
         },
-        // YÃªu cáº§u 4: TÃ´ Ä‘áº­m cÃ¡c Ã´ Ä‘Æ°á»£c chá»‰ Ä‘á»‹nh
         didParseCell: function (data) {
-            const boldColumns = [0, 2, 6]; // MÃ£ hÃ ng, Sá»‘ lÃ´, Sá»‘ lÆ°á»£ng
+            const boldColumns = [0, 2, 6];
             if (data.section === 'body' && boldColumns.includes(data.column.index)) {
                 data.cell.styles.fontStyle = 'bold';
             }

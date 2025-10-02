@@ -1,9 +1,7 @@
-// src/pages/NewExportPage.jsx
-
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
@@ -14,22 +12,24 @@ import { z } from 'zod';
 import useExportSlipStore from '../stores/exportSlipStore';
 
 const exportItemSchema = z.object({
-    productId: z.string().min(1, { message: "Mã hàng không được để trống." }),
-    selectedLotId: z.string().min(1, { message: "Vui lòng chọn một lô hàng." }),
-    quantityToExport: z.preprocess(
-        val => Number(val),
-        z.number({ invalid_type_error: "Số lượng xuất phải là một con số." })
-         .gt(0, { message: "Số lượng xuất phải lớn hơn 0." })
-    )
+  productId: z.string().min(1, { message: "Mã hàng không được để trống." }),
+  selectedLotId: z.string().min(1, { message: "Vui lòng chọn một lô hàng." }),
+  quantityToExport: z.preprocess(
+      val => Number(val),
+      z.number({ invalid_type_error: "Số lượng xuất phải là một con số." })
+       .gt(0, { message: "Số lượng xuất phải lớn hơn 0." })
+  )
 });
 
 const exportSlipSchema = z.object({
-    customerId: z.string().min(1, { message: "Mã khách hàng không được để trống." }),
-    customerName: z.string().min(1, { message: "Không tìm thấy tên khách hàng tương ứng." }),
-    items: z.array(exportItemSchema).min(1, { message: "Phiếu xuất phải có ít nhất một mặt hàng." })
+  customerId: z.string().min(1, { message: "Mã khách hàng không được để trống." }),
+  customerName: z.string().min(1, { message: "Không tìm thấy tên khách hàng tương ứng." }),
+  items: z.array(exportItemSchema).min(1, { message: "Phiếu xuất phải có ít nhất một mặt hàng." })
 });
 
+
 const NewExportPage = () => {
+    // Lấy state và actions từ store
     const {
         customerId, customerName, description, items,
         setCustomer, setDescription, addNewItemRow, removeItemRow, updateItem,
@@ -39,8 +39,28 @@ const NewExportPage = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
-    
+    const hasSelectedProduct = useRef(false);
+
+    // Refs cho các element cần focus
     const lotSelectRefs = useRef([]);
+    const quantityInputRefs = useRef([]);
+    const addRowButtonRef = useRef(null);
+    const productInputRefs = useRef([]);
+    const prevItemsLength = useRef(items.length);
+
+    // useEffect để tự động focus vào dòng mới
+    useEffect(() => {
+        // Nếu số lượng dòng tăng lên (tức là vừa thêm dòng mới)
+        if (items.length > prevItemsLength.current) {
+            const lastIndex = items.length - 1;
+            // Focus vào ô mã hàng của dòng mới nhất
+            if (productInputRefs.current[lastIndex]) {
+                productInputRefs.current[lastIndex].focus();
+            }
+        }
+        // Cập nhật lại số lượng dòng cũ
+        prevItemsLength.current = items.length;
+    }, [items.length]);
 
     const isSlipValid = useMemo(() => {
         const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
@@ -58,6 +78,7 @@ const NewExportPage = () => {
         if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
             return 'Vui lòng thêm ít nhất một sản phẩm hợp lệ (đã chọn lô và có số lượng).';
         }
+        
         return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
     }, [isSlipValid, customerId, customerName, items]);
 
@@ -81,66 +102,65 @@ const NewExportPage = () => {
         }
     };
 
-    // HÀM TÌM KIẾM SẢN PHẨM MỚI (CHỈ GỌI STORE)
     const handleProductSearch = async (index, productOrId) => {
-        if (!productOrId) {
-            handleProductSearchResult(index, null);
-            return;
-        };
-
-        let productData = null;
-        if (typeof productOrId === 'object' && productOrId !== null) {
-            productData = productOrId;
-        } 
-        else {
+        const findProductData = async () => {
+            if (!productOrId) return null;
+            if (typeof productOrId === 'object' && productOrId !== null) return productOrId;
             const productId = String(productOrId).trim().toUpperCase();
-            if (!productId) {
-                handleProductSearchResult(index, null); // Xóa dữ liệu dòng nếu productId rỗng
-                return;
-            };
+            if (!productId) return null;
             try {
                 const productRef = doc(db, 'products', productId);
                 const productSnap = await getDoc(productRef);
-                if (productSnap.exists()) {
-                    productData = { id: productSnap.id, ...productSnap.data() };
-                } else {
-                    toast.warn(`Không tìm thấy sản phẩm với mã: ${productId}`);
-                }
+                if (productSnap.exists()) return { id: productSnap.id, ...productSnap.data() };
+                toast.warn(`Không tìm thấy sản phẩm với mã: ${productId}`);
+                return null;
             } catch (error) {
                 console.error("Lỗi khi tìm sản phẩm:", error);
                 toast.error("Đã xảy ra lỗi khi tìm kiếm sản phẩm.");
+                return null;
             }
+        };
+        const productData = await findProductData();
+        await handleProductSearchResult(index, productData);
+        if (lotSelectRefs.current[index]) {
+            lotSelectRefs.current[index].focus();
         }
-        
-        handleProductSearchResult(index, productData); 
-        setTimeout(() => lotSelectRefs.current[index]?.focus(), 100);
     };
     
-    // src/pages/NewExportPage.jsx
+    const handleLotSelection = (index, selectedLotId) => {
+        const currentItem = items[index];
+        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+        if (selectedLot) {
+            replaceItem(index, {
+                selectedLotId: selectedLotId, lotNumber: selectedLot.lotNumber,
+                expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
+                quantityRemaining: selectedLot.quantityRemaining,
+                displayLotText: selectedLot.lotNumber || '(Trống)',
+                unit: selectedLot.unit || '', packaging: selectedLot.packaging || '',
+                storageTemp: selectedLot.storageTemp || '',
+            });
 
-const handleLotSelection = (index, selectedLotId) => {
-    const currentItem = items[index];
-    const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+            // Tự động focus vào ô số lượng
+            setTimeout(() => {
+                if (quantityInputRefs.current[index]) {
+                    quantityInputRefs.current[index].focus();
+                }
+            }, 0); 
 
-    if (selectedLot) {
-        replaceItem(index, {
-            selectedLotId: selectedLotId,
-            lotNumber: selectedLot.lotNumber,
-            expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
-            quantityRemaining: selectedLot.quantityRemaining,
-            displayLotText: selectedLot.lotNumber || '(Trống)',
+        } else {
+            replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
+        }
+    };
 
-            // ===== THÊM 3 DÒNG NÀY VÀO =====
-            unit: selectedLot.unit || '',
-            packaging: selectedLot.packaging || '',
-            storageTemp: selectedLot.storageTemp || '',
-            // =================================
-        });
-    } else {
-        replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '', unit: '', packaging: '', storageTemp: '' });
-    }
-};
-    
+    const handleQuantityKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); 
+            if (addRowButtonRef.current) {
+                addRowButtonRef.current.focus(); 
+            }
+        }
+    };
+
     const handleRemoveRowWithConfirmation = (index) => {
         if (items.length <= 1) return;
         setConfirmModal({
@@ -153,7 +173,7 @@ const handleLotSelection = (index, selectedLotId) => {
             }
         });
     };
-
+    
     const getValidSlipData = () => {
         const formattedDate = formatDate(new Date());
         const validItemsInput = items.filter(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0);
@@ -191,6 +211,7 @@ const handleLotSelection = (index, selectedLotId) => {
                 });
                 quantityToDistribute -= quantityFromThisLot;
             }
+            
             allProductIds.add(item.productId);
         }
 
@@ -262,7 +283,7 @@ const handleLotSelection = (index, selectedLotId) => {
             });
         }
     };
-    
+
     return (
         <div>
             <ConfirmationModal
@@ -273,31 +294,31 @@ const handleLotSelection = (index, selectedLotId) => {
                 onCancel={() => setConfirmModal({ isOpen: false })}
                 confirmText="Xác nhận"
             />
+            
             <h1>Tạo Phiếu Xuất Kho</h1>
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-    <label>Ngày xuất</label>
-    <input 
-        type="text" 
-        value={formatDate(new Date())} 
-        readOnly 
-        style={{backgroundColor: '#f0f0f0'}} 
-    />
-</div>
+                        <label>Ngày xuất</label>
+                        <input 
+                            type="text" 
+                            value={formatDate(new Date())} 
+                            readOnly 
+                            style={{backgroundColor: '#f0f0f0'}} 
+                        />
+                    </div>
                     <div className="form-group" style={{ flex: 2 }}>
-        <label>Khách hàng (*)</label>
-        <CustomerAutocomplete
-        value={customerName || customerId}
-        onSelect={({ id, name }) => {
-            setCustomer(id, name);
-            if (!id && name) { // Nếu người dùng đang gõ mà chưa chọn
-                setCustomer(name, '');
-            }
-        }}
-    />
-</div>
-                    
+                        <label>Khách hàng (*)</label>
+                        <CustomerAutocomplete
+                            value={customerName || customerId}
+                            onSelect={({ id, name }) => {
+                                setCustomer(id, name);
+                                if (!id && name) {
+                                    setCustomer(name, '');
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Diễn giải</label>
@@ -305,7 +326,6 @@ const handleLotSelection = (index, selectedLotId) => {
                 </div>
             </div>
 
-            <h2>Chi Tiết Hàng Hóa Xuất Kho</h2>
             <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 0.5fr' }}>
                 <div className="grid-header">Mã hàng (*)</div>
                 <div className="grid-header">Tên hàng</div>
@@ -322,13 +342,23 @@ const handleLotSelection = (index, selectedLotId) => {
                     <React.Fragment key={item.id}>
                         <div className="grid-cell">
                             <ProductAutocomplete
+                                ref={el => productInputRefs.current[index] = el}
                                 value={item.productId}
                                 onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
-                                onSelect={(product) => handleProductSearch(index, product)}
-                                onBlur={() => handleProductSearch(index, item.productId)}
+                                onSelect={(product) => {
+                                    hasSelectedProduct.current = true;
+                                    handleProductSearch(index, product);
+                                    setTimeout(() => { hasSelectedProduct.current = false; }, 150);
+                                }}
+                                onBlur={() => {
+                                    if (!hasSelectedProduct.current) {
+                                        handleProductSearch(index, item.productId);
+                                    }
+                                }}
                             />
                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             {item.isOutOfStock ? (
                                 <div className="inline-warning"><FiAlertCircle /><span>Sản phẩm đã hết hàng!</span></div>
@@ -339,31 +369,38 @@ const handleLotSelection = (index, selectedLotId) => {
                                 </div>
                             ) : (
                                 <select
-                                   ref={el => lotSelectRefs.current[index] = el}
+                                    ref={el => lotSelectRefs.current[index] = el}
                                     value={item.selectedLotId}
                                     onChange={e => handleLotSelection(index, e.target.value)}
-                                    disabled={item.availableLots.length === 0}
+                                    disabled={item.isFetchingLots || item.availableLots.length === 0}
                                     style={{width: '100%'}}
                                 >
-                                     <option value="">-- Chọn lô tồn kho --</option>
+                                    {item.isFetchingLots 
+                                        ? <option value="">Đang tải lô...</option>
+                                        : <option value="">-- Chọn lô tồn kho --</option>
+                                    }
                                     {item.availableLots.map(lot => (
-    <option key={lot.id} value={lot.id}>
-        {`${getExpiryStatusPrefix(lot.expiryDate)}Lô: ${lot.lotNumber || '(Không có)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'} | Tồn: ${formatNumber(lot.quantityRemaining)}`}
-    </option>
-))}
+                                        <option key={lot.id} value={lot.id}>
+                                            {`${getExpiryStatusPrefix(lot.expiryDate)}Lô: ${lot.lotNumber || '(Không có)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'} | Tồn: ${formatNumber(lot.quantityRemaining)}`}
+                                        </option>
+                                    ))}
                                 </select>
                             )}
                         </div>
+                
                         <div className="grid-cell"><input type="text" value={item.expiryDate} readOnly /></div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                        
                         <div className="grid-cell">
                             <input
+                                ref={el => quantityInputRefs.current[index] = el}
                                 type="text"
                                 inputMode="numeric"
                                 value={focusedInputIndex === index ? item.quantityToExport : formatNumber(item.quantityToExport)}
                                 onFocus={() => setFocusedInputIndex(index)}
                                 onBlur={() => setFocusedInputIndex(null)}
+                                onKeyDown={handleQuantityKeyDown}
                                 onChange={e => {
                                     const rawValue = e.target.value;
                                     const parsedValue = parseFormattedNumber(rawValue);
@@ -381,24 +418,25 @@ const handleLotSelection = (index, selectedLotId) => {
                     </React.Fragment>
                 ))}
             </div>
-            <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
+            <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
+            
             <div className="page-actions">
                 <button 
-    onClick={handleSaveDraft} 
-    className="btn-secondary" 
-    disabled={isProcessing || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'}
->
-    {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
-</button>
-<button 
-    onClick={promptForDirectExport} 
-    className="btn-primary" 
-    disabled={isProcessing || !isSlipValid}
-    title={!isSlipValid ? disabledReason : 'Xuất hàng và cập nhật tồn kho ngay lập tức'}
->
-    {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}
-</button>
+                    onClick={handleSaveDraft} 
+                    className="btn-secondary" 
+                    disabled={isProcessing || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Lưu phiếu dưới dạng bản nháp'}
+                >
+                    {isProcessing ? 'Đang xử lý...' : 'Lưu Nháp'}
+                </button>
+                <button 
+                    onClick={promptForDirectExport} 
+                    className="btn-primary" 
+                    disabled={isProcessing || !isSlipValid}
+                    title={!isSlipValid ? disabledReason : 'Xuất hàng và cập nhật tồn kho ngay lập tức'}
+                >
+                    {isProcessing ? 'Đang xử lý...' : 'Xuất Kho Trực Tiếp'}
+                </button>
             </div>
         </div>
     );

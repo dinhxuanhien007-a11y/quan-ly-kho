@@ -6,6 +6,15 @@ import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
+const initialItemState = {
+    id: Date.now(),
+    productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
+    availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+    expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '',
+    isOutOfStock: false,
+    isFetchingLots: false
+};
+
 const useExportSlipStore = create(
     persist(
         (set, get) => ({
@@ -14,68 +23,54 @@ const useExportSlipStore = create(
             customerName: '',
             description: '',
             exportDate: new Date().toISOString().split('T')[0],
-            items: [{ 
-                id: Date.now(), 
-                productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
-                availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-                expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '',
-                isOutOfStock: false
-            }],
+            items: [{ ...initialItemState, id: Date.now() }],
 
             // === ACTIONS ===
             setCustomer: (id, name) => set({ customerId: id, customerName: name }),
             setDescription: (description) => set({ description }),
 
-            // ========================================================================
-            // ===== BẮT ĐẦU PHẦN CODE ĐƯỢC VIẾT LẠI HOÀN CHỈNH =====
-            // ========================================================================
-
-            // HÀM 1: updateItem - Được đơn giản hóa tối đa
-            // Chỉ cập nhật 1 trường duy nhất, không có logic phụ.
             updateItem: (index, field, value) => set(state => {
-                const newItems = [...state.items];
-                const currentItem = { ...newItems[index] };
-                currentItem[field] = value; // Chỉ cập nhật giá trị
-                newItems[index] = currentItem;
+                const newItems = state.items.map((item, i) => {
+                    if (i === index) {
+                        return { ...item, [field]: value };
+                    }
+                    return item;
+                });
                 return { items: newItems };
             }),
-
-            // HÀM 2: handleProductSearchResult - Hàm xử lý chính, được viết lại
-            // Hàm này sẽ là một hàm async và gọi 'set' nhiều lần để cập nhật UI từng bước.
+            
+            // --- BẮT ĐẦU THAY ĐỔI ---
+            // Thêm "async" vào trước hàm
             handleProductSearchResult: async (index, productData) => {
                 
-                // BƯỚC 1: Cập nhật UI ngay lập tức để xóa dữ liệu cũ và báo đang tải
-                set(state => {
-                    const newItems = [...state.items];
-                    const currentItem = { ...newItems[index] };
-                    
-                    Object.assign(currentItem, {
-                        productName: productData ? 'Đang tải...' : '',
-                        unit: '',
-                        packaging: '',
-                        storageTemp: '',
-                        availableLots: [],
-                        selectedLotId: '',
-                        lotNumber: '',
-                        displayLotText: '',
-                        expiryDate: '',
-                        quantityRemaining: 0,
-                        isOutOfStock: false,
-                    });
+                // Bước 1: Cập nhật UI ngay lập tức để hiển thị trạng thái "Đang tải..."
+                set(state => ({
+                    items: state.items.map((item, i) => {
+                        if (i === index) {
+                            return {
+                                ...item,
+                                productId: productData ? productData.id : item.productId,
+                                productName: productData ? 'Đang tải...' : '',
+                                unit: '',
+                                packaging: '',
+                                storageTemp: '',
+                                availableLots: [],
+                                selectedLotId: '',
+                                lotNumber: '',
+                                displayLotText: '',
+                                expiryDate: '',
+                                quantityRemaining: 0,
+                                isOutOfStock: false,
+                                isFetchingLots: !!productData,
+                            };
+                        }
+                        return item;
+                    })
+                }));
 
-                    // Cập nhật lại productId từ productData nếu có
-                    if (productData) {
-                        currentItem.productId = productData.id;
-                    }
-
-                    newItems[index] = currentItem;
-                    return { items: newItems };
-                });
-
-                // Nếu không có sản phẩm, dừng lại ở đây
                 if (!productData) return;
 
-                // BƯỚC 2: Thực hiện các tác vụ bất đồng bộ (lấy dữ liệu từ server)
+                // Bước 2: Bắt đầu tìm kiếm dữ liệu từ server
                 try {
                     const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
                     const lotsSnapshot = await getDocs(lotsQuery);
@@ -94,11 +89,11 @@ const useExportSlipStore = create(
                                 const existing = lotAggregator.get(lotKey);
                                 existing.quantityRemaining += lot.quantityRemaining;
                                 if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
-                                     existing.expiryDate = lot.expiryDate;
+                                    existing.expiryDate = lot.expiryDate;
                                 }
                                 existing.originalLots.push(lot);
                             } else {
-                                 lotAggregator.set(lotKey, { ...lot, id: lotKey, quantityRemaining: lot.quantityRemaining, originalLots: [lot] });
+                                lotAggregator.set(lotKey, { ...lot, id: lotKey, quantityRemaining: lot.quantityRemaining, originalLots: [lot] });
                             }
                         }
                         const aggregatedLots = Array.from(lotAggregator.values());
@@ -106,42 +101,45 @@ const useExportSlipStore = create(
                         finalLots = aggregatedLots;
                     }
 
-                    // BƯỚC 3: Cập nhật UI lần cuối với dữ liệu đã lấy được
-                    set(state => {
-                        const newItems = [...state.items];
-                        const currentItem = { ...newItems[index] };
-
-                        Object.assign(currentItem, {
-                            productName: productData.productName || '',
-                            availableLots: finalLots,
-                            isOutOfStock: outOfStock,
-                        });
-                        
-                        newItems[index] = currentItem;
-                        return { items: newItems };
-                    });
+                    // Bước 3: Cập nhật UI lần cuối với dữ liệu đầy đủ đã tìm được
+                    set(state => ({
+                        items: state.items.map((item, i) => {
+                            if (i === index) {
+                                return {
+                                    ...item,
+                                    productName: productData.productName || '',
+                                    unit: productData.unit || '',
+                                    packaging: productData.packaging || '',
+                                    storageTemp: productData.storageTemp || '',
+                                    availableLots: finalLots,
+                                    isOutOfStock: outOfStock,
+                                    isFetchingLots: false,
+                                };
+                            }
+                            return item;
+                        })
+                    }));
 
                 } catch (e) {
                     console.error("Lỗi khi tìm lô hàng:", e);
                     toast.error("Lỗi khi tải danh sách lô hàng.");
-                    // Cập nhật UI để báo lỗi
-                    set(state => {
-                        const newItems = [...state.items];
-                        const currentItem = { ...newItems[index], isOutOfStock: true, productName: 'Lỗi tải dữ liệu' };
-                        newItems[index] = currentItem;
-                        return { items: newItems };
-                    });
+                    set(state => ({
+                        items: state.items.map((item, i) => {
+                            if (i === index) {
+                                return { ...item, isOutOfStock: true, productName: 'Lỗi tải dữ liệu', isFetchingLots: false };
+                            }
+                            return item;
+                        })
+                    }));
                 }
             },
+            // --- KẾT THÚC THAY ĐỔI ---
             
-            // ========================================================================
-            // ===== CÁC HÀM KHÁC GIỮ NGUYÊN =====
-            // ========================================================================
-
-            addNewItemRow: () => set(state => ({ items: [ ...state.items, { id: Date.now(), productId: '', productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '', isOutOfStock: false } ] })),
+            // Các hàm còn lại giữ nguyên
+            addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
             removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
             replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
-            resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ id: Date.now(), productId: '', productName: '', unit: '', packaging: '', storageTemp: '', availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '', expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '', isOutOfStock: false }] })
+            resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ ...initialItemState, id: Date.now() }] })
         }),
         {
             name: 'export-slip-storage',

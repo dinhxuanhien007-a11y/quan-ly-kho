@@ -1,19 +1,21 @@
 // src/pages/UsersPage.jsx
 
+// --- BẮT ĐẦU THAY ĐỔI 1: Import thêm các component và icon cần thiết ---
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { db, rtdb } from '../firebaseConfig';
 import { ref, onValue } from 'firebase/database';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Spinner from '../components/Spinner';
-import { FiPlus, FiTrash2, FiEdit } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit, FiUsers, FiWifi } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditAllowedUserModal from '../components/EditAllowedUserModal';
 import AddAllowedUserModal from '../components/AddAllowedUserModal';
 import HighlightText from '../components/HighlightText';
+import StatCard from '../components/StatCard'; // Thêm StatCard
 
-// Component con để hiển thị trạng thái Online/Offline
+// Component con PresenceIndicator (giữ nguyên)
 const PresenceIndicator = ({ status }) => {
     if (!status) {
         return <span style={{ color: '#888', fontStyle: 'italic' }}>Chưa từng hoạt động</span>;
@@ -36,13 +38,14 @@ const PresenceIndicator = ({ status }) => {
     return `${diffDays} ngày trước`;
 };
 
-// Component con để hiển thị trạng thái Kích hoạt/Chờ
+// Component con UserStatus (giữ nguyên)
 const UserStatus = ({ status }) => {
     if (status === 'Đã kích hoạt') {
         return <span className="status-badge status-completed">{status}</span>;
     }
     return <span className="status-badge status-pending">{status}</span>;
 };
+
 
 const UsersPage = () => {
     const [allUsers, setAllUsers] = useState([]);
@@ -54,6 +57,13 @@ const UsersPage = () => {
     const [userToEdit, setUserToEdit] = useState(null);
     const [presenceData, setPresenceData] = useState({});
 
+    // --- BẮT ĐẦU THAY ĐỔI 2: Tính toán các chỉ số thống kê ---
+    const stats = useMemo(() => {
+        const totalUsers = allUsers.length;
+        const onlineUsers = Object.values(presenceData).filter(status => status && status.isOnline).length;
+        return { totalUsers, onlineUsers };
+    }, [allUsers, presenceData]);
+
     // Lắng nghe trạng thái hoạt động từ Realtime Database
     useEffect(() => {
         const statusRef = ref(rtdb, 'status/');
@@ -62,7 +72,7 @@ const UsersPage = () => {
             setPresenceData(data || {});
         });
 
-        return () => unsubscribe(); // Hủy lắng nghe khi component unmount
+        return () => unsubscribe();
     }, []);
 
     // Tải và hợp nhất dữ liệu từ Firestore
@@ -154,6 +164,22 @@ const UsersPage = () => {
                     <FiPlus style={{ marginRight: '5px' }} />
                     Thêm Email
                 </button>
+            </div>
+
+            {/* --- BẮT ĐẦU THAY ĐỔI 3: Thêm khu vực thống kê --- */}
+            <div className="stats-grid" style={{ marginBottom: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+                <StatCard 
+                    icon={<FiUsers />} 
+                    title="Tổng số User" 
+                    value={loading ? '...' : stats.totalUsers} 
+                    isLoading={loading} 
+                />
+                <StatCard 
+                    icon={<FiWifi />} 
+                    title="Đang Online" 
+                    value={loading ? '...' : stats.onlineUsers} 
+                    isLoading={loading} 
+                />
             </div>
       
             <p>Đây là danh sách các tài khoản được phép đăng nhập bằng tài khoản Google và trạng thái hoạt động của họ.</p>

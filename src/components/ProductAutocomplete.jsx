@@ -1,12 +1,15 @@
 // src/components/ProductAutocomplete.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// --- BẮT ĐẦU THAY ĐỔI 1: Import thêm forwardRef, useImperativeHandle ---
+import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, getDocs, query, orderBy, documentId } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import styles from './Autocomplete.module.css';
 import { FiChevronDown } from 'react-icons/fi';
 
-const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
+// --- BẮT ĐẦU THAY ĐỔI 2: Bọc component bằng forwardRef ---
+const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange }, ref) => {
     const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
@@ -18,6 +21,14 @@ const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
     const containerRef = useRef(null);
     const inputRef = useRef(null);
     const suggestionsRef = useRef(null);
+
+    // --- BẮT ĐẦU THAY ĐỔI 3: Expose hàm focus cho component cha ---
+    useImperativeHandle(ref, () => ({
+        focus: () => {
+            inputRef.current.focus();
+        }
+    }));
+    // --- KẾT THÚC THAY ĐỔI 3 ---
 
     useEffect(() => {
         setInputValue(value);
@@ -153,9 +164,10 @@ const ProductAutocomplete = ({ value, onSelect, onBlur, onChange }) => {
                 onFocus={handleInputChange}
             />
             <FiChevronDown className={styles.arrowIcon} />
+            
             {showSuggestions && containerRef.current && <SuggestionsPortal />}
         </div>
     );
-};
+}); // --- KẾT THÚC THAY ĐỔI 2 ---
 
 export default ProductAutocomplete;

@@ -2,7 +2,8 @@
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import SupplierAutocomplete from '../components/SupplierAutocomplete';
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+// --- LỖI ĐÃ ĐƯỢC SỬA TẠI ĐÂY ---
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
 import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
@@ -32,7 +33,6 @@ const importItemSchema = z.object({
   ),
   expiryDate: z.string().refine(val => {
       const trimmedVal = val.trim();
-      // Hợp lệ nếu: để trống, HOẶC là 'N/A', HOẶC là ngày hợp lệ
       return trimmedVal === '' || trimmedVal.toUpperCase() === 'N/A' || parseDateString(trimmedVal) !== null;
   }, {
       message: "Hạn sử dụng không hợp lệ (cần định dạng dd/mm/yyyy hoặc để trống)."
@@ -44,6 +44,7 @@ const importSlipSchema = z.object({
     supplierName: z.string().min(1, "Không tìm thấy tên nhà cung cấp."),
     items: z.array(importItemSchema).min(1, "Phiếu nhập phải có ít nhất một mặt hàng hợp lệ.")
 });
+
 
 const NewImportPage = () => {
     const {
@@ -57,11 +58,27 @@ const NewImportPage = () => {
     const [newProductModal, setNewProductModal] = useState({ isOpen: false, productId: '', index: -1 });
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const [allSuppliers, setAllSuppliers] = useState([]);
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
-    
-    const lastInputRef = useRef(null);
 
+    // Refs cho các element cần focus
+    const productInputRefs = useRef([]);
+    const lotNumberInputRefs = useRef([]);
+    const quantityInputRefs = useRef([]);
+    const addRowButtonRef = useRef(null);
+    const prevItemsLength = useRef(items.length);
+
+    // useEffect để tự động focus vào dòng mới
+    useEffect(() => {
+        if (items.length > prevItemsLength.current) {
+            const lastIndex = items.length - 1;
+            if (productInputRefs.current[lastIndex]) {
+                productInputRefs.current[lastIndex].focus();
+            }
+        }
+        prevItemsLength.current = items.length;
+    }, [items.length]);
+
+    
     const isSlipValid = useMemo(() => {
         const hasSupplier = supplierId.trim() !== '' && supplierName.trim() !== '';
         const hasValidItem = items.some(
@@ -70,35 +87,16 @@ const NewImportPage = () => {
         return hasSupplier && hasValidItem;
     }, [supplierId, supplierName, items]);
 
-    // === BẮT ĐẦU THÊM MỚI ===
-const disabledReason = useMemo(() => {
-    if (isSlipValid) return '';
-    if (!supplierId.trim() || !supplierName.trim()) {
-        return 'Vui lòng chọn Nhà Cung Cấp.';
-    }
-    if (!items.some(item => item.productId && Number(item.quantity) > 0)) {
-        return 'Vui lòng thêm ít nhất một sản phẩm với số lượng hợp lệ.';
-    }
-    return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
-}, [isSlipValid, supplierId, supplierName, items]);
-// === KẾT THÚC THÊM MỚI ===
-
-    useEffect(() => {
-        if (lastInputRef.current) {
-            lastInputRef.current.focus();
+    const disabledReason = useMemo(() => {
+        if (isSlipValid) return '';
+        if (!supplierId.trim() || !supplierName.trim()) {
+            return 'Vui lòng chọn Nhà Cung Cấp.';
         }
-    }, [items.length]);
-
-    useEffect(() => {
-        const fetchSuppliers = async () => {
-            const q = query(collection(db, "partners"), where("partnerType", "==", "supplier"));
-            const querySnapshot = await getDocs(q);
-            const supplierList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setAllSuppliers(supplierList);
-        };
-        
-        fetchSuppliers();
-    }, []);
+        if (!items.some(item => item.productId && Number(item.quantity) > 0)) {
+            return 'Vui lòng thêm ít nhất một sản phẩm với số lượng hợp lệ.';
+        }
+        return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
+    }, [isSlipValid, supplierId, supplierName, items]);
 
     const handleRemoveRow = (index) => {
         if (items.length <= 1) return;
@@ -140,64 +138,55 @@ const disabledReason = useMemo(() => {
         }
 
         return {
-    ...validationResult.data,
-    importDate: formatDate(new Date(importDate)), // Sử dụng trực tiếp importDate từ store
-    description,
-    productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
-    status: '',
-    createdAt: serverTimestamp()
-};
+            ...validationResult.data,
+            importDate: formatDate(new Date(importDate)),
+            description,
+            productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
+            status: '',
+            createdAt: serverTimestamp()
+        };
     }
-
+    
     const handleSupplierSearch = async (idToSearch = supplierId) => {
-    if (!idToSearch) {
-        setSupplier(idToSearch, '');
-        return;
-    }
+        if (!idToSearch) {
+            setSupplier(idToSearch, '');
+            return;
+        }
         try {
-            const partnerRef = doc(db, 'partners', supplierId.toUpperCase());
+            const partnerRef = doc(db, 'partners', idToSearch.toUpperCase());
             const partnerSnap = await getDoc(partnerRef);
             
             if (partnerSnap.exists() && partnerSnap.data().partnerType === 'supplier') {
-                setSupplier(supplierId, partnerSnap.data().partnerName);
+                setSupplier(idToSearch, partnerSnap.data().partnerName);
             } else {
-                setSupplier(supplierId, '');
-                toast.error(`Không tìm thấy Nhà cung cấp với mã "${supplierId}"`);
+                setSupplier(idToSearch, '');
+                toast.error(`Không tìm thấy Nhà cung cấp với mã "${idToSearch}"`);
             }
         } catch (error) {
             console.error("Lỗi khi tìm nhà cung cấp:", error);
             toast.error("Không thể đọc dữ liệu NCC. Kiểm tra Console (F12)!"); 
-            setSupplier(supplierId, '');
+            setSupplier(idToSearch, '');
         }
     };
+    
+    const handleExpiryDateBlur = (index, value) => {
+        const formattedValue = formatExpiryDate(value);
+        updateItem(index, 'expiryDate', formattedValue);
 
-    // src/pages/NewImportPage.jsx
-
-const handleExpiryDateBlur = (index, value) => {
-    // 1. Luôn định dạng lại chuỗi người dùng nhập để đảm bảo tính nhất quán
-    const formattedValue = formatExpiryDate(value);
-    updateItem(index, 'expiryDate', formattedValue);
-
-    // 2. Nếu giá trị sau khi định dạng là rỗng hoặc "N/A" thì không cần cảnh báo
-    if (!formattedValue || formattedValue.toUpperCase() === 'N/A') {
-        return;
-    }
-
-    // 3. Chuyển chuỗi đã định dạng thành đối tượng Date để so sánh
-    const expiryDateObject = parseDateString(formattedValue);
-
-    // 4. Nếu là một ngày hợp lệ, tiến hành so sánh
-    if (expiryDateObject) {
-        const today = new Date();
-        // Đặt giờ, phút, giây về 0 để chỉ so sánh ngày, không so sánh thời gian
-        today.setHours(0, 0, 0, 0); 
-
-        // 5. Nếu ngày hết hạn nhỏ hơn ngày hôm nay, hiển thị cảnh báo
-        if (expiryDateObject < today) {
-            toast.warn(`Cảnh báo: Hạn sử dụng "${formattedValue}" của mặt hàng ở dòng ${index + 1} đã ở trong quá khứ.`);
+        if (!formattedValue || formattedValue.toUpperCase() === 'N/A') {
+            return;
         }
-    }
-};
+
+        const expiryDateObject = parseDateString(formattedValue);
+
+        if (expiryDateObject) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); 
+            if (expiryDateObject < today) {
+                toast.warn(`Cảnh báo: Hạn sử dụng "${formattedValue}" của mặt hàng ở dòng ${index + 1} đã ở trong quá khứ.`);
+            }
+        }
+    };
 
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
@@ -214,8 +203,10 @@ const handleExpiryDateBlur = (index, value) => {
             if (!querySnapshot.empty) {
                 const existingLotData = querySnapshot.docs[0].data();
                 handleLotCheckResult(index, existingLotData, true);
+                setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
             } else {
                 handleLotCheckResult(index, null, false);
+                setNewLotModal({ isOpen: true, index: index });
             }
         } catch (error) {
             console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
@@ -225,27 +216,42 @@ const handleExpiryDateBlur = (index, value) => {
     const handleProductSearch = async (index, productOrId) => {
         if (!productOrId) return;
 
+        let productData = null;
         if (typeof productOrId === 'object' && productOrId !== null) {
-            handleProductSearchResult(index, productOrId, true);
-            updateItem(index, 'productId', productOrId.id);
-            return;
+            productData = productOrId;
+        } else {
+            const productId = String(productOrId).trim().toUpperCase();
+            if (!productId) return;
+            try {
+                const productRef = doc(db, 'products', productId);
+                const productSnap = await getDoc(productRef);
+                if (productSnap.exists()) {
+                    productData = { id: productSnap.id, ...productSnap.data() };
+                }
+            } catch (error) {
+                console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+                toast.error("Lỗi khi tìm kiếm sản phẩm!");
+            }
         }
 
-        const productId = String(productOrId).trim().toUpperCase();
-        if (!productId) return;
+        handleProductSearchResult(index, productData, !!productData);
+        if (productData) {
+            updateItem(index, 'productId', productData.id);
+            setTimeout(() => lotNumberInputRefs.current[index]?.focus(), 0);
+        }
+    };
 
-        try {
-            const productRef = doc(db, 'products', productId);
-            const productSnap = await getDoc(productRef);
+    const handleNewLotDeclared = (expiry) => {
+        const { index } = newLotModal;
+        declareNewLot(index, expiry);
+        setNewLotModal({ isOpen: false, index: -1 });
+        setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
+    };
 
-            if (productSnap.exists()) {
-                handleProductSearchResult(index, { id: productSnap.id, ...productSnap.data() }, true);
-            } else {
-                handleProductSearchResult(index, null, false);
-            }
-        } catch (error) {
-            console.error("Lỗi khi tìm kiếm sản phẩm:", error);
-            toast.error("Lỗi khi tìm kiếm sản phẩm!");
+    const handleQuantityKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addRowButtonRef.current?.focus();
         }
     };
 
@@ -298,7 +304,7 @@ const handleExpiryDateBlur = (index, value) => {
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
-                    supplier: slipData.supplierName,
+                    supplierName: slipData.supplierName,
                 };
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
@@ -350,7 +356,7 @@ const handleExpiryDateBlur = (index, value) => {
                     productName={items[newLotModal.index].productName}
                     lotNumber={items[newLotModal.index].lotNumber}
                     onClose={() => setNewLotModal({ isOpen: false, index: -1 })}
-                    onSave={(expiry) => declareNewLot(newLotModal.index, expiry)}
+                    onSave={handleNewLotDeclared}
                 />
             )}
 
@@ -358,34 +364,31 @@ const handleExpiryDateBlur = (index, value) => {
             <div className="form-section">
                 <div className="form-row">
                     <div className="form-group">
-            <label>Ngày nhập</label>
-            <input 
-                type="text" 
-                value={formatDate(new Date())} 
-                readOnly 
-                style={{backgroundColor: '#f0f0f0'}} 
-            />
-        </div>
+                        <label>Ngày nhập</label>
+                        <input 
+                            type="text" 
+                            value={formatDate(new Date())} 
+                            readOnly 
+                            style={{backgroundColor: '#f0f0f0'}} 
+                        />
+                    </div>
                     <div className="form-group" style={{ flex: 2 }}>
-        <label>Nhà Cung Cấp (*)</label>
-        <SupplierAutocomplete
-        value={supplierName || supplierId}
-        onSelect={({ id, name }) => {
-            setSupplier(id, name);
-            // Nếu người dùng chỉ gõ mà chưa chọn, ta cập nhật mã NCC bằng text họ gõ
-            if (!id && name) { 
-                setSupplier(name, '');
-            }
-        }}
-        // Thêm prop onBlur để chỉ tìm kiếm khi người dùng bấm ra ngoài
-        onBlur={() => {
-            // Chỉ tìm kiếm nếu chưa có mã NCC được chọn từ danh sách
-            if (!supplierId && supplierName) {
-                handleSupplierSearch(supplierName);
-            }
-        }}
-    />
-</div>
+                        <label>Nhà Cung Cấp (*)</label>
+                        <SupplierAutocomplete
+                            value={supplierName || supplierId}
+                            onSelect={({ id, name }) => {
+                                setSupplier(id, name);
+                                if (!id && name) { 
+                                    setSupplier(name, '');
+                                }
+                            }}
+                            onBlur={() => {
+                                if (!supplierId && supplierName) {
+                                    handleSupplierSearch(supplierName);
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Diễn giải</label>
@@ -410,6 +413,7 @@ const handleExpiryDateBlur = (index, value) => {
                     <React.Fragment key={item.id}>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <ProductAutocomplete
+                                ref={el => productInputRefs.current[index] = el}
                                 value={item.productId}
                                 onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
                                 onSelect={(product) => handleProductSearch(index, product)}
@@ -428,6 +432,7 @@ const handleExpiryDateBlur = (index, value) => {
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                             <input
+                                ref={el => lotNumberInputRefs.current[index] = el}
                                 type="text"
                                 value={item.lotNumber}
                                 onChange={e => updateItem(index, 'lotNumber', e.target.value)}
@@ -459,21 +464,23 @@ const handleExpiryDateBlur = (index, value) => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            value={focusedInputIndex === index ? item.quantity : formatNumber(item.quantity)}
-                            onFocus={() => setFocusedInputIndex(index)}
-                            onBlur={() => setFocusedInputIndex(null)}
-                            onChange={e => {
-                                const rawValue = e.target.value;
-                                const parsedValue = rawValue.replace(',', '.');
-                                if (/^\d*\.?\d*$/.test(parsedValue) || parsedValue === '') {
-                                    updateItem(index, 'quantity', parsedValue);
-                                }
-                            }}
-                        />
-                    </div>
+                            <input
+                                ref={el => quantityInputRefs.current[index] = el}
+                                type="text"
+                                inputMode="numeric"
+                                value={focusedInputIndex === index ? item.quantity : formatNumber(item.quantity)}
+                                onFocus={() => setFocusedInputIndex(index)}
+                                onBlur={() => setFocusedInputIndex(null)}
+                                onKeyDown={handleQuantityKeyDown}
+                                onChange={e => {
+                                    const rawValue = e.target.value;
+                                    const parsedValue = rawValue.replace(',', '.');
+                                    if (/^\d*\.?\d*$/.test(parsedValue) || parsedValue === '') {
+                                        updateItem(index, 'quantity', parsedValue);
+                                    }
+                                }}
+                            />
+                        </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
                         <div className="grid-cell">
@@ -490,7 +497,7 @@ const handleExpiryDateBlur = (index, value) => {
                 ))}
             </div>
 
-            <button onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
+            <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             
             <div className="page-actions">
                 <button 
@@ -511,7 +518,7 @@ const handleExpiryDateBlur = (index, value) => {
                     {isSaving ? 'Đang xử lý...' : 'Nhập Kho Trực Tiếp'}
                 </button>
             </div>
-        </div> // <-- Đây là thẻ </div> đóng lại toàn bộ trang
+        </div>
     );
 };
 
