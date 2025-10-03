@@ -1,40 +1,50 @@
 // src/components/AddNewLotModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
-// --- BẮT ĐẦU THAY ĐỔI 1: Cập nhật Schema Validation ---
-// Cho phép chuỗi rỗng, chỉ validate khi có giá trị
 const newLotSchema = z.object({
-    expiryDate: z.string().refine(val => val.trim() === '' || parseDateString(val) !== null, {
+    expiryDate: z.string().refine(val => val.trim() === '' || 
+    parseDateString(val) !== null, {
         message: "Hạn Sử Dụng không hợp lệ (cần định dạng dd/mm/yyyy)."
     })
 });
-// --- KẾT THÚC THAY ĐỔI 1 ---
 
 const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) => {
     const [expiryDate, setExpiryDate] = useState('');
+    const confirmButtonRef = useRef(null);
 
     const handleSave = () => {
-        const validationResult = newLotSchema.safeParse({ expiryDate });
+        // --- THAY ĐỔI 1: Đảm bảo dữ liệu được định dạng trước khi lưu ---
+        const finalFormattedValue = formatExpiryDate(expiryDate);
+        
+        const validationResult = newLotSchema.safeParse({ expiryDate: finalFormattedValue });
         if (!validationResult.success) {
             toast.warn(validationResult.error.issues[0].message);
+            setExpiryDate(finalFormattedValue); // Cập nhật UI với định dạng đúng nếu có lỗi
             return;
         }
         
-        // Chuyển chuỗi rỗng về cho component cha xử lý
-        onSave(expiryDate);
+        onSave(finalFormattedValue);
         onClose();
     };
 
-    const handleExpiryDateBlur = (e) => {
-        setExpiryDate(formatExpiryDate(e.target.value));
+    // --- THAY ĐỔI 2: Tạo hàm xử lý định dạng chung ---
+    const handleFormatting = (value) => {
+        const formattedValue = formatExpiryDate(value);
+        setExpiryDate(formattedValue);
     };
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
-            handleSave();
+            e.preventDefault(); 
+            // Định dạng giá trị hiện tại trong ô input
+            handleFormatting(e.target.value);
+            // Di chuyển con trỏ đến nút "Xác nhận"
+            if (confirmButtonRef.current) {
+                confirmButtonRef.current.focus();
+            }
         }
     };
 
@@ -51,14 +61,14 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
                     <input type="text" value={lotNumber} readOnly disabled />
                 </div>
                 <div className="form-group">
-                    {/* --- BẮT ĐẦU THAY ĐỔI 2: Bỏ dấu (*) ở nhãn --- */}
                     <label>Hạn Sử Dụng (dd/mm/yyyy)</label>
-                    {/* --- KẾT THÚC THAY ĐỔI 2 --- */}
                     <input
                         type="text"
                         value={expiryDate}
+                        // --- THAY ĐỔI 3: Trả onChange về trạng thái đơn giản ---
                         onChange={(e) => setExpiryDate(e.target.value)}
-                        onBlur={handleExpiryDateBlur}
+                        // Thêm lại onBlur để định dạng khi rời khỏi ô
+                        onBlur={(e) => handleFormatting(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Nhập HSD cho lô mới..."
                         autoFocus
@@ -67,7 +77,14 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
                 
                 <div className="modal-actions">
                     <button type="button" onClick={onClose} className="btn-secondary">Hủy</button>
-                    <button type="button" onClick={handleSave} className="btn-primary">Xác nhận</button>
+                    <button 
+                        ref={confirmButtonRef}
+                        type="button" 
+                        onClick={handleSave} 
+                        className="btn-primary"
+                    >
+                        Xác nhận
+                    </button>
                 </div>
             </div>
         </div>

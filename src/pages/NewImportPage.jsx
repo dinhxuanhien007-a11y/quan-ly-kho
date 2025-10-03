@@ -186,6 +186,7 @@ const NewImportPage = () => {
         }
     };
 
+    // --- BẮT ĐẦU THAY ĐỔI: Cập nhật hàm checkExistingLot ---
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
         if (!currentItem.productId || !currentItem.lotNumber) return;
@@ -199,8 +200,22 @@ const NewImportPage = () => {
             const querySnapshot = await getDocs(q);
             
             if (!querySnapshot.empty) {
-                const existingLotData = querySnapshot.docs[0].data();
-                handleLotCheckResult(index, existingLotData, true);
+                // Lấy dữ liệu của lần nhập đầu tiên để có HSD
+                const baseLotData = querySnapshot.docs[0].data();
+                
+                // Cộng dồn số lượng tồn từ TẤT CẢ các lần nhập
+                let totalQuantityRemaining = 0;
+                querySnapshot.forEach(doc => {
+                    totalQuantityRemaining += doc.data().quantityRemaining;
+                });
+
+                // Tạo một đối tượng dữ liệu tổng hợp
+                const aggregatedLotData = {
+                    ...baseLotData,
+                    quantityRemaining: totalQuantityRemaining
+                };
+                
+                handleLotCheckResult(index, aggregatedLotData, true);
                 setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
             } else {
                 handleLotCheckResult(index, null, false);
@@ -210,6 +225,7 @@ const NewImportPage = () => {
             console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
         }
     };
+    // --- KẾT THÚC THAY ĐỔI ---
 
     const handleProductSearch = async (index, productOrId) => {
         if (!productOrId) return;
@@ -246,11 +262,9 @@ const NewImportPage = () => {
         setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
     };
 
-    // --- BẮT ĐẦU THAY ĐỔI 1: Thêm các hàm xử lý onKeyDown ---
     const handleLotNumberKeyDown = (e, index) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            // Giả lập hành vi blur để trigger hàm checkExistingLot
             e.target.blur(); 
         }
     };
@@ -261,7 +275,6 @@ const NewImportPage = () => {
             addRowButtonRef.current?.focus();
         }
     };
-    // --- KẾT THÚC THAY ĐỔI 1 ---
 
     const handleNewProductCreated = (newData) => {
         const { index } = newProductModal;
@@ -439,7 +452,6 @@ const NewImportPage = () => {
                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            {/* --- BẮT ĐẦU THAY ĐỔI 2: Gán ref và onKeyDown cho ô Số lô --- */}
                             <input
                                 ref={el => lotNumberInputRefs.current[index] = el}
                                 type="text"
@@ -474,7 +486,6 @@ const NewImportPage = () => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
-                            {/* --- BẮT ĐẦU THAY ĐỔI 3: Gán ref và onKeyDown cho ô Số lượng --- */}
                             <input
                                 ref={el => quantityInputRefs.current[index] = el}
                                 type="text"
@@ -508,7 +519,6 @@ const NewImportPage = () => {
                 ))}
             </div>
 
-            {/* --- BẮT ĐẦU THAY ĐỔI 4: Gán ref cho nút Thêm dòng --- */}
             <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
             
             <div className="page-actions">

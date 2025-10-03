@@ -22,19 +22,16 @@ const QuickStockLookup = () => {
     try {
       const trimmedTerm = term.trim().toUpperCase();
 
-      // Truy vấn 1: Lấy danh sách các lô hàng khớp với Mã hàng
       const lotsByProductIdQuery = query(
         collection(db, 'inventory_lots'),
         where('productId', '==', trimmedTerm)
       );
 
-      // Truy vấn 2: Lấy danh sách các lô hàng khớp với Số lô
       const lotsByLotNumberQuery = query(
         collection(db, 'inventory_lots'),
         where('lotNumber', '==', trimmedTerm)
       );
 
-      // Chạy cả hai truy vấn song song
       const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
         getDocs(lotsByProductIdQuery),
         getDocs(lotsByLotNumberQuery)
@@ -53,33 +50,41 @@ const QuickStockLookup = () => {
         const productSnap = await getDoc(productDocRef);
         const productInfo = productSnap.exists() ? productSnap.data() : null;
 
-        // === BẮT ĐẦU LOGIC GỘP LÔ HÀNG ===
-            const lotAggregator = new Map();
+        const lotAggregator = new Map();
+        for (const lot of uniqueLots) {
+            if (lot.quantityRemaining <= 0) continue;
 
-            for (const lot of uniqueLots) {
-                if (lot.quantityRemaining <= 0) continue; // Bỏ qua lô đã hết hàng
-
-                const lotKey = lot.lotNumber; // Gộp theo số lô
-
-                if (lotAggregator.has(lotKey)) {
-                    // Nếu lô đã tồn tại, cộng dồn số lượng
-                    const existingLot = lotAggregator.get(lotKey);
-                    existingLot.quantityRemaining += lot.quantityRemaining;
-                } else {
-                    // Nếu lô chưa có, tạo mới một bản sao để tránh thay đổi dữ liệu gốc
-                    lotAggregator.set(lotKey, { ...lot });
-                }
+            const lotKey = lot.lotNumber;
+            if (lotAggregator.has(lotKey)) {
+                const existingLot = lotAggregator.get(lotKey);
+                existingLot.quantityRemaining += lot.quantityRemaining;
+            } else {
+                lotAggregator.set(lotKey, { ...lot });
             }
+        }
 
-            const aggregatedLots = Array.from(lotAggregator.values());
-            // === KẾT THÚC LOGIC GỘP LÔ HÀNG ===
+        const aggregatedLots = Array.from(lotAggregator.values());
         
         const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
 
         if (productInfo) {
           setProductData({
             generalInfo: { ...productInfo, productId: productId },
-            lots: aggregatedLots.sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
+            // --- BẮT ĐẦU THAY ĐỔI LOGIC SẮP XẾP ---
+            lots: aggregatedLots.sort((a, b) => {
+                // Xử lý trường hợp không có HSD (đưa xuống cuối)
+                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+
+                // 1. Ưu tiên sắp xếp theo HSD tăng dần (date gần nhất lên trước)
+                if (dateA !== dateB) {
+                    return dateA - dateB;
+                }
+
+                // 2. Nếu HSD bằng nhau, ưu tiên sắp xếp theo số lượng tồn tăng dần (số lượng ít hơn lên trước)
+                return a.quantityRemaining - b.quantityRemaining;
+            }),
+            // --- KẾT THÚC THAY ĐỔI ---
             totalRemaining: totalRemaining
           });
         } else {

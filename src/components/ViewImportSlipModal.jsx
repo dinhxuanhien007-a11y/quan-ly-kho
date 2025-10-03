@@ -12,9 +12,6 @@ Modal.setAppElement('#root');
 const ViewImportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
 
-    // --- CÔNG CỤ CHẨN ĐOÁN ---
-    // Dòng này sẽ in ra toàn bộ dữ liệu của phiếu vào Console của trình duyệt (F12)
-    // Giúp bạn kiểm tra chính xác tên các trường dữ liệu mà code nhận được.
     console.log("Dữ liệu Phiếu Nhập được truyền vào Modal:", slip);
 
     const handleExportPDF = async () => {
@@ -39,7 +36,8 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                         <p><strong>Mã phiếu:</strong> {slip.id}</p>
                         <p><strong>Ngày nhập:</strong> {slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'Không có'}</p>
                         <p><strong>Nhà cung cấp:</strong> {slip.supplierName}</p>
-                        <p><strong>Ghi chú:</strong> {slip.notes || 'Không có'}</p>
+                        {/* --- THAY ĐỔI TẠI ĐÂY: Sửa slip.notes thành slip.description --- */}
+                        <p><strong>Ghi chú:</strong> {slip.description || 'Không có'}</p>
                     </div>
                     <div className="table-container">
                         <table className="products-table">
@@ -64,7 +62,6 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.lotNumber}</td>
                                         <td>{item.expiryDate}</td>
                                         <td>{item.unit}</td>
-                                        {/* SỬA LỖI: Sử dụng optional chaining để hiển thị an toàn */}
                                         <td>{item?.specification || ''}</td>
                                         <td style={{ textAlign: 'center' }}>{formatNumber(item?.quantity)}</td>
                                         <td>{item.notes || ''}</td>

@@ -12,7 +12,6 @@ Modal.setAppElement('#root');
 const ViewExportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
 
-    // --- CÔNG CỤ CHẨN ĐOÁN ---
     console.log("Dữ liệu Phiếu Xuất được truyền vào Modal:", slip);
     
     const handleExportPDF = async () => {
@@ -37,7 +36,8 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                         <p><strong>Mã phiếu:</strong> {slip.id}</p>
                         <p><strong>Ngày xuất:</strong> {slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'Không có'}</p>
                         <p><strong>Khách hàng:</strong> {slip.customer || ''}</p>
-                        <p><strong>Ghi chú:</strong> {slip.notes || 'Không có'}</p>
+                        {/* --- THAY ĐỔI TẠI ĐÂY: Sửa slip.notes thành slip.description --- */}
+                        <p><strong>Ghi chú:</strong> {slip.description || 'Không có'}</p>
                     </div>
                     <div className="table-container">
                         <table className="products-table">
@@ -62,7 +62,6 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.lotNumber}</td>
                                         <td>{item.expiryDate}</td>
                                         <td>{item.unit}</td>
-                                        {/* SỬA LỖI: Sử dụng optional chaining để hiển thị an toàn */}
                                         <td>{item?.specification || ''}</td>
                                         <td style={{ textAlign: 'center' }}>
                                             {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
