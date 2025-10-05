@@ -9,6 +9,10 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const logger = require("firebase-functions/logger");
 
+// --- ĐỊNH NGHĨA VÙNG CHUNG ---
+const ASIA_REGION = "asia-southeast1";
+// --- KẾT THÚC ĐỊNH NGHĨA VÙNG ---
+
 // Khởi tạo các dịch vụ của Firebase
 initializeApp();
 const db = getFirestore();
@@ -34,13 +38,13 @@ function getTodayInVietnam() {
 }
 
 // =================================================================
-// CÁC HÀM QUẢN LÝ USER VÀ QUYỀN (GIỮ NGUYÊN)
+// CÁC HÀM QUẢN LÝ USER VÀ QUYỀN (CHUYỂN VÙNG SANG ASIA)
 // =================================================================
 
 /**
  * Hàm 1: Được gọi bởi Owner để thêm một email vào danh sách được phép.
  */
-exports.addUserToAllowlist = onCall(async (request) => {
+exports.addUserToAllowlist = onCall({ region: ASIA_REGION }, async (request) => {
   if (request.auth?.token.role !== "owner") {
     throw new HttpsError(
       "permission-denied",
@@ -70,7 +74,7 @@ exports.addUserToAllowlist = onCall(async (request) => {
 /**
  * Hàm 2: Được gọi khi người dùng đăng nhập bằng Google lần đầu tiên.
  */
-exports.processNewGoogleUser = onCall(async (request) => {
+exports.processNewGoogleUser = onCall({ region: ASIA_REGION }, async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Yêu cầu phải được xác thực.");
   }
@@ -117,7 +121,7 @@ exports.processNewGoogleUser = onCall(async (request) => {
 /**
  * Hàm 3: Xóa người dùng khỏi hệ thống.
  */
-exports.deleteUserAndAllowlist = onCall(async (request) => {
+exports.deleteUserAndAllowlist = onCall({ region: ASIA_REGION }, async (request) => {
     if (request.auth?.token.role !== 'owner') {
         throw new HttpsError('permission-denied', 'Chỉ owner mới có quyền.');
     }
@@ -148,7 +152,7 @@ exports.deleteUserAndAllowlist = onCall(async (request) => {
 /**
  * Hàm 4: Cập nhật vai trò của một user.
  */
-exports.updateAllowlistRole = onCall(async (request) => {
+exports.updateAllowlistRole = onCall({ region: ASIA_REGION }, async (request) => {
   if (request.auth?.token.role !== "owner") {
     throw new HttpsError( "permission-denied", "Chỉ owner mới có quyền thực hiện chức năng này.");
   }
@@ -187,7 +191,7 @@ exports.updateAllowlistRole = onCall(async (request) => {
 
 
 // =================================================================
-// CÁC HÀM CẢNH BÁO HÀNG HẾT HẠN (GIỮ NGUYÊN)
+// CÁC HÀM CẢNH BÁO HÀNG HẾT HẠN (CHUYỂN VÙNG SANG ASIA)
 // =================================================================
 
 /**
@@ -196,6 +200,7 @@ exports.updateAllowlistRole = onCall(async (request) => {
 exports.checkExpiredLots = onSchedule({
   schedule: "every day 01:00",
   timeZone: "Asia/Ho_Chi_Minh",
+  region: ASIA_REGION // <-- ĐÃ THÊM region
 }, async (event) => {
   logger.info("Bắt đầu quét các lô hàng hết hạn...");
 
@@ -250,7 +255,7 @@ exports.checkExpiredLots = onSchedule({
 /**
  * Hàm 6: Cloud Function được gọi để xác nhận đã xử lý một cảnh báo.
  */
-exports.confirmExpiryNotification = onCall(async (request) => {
+exports.confirmExpiryNotification = onCall({ region: ASIA_REGION }, async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Bạn phải đăng nhập để thực hiện hành động này.");
   }
@@ -288,16 +293,17 @@ exports.confirmExpiryNotification = onCall(async (request) => {
 
 
 // =================================================================
-// === HÀM NÂNG CẤP: TỰ ĐỘNG ĐỒNG BỘ PRODUCT_SUMMARIES ===
+// === HÀM TỰ ĐỘNG ĐỒNG BỘ PRODUCT_SUMMARIES (CHUYỂN VÙNG SANG ASIA) ===
 // =================================================================
 
 /**
- * Hàm 7 (Mới): Tự động kích hoạt mỗi khi có một document trong 'inventory_lots'
+ * Hàm 7: Tự động kích hoạt mỗi khi có một document trong 'inventory_lots'
  * được TẠO, SỬA, hoặc XÓA.
- * Nhiệm vụ là tính toán lại tổng tồn kho và HSD gần nhất cho sản phẩm liên quan,
- * sau đó cập nhật hoặc xóa document trong 'product_summaries'.
  */
-exports.updateProductSummary = onDocumentWritten("/inventory_lots/{lotId}", async (event) => {
+exports.updateProductSummary = onDocumentWritten({
+    document: "/inventory_lots/{lotId}",
+    region: ASIA_REGION // <-- ĐÃ THÊM region
+}, async (event) => {
   const beforeData = event.data.before.data();
   const afterData = event.data.after.data();
 
@@ -371,10 +377,86 @@ exports.updateProductSummary = onDocumentWritten("/inventory_lots/{lotId}", asyn
   return null;
 });
 
-// Dán đoạn mã này vào cuối file functions/index.js
+// =================================================================
+// === HÀM LƯU TRỮ DỮ LIỆU HÀNG THÁNG (ARCHIVE MONTHLY DATA) ===
+// =================================================================
+
+/**
+ * Hàm 8: Cloud Function chạy tự động để di chuyển phiếu nhập/xuất đã hoàn thành 
+ * của tháng trước sang collection lưu trữ.
+ * Cần sử dụng Batch Write và Recursive Call cho dữ liệu lớn.
+ */
+exports.archiveMonthlyData = onSchedule({
+    schedule: "1 0 1 * *", // Chạy lúc 00:01 sáng ngày 1 đầu tháng
+    timeZone: "Asia/Ho_Chi_Minh", 
+    region: ASIA_REGION // BẮT BUỘC
+}, async (event) => {
+    logger.info("BẮT ĐẦU LƯU TRỮ dữ liệu tháng trước...");
+    
+    // --- BƯỚC 1: XÁC ĐỊNH PHẠM VI DỮ LIỆU ---
+    // Tính toán phạm vi Timestamp của tháng trước theo múi giờ Việt Nam
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthEnd = new Date(currentMonthStart.getTime() - 1);
+    const lastMonthStart = new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), 1);
+
+    logger.info(`Lưu trữ dữ liệu từ: ${lastMonthStart.toISOString()} đến ${lastMonthEnd.toISOString()}`);
+    
+    const collectionsToArchive = ['import_tickets', 'export_tickets'];
+    let totalArchivedCount = 0;
+
+    for (const collectionName of collectionsToArchive) {
+        let lastDoc = null;
+        let batchCount = 0;
+        
+        while (true) {
+            let query = db.collection(collectionName)
+                .where('status', '==', 'completed')
+                .where('createdAt', '>=', lastMonthStart)
+                .where('createdAt', '<=', lastMonthEnd)
+                .orderBy('createdAt')
+                .limit(499); // Giới hạn dưới 500 để an toàn cho Batch
+
+            if (lastDoc) {
+                query = query.startAfter(lastDoc);
+            }
+
+            const snapshot = await query.get();
+            if (snapshot.empty) break;
+
+            const archiveBatch = db.batch();
+            const archiveCollectionRef = db.collection(`archive_${collectionName}`);
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                
+                // 1. Ghi vào collection lưu trữ (archive_...)
+                archiveBatch.set(archiveCollectionRef.doc(doc.id), data);
+                
+                // 2. Xóa khỏi collection gốc
+                archiveBatch.delete(db.collection(collectionName).doc(doc.id));
+
+                lastDoc = doc;
+            });
+
+            await archiveBatch.commit();
+            totalArchivedCount += snapshot.size;
+            batchCount++;
+            
+            logger.log(`Hoàn tất Batch ${batchCount} cho ${collectionName}: Đã lưu trữ ${snapshot.size} phiếu.`);
+            
+            // Nếu snapshot.size < limit, có thể kết thúc hoặc đợi một chút (nếu muốn chia nhỏ công việc nhiều hơn)
+            if (snapshot.size < 499) break;
+        }
+    }
+
+    logger.info(`KẾT THÚC LƯU TRỮ. Tổng cộng đã lưu trữ ${totalArchivedCount} phiếu.`);
+    return null;
+});
+
 
 // =================================================================
-// === HÀM MỚI: NHẬN DẠNG GIỌNG NÓI (SPEECH-TO-TEXT) ===
+// === HÀM NHẬN DẠNG GIỌNG NÓI (SPEECH-TO-TEXT) (GIỮ NGUYÊN ASIA) ===
 // =================================================================
 const speech = require("@google-cloud/speech");
 
@@ -382,13 +464,10 @@ const speech = require("@google-cloud/speech");
 const speechClient = new speech.SpeechClient();
 
 /**
- * Hàm 8 (Mới): Cloud Function được gọi từ client để nhận dạng giọng nói.
- * Nhận một chuỗi audio base64, gửi đến Google Speech-to-Text API,
- * và trả về kết quả dưới dạng văn bản.
+ * Hàm 9: Cloud Function được gọi từ client để nhận dạng giọng nói.
  */
 exports.transcribeAudio = onCall({
-    region: "asia-southeast1", // Chọn khu vực gần Việt Nam để có tốc độ tốt nhất
-    // secrets: ["GOOGLE_APPLICATION_CREDENTIALS"] // Nếu cần xác thực phức tạp hơn
+    region: ASIA_REGION // <-- ĐÃ ĐƯỢC CHỈ ĐỊNH
 }, async (request) => {
     // Lấy dữ liệu âm thanh dưới dạng base64 từ client
     const audioBytes = request.data.audioData;
@@ -408,8 +487,8 @@ exports.transcribeAudio = onCall({
     const config = {
         encoding: "WEBM_OPUS", // Định dạng audio phổ biến trên web khi ghi âm từ trình duyệt
         sampleRateHertz: 48000, // Tần số mẫu chuẩn
-        languageCode: "vi-VN",   // Ngôn ngữ Tiếng Việt
-        model: "default",      // Mô hình nhận dạng tiêu chuẩn
+        languageCode: "vi-VN",   // Ngôn ngữ Tiếng Việt
+        model: "default",      // Mô hình nhận dạng tiêu chuẩn
     };
 
     const apiRequest = {

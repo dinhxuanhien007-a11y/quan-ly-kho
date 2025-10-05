@@ -1,4 +1,4 @@
-﻿--- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
+﻿--- FILE: D:\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
 
 
 // src/components/AddAllowedUserModal.jsx
@@ -70,46 +70,56 @@ export default AddAllowedUserModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddNewLotModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddNewLotModal.jsx ---
 
 
 // src/components/AddNewLotModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { formatExpiryDate, parseDateString } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
-// --- Báº®T Äáº¦U THAY Äá»”I 1: Cáº­p nháº­t Schema Validation ---
-// Cho phÃ©p chuá»—i rá»—ng, chá»‰ validate khi cÃ³ giÃ¡ trá»‹
 const newLotSchema = z.object({
-    expiryDate: z.string().refine(val => val.trim() === '' || parseDateString(val) !== null, {
+    expiryDate: z.string().refine(val => val.trim() === '' || 
+    parseDateString(val) !== null, {
         message: "Háº¡n Sá»­ Dá»¥ng khÃ´ng há»£p lá»‡ (cáº§n Ä‘á»‹nh dáº¡ng dd/mm/yyyy)."
     })
 });
-// --- Káº¾T THÃšC THAY Äá»”I 1 ---
 
 const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) => {
     const [expiryDate, setExpiryDate] = useState('');
+    const confirmButtonRef = useRef(null);
 
     const handleSave = () => {
-        const validationResult = newLotSchema.safeParse({ expiryDate });
+        // --- THAY Äá»”I 1: Äáº£m báº£o dá»¯ liá»‡u Ä‘Æ°á»£c Ä‘á»‹nh dáº¡ng trÆ°á»›c khi lÆ°u ---
+        const finalFormattedValue = formatExpiryDate(expiryDate);
+        
+        const validationResult = newLotSchema.safeParse({ expiryDate: finalFormattedValue });
         if (!validationResult.success) {
             toast.warn(validationResult.error.issues[0].message);
+            setExpiryDate(finalFormattedValue); // Cáº­p nháº­t UI vá»›i Ä‘á»‹nh dáº¡ng Ä‘Ãºng náº¿u cÃ³ lá»—i
             return;
         }
         
-        // Chuyá»ƒn chuá»—i rá»—ng vá» cho component cha xá»­ lÃ½
-        onSave(expiryDate);
+        onSave(finalFormattedValue);
         onClose();
     };
 
-    const handleExpiryDateBlur = (e) => {
-        setExpiryDate(formatExpiryDate(e.target.value));
+    // --- THAY Äá»”I 2: Táº¡o hÃ m xá»­ lÃ½ Ä‘á»‹nh dáº¡ng chung ---
+    const handleFormatting = (value) => {
+        const formattedValue = formatExpiryDate(value);
+        setExpiryDate(formattedValue);
     };
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
-            handleSave();
+            e.preventDefault(); 
+            // Äá»‹nh dáº¡ng giÃ¡ trá»‹ hiá»‡n táº¡i trong Ã´ input
+            handleFormatting(e.target.value);
+            // Di chuyá»ƒn con trá» Ä‘áº¿n nÃºt "XÃ¡c nháº­n"
+            if (confirmButtonRef.current) {
+                confirmButtonRef.current.focus();
+            }
         }
     };
 
@@ -126,14 +136,14 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
                     <input type="text" value={lotNumber} readOnly disabled />
                 </div>
                 <div className="form-group">
-                    {/* --- Báº®T Äáº¦U THAY Äá»”I 2: Bá» dáº¥u (*) á»Ÿ nhÃ£n --- */}
                     <label>Háº¡n Sá»­ Dá»¥ng (dd/mm/yyyy)</label>
-                    {/* --- Káº¾T THÃšC THAY Äá»”I 2 --- */}
                     <input
                         type="text"
                         value={expiryDate}
+                        // --- THAY Äá»”I 3: Tráº£ onChange vá» tráº¡ng thÃ¡i Ä‘Æ¡n giáº£n ---
                         onChange={(e) => setExpiryDate(e.target.value)}
-                        onBlur={handleExpiryDateBlur}
+                        // ThÃªm láº¡i onBlur Ä‘á»ƒ Ä‘á»‹nh dáº¡ng khi rá»i khá»i Ã´
+                        onBlur={(e) => handleFormatting(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Nháº­p HSD cho lÃ´ má»›i..."
                         autoFocus
@@ -142,7 +152,14 @@ const AddNewLotModal = ({ productId, productName, lotNumber, onClose, onSave }) 
                 
                 <div className="modal-actions">
                     <button type="button" onClick={onClose} className="btn-secondary">Há»§y</button>
-                    <button type="button" onClick={handleSave} className="btn-primary">XÃ¡c nháº­n</button>
+                    <button 
+                        ref={confirmButtonRef}
+                        type="button" 
+                        onClick={handleSave} 
+                        className="btn-primary"
+                    >
+                        XÃ¡c nháº­n
+                    </button>
                 </div>
             </div>
         </div>
@@ -153,7 +170,7 @@ export default AddNewLotModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
 
 
 // src/components/AddNewProductAndLotModal.jsx
@@ -336,7 +353,7 @@ export default AddNewProductAndLotModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddPartnerModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddPartnerModal.jsx ---
 
 
 // src/components/AddPartnerModal.jsx
@@ -430,7 +447,7 @@ export default AddPartnerModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddProductModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddProductModal.jsx ---
 
 
 // src/components/AddProductModal.jsx
@@ -583,7 +600,7 @@ export default AddProductModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
 
 
 // src/components/AddUnlistedItemModal.jsx
@@ -741,7 +758,7 @@ export default AddUnlistedItemModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AddUserModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddUserModal.jsx ---
 
 
 // src/components/AddUserModal.jsx
@@ -861,7 +878,7 @@ export default AddUserModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\AdminLayout.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AdminLayout.jsx ---
 
 
 // src/components/AdminLayout.jsx
@@ -976,7 +993,7 @@ export default AdminLayout;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Autocomplete.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\Autocomplete.module.css ---
 
 
 /* src/components/Autocomplete.module.css */
@@ -1049,7 +1066,7 @@ export default AdminLayout;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ConfirmationModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.jsx ---
 
 
 // src/components/ConfirmationModal.jsx
@@ -1111,7 +1128,7 @@ export default React.memo(ConfirmationModal);
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
 
 
 // src/components/ConfirmationModal.test.jsx
@@ -1206,7 +1223,7 @@ describe('Component: ConfirmationModal', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
 
 
 // src/components/CreateStocktakeModal.jsx
@@ -1277,7 +1294,7 @@ export default CreateStocktakeModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\CustomerAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\CustomerAutocomplete.jsx ---
 
 
 // src/components/CustomerAutocomplete.jsx
@@ -1432,7 +1449,7 @@ export default CustomerAutocomplete;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\DateRangePresets.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\DateRangePresets.jsx ---
 
 
 // src/components/DateRangePresets.jsx
@@ -1511,7 +1528,7 @@ export default DateRangePresets;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditAllowedUserModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditAllowedUserModal.jsx ---
 
 
 // src/components/EditAllowedUserModal.jsx
@@ -1575,7 +1592,7 @@ export default EditAllowedUserModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
 
 
 // src/components/EditExportSlipModal.jsx
@@ -1880,7 +1897,7 @@ export default EditExportSlipModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
 
 
 // src/components/EditImportSlipModal.jsx
@@ -2170,7 +2187,7 @@ export default EditImportSlipModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditPartnerModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditPartnerModal.jsx ---
 
 
 // src/components/EditPartnerModal.jsx
@@ -2263,7 +2280,7 @@ export default EditPartnerModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditProductModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditProductModal.jsx ---
 
 
 // src/components/EditProductModal.jsx
@@ -2372,7 +2389,7 @@ export default EditProductModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
 
 
 // src/components/EditUserRoleModal.jsx
@@ -2444,7 +2461,7 @@ export default EditUserRoleModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ErrorBoundary.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ErrorBoundary.jsx ---
 
 
 // src/components/ErrorBoundary.jsx
@@ -2492,7 +2509,7 @@ export default ErrorBoundary;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ExpiryNotificationBanner.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ExpiryNotificationBanner.jsx ---
 
 
 // src/components/ExpiryNotificationBanner.jsx
@@ -2578,7 +2595,7 @@ export default ExpiryNotificationBanner;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ExpiryPieChart.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ExpiryPieChart.jsx ---
 
 
 import React from 'react';
@@ -2621,7 +2638,7 @@ export default ExpiryPieChart;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ExportSlipCounter.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ExportSlipCounter.jsx ---
 
 
 // src/components/ExportSlipCounter.jsx
@@ -2659,7 +2676,7 @@ export default ExportSlipCounter;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\FloatingCalculator.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingCalculator.jsx ---
 
 
 // src/components/FloatingCalculator.jsx
@@ -2811,7 +2828,7 @@ export default FloatingCalculator;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\FloatingCalculator.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingCalculator.module.css ---
 
 
 /* src/components/FloatingCalculator.module.css */
@@ -2952,7 +2969,7 @@ export default FloatingCalculator;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
 
 
 // src/components/FloatingToolsModal.jsx
@@ -3002,7 +3019,7 @@ export default FloatingToolsModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\FloatingToolsModal.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingToolsModal.module.css ---
 
 
 /* src/components/FloatingToolsModal.module.css */
@@ -3095,7 +3112,7 @@ export default FloatingToolsModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\HighlightText.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\HighlightText.jsx ---
 
 
 // src/components/HighlightText.jsx
@@ -3126,7 +3143,7 @@ export default HighlightText;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\HomePage.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\HomePage.jsx ---
 
 
 // src/components/HomePage.jsx
@@ -3166,7 +3183,7 @@ export default HomePage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
 
 
 // src/components/ImportSlipCounter.jsx
@@ -3205,7 +3222,7 @@ export default ImportSlipCounter;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\InventoryFilters.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\InventoryFilters.jsx ---
 
 
 // src/components/InventoryFilters.jsx
@@ -3286,7 +3303,7 @@ export default React.memo(InventoryFilters);
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\LoginPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\LoginPage.jsx ---
 
 
 // src/components/LoginPage.jsx
@@ -3362,7 +3379,7 @@ export default LoginPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\LoginPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\LoginPage.module.css ---
 
 
 /* src/components/LoginPage.module.css */
@@ -3428,7 +3445,7 @@ export default LoginPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
 
 
 // src/components/LotJourneyExplorer.jsx
@@ -3542,7 +3559,7 @@ export default LotJourneyExplorer;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Navbar.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\Navbar.jsx ---
 
 
 // src/components/Navbar.jsx
@@ -3668,7 +3685,7 @@ export default React.memo(Navbar);
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\NewDataNotification.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\NewDataNotification.jsx ---
 
 
 // src/components/NewDataNotification.jsx
@@ -3691,7 +3708,7 @@ export default NewDataNotification;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\PartnerAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\PartnerAutocomplete.jsx ---
 
 
 // src/components/PartnerAutocomplete.jsx
@@ -3794,7 +3811,7 @@ export default PartnerAutocomplete;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ProductAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ProductAutocomplete.jsx ---
 
 
 // src/components/ProductAutocomplete.jsx
@@ -3973,7 +3990,7 @@ export default ProductAutocomplete;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\QuickStockLookup.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\QuickStockLookup.jsx ---
 
 
 // src/components/QuickStockLookup.jsx
@@ -4000,19 +4017,16 @@ const QuickStockLookup = () => {
     try {
       const trimmedTerm = term.trim().toUpperCase();
 
-      // Truy váº¥n 1: Láº¥y danh sÃ¡ch cÃ¡c lÃ´ hÃ ng khá»›p vá»›i MÃ£ hÃ ng
       const lotsByProductIdQuery = query(
         collection(db, 'inventory_lots'),
         where('productId', '==', trimmedTerm)
       );
 
-      // Truy váº¥n 2: Láº¥y danh sÃ¡ch cÃ¡c lÃ´ hÃ ng khá»›p vá»›i Sá»‘ lÃ´
       const lotsByLotNumberQuery = query(
         collection(db, 'inventory_lots'),
         where('lotNumber', '==', trimmedTerm)
       );
 
-      // Cháº¡y cáº£ hai truy váº¥n song song
       const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
         getDocs(lotsByProductIdQuery),
         getDocs(lotsByLotNumberQuery)
@@ -4031,33 +4045,41 @@ const QuickStockLookup = () => {
         const productSnap = await getDoc(productDocRef);
         const productInfo = productSnap.exists() ? productSnap.data() : null;
 
-        // === Báº®T Äáº¦U LOGIC Gá»˜P LÃ” HÃ€NG ===
-            const lotAggregator = new Map();
+        const lotAggregator = new Map();
+        for (const lot of uniqueLots) {
+            if (lot.quantityRemaining <= 0) continue;
 
-            for (const lot of uniqueLots) {
-                if (lot.quantityRemaining <= 0) continue; // Bá» qua lÃ´ Ä‘Ã£ háº¿t hÃ ng
-
-                const lotKey = lot.lotNumber; // Gá»™p theo sá»‘ lÃ´
-
-                if (lotAggregator.has(lotKey)) {
-                    // Náº¿u lÃ´ Ä‘Ã£ tá»“n táº¡i, cá»™ng dá»“n sá»‘ lÆ°á»£ng
-                    const existingLot = lotAggregator.get(lotKey);
-                    existingLot.quantityRemaining += lot.quantityRemaining;
-                } else {
-                    // Náº¿u lÃ´ chÆ°a cÃ³, táº¡o má»›i má»™t báº£n sao Ä‘á»ƒ trÃ¡nh thay Ä‘á»•i dá»¯ liá»‡u gá»‘c
-                    lotAggregator.set(lotKey, { ...lot });
-                }
+            const lotKey = lot.lotNumber;
+            if (lotAggregator.has(lotKey)) {
+                const existingLot = lotAggregator.get(lotKey);
+                existingLot.quantityRemaining += lot.quantityRemaining;
+            } else {
+                lotAggregator.set(lotKey, { ...lot });
             }
+        }
 
-            const aggregatedLots = Array.from(lotAggregator.values());
-            // === Káº¾T THÃšC LOGIC Gá»˜P LÃ” HÃ€NG ===
+        const aggregatedLots = Array.from(lotAggregator.values());
         
         const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
 
         if (productInfo) {
           setProductData({
             generalInfo: { ...productInfo, productId: productId },
-            lots: aggregatedLots.sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
+            // --- Báº®T Äáº¦U THAY Äá»”I LOGIC Sáº®P Xáº¾P ---
+            lots: aggregatedLots.sort((a, b) => {
+                // Xá»­ lÃ½ trÆ°á»ng há»£p khÃ´ng cÃ³ HSD (Ä‘Æ°a xuá»‘ng cuá»‘i)
+                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+
+                // 1. Æ¯u tiÃªn sáº¯p xáº¿p theo HSD tÄƒng dáº§n (date gáº§n nháº¥t lÃªn trÆ°á»›c)
+                if (dateA !== dateB) {
+                    return dateA - dateB;
+                }
+
+                // 2. Náº¿u HSD báº±ng nhau, Æ°u tiÃªn sáº¯p xáº¿p theo sá»‘ lÆ°á»£ng tá»“n tÄƒng dáº§n (sá»‘ lÆ°á»£ng Ã­t hÆ¡n lÃªn trÆ°á»›c)
+                return a.quantityRemaining - b.quantityRemaining;
+            }),
+            // --- Káº¾T THÃšC THAY Äá»”I ---
             totalRemaining: totalRemaining
           });
         } else {
@@ -4179,7 +4201,7 @@ export default QuickStockLookup;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\QuickStockLookup.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\QuickStockLookup.module.css ---
 
 
 /* src/components/QuickStockLookup.module.css */
@@ -4310,7 +4332,7 @@ export default QuickStockLookup;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\RecentActivityList.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\RecentActivityList.jsx ---
 
 
 import React from 'react';
@@ -4348,7 +4370,7 @@ export default RecentActivityList;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Sidebar.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\Sidebar.jsx ---
 
 
 // src/components/Sidebar.jsx
@@ -4418,7 +4440,7 @@ export default Sidebar;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Spinner.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\Spinner.jsx ---
 
 
 // src/components/Spinner.jsx
@@ -4447,7 +4469,7 @@ export default Spinner;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\Spinner.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\Spinner.module.css ---
 
 
 /* src/components/Spinner.module.css */
@@ -4482,7 +4504,7 @@ export default Spinner;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\StatCard.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\StatCard.jsx ---
 
 
 import React from 'react';
@@ -4506,7 +4528,7 @@ export default StatCard;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\StatusBadge.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\StatusBadge.jsx ---
 
 
 // src/components/StatusBadge.jsx
@@ -4548,7 +4570,7 @@ export default React.memo(StatusBadge);
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\StatusBadge.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\StatusBadge.test.jsx ---
 
 
 // src/components/StatusBadge.test.jsx
@@ -4619,7 +4641,7 @@ describe('Component: StatusBadge', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\SupplierAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\SupplierAutocomplete.jsx ---
 
 
 // src/components/SupplierAutocomplete.jsx
@@ -4779,7 +4801,7 @@ export default SupplierAutocomplete;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\TeamBadge.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\TeamBadge.jsx ---
 
 
 // src/components/TeamBadge.jsx
@@ -4810,7 +4832,7 @@ export default React.memo(TeamBadge);
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\TeamBarChart.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\TeamBarChart.jsx ---
 
 
 import React from 'react';
@@ -4851,7 +4873,7 @@ export default TeamBarChart;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\TempBadge.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\TempBadge.jsx ---
 
 
 // src/components/TempBadge.jsx
@@ -4880,7 +4902,7 @@ export default React.memo(TempBadge);
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ViewerLayout.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ViewerLayout.jsx ---
 
 
 // src/components/ViewerLayout.jsx
@@ -4995,7 +5017,7 @@ export default ViewerLayout;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
 
 
 // src/components/ViewExportSlipModal.jsx
@@ -5012,7 +5034,6 @@ Modal.setAppElement('#root');
 const ViewExportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
 
-    // --- CÃ”NG Cá»¤ CHáº¨N ÄOÃN ---
     console.log("Dá»¯ liá»‡u Phiáº¿u Xuáº¥t Ä‘Æ°á»£c truyá»n vÃ o Modal:", slip);
     
     const handleExportPDF = async () => {
@@ -5037,7 +5058,8 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                         <p><strong>MÃ£ phiáº¿u:</strong> {slip.id}</p>
                         <p><strong>NgÃ y xuáº¥t:</strong> {slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'KhÃ´ng cÃ³'}</p>
                         <p><strong>KhÃ¡ch hÃ ng:</strong> {slip.customer || ''}</p>
-                        <p><strong>Ghi chÃº:</strong> {slip.notes || 'KhÃ´ng cÃ³'}</p>
+                        {/* --- THAY Äá»”I Táº I ÄÃ‚Y: Sá»­a slip.notes thÃ nh slip.description --- */}
+                        <p><strong>Ghi chÃº:</strong> {slip.description || 'KhÃ´ng cÃ³'}</p>
                     </div>
                     <div className="table-container">
                         <table className="products-table">
@@ -5062,7 +5084,6 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.lotNumber}</td>
                                         <td>{item.expiryDate}</td>
                                         <td>{item.unit}</td>
-                                        {/* Sá»¬A Lá»–I: Sá»­ dá»¥ng optional chaining Ä‘á»ƒ hiá»ƒn thá»‹ an toÃ n */}
                                         <td>{item?.specification || ''}</td>
                                         <td style={{ textAlign: 'center' }}>
                                             {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
@@ -5091,7 +5112,7 @@ export default ViewExportSlipModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
 
 
 // src/components/ViewImportSlipModal.jsx
@@ -5108,9 +5129,6 @@ Modal.setAppElement('#root');
 const ViewImportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
 
-    // --- CÃ”NG Cá»¤ CHáº¨N ÄOÃN ---
-    // DÃ²ng nÃ y sáº½ in ra toÃ n bá»™ dá»¯ liá»‡u cá»§a phiáº¿u vÃ o Console cá»§a trÃ¬nh duyá»‡t (F12)
-    // GiÃºp báº¡n kiá»ƒm tra chÃ­nh xÃ¡c tÃªn cÃ¡c trÆ°á»ng dá»¯ liá»‡u mÃ  code nháº­n Ä‘Æ°á»£c.
     console.log("Dá»¯ liá»‡u Phiáº¿u Nháº­p Ä‘Æ°á»£c truyá»n vÃ o Modal:", slip);
 
     const handleExportPDF = async () => {
@@ -5135,7 +5153,8 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                         <p><strong>MÃ£ phiáº¿u:</strong> {slip.id}</p>
                         <p><strong>NgÃ y nháº­p:</strong> {slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'KhÃ´ng cÃ³'}</p>
                         <p><strong>NhÃ  cung cáº¥p:</strong> {slip.supplierName}</p>
-                        <p><strong>Ghi chÃº:</strong> {slip.notes || 'KhÃ´ng cÃ³'}</p>
+                        {/* --- THAY Äá»”I Táº I ÄÃ‚Y: Sá»­a slip.notes thÃ nh slip.description --- */}
+                        <p><strong>Ghi chÃº:</strong> {slip.description || 'KhÃ´ng cÃ³'}</p>
                     </div>
                     <div className="table-container">
                         <table className="products-table">
@@ -5160,7 +5179,6 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.lotNumber}</td>
                                         <td>{item.expiryDate}</td>
                                         <td>{item.unit}</td>
-                                        {/* Sá»¬A Lá»–I: Sá»­ dá»¥ng optional chaining Ä‘á»ƒ hiá»ƒn thá»‹ an toÃ n */}
                                         <td>{item?.specification || ''}</td>
                                         <td style={{ textAlign: 'center' }}>{formatNumber(item?.quantity)}</td>
                                         <td>{item.notes || ''}</td>
@@ -5187,7 +5205,7 @@ export default ViewImportSlipModal;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\context\UserContext.jsx ---
+--- FILE: D:\quan-ly-kho\src\context\UserContext.jsx ---
 
 
 // src/context/UserContext.jsx
@@ -5249,7 +5267,7 @@ export const useAuth = () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useFirestorePagination.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useFirestorePagination.js ---
 
 
 import { useState, useEffect, useCallback } from 'react';
@@ -5331,7 +5349,7 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
 
 
 // src/hooks/useFirestorePagination.test.js
@@ -5434,7 +5452,7 @@ describe('Hook: useFirestorePagination', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\usePresence.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\usePresence.js ---
 
 
 // src/hooks/usePresence.js
@@ -5492,7 +5510,7 @@ export const usePresence = () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useProductLedger.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useProductLedger.js ---
 
 
 // src/hooks/useProductLedger.js
@@ -5570,7 +5588,7 @@ export const useProductLedger = () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useRealtimeNotification.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useRealtimeNotification.js ---
 
 
 import { useState, useEffect, useRef } from 'react';
@@ -5635,7 +5653,7 @@ if (lastSeenTimestampRef.current && newestTimestamp && typeof newestTimestamp.to
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\hooks\useResponsive.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useResponsive.js ---
 
 
 import { useState, useEffect } from 'react';
@@ -5658,7 +5676,7 @@ export const useResponsive = () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\DashboardPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\DashboardPage.jsx ---
 
 
 // src/pages/DashboardPage.jsx
@@ -5844,7 +5862,7 @@ export default DashboardPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\DataImportPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\DataImportPage.jsx ---
 
 
 // src/pages/DataImportPage.jsx
@@ -6136,7 +6154,7 @@ export default DataImportPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ExportListPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ExportListPage.jsx ---
 
 
 // src/pages/ExportListPage.jsx
@@ -6566,7 +6584,7 @@ export default ExportListPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ImportListPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ImportListPage.jsx ---
 
 
 // src/pages/ImportListPage.jsx
@@ -7005,7 +7023,7 @@ export default ImportListPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\InventoryPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\InventoryPage.jsx ---
 
 
 // src/pages/InventoryPage.jsx
@@ -7189,7 +7207,7 @@ export default InventoryPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
 // src/pages/InventorySummaryPage.jsx
@@ -7670,7 +7688,7 @@ export default InventorySummaryPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\LotTracePage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\LotTracePage.jsx ---
 
 
 // src/pages/LotTracePage.jsx
@@ -7980,7 +7998,7 @@ export default LotTracePage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
 
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -8215,7 +8233,7 @@ export default MobileInventoryPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\NewExportPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
@@ -8666,7 +8684,7 @@ export default NewExportPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\NewImportPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\NewImportPage.jsx ---
 
 
 // src/pages/NewImportPage.jsx
@@ -8857,6 +8875,7 @@ const NewImportPage = () => {
         }
     };
 
+    // --- Báº®T Äáº¦U THAY Äá»”I: Cáº­p nháº­t hÃ m checkExistingLot ---
     const checkExistingLot = async (index) => {
         const currentItem = items[index];
         if (!currentItem.productId || !currentItem.lotNumber) return;
@@ -8870,8 +8889,22 @@ const NewImportPage = () => {
             const querySnapshot = await getDocs(q);
             
             if (!querySnapshot.empty) {
-                const existingLotData = querySnapshot.docs[0].data();
-                handleLotCheckResult(index, existingLotData, true);
+                // Láº¥y dá»¯ liá»‡u cá»§a láº§n nháº­p Ä‘áº§u tiÃªn Ä‘á»ƒ cÃ³ HSD
+                const baseLotData = querySnapshot.docs[0].data();
+                
+                // Cá»™ng dá»“n sá»‘ lÆ°á»£ng tá»“n tá»« Táº¤T Cáº¢ cÃ¡c láº§n nháº­p
+                let totalQuantityRemaining = 0;
+                querySnapshot.forEach(doc => {
+                    totalQuantityRemaining += doc.data().quantityRemaining;
+                });
+
+                // Táº¡o má»™t Ä‘á»‘i tÆ°á»£ng dá»¯ liá»‡u tá»•ng há»£p
+                const aggregatedLotData = {
+                    ...baseLotData,
+                    quantityRemaining: totalQuantityRemaining
+                };
+                
+                handleLotCheckResult(index, aggregatedLotData, true);
                 setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
             } else {
                 handleLotCheckResult(index, null, false);
@@ -8881,6 +8914,7 @@ const NewImportPage = () => {
             console.error("Lá»—i khi kiá»ƒm tra lÃ´ tá»“n táº¡i: ", error);
         }
     };
+    // --- Káº¾T THÃšC THAY Äá»”I ---
 
     const handleProductSearch = async (index, productOrId) => {
         if (!productOrId) return;
@@ -8917,11 +8951,9 @@ const NewImportPage = () => {
         setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
     };
 
-    // --- Báº®T Äáº¦U THAY Äá»”I 1: ThÃªm cÃ¡c hÃ m xá»­ lÃ½ onKeyDown ---
     const handleLotNumberKeyDown = (e, index) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            // Giáº£ láº­p hÃ nh vi blur Ä‘á»ƒ trigger hÃ m checkExistingLot
             e.target.blur(); 
         }
     };
@@ -8932,7 +8964,6 @@ const NewImportPage = () => {
             addRowButtonRef.current?.focus();
         }
     };
-    // --- Káº¾T THÃšC THAY Äá»”I 1 ---
 
     const handleNewProductCreated = (newData) => {
         const { index } = newProductModal;
@@ -9110,7 +9141,6 @@ const NewImportPage = () => {
                         </div>
                         <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
                         <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            {/* --- Báº®T Äáº¦U THAY Äá»”I 2: GÃ¡n ref vÃ  onKeyDown cho Ã´ Sá»‘ lÃ´ --- */}
                             <input
                                 ref={el => lotNumberInputRefs.current[index] = el}
                                 type="text"
@@ -9145,7 +9175,6 @@ const NewImportPage = () => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
                         <div className="grid-cell">
-                            {/* --- Báº®T Äáº¦U THAY Äá»”I 3: GÃ¡n ref vÃ  onKeyDown cho Ã´ Sá»‘ lÆ°á»£ng --- */}
                             <input
                                 ref={el => quantityInputRefs.current[index] = el}
                                 type="text"
@@ -9179,7 +9208,6 @@ const NewImportPage = () => {
                 ))}
             </div>
 
-            {/* --- Báº®T Äáº¦U THAY Äá»”I 4: GÃ¡n ref cho nÃºt ThÃªm dÃ²ng --- */}
             <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ ThÃªm dÃ²ng</button>
             
             <div className="page-actions">
@@ -9209,7 +9237,7 @@ export default NewImportPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\PartnersPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\PartnersPage.jsx ---
 
 
 // src/pages/PartnersPage.jsx
@@ -9454,7 +9482,7 @@ export default PartnersPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\PartnersPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\pages\PartnersPage.module.css ---
 
 
 /* src/pages/PartnersPage.module.css */
@@ -9473,7 +9501,7 @@ export default PartnersPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\PartnersPage.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\PartnersPage.test.jsx ---
 
 
 // src/pages/PartnersPage.test.jsx
@@ -9568,7 +9596,7 @@ describe('Page: PartnersPage', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductLedgerPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ProductLedgerPage.jsx ---
 
 
 // src/pages/ProductLedgerPage.jsx
@@ -10090,7 +10118,7 @@ export default ProductLedgerPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductsPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ProductsPage.jsx ---
 
 
 // src/pages/ProductsPage.jsx
@@ -10298,7 +10326,7 @@ export default ProductsPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\ProductsPage.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ProductsPage.test.jsx ---
 
 
 // src/pages/ProductsPage.test.jsx
@@ -10396,7 +10424,7 @@ describe('Page: ProductsPage', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\SalesAnalyticsPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\SalesAnalyticsPage.jsx ---
 
 
 // src/pages/SalesAnalyticsPage.jsx
@@ -10839,7 +10867,7 @@ export default SalesAnalyticsPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
 // src/pages/StocktakeListPage.jsx
@@ -11084,7 +11112,7 @@ export default StocktakeListPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
 
 
 // src/pages/StocktakeSessionPage.jsx
@@ -11680,7 +11708,7 @@ export default StocktakeSessionPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\pages\UsersPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\UsersPage.jsx ---
 
 
 // src/pages/UsersPage.jsx
@@ -11948,7 +11976,7 @@ export default UsersPage;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\dashboardService.js ---
+--- FILE: D:\quan-ly-kho\src\services\dashboardService.js ---
 
 
 // src/services/dashboardService.js
@@ -12361,7 +12389,7 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\partnerService.js ---
+--- FILE: D:\quan-ly-kho\src\services\partnerService.js ---
 
 
 // src/services/partnerService.js
@@ -12409,7 +12437,7 @@ export const deletePartner = async (partnerId) => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\partnerService.test.js ---
+--- FILE: D:\quan-ly-kho\src\services\partnerService.test.js ---
 
 
 // src/services/partnerService.test.js
@@ -12485,7 +12513,7 @@ describe('Service: partnerService', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\productService.js ---
+--- FILE: D:\quan-ly-kho\src\services\productService.js ---
 
 
 // src/services/productService.js
@@ -12531,7 +12559,7 @@ export const deleteProduct = async (productId) => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\productService.test.js ---
+--- FILE: D:\quan-ly-kho\src\services\productService.test.js ---
 
 
 // src/services/productService.test.js
@@ -12604,7 +12632,7 @@ describe('Service: productService', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\stocktakeService.js ---
+--- FILE: D:\quan-ly-kho\src\services\stocktakeService.js ---
 
 
 // src/services/stocktakeService.js
@@ -12659,7 +12687,7 @@ export const deleteStocktakeSession = async (sessionId) => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\services\stocktakeService.test.js ---
+--- FILE: D:\quan-ly-kho\src\services\stocktakeService.test.js ---
 
 
 // src/services/stocktakeService.test.js
@@ -12739,7 +12767,7 @@ describe('Service: stocktakeService', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\stores\exportSlipStore.js ---
+--- FILE: D:\quan-ly-kho\src\stores\exportSlipStore.js ---
 
 
 // src/stores/exportSlipStore.js
@@ -12895,7 +12923,7 @@ export default useExportSlipStore;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\stores\importSlipStore.js ---
+--- FILE: D:\quan-ly-kho\src\stores\importSlipStore.js ---
 
 
 // src/stores/importSlipStore.js
@@ -13049,7 +13077,7 @@ export default useImportSlipStore;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\stores\stocktakeStore.js ---
+--- FILE: D:\quan-ly-kho\src\stores\stocktakeStore.js ---
 
 
 // src/stores/stocktakeStore.js
@@ -13125,7 +13153,7 @@ export default useStocktakeStore;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\AdminLayout.css ---
+--- FILE: D:\quan-ly-kho\src\styles\AdminLayout.css ---
 
 
 :root {
@@ -14578,7 +14606,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\Dashboard.css ---
+--- FILE: D:\quan-ly-kho\src\styles\Dashboard.css ---
 
 
 /* src/styles/Dashboard.css */
@@ -14739,7 +14767,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\DashboardPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\styles\DashboardPage.module.css ---
 
 
 /* src/styles/DashboardPage.module.css */
@@ -14796,7 +14824,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\DataImportPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\styles\DataImportPage.module.css ---
 
 
 /* src/styles/DataImportPage.module.css */
@@ -14922,7 +14950,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\ExpiryNotificationBanner.css ---
+--- FILE: D:\quan-ly-kho\src\styles\ExpiryNotificationBanner.css ---
 
 
 /* src/styles/ExpiryNotificationBanner.css */
@@ -15020,7 +15048,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\MobileInventoryPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\styles\MobileInventoryPage.module.css ---
 
 
 /* src/styles/MobileInventoryPage.module.css */
@@ -15232,7 +15260,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\print.css ---
+--- FILE: D:\quan-ly-kho\src\styles\print.css ---
 
 
 /* src/styles/print.css (PhiÃªn báº£n cuá»‘i cÃ¹ng) */
@@ -15370,7 +15398,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\Responsive.css ---
+--- FILE: D:\quan-ly-kho\src\styles\Responsive.css ---
 
 
 /* src/styles/Responsive.css */
@@ -15389,7 +15417,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\styles\StocktakePage.css ---
+--- FILE: D:\quan-ly-kho\src\styles\StocktakePage.css ---
 
 
 /* src/styles/StocktakePage.css */
@@ -15526,7 +15554,7 @@ tbody tr.selected-row td {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
+--- FILE: D:\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
 
 
 // src/test/__mocks__/firebaseFirestore.js
@@ -15574,7 +15602,7 @@ export const documentId = vi.fn(() => 'mockDocumentId');
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\test\setup.js ---
+--- FILE: D:\quan-ly-kho\src\test\setup.js ---
 
 
 // src/test/setup.js
@@ -15592,7 +15620,7 @@ afterEach(() => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\utils\dateUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\dateUtils.js ---
 
 
 // src/utils/dateUtils.js
@@ -15714,7 +15742,7 @@ export const getExpiryStatusPrefix = (expiryDate) => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\utils\dateUtils.test.js ---
+--- FILE: D:\quan-ly-kho\src\utils\dateUtils.test.js ---
 
 
 import { describe, it, expect } from 'vitest';
@@ -15753,7 +15781,7 @@ describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\utils\numberUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\numberUtils.js ---
 
 
 // src/utils/numberUtils.js
@@ -15798,7 +15826,7 @@ export const parseFormattedNumber = (value) => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\utils\pdfUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\pdfUtils.js ---
 
 
 // src/utils/pdfUtils.js
@@ -16140,7 +16168,7 @@ export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filt
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\utils\stringUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\stringUtils.js ---
 
 
 // src/utils/stringUtils.js
@@ -16196,7 +16224,7 @@ export const convertVietnameseWordsToNumbers = (str) => {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\App.jsx ---
+--- FILE: D:\quan-ly-kho\src\App.jsx ---
 
 
 // src/App.jsx
@@ -16274,7 +16302,7 @@ export default App;
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\constants.js ---
+--- FILE: D:\quan-ly-kho\src\constants.js ---
 
 
 /// src/constants.js
@@ -16290,7 +16318,7 @@ export const UNIT_OPTIONS = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»n
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\firebaseConfig.js ---
+--- FILE: D:\quan-ly-kho\src\firebaseConfig.js ---
 
 
 // src/firebaseConfig.js
@@ -16323,7 +16351,7 @@ export { db, auth, functions, app, rtdb }; // <-- THÃŠM rtdb VÃ€O EXPORT
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\index.css ---
+--- FILE: D:\quan-ly-kho\src\index.css ---
 
 
 /* src/index.css */
@@ -16344,7 +16372,7 @@ body {
 
 
 
---- FILE: C:\Users\Asus Vivobook\quan-ly-kho\src\main.jsx ---
+--- FILE: D:\quan-ly-kho\src\main.jsx ---
 
 
 // src/main.jsx

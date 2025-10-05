@@ -20,7 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const functions = getFunctions(app);
+const functions = getFunctions(app, 'asia-southeast1');
 const rtdb = getDatabase(app); // <-- THÊM DÒNG NÀY
 
 export { db, auth, functions, app, rtdb }; // <-- THÊM rtdb VÀO EXPORT

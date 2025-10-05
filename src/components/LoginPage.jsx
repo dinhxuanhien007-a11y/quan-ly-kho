@@ -1,9 +1,11 @@
 // src/components/LoginPage.jsx
 import React, { useState } from 'react';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+// Sửa tại đây: Chỉ cần import các hàm từ thư viện, 
+// nhưng import đối tượng 'auth' và 'functions' từ file cấu hình
+import { auth, functions } from '../firebaseConfig'; // <-- THAY ĐỔI: IMPORT functions ĐÃ CẤU HÌNH TỪ ĐÂY
+import { httpsCallable } from 'firebase/functions'; // <-- THAY ĐỔI: CHỈ GIỮ LẠI httpsCallable
 import { toast } from 'react-toastify';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import styles from './LoginPage.module.css';
 import { FcGoogle } from 'react-icons/fc';
 
@@ -20,8 +22,8 @@ function LoginPage() {
       toast.info("Xác thực Google thành công. Đang khởi tạo vai trò...");
       
       // 2. Gọi Cloud Function để xử lý và cấp quyền
-      const functions = getFunctions();
-      const processUser = httpsCallable(functions, 'processNewGoogleUser');
+      // KHÔNG CẦN GỌI const functions = getFunctions(); NỮA
+      const processUser = httpsCallable(functions, 'processNewGoogleUser'); // <-- DÙNG functions ĐÃ IMPORT
       await processUser();
 
       // === THAY ĐỔI QUAN TRỌNG NHẤT NẰM Ở ĐÂY ===
@@ -31,10 +33,10 @@ function LoginPage() {
       toast.success("Đăng nhập và cấp quyền thành công!");
 
       // 4. Tải lại trang để đảm bảo toàn bộ ứng dụng sử dụng quyền mới
-      // Thay vì để navigate tự động, chúng ta tải lại một cách triệt để
       window.location.reload();
 
     } catch (error) {
+      // ... (Phần xử lý lỗi giữ nguyên)
       let errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
       if (error.code === 'auth/popup-closed-by-user') {
           errorMessage = "Cửa sổ đăng nhập đã bị đóng.";

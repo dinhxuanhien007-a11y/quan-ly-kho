@@ -1,6 +1,7 @@
 // src/components/AddAllowedUserModal.jsx
 import React, { useState } from 'react';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { functions } from '../firebaseConfig'; // <-- THAY ĐỔI: Import đối tượng functions đã cấu hình
+import { httpsCallable } from "firebase/functions"; // <-- THAY ĐỔI: Chỉ giữ lại httpsCallable
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
@@ -22,7 +23,7 @@ const AddAllowedUserModal = ({ onClose, onUserAdded }) => {
 
     setIsSaving(true);
     try {
-      const functions = getFunctions();
+      // Xóa: const functions = getFunctions();
       const addUserFunc = httpsCallable(functions, 'addUserToAllowlist');
       await addUserFunc({ email: email.trim(), role: role });
       toast.success(`Đã thêm ${email} vào danh sách được phép!`);

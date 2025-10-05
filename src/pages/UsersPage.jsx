@@ -2,13 +2,13 @@
 
 // --- BẮT ĐẦU THAY ĐỔI 1: Import thêm các component và icon cần thiết ---
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { db, rtdb } from '../firebaseConfig';
+import { db, rtdb, functions } from '../firebaseConfig'; // <-- THAY ĐỔI: Import functions đã cấu hình
 import { ref, onValue } from 'firebase/database';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Spinner from '../components/Spinner';
 import { FiPlus, FiTrash2, FiEdit, FiUsers, FiWifi } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions"; // <-- GIỮ LẠI
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditAllowedUserModal from '../components/EditAllowedUserModal';
 import AddAllowedUserModal from '../components/AddAllowedUserModal';
@@ -127,7 +127,6 @@ const UsersPage = () => {
         setConfirmModal({ isOpen: false });
         toast.info(`Đang xóa ${user.email}...`);
         try {
-            const functions = getFunctions();
             const deleteFunc = httpsCallable(functions, 'deleteUserAndAllowlist');
             await deleteFunc({ email: user.email });
             toast.success(`Đã xóa ${user.email} khỏi hệ thống.`);

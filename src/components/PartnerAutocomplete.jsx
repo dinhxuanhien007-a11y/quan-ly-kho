@@ -1,7 +1,7 @@
 // src/components/PartnerAutocomplete.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore'; // Giữ lại collection và getDocs
 import { normalizeString } from '../utils/stringUtils'; // Import hàm chuẩn hóa chuỗi
 
 const PartnerAutocomplete = ({ value, onSelect }) => {
@@ -14,24 +14,23 @@ const PartnerAutocomplete = ({ value, onSelect }) => {
     useEffect(() => {
         const fetchPartners = async () => {
             try {
-                const customersQuery = collection(db, 'customers');
-                const suppliersQuery = collection(db, 'suppliers');
+                // THAY THẾ: Chỉ truy vấn collection 'partners' duy nhất
+                const q = collection(db, 'partners');
 
-                const [customersSnapshot, suppliersSnapshot] = await Promise.all([
-                    getDocs(customersQuery),
-                    getDocs(suppliersQuery)
-                ]);
+                // Chỉ cần một lần getDocs vì bạn đã gộp 2 collection
+                const querySnapshot = await getDocs(q);
 
-                const customerList = customersSnapshot.docs.map(doc => ({ id: `cust-${doc.id}`, name: doc.data().name }));
-                const supplierList = suppliersSnapshot.docs.map(doc => ({ id: `supp-${doc.id}`, name: doc.data().name }));
-
-                // Gộp hai danh sách và loại bỏ các đối tác trùng tên
-                const combinedList = [...customerList, ...supplierList];
-                const uniquePartners = Array.from(new Map(combinedList.map(item => [item.name.toLowerCase(), item])).values());
+                const partnerList = querySnapshot.docs.map(doc => ({ 
+                    id: doc.id, 
+                    name: doc.data().partnerName,
+                    type: doc.data().partnerType
+                }));
                 
-                setPartners(uniquePartners.sort((a, b) => a.name.localeCompare(b.name))); // Sắp xếp theo ABC
+                setPartners(partnerList.sort((a, b) => a.name.localeCompare(b.name))); // Sắp xếp theo ABC
             } catch (error) {
                 console.error("Lỗi khi tải danh sách đối tác:", error);
+                // Bạn có thể thêm toast.error ở đây để hiển thị lỗi quyền:
+                // toast.error("Lỗi khi tải danh sách đối tác. Vui lòng kiểm tra quyền đọc.");
             }
         };
 
@@ -56,13 +55,16 @@ const PartnerAutocomplete = ({ value, onSelect }) => {
         if (inputValue) {
             const normalizedInput = normalizeString(inputValue);
             const filteredSuggestions = partners.filter(partner =>
-                normalizeString(partner.name).includes(normalizedInput)
+                // Kiểm tra cả tên đã chuẩn hóa và ID (partnerId)
+                normalizeString(partner.name).includes(normalizedInput) ||
+                partner.id.toLowerCase().includes(inputValue.toLowerCase())
             );
             setSuggestions(filteredSuggestions);
             setShowSuggestions(true);
         } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
+            // Hiển thị 10 gợi ý đầu tiên nếu ô trống
+            setSuggestions(partners.slice(0, 10)); 
+            setShowSuggestions(true);
         }
     };
 
@@ -78,14 +80,18 @@ const PartnerAutocomplete = ({ value, onSelect }) => {
                 type="text"
                 value={value}
                 onChange={handleInputChange}
-                onFocus={() => value && suggestions.length > 0 && setShowSuggestions(true)}
+                // Thêm onFocus để hiển thị gợi ý khi click vào ô
+                onFocus={() => partners.length > 0 && setShowSuggestions(true)}
                 placeholder="Nhập tên NCC / Khách hàng..."
             />
             {showSuggestions && suggestions.length > 0 && (
                 <ul className="suggestions-list">
                     {suggestions.map((partner) => (
                         <li key={partner.id} onClick={() => handleSuggestionClick(partner.name)}>
-                            {partner.name}
+                            {/* THAY ĐỔI: Hiển thị tên, ID, và loại đối tác */}
+                            <strong>{partner.name}</strong> 
+                            <span>({partner.type === 'supplier' ? 'NCC' : 'KH'})</span>
+                            <span style={{marginLeft: '10px'}}>{partner.id}</span>
                         </li>
                     ))}
                 </ul>

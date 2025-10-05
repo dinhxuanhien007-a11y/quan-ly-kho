@@ -1,6 +1,7 @@
 // src/components/EditAllowedUserModal.jsx
 import React, { useState } from 'react';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { functions } from '../firebaseConfig'; // <-- THÊM: Import functions đã cấu hình
+import { httpsCallable } from "firebase/functions"; // <-- GIỮ LẠI
 import { toast } from 'react-toastify';
 
 const EditAllowedUserModal = ({ onClose, onUserUpdated, userToEdit }) => {
@@ -14,7 +15,6 @@ const EditAllowedUserModal = ({ onClose, onUserUpdated, userToEdit }) => {
     }
     setIsSaving(true);
     try {
-      const functions = getFunctions();
       const updateRoleFunc = httpsCallable(functions, 'updateAllowlistRole');
       await updateRoleFunc({ email: userToEdit.email, newRole: newRole });
       toast.success(`Đã cập nhật vai trò cho ${userToEdit.email}!`);

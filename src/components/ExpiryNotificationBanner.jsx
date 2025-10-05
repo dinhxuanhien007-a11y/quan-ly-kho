@@ -1,9 +1,9 @@
 // src/components/ExpiryNotificationBanner.jsx
 
 import React, { useState, useEffect } from 'react';
-import { db, auth } from '../firebaseConfig'; // Đảm bảo bạn đã export auth
+import { db, auth, functions } from '../firebaseConfig'; // <-- THAY ĐỔI: Import functions đã cấu hình
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions'; // <-- GIỮ LẠI
 import { toast } from 'react-toastify';
 import { FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
 import '../styles/ExpiryNotificationBanner.css'; // Sẽ tạo file CSS ở bước sau
@@ -33,7 +33,6 @@ const ExpiryNotificationBanner = () => {
 
     const handleConfirm = async (notificationId, lotId) => {
         setIsProcessing(notificationId);
-        const functions = getFunctions();
         const confirmAction = httpsCallable(functions, 'confirmExpiryNotification');
         
         try {
