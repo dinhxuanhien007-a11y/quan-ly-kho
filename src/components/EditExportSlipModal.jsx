@@ -24,6 +24,7 @@ const exportItemSchema = z.object({
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
     const [slipData, setSlipData] = useState(() => ({
         ...slip,
+        // Bắt đầu: Đảm bảo item.expiryDate khởi tạo là Timestamp hoặc chuỗi (không phải null)
         items: slip.items.map(item => ({ 
             ...item, 
             isNew: false, 
@@ -121,14 +122,14 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
         if (selectedLot) {
             currentItem.lotNumber = selectedLot.lotNumber;
             currentItem.lotId = selectedLot.id;
-            // SỬA LỖI CRASH VÀ LOGIC: Gán đối tượng Timestamp
-            currentItem.expiryDate = selectedLot.expiryDate; 
+            // BẮT LỖI TẠI ĐÂY: Gán đối tượng Timestamp hoặc chuỗi 'N/A'
+            currentItem.expiryDate = selectedLot.expiryDate || 'N/A'; 
             currentItem.quantityRemaining = selectedLot.quantityRemaining;
         } else {
             currentItem.lotNumber = '';
             currentItem.lotId = '';
-            // SỬA LỖI CRASH VÀ LOGIC: Reset về null
-            currentItem.expiryDate = null; 
+            // BẮT LỖI TẠI ĐÂY: Reset về chuỗi 'N/A'
+            currentItem.expiryDate = 'N/A'; 
             currentItem.quantityRemaining = 0;
         }
         updatedItems[index] = currentItem;
@@ -148,8 +149,8 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                 quantityToExport: '',
                 notes: '',
                 quantityRemaining: 0,
-                // THÊM: Thêm trường expiryDate vào item mới
-                expiryDate: null, 
+                // THÊM: Thêm trường expiryDate vào item mới
+                expiryDate: 'N/A', 
                 isNew: true,
                 availableLots: [],
                 isOutOfStock: false
@@ -224,7 +225,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
 
                 <div className="modal-body">
                     <h3>Chi tiết hàng hóa</h3>
-                    <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+                    <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
                         <div className="grid-header">Mã hàng</div>
                         <div className="grid-header">Tên hàng</div>
                         <div className="grid-header">Số lô</div>
@@ -277,8 +278,14 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                                     {/* THÊM TẠI ĐÂY: Ô INPUT HIỂN THỊ HSD */}
                                     <input 
                                         type="text" 
-                                        // SỬA LỖI CRASH: Sử dụng hàm formatDate
-                                        value={item.expiryDate ? formatDate(item.expiryDate) : '(N/A)'} 
+                                        // SỬA LỖI: Kiểm tra kiểu dữ liệu trước khi định dạng
+                                        value={
+                                            // Nếu là chuỗi (dữ liệu cũ/N/A), hiển thị chuỗi
+                                            typeof item.expiryDate === 'string' 
+                                                ? item.expiryDate 
+                                                // Nếu là Timestamp (từ lô mới chọn), định dạng
+                                                : (item.expiryDate ? formatDate(item.expiryDate) : '(N/A)')
+                                        } 
                                         readOnly 
                                         title="Hạn sử dụng của lô hàng đã chọn"
                                         style={{ backgroundColor: '#f0f0f0' }}

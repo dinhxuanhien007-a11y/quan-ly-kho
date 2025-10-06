@@ -24,6 +24,16 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
         }
     };
 
+    // Hàm helper để xử lý HSD: Kiểm tra nếu là đối tượng Timestamp (từ lô mới chọn) thì định dạng, 
+    // nếu là chuỗi (từ dữ liệu cũ) thì hiển thị chuỗi, nếu là null thì hiển thị N/A.
+    const renderExpiryDate = (date) => {
+        if (!date) return 'N/A';
+        // Nếu là chuỗi (dữ liệu cũ đã định dạng hoặc 'N/A'), hiển thị luôn
+        if (typeof date === 'string') return date;
+        // Nếu là đối tượng Timestamp, sử dụng formatDate
+        return formatDate(date);
+    };
+
     return (
         <Modal isOpen={true} onRequestClose={onClose} className="modal" overlayClassName="overlay" contentLabel="Chi tiết Phiếu Xuất">
             <div className="modal-header">
@@ -37,7 +47,7 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                         
                         {/* SỬA LỖI 1: Ngăn crash khi hiển thị slip.createdAt */}
                         <p><strong>Ngày xuất:</strong> {slip.createdAt ? formatDate(slip.createdAt) : 'Không có'}</p>
-                        
+                        
                         <p><strong>Khách hàng:</strong> {slip.customer || ''}</p>
                         {/* --- THAY ĐỔI TẠI ĐÂY: Sửa slip.notes thành slip.description --- */}
                         <p><strong>Ghi chú:</strong> {slip.description || 'Không có'}</p>
@@ -63,10 +73,10 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                         <td>{item.productId}</td>
                                         <td>{item.productName}</td>
                                         <td>{item.lotNumber}</td>
-                                        
-                                        {/* SỬA LỖI 2: Ngăn crash khi hiển thị item.expiryDate */}
-                                        <td>{item.expiryDate ? formatDate(item.expiryDate) : '(N/A)'}</td>
-                                        
+                                        
+                                        {/* SỬA LỖI 2: Sử dụng hàm helper mới để xử lý cả chuỗi và Timestamp */}
+                                        <td>{renderExpiryDate(item.expiryDate)}</td>
+                                        
                                         <td>{item.unit}</td>
                                         <td>{item?.specification || ''}</td>
                                         <td style={{ textAlign: 'center' }}>
