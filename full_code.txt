@@ -3,7 +3,8 @@
 
 // src/components/AddAllowedUserModal.jsx
 import React, { useState } from 'react';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { functions } from '../firebaseConfig'; // <-- THAY Äá»”I: Import Ä‘á»‘i tÆ°á»£ng functions Ä‘Ã£ cáº¥u hÃ¬nh
+import { httpsCallable } from "firebase/functions"; // <-- THAY Äá»”I: Chá»‰ giá»¯ láº¡i httpsCallable
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
@@ -25,7 +26,7 @@ const AddAllowedUserModal = ({ onClose, onUserAdded }) => {
 
     setIsSaving(true);
     try {
-      const functions = getFunctions();
+      // XÃ³a: const functions = getFunctions();
       const addUserFunc = httpsCallable(functions, 'addUserToAllowlist');
       await addUserFunc({ email: email.trim(), role: role });
       toast.success(`ÄÃ£ thÃªm ${email} vÃ o danh sÃ¡ch Ä‘Æ°á»£c phÃ©p!`);
@@ -1533,7 +1534,8 @@ export default DateRangePresets;
 
 // src/components/EditAllowedUserModal.jsx
 import React, { useState } from 'react';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { functions } from '../firebaseConfig'; // <-- THÃŠM: Import functions Ä‘Ã£ cáº¥u hÃ¬nh
+import { httpsCallable } from "firebase/functions"; // <-- GIá»® Láº I
 import { toast } from 'react-toastify';
 
 const EditAllowedUserModal = ({ onClose, onUserUpdated, userToEdit }) => {
@@ -1547,7 +1549,6 @@ const EditAllowedUserModal = ({ onClose, onUserUpdated, userToEdit }) => {
     }
     setIsSaving(true);
     try {
-      const functions = getFunctions();
       const updateRoleFunc = httpsCallable(functions, 'updateAllowlistRole');
       await updateRoleFunc({ email: userToEdit.email, newRole: newRole });
       toast.success(`ÄÃ£ cáº­p nháº­t vai trÃ² cho ${userToEdit.email}!`);
@@ -1604,293 +1605,319 @@ import { z } from 'zod';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import ProductAutocomplete from './ProductAutocomplete';
+// Äáº£m báº£o cÃ¡c hÃ m nÃ y Ä‘Æ°á»£c import
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 
 const exportItemSchema = z.object({
-  quantityToExport: z.preprocess(
-      val => Number(String(val).trim()),
-      z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
-       .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
-  ),
-  productId: z.string(),
-  lotNumber: z.string().nullable(),
+Â  quantityToExport: z.preprocess(
+Â  Â  Â  val => Number(String(val).trim()),
+Â  Â  Â  z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
+Â  Â  Â  Â .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
+Â  ),
+Â  productId: z.string(),
+Â  lotNumber: z.string().nullable(),
 });
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
-    const [slipData, setSlipData] = useState(() => ({
-        ...slip,
-        items: slip.items.map(item => ({ 
-            ...item, 
-            isNew: false, 
-            availableLots: [],
-            isOutOfStock: false 
-        }))
-    }));
+Â  Â  const [slipData, setSlipData] = useState(() => ({
+Â  Â  Â  Â  ...slip,
+Â  Â  Â  Â  // Báº¯t Ä‘áº§u: Äáº£m báº£o item.expiryDate khá»Ÿi táº¡o lÃ  Timestamp hoáº·c chuá»—i (khÃ´ng pháº£i null)
+Â  Â  Â  Â  items: slip.items.map(item => ({ 
+Â  Â  Â  Â  Â  Â  ...item, 
+Â  Â  Â  Â  Â  Â  isNew: false, 
+Â  Â  Â  Â  Â  Â  availableLots: [],
+Â  Â  Â  Â  Â  Â  isOutOfStock: false 
+Â  Â  Â  Â  }))
+Â  Â  }));
 
-    const dateToInputValue = (dateStr) => {
-        if (!dateStr || dateStr.split('/').length !== 3) return '';
-        const [day, month, year] = dateStr.split('/');
-        return `${year}-${month}-${day}`;
-    };
+Â  Â  const dateToInputValue = (dateStr) => {
+Â  Â  Â  Â  if (!dateStr || dateStr.split('/').length !== 3) return '';
+Â  Â  Â  Â  const [day, month, year] = dateStr.split('/');
+Â  Â  Â  Â  return `${year}-${month}-${day}`;
+Â  Â  };
 
-    const handleInfoChange = (field, value) => {
-        let finalValue = value;
-        if (field === 'exportDate') {
-            const [year, month, day] = value.split('-');
-            finalValue = `${day}/${month}/${year}`;
-        }
-        setSlipData(prev => ({ ...prev, [field]: finalValue }));
-    };
+Â  Â  const handleInfoChange = (field, value) => {
+Â  Â  Â  Â  let finalValue = value;
+Â  Â  Â  Â  if (field === 'exportDate') {
+Â  Â  Â  Â  Â  Â  const [year, month, day] = value.split('-');
+Â  Â  Â  Â  Â  Â  finalValue = `${day}/${month}/${year}`;
+Â  Â  Â  Â  }
+Â  Â  Â  Â  setSlipData(prev => ({ ...prev, [field]: finalValue }));
+Â  Â  };
 
-    const handleItemChange = (index, field, value) => {
-        const updatedItems = [...slipData.items];
-        if (field === 'quantityToExport') {
-            const numericValue = Number(value);
-            const originalExportedQty = slip.items[index]?.quantityToExport || slip.items[index]?.quantityExported || 0;
-            const availableStock = (updatedItems[index].quantityRemaining || 0) + originalExportedQty;
-            
-            if (numericValue < 0) return;
+Â  Â  const handleItemChange = (index, field, value) => {
+Â  Â  Â  Â  const updatedItems = [...slipData.items];
+Â  Â  Â  Â  if (field === 'quantityToExport') {
+Â  Â  Â  Â  Â  Â  const numericValue = Number(value);
+Â  Â  Â  Â  Â  Â  const originalExportedQty = slip.items[index]?.quantityToExport || slip.items[index]?.quantityExported || 0;
+Â  Â  Â  Â  Â  Â  const availableStock = (updatedItems[index].quantityRemaining || 0) + originalExportedQty;
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  if (numericValue < 0) return;
 
-            if (numericValue > availableStock) {
-                toast.warn(`Sá»‘ lÆ°á»£ng xuáº¥t (${numericValue}) khÃ´ng thá»ƒ vÆ°á»£t quÃ¡ tá»“n kho hiá»‡n cÃ³ (${availableStock}).`);
-                updatedItems[index][field] = availableStock;
-            } else {
-                updatedItems[index][field] = value;
-            }
-        } else {
-            updatedItems[index][field] = value;
-        }
-        setSlipData(prev => ({ ...prev, items: updatedItems }));
-    };
-    
-    const handleProductSearch = async (index, productOrId) => {
-        if (!productOrId) return;
-        const productId = (typeof productOrId === 'object' ? productOrId.id : String(productOrId)).trim().toUpperCase();
-        if (!productId) return;
-        
-        const updatedItems = [...slipData.items];
-        const currentItem = { ...updatedItems[index] };
+Â  Â  Â  Â  Â  Â  if (numericValue > availableStock) {
+Â  Â  Â  Â  Â  Â  Â  Â  toast.warn(`Sá»‘ lÆ°á»£ng xuáº¥t (${numericValue}) khÃ´ng thá»ƒ vÆ°á»£t quÃ¡ tá»“n kho hiá»‡n cÃ³ (${availableStock}).`);
+Â  Â  Â  Â  Â  Â  Â  Â  updatedItems[index][field] = availableStock;
+Â  Â  Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  Â  Â  updatedItems[index][field] = value;
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  updatedItems[index][field] = value;
+Â  Â  Â  Â  }
+Â  Â  Â  Â  setSlipData(prev => ({ ...prev, items: updatedItems }));
+Â  Â  };
+Â  Â  
+Â  Â  const handleProductSearch = async (index, productOrId) => {
+Â  Â  Â  Â  if (!productOrId) return;
+Â  Â  Â  Â  const productId = (typeof productOrId === 'object' ? productOrId.id : String(productOrId)).trim().toUpperCase();
+Â  Â  Â  Â  if (!productId) return;
+Â  Â  Â  Â  
+Â  Â  Â  Â  const updatedItems = [...slipData.items];
+Â  Â  Â  Â  const currentItem = { ...updatedItems[index] };
 
-        try {
-            const productRef = doc(db, 'products', productId);
-            const productSnap = await getDoc(productRef);
+Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  const productRef = doc(db, 'products', productId);
+Â  Â  Â  Â  Â  Â  const productSnap = await getDoc(productRef);
 
-            if (!productSnap.exists()) {
-                toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
-                return;
-            }
+Â  Â  Â  Â  Â  Â  if (!productSnap.exists()) {
+Â  Â  Â  Â  Â  Â  Â  Â  toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+Â  Â  Â  Â  Â  Â  Â  Â  return;
+Â  Â  Â  Â  Â  Â  }
 
-            const productData = productSnap.data();
-            currentItem.productId = productId;
-            currentItem.productName = productData.productName;
-            currentItem.unit = productData.unit;
-            currentItem.packaging = productData.packaging;
+Â  Â  Â  Â  Â  Â  const productData = productSnap.data();
+Â  Â  Â  Â  Â  Â  currentItem.productId = productId;
+Â  Â  Â  Â  Â  Â  currentItem.productName = productData.productName;
+Â  Â  Â  Â  Â  Â  currentItem.unit = productData.unit;
+Â  Â  Â  Â  Â  Â  currentItem.packaging = productData.packaging;
 
-            const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
-            const lotsSnapshot = await getDocs(lotsQuery);
+Â  Â  Â  Â  Â  Â  const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
+Â  Â  Â  Â  Â  Â  const lotsSnapshot = await getDocs(lotsQuery);
 
-            if (lotsSnapshot.empty) {
-                currentItem.isOutOfStock = true;
-                currentItem.availableLots = [];
-            } else {
-                const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                foundLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
-                currentItem.isOutOfStock = false;
-                currentItem.availableLots = foundLots;
-            }
-            
-            updatedItems[index] = currentItem;
-            setSlipData(prev => ({ ...prev, items: updatedItems }));
+Â  Â  Â  Â  Â  Â  if (lotsSnapshot.empty) {
+Â  Â  Â  Â  Â  Â  Â  Â  currentItem.isOutOfStock = true;
+Â  Â  Â  Â  Â  Â  Â  Â  currentItem.availableLots = [];
+Â  Â  Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  Â  Â  const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+Â  Â  Â  Â  Â  Â  Â  Â  foundLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+Â  Â  Â  Â  Â  Â  Â  Â  currentItem.isOutOfStock = false;
+Â  Â  Â  Â  Â  Â  Â  Â  currentItem.availableLots = foundLots;
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  updatedItems[index] = currentItem;
+Â  Â  Â  Â  Â  Â  setSlipData(prev => ({ ...prev, items: updatedItems }));
 
-        } catch (error) {
-            console.error("Lá»—i khi tÃ¬m sáº£n pháº©m/lÃ´ hÃ ng:", error);
-            toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m.");
-        }
-    };
-    
-    const handleLotSelection = (index, selectedLotId) => {
-        const updatedItems = [...slipData.items];
-        const currentItem = { ...updatedItems[index] };
-        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m sáº£n pháº©m/lÃ´ hÃ ng:", error);
+Â  Â  Â  Â  Â  Â  toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m.");
+Â  Â  Â  Â  }
+Â  Â  };
+Â  Â  
+Â  Â  const handleLotSelection = (index, selectedLotId) => {
+Â  Â  Â  Â  const updatedItems = [...slipData.items];
+Â  Â  Â  Â  const currentItem = { ...updatedItems[index] };
+Â  Â  Â  Â  const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
 
-        if (selectedLot) {
-            currentItem.lotNumber = selectedLot.lotNumber;
-            currentItem.lotId = selectedLot.id;
-            currentItem.quantityRemaining = selectedLot.quantityRemaining;
-        } else {
-            currentItem.lotNumber = '';
-            currentItem.lotId = '';
-            currentItem.quantityRemaining = 0;
-        }
-        updatedItems[index] = currentItem;
-        setSlipData(prev => ({ ...prev, items: updatedItems }));
-    };
+Â  Â  Â  Â  if (selectedLot) {
+Â  Â  Â  Â  Â  Â  currentItem.lotNumber = selectedLot.lotNumber;
+Â  Â  Â  Â  Â  Â  currentItem.lotId = selectedLot.id;
+Â  Â  Â  Â  Â  Â  // Báº®T Lá»–I Táº I ÄÃ‚Y: GÃ¡n Ä‘á»‘i tÆ°á»£ng Timestamp hoáº·c chuá»—i 'N/A'
+Â  Â  Â  Â  Â  Â  currentItem.expiryDate = selectedLot.expiryDate || 'N/A'; 
+Â  Â  Â  Â  Â  Â  currentItem.quantityRemaining = selectedLot.quantityRemaining;
+Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  currentItem.lotNumber = '';
+Â  Â  Â  Â  Â  Â  currentItem.lotId = '';
+Â  Â  Â  Â  Â  Â  // Báº®T Lá»–I Táº I ÄÃ‚Y: Reset vá» chuá»—i 'N/A'
+Â  Â  Â  Â  Â  Â  currentItem.expiryDate = 'N/A'; 
+Â  Â  Â  Â  Â  Â  currentItem.quantityRemaining = 0;
+Â  Â  Â  Â  }
+Â  Â  Â  Â  updatedItems[index] = currentItem;
+Â  Â  Â  Â  setSlipData(prev => ({ ...prev, items: updatedItems }));
+Â  Â  };
 
-    const addNewRow = () => {
-        setSlipData(prev => ({
-            ...prev,
-            items: [...prev.items, {
-                id: Date.now(),
-                productId: '',
-                productName: '',
-                lotNumber: '',
-                unit: '',
-                packaging: '',
-                quantityToExport: '',
-                notes: '',
-                quantityRemaining: 0,
-                isNew: true,
-                availableLots: [],
-                isOutOfStock: false
-            }]
-        }));
-    };
+Â  Â  const addNewRow = () => {
+Â  Â  Â  Â  setSlipData(prev => ({
+Â  Â  Â  Â  Â  Â  ...prev,
+Â  Â  Â  Â  Â  Â  items: [...prev.items, {
+Â  Â  Â  Â  Â  Â  Â  Â  id: Date.now(),
+Â  Â  Â  Â  Â  Â  Â  Â  productId: '',
+Â  Â  Â  Â  Â  Â  Â  Â  productName: '',
+Â  Â  Â  Â  Â  Â  Â  Â  lotNumber: '',
+Â  Â  Â  Â  Â  Â  Â  Â  unit: '',
+Â  Â  Â  Â  Â  Â  Â  Â  packaging: '',
+Â  Â  Â  Â  Â  Â  Â  Â  quantityToExport: '',
+Â  Â  Â  Â  Â  Â  Â  Â  notes: '',
+Â  Â  Â  Â  Â  Â  Â  Â  quantityRemaining: 0,
+Â  Â  Â  Â  Â  Â  Â  Â  // THÃŠM: ThÃªm trÆ°á»ng expiryDate vÃ o item má»›i
+Â  Â  Â  Â  Â  Â  Â  Â  expiryDate: 'N/A', 
+Â  Â  Â  Â  Â  Â  Â  Â  isNew: true,
+Â  Â  Â  Â  Â  Â  Â  Â  availableLots: [],
+Â  Â  Â  Â  Â  Â  Â  Â  isOutOfStock: false
+Â  Â  Â  Â  Â  Â  }]
+Â  Â  Â  Â  }));
+Â  Â  };
 
-    const removeRow = (indexToRemove) => {
-        const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
-        setSlipData({ ...slipData, items: newItems });
-    };
+Â  Â  const removeRow = (indexToRemove) => {
+Â  Â  Â  Â  const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
+Â  Â  Â  Â  setSlipData({ ...slipData, items: newItems });
+Â  Â  };
 
-    const handleSaveChanges = () => {
-        const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
-        
-        if (itemsToValidate.length === 0) {
-            toast.warn("Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng vá»›i sá»‘ lÆ°á»£ng lá»›n hÆ¡n 0.");
-            onSave({ ...slipData, items: [] });
-            return;
-        }
+Â  Â  const handleSaveChanges = () => {
+Â  Â  Â  Â  const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
+Â  Â  Â  Â  
+Â  Â  Â  Â  if (itemsToValidate.length === 0) {
+Â  Â  Â  Â  Â  Â  toast.warn("Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng vá»›i sá»‘ lÆ°á»£ng lá»›n hÆ¡n 0.");
+Â  Â  Â  Â  Â  Â  onSave({ ...slipData, items: [] });
+Â  Â  Â  Â  Â  Â  return;
+Â  Â  Â  Â  }
 
-        for (let i = 0; i < itemsToValidate.length; i++) {
-            const item = itemsToValidate[i];
-            const validationResult = exportItemSchema.safeParse(item);
-            if (!validationResult.success) {
-                const originalIndex = slipData.items.findIndex(originalItem => originalItem.id === item.id);
-                const errorMessage = `Lá»—i á»Ÿ dÃ²ng ${originalIndex + 1} (MÃ£: ${item.productId}): ${validationResult.error.issues[0].message}`;
-                toast.warn(errorMessage);
-                return;
-            }
-        }
+Â  Â  Â  Â  for (let i = 0; i < itemsToValidate.length; i++) {
+Â  Â  Â  Â  Â  Â  const item = itemsToValidate[i];
+Â  Â  Â  Â  Â  Â  const validationResult = exportItemSchema.safeParse(item);
+Â  Â  Â  Â  Â  Â  if (!validationResult.success) {
+Â  Â  Â  Â  Â  Â  Â  Â  const originalIndex = slipData.items.findIndex(originalItem => originalItem.id === item.id);
+Â  Â  Â  Â  Â  Â  Â  Â  const errorMessage = `Lá»—i á»Ÿ dÃ²ng ${originalIndex + 1} (MÃ£: ${item.productId}): ${validationResult.error.issues[0].message}`;
+Â  Â  Â  Â  Â  Â  Â  Â  toast.warn(errorMessage);
+Â  Â  Â  Â  Â  Â  Â  Â  return;
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  }
 
-        const finalSlipData = {
-            ...slipData,
-            items: itemsToValidate
-        };
-        onSave(finalSlipData);
-    };
+Â  Â  Â  Â  const finalSlipData = {
+Â  Â  Â  Â  Â  Â  ...slipData,
+Â  Â  Â  Â  Â  Â  items: itemsToValidate
+Â  Â  Â  Â  };
+Â  Â  Â  Â  onSave(finalSlipData);
+Â  Â  };
 
-    return (
-        <div className="modal-backdrop">
-            <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
-                <h2>Chá»‰nh sá»­a Phiáº¿u Xuáº¥t Kho (ID: {slipData.id})</h2>
-                
-                <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>NgÃ y xuáº¥t (*)</label>
-                            <div className="date-input-wrapper">
-                                <input 
-                                    type="date"
-                                    value={dateToInputValue(slipData.exportDate)}
-                                    onChange={(e) => handleInfoChange('exportDate', e.target.value)}
-                                />
-                                <FiCalendar className="date-input-icon" />
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label>KhÃ¡ch hÃ ng</label>
-                            <input type="text" value={slipData.customer} readOnly disabled />
-                        </div>
-                        <div className="form-group">
-                            <label>Diá»…n giáº£i</label>
-                            <textarea 
-                                value={slipData.description || ''} 
-                                onChange={(e) => handleInfoChange('description', e.target.value)}
-                                rows={1}
-                            />
-                        </div>
-                    </div>
-                </div>
+Â  Â  return (
+Â  Â  Â  Â  <div className="modal-backdrop">
+Â  Â  Â  Â  Â  Â  <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
+Â  Â  Â  Â  Â  Â  Â  Â  <h2>Chá»‰nh sá»­a Phiáº¿u Xuáº¥t Kho (ID: {slipData.id})</h2>
+Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-row">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-group">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <label>NgÃ y xuáº¥t (*)</label>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="date-input-wrapper">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="date"
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={dateToInputValue(slipData.exportDate)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(e) => handleInfoChange('exportDate', e.target.value)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiCalendar className="date-input-icon" />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-group">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <label>KhÃ¡ch hÃ ng</label>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input type="text" value={slipData.customer} readOnly disabled />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-group">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <label>Diá»…n giáº£i</label>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <textarea 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={slipData.description || ''} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(e) => handleInfoChange('description', e.target.value)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  rows={1}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
 
-                <div className="modal-body">
-                    <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
-                    <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-                        <div className="grid-header">MÃ£ hÃ ng</div>
-                        <div className="grid-header">TÃªn hÃ ng</div>
-                        <div className="grid-header">Sá»‘ lÃ´</div>
-                        <div className="grid-header">ÄVT</div>
-                        <div className="grid-header">Quy cÃ¡ch</div>
-                        <div className="grid-header">SL Xuáº¥t (*)</div>
-                        <div className="grid-header">Ghi chÃº</div>
-                        <div className="grid-header">Thao tÃ¡c</div>
+Â  Â  Â  Â  Â  Â  Â  Â  <div className="modal-body">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">MÃ£ hÃ ng</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">TÃªn hÃ ng</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Sá»‘ lÃ´</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">HSD</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">ÄVT</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Quy cÃ¡ch</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">SL Xuáº¥t (*)</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Ghi chÃº</div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Thao tÃ¡c</div>
 
-                        {slipData.items.map((item, index) => (
-                            <React.Fragment key={item.id || index}>
-                                <div className="grid-cell">
-                                    {item.isNew ? (
-                                        <ProductAutocomplete
-                                            value={item.productId}
-                                            onChange={(value) => handleItemChange(index, 'productId', value.toUpperCase())}
-                                            onSelect={(product) => handleProductSearch(index, product)}
-                                            onBlur={() => handleProductSearch(index, item.productId)}
-                                        />
-                                    ) : (
-                                        <input type="text" value={item.productId} readOnly title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng Ä‘Ã£ cÃ³." />
-                                    )}
-                                </div>
-                                <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-                                <div className="grid-cell">
-                                    {item.isNew ? (
-                                        item.isOutOfStock ? (
-                                            <span style={{color: 'red'}}>Háº¿t hÃ ng</span>
-                                        ) : (
-                                            <select
-                                                value={item.lotId || ''}
-                                                onChange={e => handleLotSelection(index, e.target.value)}
-                                                disabled={!item.availableLots || item.availableLots.length === 0}
-                                                style={{width: '100%'}}
-                                            >
-                                                <option value="">-- Chá»n lÃ´ --</option>
-                                                {item.availableLots.map(lot => (
-                                                    <option key={lot.id} value={lot.id}>
-                                                        {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(Trá»‘ng)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        )
-                                    ) : (
-                                        <input type="text" value={item.lotNumber || '(KhÃ´ng cÃ³)'} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng Ä‘Ã£ cÃ³." />
-                                    )}
-                                </div>
-                                <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-                                <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-                                <div className="grid-cell">
-                                    <input 
-                                        type="number"
-                                        step="any"
-                                        value={item.quantityToExport} 
-                                        onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} 
-                                    />
-                                </div>
-                                <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
-                                <div className="grid-cell">
-                                    <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
-                                        <FiXCircle />
-                                    </button>
-                                </div>
-                            </React.Fragment>
-                        ))}
-                    </div>
-                </div>
-                
-                <div className="modal-actions">
-                    <button type="button" onClick={addNewRow} className="btn-secondary">ThÃªm dÃ²ng</button>
-                    <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
-                    <button type="button" onClick={handleSaveChanges} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
-                </div>
-            </div>
-        </div>
-    );
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {slipData.items.map((item, index) => (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <React.Fragment key={item.id || index}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {item.isNew ? (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <ProductAutocomplete
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={item.productId}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(value) => handleItemChange(index, 'productId', value.toUpperCase())}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onSelect={(product) => handleProductSearch(index, product)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onBlur={() => handleProductSearch(index, item.productId)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input type="text" value={item.productId} readOnly title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng Ä‘Ã£ cÃ³." />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {item.isNew ? (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  item.isOutOfStock ? (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <span style={{color: 'red'}}>Háº¿t hÃ ng</span>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <select
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={item.lotId || ''}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={e => handleLotSelection(index, e.target.value)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  disabled={!item.availableLots || item.availableLots.length === 0}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  style={{width: '100%'}}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  >
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <option value="">-- Chá»n lÃ´ --</option>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {item.availableLots.map(lot => (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <option key={lot.id} value={lot.id}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(Trá»‘ng)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </option>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </select>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input type="text" value={item.lotNumber || '(KhÃ´ng cÃ³)'} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng Ä‘Ã£ cÃ³." />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {/* THÃŠM Táº I ÄÃ‚Y: Ã” INPUT HIá»‚N THá»Š HSD */}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="text" 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // Sá»¬A Lá»–I: Kiá»ƒm tra kiá»ƒu dá»¯ liá»‡u trÆ°á»›c khi Ä‘á»‹nh dáº¡ng
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={
+                                            // Náº¿u lÃ  chuá»—i (dá»¯ liá»‡u cÅ©/N/A), hiá»ƒn thá»‹ chuá»—i
+                                            typeof item.expiryDate === 'string' 
+                                                ? item.expiryDate 
+                                                // Náº¿u lÃ  Timestamp (tá»« lÃ´ má»›i chá»n), Ä‘á»‹nh dáº¡ng
+                                                : (item.expiryDate ? formatDate(item.expiryDate) : '(N/A)')
+                                        } 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  readOnly 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  title="Háº¡n sá»­ dá»¥ng cá»§a lÃ´ hÃ ng Ä‘Ã£ chá»n"
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  style={{ backgroundColor: '#f0f0f0' }}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="number"
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  step="any"
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={item.quantityToExport} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiXCircle />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </button>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </React.Fragment>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  <div className="modal-actions">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" onClick={addNewRow} className="btn-secondary">ThÃªm dÃ²ng</button>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" onClick={handleSaveChanges} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  </div>
+Â  Â  );
 };
 
 export default EditExportSlipModal;
@@ -2515,9 +2542,9 @@ export default ErrorBoundary;
 // src/components/ExpiryNotificationBanner.jsx
 
 import React, { useState, useEffect } from 'react';
-import { db, auth } from '../firebaseConfig'; // Äáº£m báº£o báº¡n Ä‘Ã£ export auth
+import { db, auth, functions } from '../firebaseConfig'; // <-- THAY Äá»”I: Import functions Ä‘Ã£ cáº¥u hÃ¬nh
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions'; // <-- GIá»® Láº I
 import { toast } from 'react-toastify';
 import { FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
 import '../styles/ExpiryNotificationBanner.css'; // Sáº½ táº¡o file CSS á»Ÿ bÆ°á»›c sau
@@ -2547,7 +2574,6 @@ const ExpiryNotificationBanner = () => {
 
     const handleConfirm = async (notificationId, lotId) => {
         setIsProcessing(notificationId);
-        const functions = getFunctions();
         const confirmAction = httpsCallable(functions, 'confirmExpiryNotification');
         
         try {
@@ -3309,9 +3335,11 @@ export default React.memo(InventoryFilters);
 // src/components/LoginPage.jsx
 import React, { useState } from 'react';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+// Sá»­a táº¡i Ä‘Ã¢y: Chá»‰ cáº§n import cÃ¡c hÃ m tá»« thÆ° viá»‡n, 
+// nhÆ°ng import Ä‘á»‘i tÆ°á»£ng 'auth' vÃ  'functions' tá»« file cáº¥u hÃ¬nh
+import { auth, functions } from '../firebaseConfig'; // <-- THAY Äá»”I: IMPORT functions ÄÃƒ Cáº¤U HÃŒNH Tá»ª ÄÃ‚Y
+import { httpsCallable } from 'firebase/functions'; // <-- THAY Äá»”I: CHá»ˆ GIá»® Láº I httpsCallable
 import { toast } from 'react-toastify';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import styles from './LoginPage.module.css';
 import { FcGoogle } from 'react-icons/fc';
 
@@ -3328,8 +3356,8 @@ function LoginPage() {
       toast.info("XÃ¡c thá»±c Google thÃ nh cÃ´ng. Äang khá»Ÿi táº¡o vai trÃ²...");
       
       // 2. Gá»i Cloud Function Ä‘á»ƒ xá»­ lÃ½ vÃ  cáº¥p quyá»n
-      const functions = getFunctions();
-      const processUser = httpsCallable(functions, 'processNewGoogleUser');
+      // KHÃ”NG Cáº¦N Gá»ŒI const functions = getFunctions(); Ná»®A
+      const processUser = httpsCallable(functions, 'processNewGoogleUser'); // <-- DÃ™NG functions ÄÃƒ IMPORT
       await processUser();
 
       // === THAY Äá»”I QUAN TRá»ŒNG NHáº¤T Náº°M á»ž ÄÃ‚Y ===
@@ -3339,10 +3367,10 @@ function LoginPage() {
       toast.success("ÄÄƒng nháº­p vÃ  cáº¥p quyá»n thÃ nh cÃ´ng!");
 
       // 4. Táº£i láº¡i trang Ä‘á»ƒ Ä‘áº£m báº£o toÃ n bá»™ á»©ng dá»¥ng sá»­ dá»¥ng quyá»n má»›i
-      // Thay vÃ¬ Ä‘á»ƒ navigate tá»± Ä‘á»™ng, chÃºng ta táº£i láº¡i má»™t cÃ¡ch triá»‡t Ä‘á»ƒ
       window.location.reload();
 
     } catch (error) {
+      // ... (Pháº§n xá»­ lÃ½ lá»—i giá»¯ nguyÃªn)
       let errorMessage = "ÄÃ£ xáº£y ra lá»—i. Vui lÃ²ng thá»­ láº¡i.";
       if (error.code === 'auth/popup-closed-by-user') {
           errorMessage = "Cá»­a sá»• Ä‘Äƒng nháº­p Ä‘Ã£ bá»‹ Ä‘Ã³ng.";
@@ -3714,7 +3742,7 @@ export default NewDataNotification;
 // src/components/PartnerAutocomplete.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore'; // Giá»¯ láº¡i collection vÃ  getDocs
 import { normalizeString } from '../utils/stringUtils'; // Import hÃ m chuáº©n hÃ³a chuá»—i
 
 const PartnerAutocomplete = ({ value, onSelect }) => {
@@ -3727,24 +3755,23 @@ const PartnerAutocomplete = ({ value, onSelect }) => {
     useEffect(() => {
         const fetchPartners = async () => {
             try {
-                const customersQuery = collection(db, 'customers');
-                const suppliersQuery = collection(db, 'suppliers');
+                // THAY THáº¾: Chá»‰ truy váº¥n collection 'partners' duy nháº¥t
+                const q = collection(db, 'partners');
 
-                const [customersSnapshot, suppliersSnapshot] = await Promise.all([
-                    getDocs(customersQuery),
-                    getDocs(suppliersQuery)
-                ]);
+                // Chá»‰ cáº§n má»™t láº§n getDocs vÃ¬ báº¡n Ä‘Ã£ gá»™p 2 collection
+                const querySnapshot = await getDocs(q);
 
-                const customerList = customersSnapshot.docs.map(doc => ({ id: `cust-${doc.id}`, name: doc.data().name }));
-                const supplierList = suppliersSnapshot.docs.map(doc => ({ id: `supp-${doc.id}`, name: doc.data().name }));
-
-                // Gá»™p hai danh sÃ¡ch vÃ  loáº¡i bá» cÃ¡c Ä‘á»‘i tÃ¡c trÃ¹ng tÃªn
-                const combinedList = [...customerList, ...supplierList];
-                const uniquePartners = Array.from(new Map(combinedList.map(item => [item.name.toLowerCase(), item])).values());
+                const partnerList = querySnapshot.docs.map(doc => ({ 
+                    id: doc.id, 
+                    name: doc.data().partnerName,
+                    type: doc.data().partnerType
+                }));
                 
-                setPartners(uniquePartners.sort((a, b) => a.name.localeCompare(b.name))); // Sáº¯p xáº¿p theo ABC
+                setPartners(partnerList.sort((a, b) => a.name.localeCompare(b.name))); // Sáº¯p xáº¿p theo ABC
             } catch (error) {
                 console.error("Lá»—i khi táº£i danh sÃ¡ch Ä‘á»‘i tÃ¡c:", error);
+                // Báº¡n cÃ³ thá»ƒ thÃªm toast.error á»Ÿ Ä‘Ã¢y Ä‘á»ƒ hiá»ƒn thá»‹ lá»—i quyá»n:
+                // toast.error("Lá»—i khi táº£i danh sÃ¡ch Ä‘á»‘i tÃ¡c. Vui lÃ²ng kiá»ƒm tra quyá»n Ä‘á»c.");
             }
         };
 
@@ -3769,13 +3796,16 @@ const PartnerAutocomplete = ({ value, onSelect }) => {
         if (inputValue) {
             const normalizedInput = normalizeString(inputValue);
             const filteredSuggestions = partners.filter(partner =>
-                normalizeString(partner.name).includes(normalizedInput)
+                // Kiá»ƒm tra cáº£ tÃªn Ä‘Ã£ chuáº©n hÃ³a vÃ  ID (partnerId)
+                normalizeString(partner.name).includes(normalizedInput) ||
+                partner.id.toLowerCase().includes(inputValue.toLowerCase())
             );
             setSuggestions(filteredSuggestions);
             setShowSuggestions(true);
         } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
+            // Hiá»ƒn thá»‹ 10 gá»£i Ã½ Ä‘áº§u tiÃªn náº¿u Ã´ trá»‘ng
+            setSuggestions(partners.slice(0, 10)); 
+            setShowSuggestions(true);
         }
     };
 
@@ -3791,14 +3821,18 @@ const PartnerAutocomplete = ({ value, onSelect }) => {
                 type="text"
                 value={value}
                 onChange={handleInputChange}
-                onFocus={() => value && suggestions.length > 0 && setShowSuggestions(true)}
+                // ThÃªm onFocus Ä‘á»ƒ hiá»ƒn thá»‹ gá»£i Ã½ khi click vÃ o Ã´
+                onFocus={() => partners.length > 0 && setShowSuggestions(true)}
                 placeholder="Nháº­p tÃªn NCC / KhÃ¡ch hÃ ng..."
             />
             {showSuggestions && suggestions.length > 0 && (
                 <ul className="suggestions-list">
                     {suggestions.map((partner) => (
                         <li key={partner.id} onClick={() => handleSuggestionClick(partner.name)}>
-                            {partner.name}
+                            {/* THAY Äá»”I: Hiá»ƒn thá»‹ tÃªn, ID, vÃ  loáº¡i Ä‘á»‘i tÃ¡c */}
+                            <strong>{partner.name}</strong> 
+                            <span>({partner.type === 'supplier' ? 'NCC' : 'KH'})</span>
+                            <span style={{marginLeft: '10px'}}>{partner.id}</span>
                         </li>
                     ))}
                 </ul>
@@ -5032,80 +5066,96 @@ import { toast } from 'react-toastify';
 Modal.setAppElement('#root');
 
 const ViewExportSlipModal = ({ slip, onClose }) => {
-    if (!slip) return null;
+Â  Â  if (!slip) return null;
 
-    console.log("Dá»¯ liá»‡u Phiáº¿u Xuáº¥t Ä‘Æ°á»£c truyá»n vÃ o Modal:", slip);
-    
-    const handleExportPDF = async () => {
-        toast.info("Äang táº¡o file PDF...");
-        try {
-            await exportExportSlipToPDF(slip);
-        } catch (error) {
-            console.error("Lá»—i khi xuáº¥t PDF phiáº¿u xuáº¥t:", error);
-            toast.error("ÄÃ£ xáº£y ra lá»—i khi táº¡o file PDF.");
-        }
+Â  Â  console.log("Dá»¯ liá»‡u Phiáº¿u Xuáº¥t Ä‘Æ°á»£c truyá»n vÃ o Modal:", slip);
+Â  Â  
+Â  Â  const handleExportPDF = async () => {
+Â  Â  Â  Â  toast.info("Äang táº¡o file PDF...");
+Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  await exportExportSlipToPDF(slip);
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi xuáº¥t PDF phiáº¿u xuáº¥t:", error);
+Â  Â  Â  Â  Â  Â  toast.error("ÄÃ£ xáº£y ra lá»—i khi táº¡o file PDF.");
+Â  Â  Â  Â  }
+Â  Â  };
+
+    // HÃ m helper Ä‘á»ƒ xá»­ lÃ½ HSD: Kiá»ƒm tra náº¿u lÃ  Ä‘á»‘i tÆ°á»£ng Timestamp (tá»« lÃ´ má»›i chá»n) thÃ¬ Ä‘á»‹nh dáº¡ng, 
+    // náº¿u lÃ  chuá»—i (tá»« dá»¯ liá»‡u cÅ©) thÃ¬ hiá»ƒn thá»‹ chuá»—i, náº¿u lÃ  null thÃ¬ hiá»ƒn thá»‹ N/A.
+    const renderExpiryDate = (date) => {
+        if (!date) return 'N/A';
+        // Náº¿u lÃ  chuá»—i (dá»¯ liá»‡u cÅ© Ä‘Ã£ Ä‘á»‹nh dáº¡ng hoáº·c 'N/A'), hiá»ƒn thá»‹ luÃ´n
+        if (typeof date === 'string') return date;
+        // Náº¿u lÃ  Ä‘á»‘i tÆ°á»£ng Timestamp, sá»­ dá»¥ng formatDate
+        return formatDate(date);
     };
 
-    return (
-        <Modal isOpen={true} onRequestClose={onClose} className="modal" overlayClassName="overlay" contentLabel="Chi tiáº¿t Phiáº¿u Xuáº¥t">
-            <div className="modal-header">
-                <h2>Chi tiáº¿t Phiáº¿u Xuáº¥t Kho</h2>
-                <button onClick={onClose} className="close-button"><FiX /></button>
-            </div>
-            <div className="modal-body">
-                <div id="slip-content">
-                    <div className="slip-info">
-                        <p><strong>MÃ£ phiáº¿u:</strong> {slip.id}</p>
-                        <p><strong>NgÃ y xuáº¥t:</strong> {slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'KhÃ´ng cÃ³'}</p>
-                        <p><strong>KhÃ¡ch hÃ ng:</strong> {slip.customer || ''}</p>
-                        {/* --- THAY Äá»”I Táº I ÄÃ‚Y: Sá»­a slip.notes thÃ nh slip.description --- */}
-                        <p><strong>Ghi chÃº:</strong> {slip.description || 'KhÃ´ng cÃ³'}</p>
-                    </div>
-                    <div className="table-container">
-                        <table className="products-table">
-                            <thead>
-                                <tr>
-                                    <th>MÃ£ hÃ ng</th>
-                                    <th>TÃªn sáº£n pháº©m</th>
-                                    <th>Sá»‘ lÃ´</th>
-                                    <th>HSD</th>
-                                    <th>ÄVT</th>
-                                    <th>Quy cÃ¡ch</th>
-                                    <th>Sá»‘ lÆ°á»£ng</th>
-                                    <th>Ghi chÃº</th>
-                                    <th>Nhiá»‡t Ä‘á»™ BQ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {slip.items.map((item, index) => (
-                                    <tr key={index}>
-                                        <td>{item.productId}</td>
-                                        <td>{item.productName}</td>
-                                        <td>{item.lotNumber}</td>
-                                        <td>{item.expiryDate}</td>
-                                        <td>{item.unit}</td>
-                                        <td>{item?.specification || ''}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
-                                        </td>
-                                        <td>{item.notes || ''}</td>
-                                        <td>{item.storageTemp}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div className="modal-footer">
-                <button onClick={handleExportPDF} className="btn-primary">
-                    <FiPrinter style={{ marginRight: '5px' }} />
-                    Xuáº¥t PDF
-                </button>
-                <button onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
-            </div>
-        </Modal>
-    );
+Â  Â  return (
+Â  Â  Â  Â  <Modal isOpen={true} onRequestClose={onClose} className="modal" overlayClassName="overlay" contentLabel="Chi tiáº¿t Phiáº¿u Xuáº¥t">
+Â  Â  Â  Â  Â  Â  <div className="modal-header">
+Â  Â  Â  Â  Â  Â  Â  Â  <h2>Chi tiáº¿t Phiáº¿u Xuáº¥t Kho</h2>
+Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={onClose} className="close-button"><FiX /></button>
+Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  <div className="modal-body">
+Â  Â  Â  Â  Â  Â  Â  Â  <div id="slip-content">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="slip-info">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <p><strong>MÃ£ phiáº¿u:</strong> {slip.id}</p>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+                        {/* Sá»¬A Lá»–I 1: NgÄƒn crash khi hiá»ƒn thá»‹ slip.createdAt */}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <p><strong>NgÃ y xuáº¥t:</strong> {slip.createdAt ? formatDate(slip.createdAt) : 'KhÃ´ng cÃ³'}</p>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <p><strong>KhÃ¡ch hÃ ng:</strong> {slip.customer || ''}</p>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {/* --- THAY Äá»”I Táº I ÄÃ‚Y: Sá»­a slip.notes thÃ nh slip.description --- */}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <p><strong>Ghi chÃº:</strong> {slip.description || 'KhÃ´ng cÃ³'}</p>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="table-container">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <table className="products-table">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <thead>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>MÃ£ hÃ ng</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>TÃªn sáº£n pháº©m</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Sá»‘ lÃ´</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>HSD</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>ÄVT</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Quy cÃ¡ch</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Sá»‘ lÆ°á»£ng</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Ghi chÃº</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Nhiá»‡t Ä‘á»™ BQ</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {slip.items.map((item, index) => (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tr key={index}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productId}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productName}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.lotNumber}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {/* Sá»¬A Lá»–I 2: Sá»­ dá»¥ng hÃ m helper má»›i Ä‘á»ƒ xá»­ lÃ½ cáº£ chuá»—i vÃ  Timestamp */}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{renderExpiryDate(item.expiryDate)}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.unit}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item?.specification || ''}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td style={{ textAlign: 'center' }}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.notes || ''}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.storageTemp}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tbody>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </table>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  <div className="modal-footer">
+Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={handleExportPDF} className="btn-primary">
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiPrinter style={{ marginRight: '5px' }} />
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Xuáº¥t PDF
+Â  Â  Â  Â  Â  Â  Â  Â  </button>
+Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
+Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  </Modal>
+Â  Â  );
 };
 
 export default ViewExportSlipModal;
@@ -6161,7 +6211,7 @@ export default DataImportPage;
 
 import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp } from 'firebase/firestore'; // ThÃªm where, Timestamp
+import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp, writeBatch } from 'firebase/firestore';
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
@@ -6256,69 +6306,137 @@ const ExportListPage = () => {
 
 // THAY THáº¾ HÃ€M CÅ¨ Báº°NG HÃ€M NÃ€Y:
 const handleConfirmExport = async (slip) => {
-    setIsProcessing(true); // BÃ¡o cho há»‡ thá»‘ng biáº¿t lÃ  Ä‘ang xá»­ lÃ½
-    try {
-      for (const item of slip.items) {
-        const lotRef = doc(db, 'inventory_lots', item.lotId);
-        const lotSnap = await getDoc(lotRef);
-        if (lotSnap.exists()) {
-         const currentQuantity = lotSnap.data().quantityRemaining;
-          const newQuantityRemaining = currentQuantity - (item.quantityToExport || item.quantityExported);
-          if (newQuantityRemaining < 0) {
-            toast.error(`Lá»—i: Tá»“n kho cá»§a lÃ´ ${item.lotNumber} khÃ´ng Ä‘á»§ Ä‘á»ƒ xuáº¥t.`);
-            setIsProcessing(false); // Dá»«ng xá»­ lÃ½ náº¿u cÃ³ lá»—i
-            return;
-          }
-          await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
-        }
-      }
-      const slipRef = doc(db, 'export_tickets', slip.id);
-      await updateDoc(slipRef, { status: 'completed' });
-      toast.success('XÃ¡c nháº­n xuáº¥t kho thÃ nh cÃ´ng!');
-      reset();
-    } catch (error) {
-      console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
-      toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n.');
-    } finally {
-        setIsProcessing(false); // LuÃ´n táº¯t tráº¡ng thÃ¡i xá»­ lÃ½ khi xong
-        setConfirmModal({ isOpen: false });
-    }
+Â  Â  setIsProcessing(true);
+    const batch = writeBatch(db); // DÃ¹ng Batch Writes
+    
+Â  Â  try {
+Â  Â  Â  for (const item of slip.items) {
+Â  Â  Â  Â  const lotRef = doc(db, 'inventory_lots', item.lotId);
+Â  Â  Â  Â  const lotSnap = await getDoc(lotRef);
+Â  Â  Â  Â  
+Â  Â  Â  Â  if (lotSnap.exists()) {
+            const currentRemaining = lotSnap.data().quantityRemaining;
+            const currentAllocated = lotSnap.data().quantityAllocated || 0;
+Â  Â  Â  Â  Â  Â  const quantityToExport = item.quantityToExport || item.quantityExported;
+Â  Â  Â  Â  Â  Â  
+            // 1. Kiá»ƒm tra tá»“n kho thá»±c táº¿
+Â  Â  Â  Â  Â  Â  const newQuantityRemaining = currentRemaining - quantityToExport; 
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  if (newQuantityRemaining < 0) {
+Â  Â  Â  Â  Â  Â  Â  Â  toast.error(`Lá»—i: Tá»“n kho cá»§a lÃ´ ${item.lotNumber} khÃ´ng Ä‘á»§ (${currentRemaining}) Ä‘á»ƒ xuáº¥t.`);
+Â  Â  Â  Â  Â  Â  Â  Â  setIsProcessing(false); 
+Â  Â  Â  Â  Â  Â  Â  Â  return;
+Â  Â  Â  Â  Â  Â  }
+            
+            // 2. Giáº£i phÃ³ng Ä‘áº·t giá»¯ (trá»« Ä‘i lÆ°á»£ng Ä‘Ã£ xuáº¥t)
+            const newAllocated = Math.max(0, currentAllocated - quantityToExport);
+            
+            // 3. Cáº­p nháº­t cáº£ 2 trÆ°á»ng
+Â  Â  Â  Â  Â  Â  batch.update(lotRef, { 
+                quantityRemaining: newQuantityRemaining,
+                quantityAllocated: newAllocated // Giáº£i phÃ³ng Ä‘áº·t giá»¯
+            });
+Â  Â  Â  Â  }
+Â  Â  Â  }
+        
+        // Cáº­p nháº­t tráº¡ng thÃ¡i phiáº¿u
+Â  Â  Â  const slipRef = doc(db, 'export_tickets', slip.id);
+Â  Â  Â  batch.update(slipRef, { status: 'completed' });
+        
+        await batch.commit();
+
+Â  Â  Â  toast.success('XÃ¡c nháº­n xuáº¥t kho thÃƒÂ nh cÃƒÂ´ng!');
+Â  Â  Â  reset();
+Â  Â  } catch (error) {
+Â  Â  Â  console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
+Â  Â  Â  toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n.');
+Â  Â  } finally {
+Â  Â  Â  Â  setIsProcessing(false);
+Â  Â  Â  Â  setConfirmModal({ isOpen: false });
+Â  Â  }
 };
 
 // THAY THáº¾ HÃ€M CÅ¨ Báº°NG HÃ€M NÃ€Y (Ä‘á»ƒ Ä‘á»“ng bá»™):
 const handleCancelSlip = async (slip) => {
-    setIsProcessing(true); // BÃ¡o cho há»‡ thá»‘ng biáº¿t lÃ  Ä‘ang xá»­ lÃ½
-    try {
-      const slipRef = doc(db, 'export_tickets', slip.id);
-      await updateDoc(slipRef, { status: 'cancelled' });
-      toast.success('Há»§y phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
-      reset();
-    } catch (error) {
-      console.error("Lá»—i khi há»§y phiáº¿u: ", error);
-      toast.error('ÄÃ£ xáº£y ra lá»—i khi há»§y phiáº¿u.');
-    } finally {
-       setIsProcessing(false); // LuÃ´n táº¯t tráº¡ng thÃ¡i xá»­ lÃ½ khi xong
-       setConfirmModal({ isOpen: false });
-    }
+Â  Â  setIsProcessing(true); // BÃ¡o cho há»‡ thá»‘ng biáº¿t lÃ  Ä‘ang xá»­ lÃ½
+Â  Â  try {
+        const batch = writeBatch(db); // DÃ¹ng Batch Writes
+
+Â  Â  Â  Â  // 1. Giáº£i phÃ³ng Ä‘áº·t giá»¯ lÃ´ hÃ ng
+Â  Â  Â  Â  for (const item of slip.items) {
+Â  Â  Â  Â  Â  Â  const lotRef = doc(db, 'inventory_lots', item.lotId);
+Â  Â  Â  Â  Â  Â  const lotSnap = await getDoc(lotRef);
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  if (lotSnap.exists()) {
+Â  Â  Â  Â  Â  Â  Â  Â  const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                const quantityToRelease = item.quantityToExport || item.quantityExported || 0;
+                
+                const newAllocated = Math.max(0, currentAllocated - quantityToRelease); // Giáº£m lÆ°á»£ng Ä‘áº·t giá»¯
+                
+                batch.update(lotRef, { 
+                    quantityAllocated: newAllocated 
+                });
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  }
+
+Â  Â  Â  Â  // 2. Cáº­p nháº­t tráº¡ng thÃ¡i phiáº¿u
+Â  Â  Â  Â  const slipRef = doc(db, 'export_tickets', slip.id);
+Â  Â  Â  Â  batch.update(slipRef, { status: 'cancelled' });
+
+        await batch.commit(); // Ghi táº¥t cáº£ má»™t láº§n
+
+Â  Â  Â  Â  toast.success('Há»§y phiáº¿u xuáº¥t thÃ nh cÃ´ng vÃ  giáº£i phÃ³ng tá»“n kho Ä‘Ã£ Ä‘áº·t giá»¯!');
+Â  Â  Â  Â  reset();
+Â  Â  } catch (error) {
+Â  Â  Â  Â  console.error("Lá»—i khi há»§y phiáº¿u: ", error);
+Â  Â  Â  Â  toast.error('ÄÃ£ xáº£y ra lá»—i khi há»§y phiáº¿u.');
+Â  Â  } finally {
+Â  Â  Â  Â setIsProcessing(false);
+Â  Â  Â  Â setConfirmModal({ isOpen: false });
+Â  Â  }
 };
 
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
-      const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
-      await updateDoc(slipDocRef, { 
-          items: updatedSlip.items,
-          customer: updatedSlip.customer,
-          description: updatedSlip.description,
-          exportDate: updatedSlip.exportDate // <-- THÃŠM DÃ’NG NÃ€Y
-      });
-      setIsEditModalOpen(false);
-      reset();
-      toast.success('Cáº­p nháº­t phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
+        const batch = writeBatch(db); // DÃ¹ng Batch Writes
+        const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
+        
+        // 1. Cáº¬P NHáº¬T TRÆ¯á»œNG quantityAllocated TRONG INVENTORY_LOTS
+        for (const item of updatedSlip.items) {
+            // LÃ´ hÃ ng trong phiáº¿u chá»‰nh sá»­a cáº§n Ä‘Æ°á»£c Ä‘áº·t giá»¯
+            const lotRef = doc(db, 'inventory_lots', item.lotId);
+            const lotSnap = await getDoc(lotRef);
+            
+            if (lotSnap.exists()) {
+                const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                // Äáº·t giá»¯ sá»‘ lÆ°á»£ng má»›i/Ä‘Ã£ chá»‰nh sá»­a
+                const newAllocated = currentAllocated + item.quantityToExport; 
+                
+                batch.update(lotRef, { 
+                    quantityAllocated: newAllocated 
+                });
+            }
+        }
+
+        // 2. Cáº­p nháº­t phiáº¿u xuáº¥t
+        batch.update(slipDocRef, { 
+            items: updatedSlip.items,
+            customer: updatedSlip.customer,
+            description: updatedSlip.description,
+            exportDate: updatedSlip.exportDate
+        });
+        
+        await batch.commit(); // Ghi táº¥t cáº£ má»™t láº§n
+
+        setIsEditModalOpen(false);
+        reset();
+        toast.success('Cáº­p nháº­t phiáº¿u xuáº¥t thÃ nh cÃ´ng vÃ  Ä‘áº·t giá»¯ tá»“n kho!');
+
     } catch (error) {
-      console.error("Lá»—i khi cáº­p nháº­t phiáº¿u xuáº¥t: ", error);
-      toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
+        console.error("Lá»—i khi cáº­p nháº­t phiáº¿u xuáº¥t: ", error);
+        toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
     }
-  };
+};
 
 const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -8236,12 +8354,14 @@ export default MobileInventoryPage;
 --- FILE: D:\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
+// src/pages/NewExportPage.jsx (Thay tháº¿ toÃ n bá»™ ná»™i dung file)
+
 import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore'; // THÃŠM writeBatch
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
@@ -8250,277 +8370,354 @@ import { z } from 'zod';
 import useExportSlipStore from '../stores/exportSlipStore';
 
 const exportItemSchema = z.object({
-  productId: z.string().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
-  selectedLotId: z.string().min(1, { message: "Vui lÃ²ng chá»n má»™t lÃ´ hÃ ng." }),
-  quantityToExport: z.preprocess(
-      val => Number(val),
-      z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
-       .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
-  )
+Â  productId: z.string().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+Â  selectedLotId: z.string().min(1, { message: "Vui lÃ²ng chá»n má»™t lÃ´ hÃ ng." }),
+Â  quantityToExport: z.preprocess(
+Â  Â  Â  val => Number(val),
+Â  Â  Â  z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
+Â  Â  Â  Â .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
+Â  )
 });
 
 const exportSlipSchema = z.object({
-  customerId: z.string().min(1, { message: "MÃ£ khÃ¡ch hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
-  customerName: z.string().min(1, { message: "KhÃ´ng tÃ¬m tháº¥y tÃªn khÃ¡ch hÃ ng tÆ°Æ¡ng á»©ng." }),
-  items: z.array(exportItemSchema).min(1, { message: "Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng." })
+Â  customerId: z.string().min(1, { message: "MÃ£ khÃ¡ch hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+Â  customerName: z.string().min(1, { message: "KhÃ´ng tÃ¬m tháº¥y tÃªn khÃ¡ch hÃ ng tÆ°Æ¡ng á»©ng." }),
+Â  items: z.array(exportItemSchema).min(1, { message: "Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng." })
 });
 
 
 const NewExportPage = () => {
-    // Láº¥y state vÃ  actions tá»« store
-    const {
-        customerId, customerName, description, items,
-        setCustomer, setDescription, addNewItemRow, removeItemRow, updateItem,
-        replaceItem, handleProductSearchResult, resetSlip
-    } = useExportSlipStore();
+Â  Â  // Láº¥y state vÃ  actions tá»« store
+Â  Â  const {
+Â  Â  Â  Â  customerId, customerName, description, items,
+Â  Â  Â  Â  setCustomer, setDescription, addNewItemRow, removeItemRow, updateItem,
+Â  Â  Â  Â  replaceItem, handleProductSearchResult, resetSlip
+Â  Â  } = useExportSlipStore();
 
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const [focusedInputIndex, setFocusedInputIndex] = useState(null);
-    const hasSelectedProduct = useRef(false);
+Â  Â  const [isProcessing, setIsProcessing] = useState(false);
+Â  Â  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+Â  Â  const [focusedInputIndex, setFocusedInputIndex] = useState(null);
+Â  Â  const hasSelectedProduct = useRef(false);
 
-    // Refs cho cÃ¡c element cáº§n focus
-    const lotSelectRefs = useRef([]);
-    const quantityInputRefs = useRef([]);
-    const addRowButtonRef = useRef(null);
-    const productInputRefs = useRef([]);
-    const prevItemsLength = useRef(items.length);
+Â  Â  // Refs cho cÃ¡c element cáº§n focus
+Â  Â  const lotSelectRefs = useRef([]);
+Â  Â  const quantityInputRefs = useRef([]);
+Â  Â  const addRowButtonRef = useRef(null);
+Â  Â  const productInputRefs = useRef([]);
+Â  Â  const prevItemsLength = useRef(items.length);
 
-    // useEffect Ä‘á»ƒ tá»± Ä‘á»™ng focus vÃ o dÃ²ng má»›i
-    useEffect(() => {
-        // Náº¿u sá»‘ lÆ°á»£ng dÃ²ng tÄƒng lÃªn (tá»©c lÃ  vá»«a thÃªm dÃ²ng má»›i)
-        if (items.length > prevItemsLength.current) {
-            const lastIndex = items.length - 1;
-            // Focus vÃ o Ã´ mÃ£ hÃ ng cá»§a dÃ²ng má»›i nháº¥t
-            if (productInputRefs.current[lastIndex]) {
-                productInputRefs.current[lastIndex].focus();
-            }
-        }
-        // Cáº­p nháº­t láº¡i sá»‘ lÆ°á»£ng dÃ²ng cÅ©
-        prevItemsLength.current = items.length;
-    }, [items.length]);
+Â  Â  // useEffect Ä‘á»ƒ tá»± Ä‘á»™ng focus vÃ o dÃ²ng má»›i
+Â  Â  useEffect(() => {
+Â  Â  Â  Â  // Náº¿u sá»‘ lÆ°á»£ng dÃ²ng tÄƒng lÃªn (tá»©c lÃ  vá»«a thÃªm dÃ²ng má»›i)
+Â  Â  Â  Â  if (items.length > prevItemsLength.current) {
+Â  Â  Â  Â  Â  Â  const lastIndex = items.length - 1;
+Â  Â  Â  Â  Â  Â  // Focus vÃ o Ã´ mÃ£ hÃ ng cá»§a dÃ²ng má»›i nháº¥t
+Â  Â  Â  Â  Â  Â  if (productInputRefs.current[lastIndex]) {
+Â  Â  Â  Â  Â  Â  Â  Â  productInputRefs.current[lastIndex].focus();
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  }
+Â  Â  Â  Â  // Cáº­p nháº­t láº¡i sá»‘ lÆ°á»£ng dÃ²ng cÅ©
+Â  Â  Â  Â  prevItemsLength.current = items.length;
+Â  Â  }, [items.length]);
 
-    const isSlipValid = useMemo(() => {
-        const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
-        const hasValidItem = items.some(
-            item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0
-        );
-        return hasCustomer && hasValidItem;
-    }, [customerId, customerName, items]);
+Â  Â  const isSlipValid = useMemo(() => {
+Â  Â  Â  Â  const hasCustomer = customerId.trim() !== '' && customerName.trim() !== '';
+Â  Â  Â  Â  const hasValidItem = items.some(
+Â  Â  Â  Â  Â  Â  item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0
+Â  Â  Â  Â  );
+Â  Â  Â  Â  return hasCustomer && hasValidItem;
+Â  Â  }, [customerId, customerName, items]);
 
-    const disabledReason = useMemo(() => {
-        if (isSlipValid) return '';
-        if (!customerId.trim() || !customerName.trim()) {
-            return 'Vui lÃ²ng chá»n KhÃ¡ch HÃ ng.';
-        }
-        if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
-            return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m há»£p lá»‡ (Ä‘Ã£ chá»n lÃ´ vÃ  cÃ³ sá»‘ lÆ°á»£ng).';
-        }
+Â  Â  const disabledReason = useMemo(() => {
+Â  Â  Â  Â  if (isSlipValid) return '';
+Â  Â  Â  Â  if (!customerId.trim() || !customerName.trim()) {
+Â  Â  Â  Â  Â  Â  return 'Vui lÃ²ng chá»n KhÃ¡ch HÃ ng.';
+Â  Â  Â  Â  }
+Â  Â  Â  Â  if (!items.some(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0)) {
+Â  Â  Â  Â  Â  Â  return 'Vui lÃ²ng thÃªm Ã­t nháº¥t má»™t sáº£n pháº©m há»£p lá»‡ (Ä‘Ã£ chá»n lÃ´ vÃ  cÃ³ sá»‘ lÆ°á»£ng).';
+Â  Â  Â  Â  }
+Â  Â  Â  Â  
+Â  Â  Â  Â  return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
+Â  Â  }, [isSlipValid, customerId, customerName, items]);
+
+Â  Â  const handleCustomerSearch = async (idToSearch) => { 
+Â  Â  Â  Â  if (!idToSearch) {
+Â  Â  Â  Â  Â  Â  setCustomer(idToSearch, '');
+Â  Â  Â  Â  Â  Â  return;
+Â  Â  Â  Â  }
+Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  const partnerRef = doc(db, 'partners', idToSearch.toUpperCase()); 
+Â  Â  Â  Â  Â  Â  const partnerSnap = await getDoc(partnerRef);
+Â  Â  Â  Â  Â  Â  if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
+Â  Â  Â  Â  Â  Â  Â  Â  setCustomer(idToSearch, partnerSnap.data().partnerName);
+Â  Â  Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  Â  Â  setCustomer(idToSearch, '');
+Â  Â  Â  Â  Â  Â  Â  Â  toast.error(`KhÃ´ng tÃ¬m tháº¥y KhÃ¡ch hÃ ng vá»›i mÃ£ "${idToSearch}"`);
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m khÃ¡ch hÃ ng:", error);
+Â  Â  Â  Â  Â  Â  setCustomer(idToSearch, '');
+Â  Â  Â  Â  }
+Â  Â  };
+
+Â  Â  const handleProductSearch = async (index, productOrId) => {
+Â  Â  Â  Â  const findProductData = async () => {
+Â  Â  Â  Â  Â  Â  if (!productOrId) return null;
+Â  Â  Â  Â  Â  Â  if (typeof productOrId === 'object' && productOrId !== null) return productOrId;
+Â  Â  Â  Â  Â  Â  const productId = String(productOrId).trim().toUpperCase();
+Â  Â  Â  Â  Â  Â  if (!productId) return null;
+Â  Â  Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  Â  Â  const productRef = doc(db, 'products', productId);
+Â  Â  Â  Â  Â  Â  Â  Â  const productSnap = await getDoc(productRef);
+Â  Â  Â  Â  Â  Â  Â  Â  if (productSnap.exists()) return { id: productSnap.id, ...productSnap.data() };
+Â  Â  Â  Â  Â  Â  Â  Â  toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+Â  Â  Â  Â  Â  Â  Â  Â  return null;
+Â  Â  Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m sáº£n pháº©m:", error);
+Â  Â  Â  Â  Â  Â  Â  Â  toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m.");
+Â  Â  Â  Â  Â  Â  Â  Â  return null;
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  };
+Â  Â  Â  Â  const productData = await findProductData();
+Â  Â  Â  Â  await handleProductSearchResult(index, productData);
+Â  Â  Â  Â  if (lotSelectRefs.current[index]) {
+Â  Â  Â  Â  Â  Â  lotSelectRefs.current[index].focus();
+Â  Â  Â  Â  }
+Â  Â  };
+Â  Â  
+Â  Â  // src/pages/NewExportPage.jsx (Thay tháº¿ hÃ m handleLotSelection)
+
+const handleLotSelection = (index, selectedLotId) => {
+    const currentItem = items[index];
+    const selectedAggregatedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+    
+    if (selectedAggregatedLot) {
+        // LÆ¯U Ã: TrÆ°á»ng quantityRemaining (trong store) Ä‘Æ°á»£c dÃ¹ng Ä‘á»ƒ TÃNH Tá»’N CUá»I.
+        // NHÆ¯NG CHÃšNG TA ÄANG Sá»¬ Dá»¤NG quantityAvailableForExport (trong hÃ m getValidSlipData) Äá»‚ KIá»‚M TRA.
+        // Cáº£ hai trÆ°á»ng nÃ y pháº£i Ä‘Æ°á»£c gÃ¡n Tá»’N KHáº¢ Dá»¤NG.
         
-        return 'Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ thÃ´ng tin báº¯t buá»™c (*).';
-    }, [isSlipValid, customerId, customerName, items]);
-
-    const handleCustomerSearch = async (idToSearch) => { 
-        if (!idToSearch) {
-            setCustomer(idToSearch, '');
-            return;
-        }
-        try {
-            const partnerRef = doc(db, 'partners', idToSearch.toUpperCase()); 
-            const partnerSnap = await getDoc(partnerRef);
-            if (partnerSnap.exists() && partnerSnap.data().partnerType === 'customer') {
-                setCustomer(idToSearch, partnerSnap.data().partnerName);
-            } else {
-                setCustomer(idToSearch, '');
-                toast.error(`KhÃ´ng tÃ¬m tháº¥y KhÃ¡ch hÃ ng vá»›i mÃ£ "${idToSearch}"`);
-            }
-        } catch (error) {
-            console.error("Lá»—i khi tÃ¬m khÃ¡ch hÃ ng:", error);
-            setCustomer(idToSearch, '');
-        }
-    };
-
-    const handleProductSearch = async (index, productOrId) => {
-        const findProductData = async () => {
-            if (!productOrId) return null;
-            if (typeof productOrId === 'object' && productOrId !== null) return productOrId;
-            const productId = String(productOrId).trim().toUpperCase();
-            if (!productId) return null;
-            try {
-                const productRef = doc(db, 'products', productId);
-                const productSnap = await getDoc(productRef);
-                if (productSnap.exists()) return { id: productSnap.id, ...productSnap.data() };
-                toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
-                return null;
-            } catch (error) {
-                console.error("Lá»—i khi tÃ¬m sáº£n pháº©m:", error);
-                toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m sáº£n pháº©m.");
-                return null;
-            }
-        };
-        const productData = await findProductData();
-        await handleProductSearchResult(index, productData);
-        if (lotSelectRefs.current[index]) {
-            lotSelectRefs.current[index].focus();
-        }
-    };
-    
-    const handleLotSelection = (index, selectedLotId) => {
-        const currentItem = items[index];
-        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
-        if (selectedLot) {
-            replaceItem(index, {
-                selectedLotId: selectedLotId, lotNumber: selectedLot.lotNumber,
-                expiryDate: selectedLot.expiryDate ? formatDate(selectedLot.expiryDate) : '',
-                quantityRemaining: selectedLot.quantityRemaining,
-                displayLotText: selectedLot.lotNumber || '(Trá»‘ng)',
-                unit: selectedLot.unit || '', packaging: selectedLot.packaging || '',
-                storageTemp: selectedLot.storageTemp || '',
-            });
-
-            // Tá»± Ä‘á»™ng focus vÃ o Ã´ sá»‘ lÆ°á»£ng
-            setTimeout(() => {
-                if (quantityInputRefs.current[index]) {
-                    quantityInputRefs.current[index].focus();
-                }
-            }, 0); 
-
-        } else {
-            replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityRemaining: 0, displayLotText: '' });
-        }
-    };
-
-    const handleQuantityKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault(); 
-            if (addRowButtonRef.current) {
-                addRowButtonRef.current.focus(); 
-            }
-        }
-    };
-
-    const handleRemoveRowWithConfirmation = (index) => {
-        if (items.length <= 1) return;
-        setConfirmModal({
-            isOpen: true,
-            title: "XÃ¡c nháº­n xÃ³a dÃ²ng?",
-            message: "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a dÃ²ng hÃ ng nÃ y khá»i phiáº¿u xuáº¥t?",
-            onConfirm: () => {
-                removeItemRow(index);
-                setConfirmModal({ isOpen: false });
-            }
-        });
-    };
-    
-    const getValidSlipData = () => {
-        const formattedDate = formatDate(new Date());
-        const validItemsInput = items.filter(item => item.productId && item.selectedLotId && Number(item.quantityToExport) > 0);
-        if (validItemsInput.length === 0) {
-            toast.warn("Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.");
-            return null;
-        }
-
-        const finalItems = [];
-        let allProductIds = new Set();
-
-        for (const item of validItemsInput) {
-            let quantityToDistribute = Number(item.quantityToExport);
-            const selectedAggregatedLot = item.availableLots.find(lot => lot.id === item.selectedLotId);
-
-            if (!selectedAggregatedLot || quantityToDistribute <= 0) continue;
-
-            const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
-
-            for (const originalLot of originalLotsSorted) {
-                if (quantityToDistribute <= 0) break;
-                const quantityFromThisLot = Math.min(quantityToDistribute, originalLot.quantityRemaining);
-                
-                finalItems.push({
-                    productId: item.productId,
-                    productName: item.productName,
-                    lotId: originalLot.id,
-                    lotNumber: originalLot.lotNumber,
-                    expiryDate: originalLot.expiryDate ? formatDate(originalLot.expiryDate) : '',
-                    unit: item.unit,
-                    packaging: item.packaging,
-                    storageTemp: item.storageTemp || '',
-                    quantityToExport: quantityFromThisLot,
-                    notes: item.notes || ''
-                });
-                quantityToDistribute -= quantityFromThisLot;
-            }
+        replaceItem(index, {
+            selectedLotId: selectedLotId, lotNumber: selectedAggregatedLot.lotNumber,
+            expiryDate: selectedAggregatedLot.expiryDate ? formatDate(selectedAggregatedLot.expiryDate) : '',
             
-            allProductIds.add(item.productId);
-        }
+            // THAY Äá»”I Cá»T LÃ•I Táº I ÄÃ‚Y:
+            // 1. GÃ¡n Tá»’N KHáº¢ Dá»¤NG (availableQty) vÃ o trÆ°á»ng kiá»ƒm tra giá»›i háº¡n
+            quantityAvailableForExport: selectedAggregatedLot.availableQty, 
+            
+            // 2. GÃ¡n Tá»’N KHáº¢ Dá»¤NG (availableQty) vÃ o trÆ°á»ng quantityRemaining 
+            //    (Ä‘Ã¢y lÃ  trÆ°á»ng Ä‘Æ°á»£c dÃ¹ng trong logic cÅ© Ä‘á»ƒ hiá»ƒn thá»‹ Tá»’N KHO)
+            //    ChÃºng ta cáº§n Ä‘áº£m báº£o nÃ³ mang giÃ¡ trá»‹ 60 (Tá»“n kháº£ dá»¥ng) chá»© khÃ´ng pháº£i 66 (Tá»“n thá»±c)
+            quantityRemaining: selectedAggregatedLot.availableQty, 
+            
+            displayLotText: selectedAggregatedLot.lotNumber || '(Trá»‘ng)',
+            unit: selectedAggregatedLot.unit || '', packaging: selectedAggregatedLot.packaging || '',
+            storageTemp: selectedAggregatedLot.storageTemp || '',
+        });
 
-        if(finalItems.length === 0){
-            toast.warn("KhÃ´ng cÃ³ máº·t hÃ ng nÃ o há»£p lá»‡ Ä‘á»ƒ xuáº¥t.");
-            return null;
-        }
+        // Tá»± Ä‘á»™ng focus vÃ o Ã´ sá»‘ lÆ°á»£ng
+        setTimeout(() => {
+            if (quantityInputRefs.current[index]) {
+                quantityInputRefs.current[index].focus();
+            }
+        }, 0); 
 
-        return {
-            exportDate: formattedDate, 
-            customerId: customerId.toUpperCase(), 
-            customer: customerName,
-            description, 
-            items: finalItems, 
-            productIds: Array.from(allProductIds),
-            createdAt: serverTimestamp()
-        };
-    };
-    
-    const handleSaveDraft = async () => {
-        const slipData = getValidSlipData();
-        if (!slipData) return;
-        setIsProcessing(true);
-        try {
-            await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'pending' });
-            toast.success('LÆ°u nhÃ¡p phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
-            resetSlip();
-        } catch (error) {
-            console.error("Lá»—i khi lÆ°u nhÃ¡p phiáº¿u xuáº¥t: ", error);
-            toast.error('ÄÃ£ xáº£y ra lá»—i khi lÆ°u nhÃ¡p.');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+    } else {
+        // RESET Vá»€ 0
+        replaceItem(index, { selectedLotId: '', lotNumber: '', expiryDate: '', quantityAvailableForExport: 0, quantityRemaining: 0, displayLotText: '' });
+    }
+};
 
-    const handleDirectExport = async () => {
-        const slipData = getValidSlipData();
-        if (!slipData) return;
-        setConfirmModal({isOpen: false});
-        setIsProcessing(true);
-        try {
+Â  Â  const handleQuantityKeyDown = (e) => {
+Â  Â  Â  Â  if (e.key === 'Enter') {
+Â  Â  Â  Â  Â  Â  e.preventDefault(); 
+Â  Â  Â  Â  Â  Â  if (addRowButtonRef.current) {
+Â  Â  Â  Â  Â  Â  Â  Â  addRowButtonRef.current.focus(); 
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  }
+Â  Â  };
+
+Â  Â  const handleRemoveRowWithConfirmation = (index) => {
+Â  Â  Â  Â  if (items.length <= 1) return;
+Â  Â  Â  Â  setConfirmModal({
+Â  Â  Â  Â  Â  Â  isOpen: true,
+Â  Â  Â  Â  Â  Â  title: "XÃ¡c nháº­n xÃ³a dÃ²ng?",
+Â  Â  Â  Â  Â  Â  message: "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a dÃ²ng hÃ ng nÃ y khá»i phiáº¿u xuáº¥t?",
+Â  Â  Â  Â  Â  Â  onConfirm: () => {
+Â  Â  Â  Â  Â  Â  Â  Â  removeItemRow(index);
+Â  Â  Â  Â  Â  Â  Â  Â  setConfirmModal({ isOpen: false });
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  });
+Â  Â  };
+Â  Â  
+Â  Â  const getValidSlipData = () => {
+Â  Â  Â  Â  const formattedDate = formatDate(new Date());
+Â  Â  Â  Â  // Sá»­a lá»—i Validation Tá»“n kho Kháº£ dá»¥ng
+Â  Â  Â  Â  const validItemsInput = items.filter(item => {
+        const qty = Number(item.quantityToExport);
+        // THAY Äá»”I Táº I ÄÃ‚Y: Láº¥y Tá»“n kháº£ dá»¥ng Ä‘Ã£ tÃ­nh toÃ¡n tá»« Store
+        const available = item.quantityAvailableForExport; 
+        
+        // CHá»ˆ KIá»‚M TRA Náº¾U ÄÃƒ CHá»ŒN LÃ” (Ä‘á»ƒ trÃ¡nh lá»—i khi Ã´ cÃ²n trá»‘ng)
+        if (item.productId && item.selectedLotId) {
+            // Lá»—i nghiá»‡p vá»¥ quan trá»ng: Cháº·n xuáº¥t náº¿u vÆ°á»£t quÃ¡ Tá»“n kháº£ dá»¥ng
+            if (qty > available) {
+                toast.warn(`Lá»—i: SL xuáº¥t (${formatNumber(qty)}) vÆ°á»£t quÃ¡ tá»“n kháº£ dá»¥ng (${formatNumber(available)}) cá»§a lÃ´ hÃ ng.`);
+                return false; // Loáº¡i bá» má»¥c nÃ y khá»i phiáº¿u vÃ  dá»«ng quÃ¡ trÃ¬nh
+            }
+            return qty > 0;
+        }
+        return false;
+    });
+
+Â  Â  Â  Â  if (validItemsInput.length === 0) {
+Â  Â  Â  Â  Â  Â  toast.warn("Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.");
+Â  Â  Â  Â  Â  Â  return null;
+Â  Â  Â  Â  }
+
+Â  Â  Â  Â  const finalItems = [];
+Â  Â  Â  Â  let allProductIds = new Set();
+
+Â  Â  Â  Â  for (const item of validItemsInput) {
+Â  Â  Â  Â  Â  Â  let quantityToDistribute = Number(item.quantityToExport);
+Â  Â  Â  Â  Â  Â  const selectedAggregatedLot = item.availableLots.find(lot => lot.id === item.selectedLotId);
+
+Â  Â  Â  Â  Â  Â  if (!selectedAggregatedLot || quantityToDistribute <= 0) continue;
+
+Â  Â  Â  Â  Â  Â  const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+
+Â  Â  Â  Â  Â  Â  for (const originalLot of originalLotsSorted) {
+Â  Â  Â  Â  Â  Â  Â  Â  if (quantityToDistribute <= 0) break;
+                // Sá»­a lá»—i: LÆ°á»£ng kháº£ dá»¥ng cá»§a lÃ´ gá»‘c = Tá»“n thá»±c - Äáº·t giá»¯ hiá»‡n táº¡i
+                const originalLotAvailableQty = originalLot.quantityRemaining - (originalLot.quantityAllocated || 0);
+
+Â  Â  Â  Â  Â  Â  Â  Â  const quantityFromThisLot = Math.min(quantityToDistribute, originalLotAvailableQty); // Sá»­ dá»¥ng AVAILABLE QTY
+Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  finalItems.push({
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productId: item.productId,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productName: item.productName,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  lotId: originalLot.id,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  lotNumber: originalLot.lotNumber,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  expiryDate: originalLot.expiryDate ? formatDate(originalLot.expiryDate) : '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  unit: item.unit,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  packaging: item.packaging,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storageTemp: item.storageTemp || '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityToExport: quantityFromThisLot,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  notes: item.notes || ''
+Â  Â  Â  Â  Â  Â  Â  Â  });
+Â  Â  Â  Â  Â  Â  Â  Â  quantityToDistribute -= quantityFromThisLot;
+Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  allProductIds.add(item.productId);
+Â  Â  Â  Â  }
+
+Â  Â  Â  Â  if(finalItems.length === 0){
+Â  Â  Â  Â  Â  Â  toast.warn("KhÃ´ng cÃ³ máº·t hÃ ng nÃ o há»£p lá»‡ Ä‘á»ƒ xuáº¥t.");
+Â  Â  Â  Â  Â  Â  return null;
+Â  Â  Â  Â  }
+
+Â  Â  Â  Â  return {
+Â  Â  Â  Â  Â  Â  exportDate: formattedDate, 
+Â  Â  Â  Â  Â  Â  customerId: customerId.toUpperCase(), 
+Â  Â  Â  Â  Â  Â  customer: customerName,
+Â  Â  Â  Â  Â  Â  description, 
+Â  Â  Â  Â  Â  Â  items: finalItems, 
+Â  Â  Â  Â  Â  Â  productIds: Array.from(allProductIds),
+Â  Â  Â  Â  Â  Â  createdAt: serverTimestamp()
+Â  Â  Â  Â  };
+Â  Â  };
+Â  Â  
+Â  Â  const handleSaveDraft = async () => {
+Â  Â  Â  Â  const slipData = getValidSlipData();
+Â  Â  Â  Â  if (!slipData) return;
+Â  Â  Â  Â  setIsProcessing(true);
+Â  Â  Â  Â  
+Â  Â  Â  Â  try {
+            const batch = writeBatch(db); // DÃ¹ng Batch Writes
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  // 1. Äáº·t giá»¯ cÃ¡c lÃ´ hÃ ng (Soft Lock)
             for (const item of slipData.items) {
                 const lotRef = doc(db, 'inventory_lots', item.lotId);
-                const lotSnap = await getDoc(lotRef);
-                if(lotSnap.exists()){
-                    const currentQuantity = lotSnap.data().quantityRemaining;
-                    const newQuantityRemaining = currentQuantity - item.quantityToExport;
-                    await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
+                const lotSnap = await getDoc(lotRef); 
+                if (lotSnap.exists()) {
+                    const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                    const newAllocated = currentAllocated + item.quantityToExport;
+
+                    batch.update(lotRef, { 
+                        quantityAllocated: newAllocated // TÄƒng lÆ°á»£ng Ä‘áº·t giá»¯
+                    });
                 }
             }
-            await addDoc(collection(db, 'export_tickets'), { ...slipData, status: 'completed' });
-            toast.success('Xuáº¥t kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
-            resetSlip();
-        } catch (error) {
-            console.error("Lá»—i khi xuáº¥t kho trá»±c tiáº¿p: ", error);
-            toast.error('ÄÃ£ xáº£y ra lá»—i trong quÃ¡ trÃ¬nh xuáº¥t kho.');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-    
-    const promptForDirectExport = () => {
-        if (getValidSlipData()) {
-             setConfirmModal({
-                isOpen: true,
-                title: "XÃ¡c nháº­n xuáº¥t kho?",
-                message: "HÃ nh Ä‘á»™ng nÃ y sáº½ trá»« tá»“n kho ngay láº­p tá»©c. Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c?",
-                onConfirm: handleDirectExport
-            });
-        }
-    };
+
+Â  Â  Â  Â  Â  Â  // 2. LÆ°u phiáº¿u xuáº¥t nhÃ¡p
+            const slipRef = doc(collection(db, 'export_tickets'));
+            batch.set(slipRef, { ...slipData, status: 'pending' });
+
+            await batch.commit(); // Ghi táº¥t cáº£ má»™t láº§n
+
+Â  Â  Â  Â  Â  Â  toast.success('LÆ°u nhÃ¡p phiáº¿u xuáº¥t thÃ nh cÃ´ng vÃ  Ä‘áº·t giá»¯ tá»“n kho!');
+Â  Â  Â  Â  Â  Â  resetSlip();
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi lÆ°u nhÃ¡p phiáº¿u xuáº¥t: ", error);
+Â  Â  Â  Â  Â  Â  toast.error('ÄÃ£ xáº£y ra lá»—i khi lÆ°u nhÃ¡p.');
+Â  Â  Â  Â  } finally {
+Â  Â  Â  Â  Â  Â  setIsProcessing(false);
+Â  Â  Â  Â  }
+Â  Â  };
+
+Â  Â  const handleDirectExport = async () => {
+Â  Â  Â  Â  const slipData = getValidSlipData();
+Â  Â  Â  Â  if (!slipData) return;
+Â  Â  Â  Â  setConfirmModal({isOpen: false});
+Â  Â  Â  Â  setIsProcessing(true);
+Â  Â  Â  Â  try {
+            const batch = writeBatch(db); // DÃ¹ng Batch Writes
+
+Â  Â  Â  Â  Â  Â  // 1. Trá»« tá»“n kho thá»±c táº¿ VÃ€ giáº£i phÃ³ng Ä‘áº·t giá»¯
+Â  Â  Â  Â  Â  Â  for (const item of slipData.items) {
+Â  Â  Â  Â  Â  Â  Â  Â  const lotRef = doc(db, 'inventory_lots', item.lotId);
+Â  Â  Â  Â  Â  Â  Â  Â  const lotSnap = await getDoc(lotRef);
+Â  Â  Â  Â  Â  Â  Â  Â  if(lotSnap.exists()){
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const currentRemaining = lotSnap.data().quantityRemaining;
+                    const currentAllocated = lotSnap.data().quantityAllocated || 0;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const newQuantityRemaining = currentRemaining - item.quantityToExport; // Trá»« tá»“n kho thá»±c táº¿
+                    
+                    // Náº¿u lÃ´ hÃ ng nÃ y Ä‘Ã£ Ä‘Æ°á»£c Ä‘áº·t giá»¯ trÆ°á»›c Ä‘Ã³, giáº£i phÃ³ng pháº§n Ä‘Ã³ (Äáº·t giá»¯ luÃ´n pháº£i >= 0)
+                    const newAllocated = Math.max(0, currentAllocated - item.quantityToExport); 
+
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  batch.update(lotRef, { 
+                        quantityRemaining: newQuantityRemaining,
+                        quantityAllocated: newAllocated // Giáº£i phÃ³ng Ä‘áº·t giá»¯
+                    });
+Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  }
+
+Â  Â  Â  Â  Â  Â  // 2. LÆ°u phiáº¿u xuáº¥t chÃ­nh thá»©c
+            const slipRef = doc(collection(db, 'export_tickets'));
+            batch.set(slipRef, { ...slipData, status: 'completed' });
+
+            await batch.commit(); // Ghi táº¥t cáº£ má»™t láº§n
+
+Â  Â  Â  Â  Â  Â  toast.success('Xuáº¥t kho trá»±c tiáº¿p thÃ nh cÃ´ng!');
+Â  Â  Â  Â  Â  Â  resetSlip();
+Â  Â  Â  Â  } catch (error) {
+Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi xuáº¥t kho trá»±c tiáº¿p: ", error);
+Â  Â  Â  Â  Â  Â  toast.error('ÄÃ£ xáº£y ra lá»—i trong quÃ¡ trÃ¬nh xuáº¥t kho.');
+Â  Â  Â  Â  } finally {
+Â  Â  Â  Â  Â  Â  setIsProcessing(false);
+Â  Â  Â  Â  }
+Â  Â  };
+Â  Â  
+Â  Â  const promptForDirectExport = () => {
+Â  Â  Â  Â  if (getValidSlipData()) {
+Â  Â  Â  Â  Â  Â  Â setConfirmModal({
+Â  Â  Â  Â  Â  Â  Â  Â  isOpen: true,
+Â  Â  Â  Â  Â  Â  Â  Â  title: "XÃ¡c nháº­n xuáº¥t kho?",
+Â  Â  Â  Â  Â  Â  Â  Â  message: "HÃ nh Ä‘á»™ng nÃ y sáº½ trá»« tá»“n kho ngay láº­p tá»©c. Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n tiáº¿p tá»¥c?",
+Â  Â  Â  Â  Â  Â  Â  Â  onConfirm: handleDirectExport
+Â  Â  Â  Â  Â  Â  });
+Â  Â  Â  Â  }
+Â  Â  };
 
     return (
         <div>
@@ -11715,13 +11912,13 @@ export default StocktakeSessionPage;
 
 // --- Báº®T Äáº¦U THAY Äá»”I 1: Import thÃªm cÃ¡c component vÃ  icon cáº§n thiáº¿t ---
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { db, rtdb } from '../firebaseConfig';
+import { db, rtdb, functions } from '../firebaseConfig'; // <-- THAY Äá»”I: Import functions Ä‘Ã£ cáº¥u hÃ¬nh
 import { ref, onValue } from 'firebase/database';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import Spinner from '../components/Spinner';
 import { FiPlus, FiTrash2, FiEdit, FiUsers, FiWifi } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions"; // <-- GIá»® Láº I
 import ConfirmationModal from '../components/ConfirmationModal';
 import EditAllowedUserModal from '../components/EditAllowedUserModal';
 import AddAllowedUserModal from '../components/AddAllowedUserModal';
@@ -11840,7 +12037,6 @@ const UsersPage = () => {
         setConfirmModal({ isOpen: false });
         toast.info(`Äang xÃ³a ${user.email}...`);
         try {
-            const functions = getFunctions();
             const deleteFunc = httpsCallable(functions, 'deleteUserAndAllowlist');
             await deleteFunc({ email: user.email });
             toast.success(`ÄÃ£ xÃ³a ${user.email} khá»i há»‡ thá»‘ng.`);
@@ -12770,7 +12966,7 @@ describe('Service: stocktakeService', () => {
 --- FILE: D:\quan-ly-kho\src\stores\exportSlipStore.js ---
 
 
-// src/stores/exportSlipStore.js
+// src/stores/exportSlipStore.js (ÄÃ£ sá»­a lá»—i hiá»ƒn thá»‹ Dropdown)
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -12779,144 +12975,173 @@ import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const initialItemState = {
-    id: Date.now(),
-    productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
-    availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-    expiryDate: '', quantityRemaining: 0, quantityToExport: '', notes: '',
-    isOutOfStock: false,
-    isFetchingLots: false
+Â  Â  id: Date.now(),
+Â  Â  productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
+Â  Â  availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+Â  Â  expiryDate: '', quantityAvailableForExport: 0, quantityToExport: '', notes: '', 
+Â  Â  isOutOfStock: false,
+Â  Â  isFetchingLots: false
 };
 
 const useExportSlipStore = create(
-    persist(
-        (set, get) => ({
-            // === STATE ===
-            customerId: '',
-            customerName: '',
-            description: '',
-            exportDate: new Date().toISOString().split('T')[0],
-            items: [{ ...initialItemState, id: Date.now() }],
+Â  Â  persist(
+Â  Â  Â  Â  (set, get) => ({
+Â  Â  Â  Â  Â  Â  // === STATE ===
+Â  Â  Â  Â  Â  Â  customerId: '',
+Â  Â  Â  Â  Â  Â  customerName: '',
+Â  Â  Â  Â  Â  Â  description: '',
+Â  Â  Â  Â  Â  Â  exportDate: new Date().toISOString().split('T')[0],
+Â  Â  Â  Â  Â  Â  items: [{ ...initialItemState, id: Date.now() }],
 
-            // === ACTIONS ===
-            setCustomer: (id, name) => set({ customerId: id, customerName: name }),
-            setDescription: (description) => set({ description }),
+Â  Â  Â  Â  Â  Â  // === ACTIONS ===
+Â  Â  Â  Â  Â  Â  setCustomer: (id, name) => set({ customerId: id, customerName: name }),
+Â  Â  Â  Â  Â  Â  setDescription: (description) => set({ description }),
 
-            updateItem: (index, field, value) => set(state => {
-                const newItems = state.items.map((item, i) => {
-                    if (i === index) {
-                        return { ...item, [field]: value };
-                    }
-                    return item;
-                });
-                return { items: newItems };
-            }),
-            
-            // --- Báº®T Äáº¦U THAY Äá»”I ---
-            // ThÃªm "async" vÃ o trÆ°á»›c hÃ m
-            handleProductSearchResult: async (index, productData) => {
-                
-                // BÆ°á»›c 1: Cáº­p nháº­t UI ngay láº­p tá»©c Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i "Äang táº£i..."
-                set(state => ({
-                    items: state.items.map((item, i) => {
-                        if (i === index) {
-                            return {
-                                ...item,
-                                productId: productData ? productData.id : item.productId,
-                                productName: productData ? 'Äang táº£i...' : '',
-                                unit: '',
-                                packaging: '',
-                                storageTemp: '',
-                                availableLots: [],
-                                selectedLotId: '',
-                                lotNumber: '',
-                                displayLotText: '',
-                                expiryDate: '',
-                                quantityRemaining: 0,
-                                isOutOfStock: false,
-                                isFetchingLots: !!productData,
-                            };
-                        }
-                        return item;
-                    })
-                }));
+Â  Â  Â  Â  Â  Â  updateItem: (index, field, value) => set(state => {
+Â  Â  Â  Â  Â  Â  Â  Â  const newItems = state.items.map((item, i) => {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return { ...item, [field]: value };
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
+Â  Â  Â  Â  Â  Â  Â  Â  });
+Â  Â  Â  Â  Â  Â  Â  Â  return { items: newItems };
+Â  Â  Â  Â  Â  Â  }),
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  // --- HÃ€M Xá»¬ LÃ Káº¾T QUáº¢ TÃŒM KIáº¾M Sáº¢N PHáº¨M (SOFT ALLOCATION LOGIC) ---
+Â  Â  Â  Â  Â  Â  handleProductSearchResult: async (index, productData) => {
+Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  // BÆ°á»›c 1: Cáº­p nháº­t UI ngay láº­p tá»©c Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i "Äang táº£i..."
+Â  Â  Â  Â  Â  Â  Â  Â  set(state => ({
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  items: state.items.map((item, i) => {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ...item,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productId: productData ? productData.id : item.productId,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productName: productData ? 'Äang táº£i...' : '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  unit: '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  packaging: '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storageTemp: '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  availableLots: [],
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  selectedLotId: '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  lotNumber: '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  displayLotText: '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  expiryDate: '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAvailableForExport: 0, 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isOutOfStock: false,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isFetchingLots: !!productData,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  };
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  })
+Â  Â  Â  Â  Â  Â  Â  Â  }));
 
-                if (!productData) return;
+Â  Â  Â  Â  Â  Â  Â  Â  if (!productData) return;
 
-                // BÆ°á»›c 2: Báº¯t Ä‘áº§u tÃ¬m kiáº¿m dá»¯ liá»‡u tá»« server
-                try {
-                    const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
-                    const lotsSnapshot = await getDocs(lotsQuery);
+Â  Â  Â  Â  Â  Â  Â  Â  // BÆ°á»›c 2: Báº¯t Ä‘áº§u tÃ¬m kiáº¿m dá»¯ liá»‡u tá»« server
+Â  Â  Â  Â  Â  Â  Â  Â  try {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotsSnapshot = await getDocs(lotsQuery);
 
-                    let finalLots = [];
-                    let outOfStock = false;
-                    
-                    if (lotsSnapshot.empty) {
-                        outOfStock = true;
-                    } else {
-                        const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        const lotAggregator = new Map();
-                        for (const lot of foundLots) {
-                            const lotKey = lot.lotNumber || 'KHONG_CO_LO';
-                            if (lotAggregator.has(lotKey)) {
-                                const existing = lotAggregator.get(lotKey);
-                                existing.quantityRemaining += lot.quantityRemaining;
-                                if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
-                                    existing.expiryDate = lot.expiryDate;
-                                }
-                                existing.originalLots.push(lot);
-                            } else {
-                                lotAggregator.set(lotKey, { ...lot, id: lotKey, quantityRemaining: lot.quantityRemaining, originalLots: [lot] });
-                            }
-                        }
-                        const aggregatedLots = Array.from(lotAggregator.values());
-                        aggregatedLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
-                        finalLots = aggregatedLots;
-                    }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  let finalLots = [];
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  let outOfStock = false;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lotsSnapshot.empty) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  outOfStock = true;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotAggregator = new Map();
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  for (const lot of foundLots) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // 1. TÃNH TOÃN Tá»’N KHO KHáº¢ Dá»¤NG
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const allocatedQty = lot.quantityAllocated || 0;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const availableQty = lot.quantityRemaining - allocatedQty; 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (availableQty <= 0) continue; // Bá» qua náº¿u tá»“n kháº£ dá»¥ng <= 0
 
-                    // BÆ°á»›c 3: Cáº­p nháº­t UI láº§n cuá»‘i vá»›i dá»¯ liá»‡u Ä‘áº§y Ä‘á»§ Ä‘Ã£ tÃ¬m Ä‘Æ°á»£c
-                    set(state => ({
-                        items: state.items.map((item, i) => {
-                            if (i === index) {
-                                return {
-                                    ...item,
-                                    productName: productData.productName || '',
-                                    unit: productData.unit || '',
-                                    packaging: productData.packaging || '',
-                                    storageTemp: productData.storageTemp || '',
-                                    availableLots: finalLots,
-                                    isOutOfStock: outOfStock,
-                                    isFetchingLots: false,
-                                };
-                            }
-                            return item;
-                        })
-                    }));
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotKey = lot.lotNumber || 'KHONG_CO_LO';
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lotAggregator.has(lotKey)) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const existing = lotAggregator.get(lotKey);
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.quantityRemaining += lot.quantityRemaining; // Tá»“n thá»±c
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.quantityAllocated += allocatedQty; // Äáº·t giá»¯
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.availableQty += availableQty; // Kháº£ dá»¥ng (ÄÃƒ Sá»¬A Gá»˜P NHÃ“M)
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.expiryDate = lot.expiryDate;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.originalLots.push(lot);
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  } else {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // KHá»žI Táº O LÃ” Má»šI TRONG AGGREGATOR
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  lotAggregator.set(lotKey, { 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ...lot, 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  id: lotKey, 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityRemaining: lot.quantityRemaining,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAllocated: allocatedQty,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  availableQty: availableQty, // <--- Tá»’N KHáº¢ Dá»¤NG Äá»‚ KIá»‚M TRA
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  originalLots: [lot] 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  });
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const aggregatedLots = Array.from(lotAggregator.values());
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  aggregatedLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  finalLots = aggregatedLots;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // TÃ­nh tá»•ng tá»“n kháº£ dá»¥ng
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const totalAvailable = finalLots.reduce((sum, lot) => sum + lot.availableQty, 0);
 
-                } catch (e) {
-                    console.error("Lá»—i khi tÃ¬m lÃ´ hÃ ng:", e);
-                    toast.error("Lá»—i khi táº£i danh sÃ¡ch lÃ´ hÃ ng.");
-                    set(state => ({
-                        items: state.items.map((item, i) => {
-                            if (i === index) {
-                                return { ...item, isOutOfStock: true, productName: 'Lá»—i táº£i dá»¯ liá»‡u', isFetchingLots: false };
-                            }
-                            return item;
-                        })
-                    }));
-                }
-            },
-            // --- Káº¾T THÃšC THAY Äá»”I ---
-            
-            // CÃ¡c hÃ m cÃ²n láº¡i giá»¯ nguyÃªn
-            addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
-            removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
-            replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
-            resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ ...initialItemState, id: Date.now() }] })
-        }),
-        {
-            name: 'export-slip-storage',
-        }
-    )
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // Náº¿u sau khi lá»c Allocation mÃ  háº¿t hÃ ng, Ä‘Ã¡nh dáº¥u lÃ  OutOfStock
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (aggregatedLots.length === 0 || totalAvailable <= 0) outOfStock = true;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // BÆ°á»›c 3: Cáº­p nháº­t UI láº§n cuá»‘i vá»›i dá»¯ liá»‡u Ä‘áº§y Ä‘á»§ Ä‘Ã£ tÃ¬m Ä‘Æ°á»£c
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  set(state => ({
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  items: state.items.map((item, i) => {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // TÃ­nh tá»•ng tá»“n kháº£ dá»¥ng cá»§a Táº¤T Cáº¢ cÃ¡c lÃ´ Ä‘Ã£ gom nhÃ³m
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const totalAvailable = finalLots.reduce((sum, lot) => sum + lot.availableQty, 0);
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ...item,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productName: productData.productName || '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  unit: productData.unit || '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  packaging: productData.packaging || '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storageTemp: productData.storageTemp || '',
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  availableLots: finalLots,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isOutOfStock: outOfStock,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isFetchingLots: false,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAvailableForExport: totalAvailable, // GÃ¡n Tá»”NG Tá»’N KHáº¢ Dá»¤NG
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  };
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  })
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }));
+
+Â  Â  Â  Â  Â  Â  Â  Â  } catch (e) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m lÃ´ hÃ ng:", e);
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  toast.error("Lá»—i khi táº£i danh sÃ¡ch lÃ´ hÃ ng.");
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  set(state => ({
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  items: state.items.map((item, i) => {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return { ...item, isOutOfStock: true, productName: 'Lá»—i táº£i dá»¯ liá»‡u', isFetchingLots: false };
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  })
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }));
+Â  Â  Â  Â  Â  Â  Â  Â  }
+Â  Â  Â  Â  Â  Â  },
+Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  // CÃ¡c hÃ m cÃ²n láº¡i giá»¯ nguyÃªn
+Â  Â  Â  Â  Â  Â  addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
+Â  Â  Â  Â  Â  Â  removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
+Â  Â  Â  Â  Â  Â  replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
+Â  Â  Â  Â  Â  Â  resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ ...initialItemState, id: Date.now() }] })
+Â  Â  Â  Â  }),
+Â  Â  Â  Â  {
+Â  Â  Â  Â  Â  Â  name: 'export-slip-storage',
+Â  Â  Â  Â  }
+Â  Â  )
 );
 
 export default useExportSlipStore;
@@ -16343,7 +16568,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const functions = getFunctions(app);
+const functions = getFunctions(app, 'asia-southeast1');
 const rtdb = getDatabase(app); // <-- THÃŠM DÃ’NG NÃ€Y
 
 export { db, auth, functions, app, rtdb }; // <-- THÃŠM rtdb VÃ€O EXPORT

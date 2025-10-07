@@ -198,25 +198,26 @@ exports.updateAllowlistRole = onCall({ region: ASIA_REGION }, async (request) =>
  * Hàm 5: Cloud Function chạy tự động mỗi ngày vào lúc 01:00 sáng.
  */
 exports.checkExpiredLots = onSchedule({
-  schedule: "every day 01:00",
-  timeZone: "Asia/Ho_Chi_Minh",
-  region: ASIA_REGION // <-- ĐÃ THÊM region
+  schedule: "every day 01:00",
+  timeZone: "Asia/Ho_Chi_Minh",
+  region: ASIA_REGION
 }, async (event) => {
-  logger.info("Bắt đầu quét các lô hàng hết hạn...");
+  logger.info("Bắt đầu quét các lô hàng hết hạn...");
 
-  // SỬA LỖI: Chuyển sang dùng Timestamp để truy vấn
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // 1. XÁC ĐỊNH NGÀY HÔM NAY (00:00:00)
+  const today = new Date(); 
+  today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00
 
-  const inventoryRef = db.collection("inventory_lots"); // SỬA LỖI: Đổi tên collection
-  const expiredLotsQuery = inventoryRef
-    .where("expiryDate", ">=", today)
-    .where("expiryDate", "<", tomorrow)
-    .where("quantityRemaining", ">", 0); // SỬA LỖI: Đổi tên trường
-
-  const snapshot = await expiredLotsQuery.get();
+  const inventoryRef = db.collection("inventory_lots"); 
+  
+  // 2. TRUY VẤN: 
+  //    - expiryDate < today (Lô hết hạn trước 00:00:00 hôm nay)
+  //    - quantityRemaining > 0 (Chỉ lô còn tồn)
+  const expiredLotsQuery = inventoryRef
+    .where("expiryDate", "<", today) 
+    .where("quantityRemaining", ">", 0); 
+    
+  const snapshot = await expiredLotsQuery.get();
 
   if (snapshot.empty) {
     logger.info("Không tìm thấy lô hàng nào hết hạn hôm nay.");

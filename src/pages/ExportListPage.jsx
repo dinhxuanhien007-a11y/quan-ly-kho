@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp } from 'firebase/firestore'; // Thêm where, Timestamp
-import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp, writeBatch, deleteDoc } from 'firebase/firestore'; 
+import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
@@ -97,69 +97,161 @@ const ExportListPage = () => {
 
 // THAY THẾ HÀM CŨ BẰNG HÀM NÀY:
 const handleConfirmExport = async (slip) => {
-    setIsProcessing(true); // Báo cho hệ thống biết là đang xử lý
-    try {
-      for (const item of slip.items) {
-        const lotRef = doc(db, 'inventory_lots', item.lotId);
-        const lotSnap = await getDoc(lotRef);
-        if (lotSnap.exists()) {
-         const currentQuantity = lotSnap.data().quantityRemaining;
-          const newQuantityRemaining = currentQuantity - (item.quantityToExport || item.quantityExported);
-          if (newQuantityRemaining < 0) {
-            toast.error(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ để xuất.`);
-            setIsProcessing(false); // Dừng xử lý nếu có lỗi
-            return;
-          }
-          await updateDoc(lotRef, { quantityRemaining: newQuantityRemaining });
-        }
-      }
-      const slipRef = doc(db, 'export_tickets', slip.id);
-      await updateDoc(slipRef, { status: 'completed' });
-      toast.success('Xác nhận xuất kho thành công!');
-      reset();
-    } catch (error) {
-      console.error("Lỗi khi xác nhận xuất kho: ", error);
-      toast.error('Đã xảy ra lỗi khi xác nhận.');
-    } finally {
-        setIsProcessing(false); // Luôn tắt trạng thái xử lý khi xong
-        setConfirmModal({ isOpen: false });
-    }
+    setIsProcessing(true);
+    const batch = writeBatch(db); // Dùng Batch Writes
+    
+    try {
+      for (const item of slip.items) {
+        const lotRef = doc(db, 'inventory_lots', item.lotId);
+        const lotSnap = await getDoc(lotRef);
+        
+        if (lotSnap.exists()) {
+            const currentRemaining = lotSnap.data().quantityRemaining;
+            const currentAllocated = lotSnap.data().quantityAllocated || 0;
+            const quantityToExport = item.quantityToExport || item.quantityExported;
+            
+            // 1. Kiểm tra tồn kho thực tế
+            const newQuantityRemaining = currentRemaining - quantityToExport; 
+            
+            if (newQuantityRemaining < 0) {
+                toast.error(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ (${currentRemaining}) để xuất.`);
+                setIsProcessing(false); 
+                return;
+            }
+            
+            // 2. Giải phóng đặt giữ (trừ đi lượng đã xuất)
+            const newAllocated = Math.max(0, currentAllocated - quantityToExport);
+            
+            // 3. Cập nhật cả 2 trường
+            batch.update(lotRef, { 
+                quantityRemaining: newQuantityRemaining,
+                quantityAllocated: newAllocated // Giải phóng đặt giữ
+            });
+        }
+      }
+        
+        // Cập nhật trạng thái phiếu
+      const slipRef = doc(db, 'export_tickets', slip.id);
+      batch.update(slipRef, { status: 'completed' });
+        
+        await batch.commit();
+
+      toast.success('Xác nhận xuất kho thÃ nh cÃ´ng!');
+      reset();
+    } catch (error) {
+      console.error("Lỗi khi xác nhận xuất kho: ", error);
+      toast.error('Đã xảy ra lỗi khi xác nhận.');
+    } finally {
+        setIsProcessing(false);
+        setConfirmModal({ isOpen: false });
+    }
 };
 
 // THAY THẾ HÀM CŨ BẰNG HÀM NÀY (để đồng bộ):
 const handleCancelSlip = async (slip) => {
-    setIsProcessing(true); // Báo cho hệ thống biết là đang xử lý
+    setIsProcessing(true); // Báo cho hệ thống biết là đang xử lý
+    try {
+        const batch = writeBatch(db); // Dùng Batch Writes
+
+        // 1. Giải phóng đặt giữ lô hàng
+        for (const item of slip.items) {
+            const lotRef = doc(db, 'inventory_lots', item.lotId);
+            const lotSnap = await getDoc(lotRef);
+            
+            if (lotSnap.exists()) {
+                const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                const quantityToRelease = item.quantityToExport || item.quantityExported || 0;
+                
+                const newAllocated = Math.max(0, currentAllocated - quantityToRelease); // Giảm lượng đặt giữ
+                
+                batch.update(lotRef, { 
+                    quantityAllocated: newAllocated 
+                });
+            }
+        }
+
+        // 2. Cập nhật trạng thái phiếu
+        const slipRef = doc(db, 'export_tickets', slip.id);
+        batch.update(slipRef, { status: 'cancelled' });
+
+        await batch.commit(); // Ghi tất cả một lần
+
+        toast.success('Hủy phiếu xuất thành công và giải phóng tồn kho đã đặt giữ!');
+        reset();
+    } catch (error) {
+        console.error("Lỗi khi hủy phiếu: ", error);
+        toast.error('Đã xảy ra lỗi khi hủy phiếu.');
+    } finally {
+       setIsProcessing(false);
+       setConfirmModal({ isOpen: false });
+    }
+};
+
+const handleDeleteSlip = async (slipToDelete) => {
+    if (slipToDelete.status !== 'cancelled') {
+        return toast.warn('Chỉ có thể xóa các phiếu đã hủy.');
+    }
+    setIsProcessing(true);
     try {
-      const slipRef = doc(db, 'export_tickets', slip.id);
-      await updateDoc(slipRef, { status: 'cancelled' });
-      toast.success('Hủy phiếu xuất thành công!');
-      reset();
+        const slipDocRef = doc(db, 'export_tickets', slipToDelete.id);
+        
+        // **QUAN TRỌNG:** Kiểm tra lần cuối xem có allocation nào còn sót không.
+        // Tuy nhiên, vì phiếu đã ở trạng thái 'cancelled', ta mặc định allocation = 0.
+        
+        await deleteDoc(slipDocRef); // <-- Dùng deleteDoc để xóa hẳn document
+
+        toast.success(`Đã xóa vĩnh viễn phiếu xuất ${slipToDelete.id}.`);
+        reset(); // Tải lại danh sách
     } catch (error) {
-      console.error("Lỗi khi hủy phiếu: ", error);
-      toast.error('Đã xảy ra lỗi khi hủy phiếu.');
+        console.error("Lỗi khi xóa phiếu xuất: ", error);
+        toast.error('Đã xảy ra lỗi khi xóa phiếu xuất.');
     } finally {
-       setIsProcessing(false); // Luôn tắt trạng thái xử lý khi xong
-       setConfirmModal({ isOpen: false });
+        setIsProcessing(false);
+        setConfirmModal({ isOpen: false });
     }
 };
 
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
-      const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
-      await updateDoc(slipDocRef, { 
-          items: updatedSlip.items,
-          customer: updatedSlip.customer,
-          description: updatedSlip.description,
-          exportDate: updatedSlip.exportDate // <-- THÊM DÒNG NÀY
-      });
-      setIsEditModalOpen(false);
-      reset();
-      toast.success('Cập nhật phiếu xuất thành công!');
+        const batch = writeBatch(db); // Dùng Batch Writes
+        const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
+        
+        // 1. CẬP NHẬT TRƯỜNG quantityAllocated TRONG INVENTORY_LOTS
+        for (const item of updatedSlip.items) {
+            // Lô hàng trong phiếu chỉnh sửa cần được đặt giữ
+            const lotRef = doc(db, 'inventory_lots', item.lotId);
+            const lotSnap = await getDoc(lotRef);
+            
+            if (lotSnap.exists()) {
+                const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                // Đặt giữ số lượng mới/đã chỉnh sửa
+                const newAllocated = currentAllocated + item.quantityToExport; 
+                
+                batch.update(lotRef, { 
+                    quantityAllocated: newAllocated 
+                });
+            }
+        }
+
+        // 2. Cập nhật phiếu xuất
+        batch.update(slipDocRef, { 
+            items: updatedSlip.items,
+            customer: updatedSlip.customer,
+            description: updatedSlip.description,
+            exportDate: updatedSlip.exportDate
+        });
+        
+        await batch.commit(); // Ghi tất cả một lần
+
+        setIsEditModalOpen(false);
+        reset();
+        toast.success('Cập nhật phiếu xuất thành công và đặt giữ tồn kho!');
+
     } catch (error) {
-      console.error("Lỗi khi cập nhật phiếu xuất: ", error);
-      toast.error('Đã xảy ra lỗi khi cập nhật.');
+        console.error("Lỗi khi cập nhật phiếu xuất: ", error);
+        toast.error('Đã xảy ra lỗi khi cập nhật.');
     }
-  };
+};
 
 const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
@@ -185,6 +277,14 @@ const promptAction = (action, slip) => {
             message: `Bạn có chắc muốn HỦY phiếu xuất của khách hàng "${slip.customer}" không? Thao tác này sẽ không trừ tồn kho.`,
             onConfirm: () => handleCancelSlip(slip),
             confirmText: "Đồng ý hủy"
+        });
+        } else if (action === 'delete') { // <-- THÊM LOGIC NÀY
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận xóa VĨNH VIỄN?",
+            message: `Bạn có chắc muốn XÓA vĩnh viễn phiếu xuất đã hủy của khách hàng "${slip.customer}" không? Thao tác này không thể hoàn tác.`, // <-- SỬA TẠI ĐÂY
+            onConfirm: () => handleDeleteSlip(slip), 
+            confirmText: "Xóa Vĩnh Viễn"
         });
     }
   };
@@ -395,6 +495,16 @@ return (
                                         <FiCheckCircle />
                                     </button>
                                 </>
+                                )}
+                                {/* THÊM LOGIC NÀY CHO PHIẾU ĐÃ HỦY */}
+                                {slip.status === 'cancelled' && (
+                                    <button 
+                                        className="btn-icon btn-delete" 
+                                        title="Xóa vĩnh viễn phiếu đã hủy" 
+                                        onClick={() => promptAction('delete', slip)}
+                                    >
+                                        <FiTrash2 /> {/* Cần import FiTrash2 */}
+                                    </button>
                                 )}
                             </div>
                         </td>
