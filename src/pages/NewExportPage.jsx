@@ -21,44 +21,49 @@ import useExportSlipStore from '../stores/exportSlipStore';
  * @param {string} currentUnit - ĐVT hiện tại của item.
  * @returns {string} - Đơn vị quy đổi (vd: Lọ, Thùng, Test).
  */
+// src/pages/NewExportPage.jsx (Áp dụng tương tự cho NewImportPage.jsx)
+// Thay thế hàm getTargetUnit
+
 const getTargetUnit = (packagingStr, currentUnit) => {
     if (!packagingStr || !currentUnit) return 'Đơn vị';
     const lowerUnit = currentUnit.toLowerCase().trim();
 
-    // 1. Dùng phép NHÂN (Xuôi: ĐVT là Hộp/Thùng/Lọ -> ĐV nhỏ)
-    if (lowerUnit === 'hộp' || lowerUnit === 'thùng' || lowerUnit === 'lọ') { 
+    // --- QUY TẮC NHẮM MỤC TIÊU: LỌ/HỘP ---
+    // Xử lý mã 246001 và các mã Hộp tương tự: Luôn ưu tiên Lọ hơn mL/G.
+    if (lowerUnit === 'hộp') {
+        // Cố gắng tìm đơn vị đếm (Lọ, Test, Cái)
+        const countMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(Test|Lọ|Cái|Ống|Bộ|Gói)\s*\//i);
+        if (countMatch && countMatch[3]) {
+            return countMatch[3].trim(); // Trả về Lọ (hoặc Test)
+        }
+    }
+    // ----------------------------------------
+    
+    // --- LOGIC GỐC (Áp dụng cho các mã Thùng/Lít/Khay) ---
+    if (lowerUnit === 'hộp' || lowerUnit === 'lọ' || lowerUnit === 'thùng' || lowerUnit === 'khay') { 
         
-        // Regex tìm: (SỐ) [Đơn vị mục tiêu] / [Đơn vị lớn]
-        // CỐT LÕI: Chúng ta chỉ muốn lấy Đơn vị mục tiêu (ví dụ: Lít)
-        // Nhóm thứ 3 (targetMatch[3]) phải chứa tên đơn vị
-        const targetUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(\w+)\s*\//i);
-        
-        if (targetUnitMatch && targetUnitMatch[3]) {
-            let unitCandidate = targetUnitMatch[3].trim();
-            
-            // Loại bỏ các đơn vị phức tạp để đơn giản hóa hiển thị
-            if (unitCandidate.includes('/')) {
-                // Nếu là 5 Lít/Thùng -> chỉ lấy Lít
-                unitCandidate = unitCandidate.split('/')[0].trim();
-            }
-            return unitCandidate; 
+        // 1. Ưu tiên tìm đơn vị THỂ TÍCH/KHỐI LƯỢNG (Lít, mL, G)
+        const volumeUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(Lít|mL|G|µg)\s*\//i);
+        if (volumeUnitMatch && volumeUnitMatch[3]) {
+             return volumeUnitMatch[3].trim(); 
+        }
+
+        // 2. Nếu không phải thể tích, ưu tiên tìm đơn vị ĐẾM (Lọ, Test, Cái)
+        const countMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(Test|Lọ|Cái|Ống|Bộ|Gói)\s*\//i);
+        if (countMatch && countMatch[3]) {
+            return countMatch[3].trim();
         }
         
-        // Nếu không khớp regex nào, kiểm tra xem có đơn vị thể tích/khối lượng nào không
-        const volumeMatch = packagingStr.match(/(Lít|mL|G|µg)/i);
-        if (volumeMatch) return volumeMatch[1];
-        
-        return 'Đơn vị'; // Fallback an toàn
+        return 'Đơn vị'; 
     }
 
-    // 2. Dùng phép CHIA (Ngược: ĐVT nhỏ quy đổi sang ĐVT lớn)
-    // Tìm Đơn vị đóng gói lớn nhất ở cuối chuỗi. 
-    const largeUnitMatch = packagingStr.match(/\/ (Hộp|Thùng|Can|Kiện|Lọ|Bộ|Gói)$/i);
+    // ... (Logic phép Chia giữ nguyên)
+    const largeUnitMatch = packagingStr.match(/\/ (Hộp|Thùng|Can|Kiện|Lọ|Bộ|Gói|Khay)$/i);
     if (largeUnitMatch) {
         return largeUnitMatch[1].trim();
     }
     
-    return 'Thùng'; // Fallback phổ biến nhất
+    return 'Thùng'; 
 }
 
 const exportItemSchema = z.object({
@@ -552,19 +557,22 @@ const handleLotSelection = (index, selectedLotId) => {
 
 {/* HIỂN THỊ SỐ KIỆN */}
 {item.packaging && item.conversionFactor > 1 && (
-                                <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
-                                    Quy đổi: <strong>
-                                        {/* GỌI HÀM MỚI VÀ LẤY GIÁ TRỊ */}
-                                        {formatNumber(calculateCaseCount(
-                                            Number(item.quantityToExport), 
-                                            item.conversionFactor, 
-                                            item.unit
-                                        ).value)}
-                                    </strong> 
-                                        {/* GỌI HÀM MỚI LẤY ĐƠN VỊ */}
-                                        {getTargetUnit(item.packaging, item.unit)} 
-                                </div>
-                            )}
+    <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+        Quy đổi: <strong>
+            {/* LƯU Ý: LẤY ĐƠN VỊ VÀ KẾT QUẢ TỪ HÀM calculateCaseCount */}
+            {formatNumber(calculateCaseCount(
+                Number(item.quantityToExport), 
+                item.conversionFactor, 
+                item.unit
+            ).value)}
+        </strong> 
+        
+        {/* ĐƠN VỊ HIỂN THỊ */}
+        {calculateCaseCount(Number(item.quantityToExport), item.conversionFactor, item.unit).action === 'MULTIPLY'
+            ? getTargetUnit(item.packaging, item.unit) // Logic Lọ/Test
+            : 'Thùng'} 
+    </div>
+)}
                         </div>
                         <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.storageTemp} readOnly /></div>

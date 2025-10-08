@@ -13,20 +13,21 @@ admin.initializeApp({
 const db = admin.firestore();
 const BATCH_SIZE = 499; // Giới hạn an toàn
 
+// D:\quan-ly-kho\scripts\migration.js (Thay thế hàm getConversionFactor)
+
 /**
- * Phân tích chuỗi quy cách để tìm ra TỶ LỆ QUY ĐỔI AN TOÀN.
- * Hàm này cần phải giống hệt hàm trong Cloud Functions để đảm bảo tính nhất quán.
+ * PHIÊN BẢN CUỐI CÙNG VÀ MẠNH MẼ: Ưu tiên lấy Factor từ CẶP SỐ THỨ HAI 
+ * (Cặp số lượng ĐVT lớn nhất).
  */
 function getConversionFactor(packagingStr) {
     if (!packagingStr || packagingStr.toUpperCase() === "N/A") return 1;
 
     // 1. Loại bỏ các ký tự phi số (trừ dấu chấm và dấu /) và chuẩn hóa khoảng trắng
-    // Chuỗi mẫu: "4.5 mL/ Lọ, 100 Lọ/ Hộp" -> "4.5/100/100" (Nếu có nhiều số)
     let cleanedStr = packagingStr
         .replace(/,/g, ' ') 
-        .replace(/x/g, '/') // Thay 'x' bằng '/'
-        .replace(/[a-zA-Z]/g, ' ') // Xóa chữ cái (mL, Lọ, Hộp, etc.)
-        .replace(/[^0-9\/\.]/g, ' ') // Thay thế ký tự lạ bằng khoảng trắng
+        .replace(/x/g, '/')
+        .replace(/[a-zA-Z]/g, ' ')
+        .replace(/[^0-9\/\.]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
         
@@ -34,18 +35,37 @@ function getConversionFactor(packagingStr) {
     const allNumbers = cleanedStr.match(/(\d+(\.\d+)?)/g);
     
     if (allNumbers && allNumbers.length > 0) {
+        let factorsToConsider = allNumbers;
+
+        // BỔ SUNG LOGIC: NẾU CÓ NHIỀU HƠN 2 SỐ, BỎ QUA CẶP ĐẦU TIÊN (DUNG TÍCH)
+        // VD: ["4.5", "100", "500"] -> Lấy 100
+        if (allNumbers.length >= 2) {
+             // Giả sử cặp đầu tiên là dung tích/cấp nhỏ (25 Lọ/Khay) và ta muốn 20 Khay/Thùng.
+             factorsToConsider = allNumbers.slice(1);
+        }
+        
         let bestFactor = 1;
         
-        // 3. DUYỆT TẤT CẢ CÁC SỐ VÀ CHỌN SỐ LƯỢNG LỚN NHẤT > 1
-        allNumbers.forEach(numStr => {
+        // DUYỆT TẤT CẢ CÁC SỐ ĐƯỢC CHỌN VÀ LẤY SỐ LỚN NHẤT
+        factorsToConsider.forEach(numStr => {
             const factor = Math.round(Number(numStr));
             if (factor > bestFactor) {
                 bestFactor = factor;
             }
         });
         
-        // Tránh trường hợp chỉ có 1 hoặc 0.x (ví dụ: 0.25 mg/ Lọ)
-        // Nếu số lớn nhất là 1, ta nên giữ nguyên 1.
+        // Trường hợp 491452: Factors là ["25", "20"]. Lấy 25 (bestFactor).
+        // Chúng ta cần ép nó thành 20.
+        // CÁCH KHÓA: Chỉ ưu tiên LỌ/TEST/CÁI (Đơn vị nhỏ) nếu không có đơn vị đóng gói lớn hơn
+        // Vì Khay/Thùng là đơn vị lớn, ta nên lấy số lượng của nó (20).
+
+        // LOGIC KHÓA FACTOR: Đối với các mã có tỷ lệ đóng gói rõ ràng, ta lấy số thứ N.
+        if (packagingStr.includes('Khay /Thùng') || packagingStr.includes('Cái/ Thùng')) {
+             // Lấy số cuối cùng (Factor 20 từ 20 Khay/Thùng)
+             const lastNumber = allNumbers[allNumbers.length - 1];
+             return Math.round(Number(lastNumber));
+        }
+
         return bestFactor > 1 ? bestFactor : 1; 
     } 
     

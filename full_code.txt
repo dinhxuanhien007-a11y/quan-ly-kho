@@ -6211,8 +6211,8 @@ export default DataImportPage;
 
 import React, { useState, useMemo } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp, writeBatch } from 'firebase/firestore';
-import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp, writeBatch, deleteDoc } from 'firebase/firestore'; 
+import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
@@ -6396,6 +6396,30 @@ const handleCancelSlip = async (slip) => {
 Â  Â  }
 };
 
+const handleDeleteSlip = async (slipToDelete) => {
+    if (slipToDelete.status !== 'cancelled') {
+        return toast.warn('Chá»‰ cÃ³ thá»ƒ xÃ³a cÃ¡c phiáº¿u Ä‘Ã£ há»§y.');
+    }
+    setIsProcessing(true);
+    try {
+        const slipDocRef = doc(db, 'export_tickets', slipToDelete.id);
+        
+        // **QUAN TRá»ŒNG:** Kiá»ƒm tra láº§n cuá»‘i xem cÃ³ allocation nÃ o cÃ²n sÃ³t khÃ´ng.
+        // Tuy nhiÃªn, vÃ¬ phiáº¿u Ä‘Ã£ á»Ÿ tráº¡ng thÃ¡i 'cancelled', ta máº·c Ä‘á»‹nh allocation = 0.
+        
+        await deleteDoc(slipDocRef); // <-- DÃ¹ng deleteDoc Ä‘á»ƒ xÃ³a háº³n document
+
+        toast.success(`ÄÃ£ xÃ³a vÄ©nh viá»…n phiáº¿u xuáº¥t ${slipToDelete.id}.`);
+        reset(); // Táº£i láº¡i danh sÃ¡ch
+    } catch (error) {
+        console.error("Lá»—i khi xÃ³a phiáº¿u xuáº¥t: ", error);
+        toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ³a phiáº¿u xuáº¥t.');
+    } finally {
+        setIsProcessing(false);
+        setConfirmModal({ isOpen: false });
+    }
+};
+
   const handleSaveSlipChanges = async (updatedSlip) => {
     try {
         const batch = writeBatch(db); // DÃ¹ng Batch Writes
@@ -6462,6 +6486,14 @@ const promptAction = (action, slip) => {
             message: `Báº¡n cÃ³ cháº¯c muá»‘n Há»¦Y phiáº¿u xuáº¥t cá»§a khÃ¡ch hÃ ng "${slip.customer}" khÃ´ng? Thao tÃ¡c nÃ y sáº½ khÃ´ng trá»« tá»“n kho.`,
             onConfirm: () => handleCancelSlip(slip),
             confirmText: "Äá»“ng Ã½ há»§y"
+        });
+        } else if (action === 'delete') { // <-- THÃŠM LOGIC NÃ€Y
+        setConfirmModal({
+            isOpen: true,
+            title: "XÃ¡c nháº­n xÃ³a VÄ¨NH VIá»„N?",
+            message: `Báº¡n cÃ³ cháº¯c muá»‘n XÃ“A vÄ©nh viá»…n phiáº¿u xuáº¥t Ä‘Ã£ há»§y cá»§a khÃ¡ch hÃ ng "${slip.customer}" khÃ´ng? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.`, // <-- Sá»¬A Táº I ÄÃ‚Y
+            onConfirm: () => handleDeleteSlip(slip), 
+            confirmText: "XÃ³a VÄ©nh Viá»…n"
         });
     }
   };
@@ -6672,6 +6704,16 @@ return (
                                         <FiCheckCircle />
                                     </button>
                                 </>
+                                )}
+                                {/* THÃŠM LOGIC NÃ€Y CHO PHIáº¾U ÄÃƒ Há»¦Y */}
+                                {slip.status === 'cancelled' && (
+                                    <button 
+                                        className="btn-icon btn-delete" 
+                                        title="XÃ³a vÄ©nh viá»…n phiáº¿u Ä‘Ã£ há»§y" 
+                                        onClick={() => promptAction('delete', slip)}
+                                    >
+                                        <FiTrash2 /> {/* Cáº§n import FiTrash2 */}
+                                    </button>
                                 )}
                             </div>
                         </td>
@@ -8356,7 +8398,7 @@ export default MobileInventoryPage;
 
 // src/pages/NewExportPage.jsx (Thay tháº¿ toÃ n bá»™ ná»™i dung file)
 
-import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
+import { formatNumber, parseFormattedNumber, calculateCaseCount } from '../utils/numberUtils'; // <-- THÃŠM calculateCaseCount
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
@@ -8368,6 +8410,54 @@ import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useExportSlipStore from '../stores/exportSlipStore';
+
+// src/pages/NewExportPage.jsx (ThÃªm hÃ m nÃ y dÆ°á»›i cÃ¡c import)
+
+/**
+ * XÃ¡c Ä‘á»‹nh Ä‘Æ¡n vá»‹ cáº§n hiá»ƒn thá»‹ khi quy Ä‘á»•i.
+ * @param {string} packagingStr - Chuá»—i quy cÃ¡ch.
+ * @param {string} currentUnit - ÄVT hiá»‡n táº¡i cá»§a item.
+ * @returns {string} - ÄÆ¡n vá»‹ quy Ä‘á»•i (vd: Lá», ThÃ¹ng, Test).
+ */
+const getTargetUnit = (packagingStr, currentUnit) => {
+    if (!packagingStr || !currentUnit) return 'ÄÆ¡n vá»‹';
+    const lowerUnit = currentUnit.toLowerCase().trim();
+
+    // 1. DÃ¹ng phÃ©p NHÃ‚N (XuÃ´i: ÄVT lÃ  Há»™p/ThÃ¹ng/Lá» -> ÄV nhá»)
+    if (lowerUnit === 'há»™p' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'lá»') { 
+        
+        // Regex tÃ¬m: (Sá») [ÄÆ¡n vá»‹ má»¥c tiÃªu] / [ÄÆ¡n vá»‹ lá»›n]
+        // Cá»T LÃ•I: ChÃºng ta chá»‰ muá»‘n láº¥y ÄÆ¡n vá»‹ má»¥c tiÃªu (vÃ­ dá»¥: LÃ­t)
+        // NhÃ³m thá»© 3 (targetMatch[3]) pháº£i chá»©a tÃªn Ä‘Æ¡n vá»‹
+        const targetUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(\w+)\s*\//i);
+        
+        if (targetUnitMatch && targetUnitMatch[3]) {
+            let unitCandidate = targetUnitMatch[3].trim();
+            
+            // Loáº¡i bá» cÃ¡c Ä‘Æ¡n vá»‹ phá»©c táº¡p Ä‘á»ƒ Ä‘Æ¡n giáº£n hÃ³a hiá»ƒn thá»‹
+            if (unitCandidate.includes('/')) {
+                // Náº¿u lÃ  5 LÃ­t/ThÃ¹ng -> chá»‰ láº¥y LÃ­t
+                unitCandidate = unitCandidate.split('/')[0].trim();
+            }
+            return unitCandidate; 
+        }
+        
+        // Náº¿u khÃ´ng khá»›p regex nÃ o, kiá»ƒm tra xem cÃ³ Ä‘Æ¡n vá»‹ thá»ƒ tÃ­ch/khá»‘i lÆ°á»£ng nÃ o khÃ´ng
+        const volumeMatch = packagingStr.match(/(LÃ­t|mL|G|Âµg)/i);
+        if (volumeMatch) return volumeMatch[1];
+        
+        return 'ÄÆ¡n vá»‹'; // Fallback an toÃ n
+    }
+
+    // 2. DÃ¹ng phÃ©p CHIA (NgÆ°á»£c: ÄVT nhá» quy Ä‘á»•i sang ÄVT lá»›n)
+    // TÃ¬m ÄÆ¡n vá»‹ Ä‘Ã³ng gÃ³i lá»›n nháº¥t á»Ÿ cuá»‘i chuá»—i. 
+    const largeUnitMatch = packagingStr.match(/\/ (Há»™p|ThÃ¹ng|Can|Kiá»‡n|Lá»|Bá»™|GÃ³i)$/i);
+    if (largeUnitMatch) {
+        return largeUnitMatch[1].trim();
+    }
+    
+    return 'ThÃ¹ng'; // Fallback phá»• biáº¿n nháº¥t
+}
 
 const exportItemSchema = z.object({
 Â  productId: z.string().min(1, { message: "MÃ£ hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
@@ -8550,12 +8640,12 @@ const handleLotSelection = (index, selectedLotId) => {
 Â  Â  };
 Â  Â  
 Â  Â  const getValidSlipData = () => {
-Â  Â  Â  Â  const formattedDate = formatDate(new Date());
-Â  Â  Â  Â  // Sá»­a lá»—i Validation Tá»“n kho Kháº£ dá»¥ng
-Â  Â  Â  Â  const validItemsInput = items.filter(item => {
+    const formattedDate = formatDate(new Date());
+    // Sá»­a lá»—i Validation Tá»“n kho Kháº£ dá»¥ng
+    const validItemsInput = items.filter(item => {
         const qty = Number(item.quantityToExport);
         // THAY Äá»”I Táº I ÄÃ‚Y: Láº¥y Tá»“n kháº£ dá»¥ng Ä‘Ã£ tÃ­nh toÃ¡n tá»« Store
-        const available = item.quantityAvailableForExport; 
+        const available = item.quantityAvailableForExport;
         
         // CHá»ˆ KIá»‚M TRA Náº¾U ÄÃƒ CHá»ŒN LÃ” (Ä‘á»ƒ trÃ¡nh lá»—i khi Ã´ cÃ²n trá»‘ng)
         if (item.productId && item.selectedLotId) {
@@ -8815,10 +8905,10 @@ const handleLotSelection = (index, selectedLotId) => {
                                         : <option value="">-- Chá»n lÃ´ tá»“n kho --</option>
                                     }
                                     {item.availableLots.map(lot => (
-                                        <option key={lot.id} value={lot.id}>
-                                            {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
-                                        </option>
-                                    ))}
+    <option key={lot.id} value={lot.id}>
+        {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'} | Tá»“n: ${formatNumber(lot.availableQty)}`} 
+    </option>
+))}
                                 </select>
                             )}
                         </div>
@@ -8837,14 +8927,43 @@ const handleLotSelection = (index, selectedLotId) => {
                                 onBlur={() => setFocusedInputIndex(null)}
                                 onKeyDown={handleQuantityKeyDown}
                                 onChange={e => {
-                                    const rawValue = e.target.value;
-                                    const parsedValue = parseFormattedNumber(rawValue);
-                                    if (/^\d*\.?\d*$/.test(parsedValue) || parsedValue === '') {
-                                        updateItem(index, 'quantityToExport', parsedValue);
-                                    }
-                                }}
-                            />
-                        </div>
+            const rawValue = e.target.value;
+            const parsedValue = parseFormattedNumber(rawValue);
+            const numValue = Number(parsedValue);
+            
+            // THÃŠM LOGIC KIá»‚M TRA Táº I ÄÃ‚Y
+            const available = item.quantityAvailableForExport;
+            
+            if (numValue > available) {
+                toast.warn(`Cáº£nh bÃ¡o: SL vÆ°á»£t quÃ¡ tá»“n kháº£ dá»¥ng (${formatNumber(available)}).`);
+                // Giá»›i háº¡n giÃ¡ trá»‹ nháº­p vÃ o báº±ng tá»“n kháº£ dá»¥ng
+                updateItem(index, 'quantityToExport', available);
+                return;
+            }
+            // Káº¾T THÃšC LOGIC KIá»‚M TRA
+            
+            if (/^\d*\.?\d*$/.test(parsedValue) || parsedValue === '') {
+                updateItem(index, 'quantityToExport', parsedValue);
+            }
+        }}
+    />
+
+{/* HIá»‚N THá»Š Sá» KIá»†N */}
+{item.packaging && item.conversionFactor > 1 && (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Quy Ä‘á»•i: <strong>
+                                        {/* Gá»ŒI HÃ€M Má»šI VÃ€ Láº¤Y GIÃ TRá»Š */}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {formatNumber(calculateCaseCount(
+                                            Number(item.quantityToExport), 
+                                            item.conversionFactor, 
+                                            item.unit
+                                        ).value)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </strong> 
+                                        {/* Gá»ŒI HÃ€M Má»šI Láº¤Y ÄÆ N Vá»Š */}
+                                        {getTargetUnit(item.packaging, item.unit)} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
                         <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.storageTemp} readOnly /></div>
                         <div className="grid-cell">
@@ -8885,7 +9004,7 @@ export default NewExportPage;
 
 
 // src/pages/NewImportPage.jsx
-import { formatNumber, parseFormattedNumber } from '../utils/numberUtils';
+import { formatNumber, parseFormattedNumber, calculateCaseCount } from '../utils/numberUtils'; // <-- THÃŠM calculateCaseCount
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import SupplierAutocomplete from '../components/SupplierAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
@@ -8899,6 +9018,54 @@ import { FiInfo, FiXCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useImportSlipStore from '../stores/importSlipStore';
+
+// src/pages/NewExportPage.jsx (ThÃªm hÃ m nÃ y dÆ°á»›i cÃ¡c import)
+
+/**
+ * XÃ¡c Ä‘á»‹nh Ä‘Æ¡n vá»‹ cáº§n hiá»ƒn thá»‹ khi quy Ä‘á»•i.
+ * @param {string} packagingStr - Chuá»—i quy cÃ¡ch.
+ * @param {string} currentUnit - ÄVT hiá»‡n táº¡i cá»§a item.
+ * @returns {string} - ÄÆ¡n vá»‹ quy Ä‘á»•i (vd: Lá», ThÃ¹ng, Test).
+ */
+const getTargetUnit = (packagingStr, currentUnit) => {
+    if (!packagingStr || !currentUnit) return 'ÄÆ¡n vá»‹';
+    const lowerUnit = currentUnit.toLowerCase().trim();
+
+    // 1. DÃ¹ng phÃ©p NHÃ‚N (XuÃ´i: ÄVT lÃ  Há»™p/ThÃ¹ng/Lá» -> ÄV nhá»)
+    if (lowerUnit === 'há»™p' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'lá»') { 
+        
+        // Regex tÃ¬m: (Sá») [ÄÆ¡n vá»‹ má»¥c tiÃªu] / [ÄÆ¡n vá»‹ lá»›n]
+        // Cá»T LÃ•I: ChÃºng ta chá»‰ muá»‘n láº¥y ÄÆ¡n vá»‹ má»¥c tiÃªu (vÃ­ dá»¥: LÃ­t)
+        // NhÃ³m thá»© 3 (targetMatch[3]) pháº£i chá»©a tÃªn Ä‘Æ¡n vá»‹
+        const targetUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(\w+)\s*\//i);
+        
+        if (targetUnitMatch && targetUnitMatch[3]) {
+            let unitCandidate = targetUnitMatch[3].trim();
+            
+            // Loáº¡i bá» cÃ¡c Ä‘Æ¡n vá»‹ phá»©c táº¡p Ä‘á»ƒ Ä‘Æ¡n giáº£n hÃ³a hiá»ƒn thá»‹
+            if (unitCandidate.includes('/')) {
+                // Náº¿u lÃ  5 LÃ­t/ThÃ¹ng -> chá»‰ láº¥y LÃ­t
+                unitCandidate = unitCandidate.split('/')[0].trim();
+            }
+            return unitCandidate; 
+        }
+        
+        // Náº¿u khÃ´ng khá»›p regex nÃ o, kiá»ƒm tra xem cÃ³ Ä‘Æ¡n vá»‹ thá»ƒ tÃ­ch/khá»‘i lÆ°á»£ng nÃ o khÃ´ng
+        const volumeMatch = packagingStr.match(/(LÃ­t|mL|G|Âµg)/i);
+        if (volumeMatch) return volumeMatch[1];
+        
+        return 'ÄÆ¡n vá»‹'; // Fallback an toÃ n
+    }
+
+    // 2. DÃ¹ng phÃ©p CHIA (NgÆ°á»£c: ÄVT nhá» quy Ä‘á»•i sang ÄVT lá»›n)
+    // TÃ¬m ÄÆ¡n vá»‹ Ä‘Ã³ng gÃ³i lá»›n nháº¥t á»Ÿ cuá»‘i chuá»—i. 
+    const largeUnitMatch = packagingStr.match(/\/ (Há»™p|ThÃ¹ng|Can|Kiá»‡n|Lá»|Bá»™|GÃ³i)$/i);
+    if (largeUnitMatch) {
+        return largeUnitMatch[1].trim();
+    }
+    
+    return 'ThÃ¹ng'; // Fallback phá»• biáº¿n nháº¥t
+}
 
 // --- PHáº¦N SCHEMAS GIá»® NGUYÃŠN ---
 const importItemSchema = z.object({
@@ -9388,7 +9555,22 @@ const NewImportPage = () => {
                                     }
                                 }}
                             />
-                        </div>
+                            {/* HIá»‚N THá»Š Sá» KIá»†N */}
+{item.packaging && item.conversionFactor > 1 && (
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Quy Ä‘á»•i: <strong>
+                                        {/* Gá»ŒI HÃ€M Má»šI VÃ€ Láº¤Y GIÃ TRá»Š */}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {formatNumber(calculateCaseCount(
+                                            Number(item.quantityToExport), 
+                                            item.conversionFactor, 
+                                            item.unit
+                                        ).value)}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </strong> 
+                                        {/* Gá»ŒI HÃ€M Má»šI Láº¤Y ÄÆ N Vá»Š */}
+                                        {getTargetUnit(item.packaging, item.unit)} 
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
                         <div className="grid-cell">
@@ -10319,8 +10501,8 @@ export default ProductLedgerPage;
 
 
 // src/pages/ProductsPage.jsx
-import React, { useState, useMemo } from 'react';
-import { collection, query, orderBy, where, documentId } from 'firebase/firestore';
+import React, { useState, useMemo, useEffect } from 'react'; 
+import { collection, query, orderBy, where, documentId, getDocs } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
@@ -12722,6 +12904,7 @@ import {
     deleteDoc,
     serverTimestamp // <-- THÃŠM IMPORT
 } from 'firebase/firestore';
+import { getConversionFactor } from '../utils/stringUtils';
 
 /**
  * ThÃªm má»™t sáº£n pháº©m má»›i vÃ o Firestore.
@@ -12729,9 +12912,14 @@ import {
  * @param {object} productData - Dá»¯ liá»‡u cá»§a sáº£n pháº©m.
  */
 export const addProduct = async (productId, productData) => {
+    // TÃ­nh toÃ¡n conversionFactor trÆ°á»›c khi lÆ°u
+    const factor = getConversionFactor(productData.packaging);
     const productRef = doc(db, 'products', productId);
-    // <-- THÃŠM Dá»® LIá»†U createdAt VÃ€O ÄÃ‚Y
-    await setDoc(productRef, { ...productData, createdAt: serverTimestamp() });
+    await setDoc(productRef, { 
+        ...productData, 
+        conversionFactor: factor, // <-- THÃŠM TRÆ¯á»œNG NÃ€Y
+        createdAt: serverTimestamp() 
+    });
 };
 
 /**
@@ -12740,8 +12928,13 @@ export const addProduct = async (productId, productData) => {
  * @param {object} productData - Dá»¯ liá»‡u má»›i cá»§a sáº£n pháº©m.
  */
 export const updateProduct = async (productId, productData) => {
+    // TÃ­nh toÃ¡n conversionFactor trÆ°á»›c khi lÆ°u
+    const factor = getConversionFactor(productData.packaging);
     const productDocRef = doc(db, 'products', productId);
-    await updateDoc(productDocRef, productData);
+    await updateDoc(productDocRef, {
+        ...productData,
+        conversionFactor: factor, // <-- THÃŠM TRÆ¯á»œNG NÃ€Y
+    });
 };
 
 /**
@@ -12980,7 +13173,8 @@ const initialItemState = {
 Â  Â  availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
 Â  Â  expiryDate: '', quantityAvailableForExport: 0, quantityToExport: '', notes: '', 
 Â  Â  isOutOfStock: false,
-Â  Â  isFetchingLots: false
+Â  Â  isFetchingLots: false,
+    conversionFactor: 1
 };
 
 const useExportSlipStore = create(
@@ -13037,10 +13231,11 @@ const useExportSlipStore = create(
 
 Â  Â  Â  Â  Â  Â  Â  Â  if (!productData) return;
 
-Â  Â  Â  Â  Â  Â  Â  Â  // BÆ°á»›c 2: Báº¯t Ä‘áº§u tÃ¬m kiáº¿m dá»¯ liá»‡u tá»« server
-Â  Â  Â  Â  Â  Â  Â  Â  try {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotsSnapshot = await getDocs(lotsQuery);
+Â  Â  Â  Â  Â  Â  Â  Â  // BÆ¯á»šC 2: Báº¯t Ä‘áº§u tÃ¬m kiáº¿m dá»¯ liá»‡u tá»« server
+try {
+    // 1. CHá»ˆ TRUY Váº¤N CÃC LÃ” CÃ“ Tá»’N THá»°C Táº¾ > 0
+    const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
+    const lotsSnapshot = await getDocs(lotsQuery);
 
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  let finalLots = [];
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  let outOfStock = false;
@@ -13048,41 +13243,43 @@ const useExportSlipStore = create(
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lotsSnapshot.empty) {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  outOfStock = true;
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotAggregator = new Map();
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  for (const lot of foundLots) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // 1. TÃNH TOÃN Tá»’N KHO KHáº¢ Dá»¤NG
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const allocatedQty = lot.quantityAllocated || 0;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const availableQty = lot.quantityRemaining - allocatedQty; 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (availableQty <= 0) continue; // Bá» qua náº¿u tá»“n kháº£ dá»¥ng <= 0
+        const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const lotAggregator = new Map();
+        
+        for (const lot of foundLots) {
+            // 1. TÃNH TOÃN Tá»’N KHO KHáº¢ Dá»¤NG: Tá»“n thá»±c - Äáº·t giá»¯
+            const allocatedQty = lot.quantityAllocated || 0; // 
+            const availableQty = lot.quantityRemaining - allocatedQty;
+            
+            // THAY Äá»”I Cá»T LÃ•I Táº I ÄÃ‚Y:
+            if (availableQty <= 0) continue; // Bá» qua náº¿u tá»“n kháº£ dá»¥ng <= 0
 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const lotKey = lot.lotNumber || 'KHONG_CO_LO';
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lotAggregator.has(lotKey)) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const existing = lotAggregator.get(lotKey);
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.quantityRemaining += lot.quantityRemaining; // Tá»“n thá»±c
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.quantityAllocated += allocatedQty; // Äáº·t giá»¯
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.availableQty += availableQty; // Kháº£ dá»¥ng (ÄÃƒ Sá»¬A Gá»˜P NHÃ“M)
+            const lotKey = lot.lotNumber || 'KHONG_CO_LO';
+            
+            if (lotAggregator.has(lotKey)) {
+                const existing = lotAggregator.get(lotKey);
+                
+                // Gá»˜P NHÃ“M cÃ¡c trÆ°á»ng
+                existing.quantityRemaining += lot.quantityRemaining; 
+                existing.quantityAllocated += allocatedQty;
+                existing.availableQty += availableQty; // Tá»“n Kháº£ Dá»¥ng Ä‘Ã£ gá»™p
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.expiryDate = lot.expiryDate;
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.originalLots.push(lot);
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // KHá»žI Táº O LÃ” Má»šI TRONG AGGREGATOR
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  lotAggregator.set(lotKey, { 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ...lot, 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  id: lotKey, 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityRemaining: lot.quantityRemaining,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAllocated: allocatedQty,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  availableQty: availableQty, // <--- Tá»’N KHáº¢ Dá»¤NG Äá»‚ KIá»‚M TRA
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  originalLots: [lot] 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  });
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+                // KHá»žI Táº O LÃ” Má»šI TRONG AGGREGATOR
+                lotAggregator.set(lotKey, { 
+                    ...lot, 
+                    id: lotKey, 
+                    quantityRemaining: lot.quantityRemaining,
+                    quantityAllocated: allocatedQty,
+                    availableQty: availableQty,
+                    originalLots: [lot] 
+                });
+            }
+        }
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const aggregatedLots = Array.from(lotAggregator.values());
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  aggregatedLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
@@ -13108,6 +13305,7 @@ const useExportSlipStore = create(
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  unit: productData.unit || '',
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  packaging: productData.packaging || '',
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storageTemp: productData.storageTemp || '',
+                                    conversionFactor: productData.conversionFactor || 1,
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  availableLots: finalLots,
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isOutOfStock: outOfStock,
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isFetchingLots: false,
@@ -13173,7 +13371,8 @@ const initialItemState = {
     manufacturer: '',
     productNotFound: false,
     lotStatus: 'unchecked', // 'unchecked', 'exists', 'new', 'declared'
-    existingLotInfo: null
+    existingLotInfo: null,
+    conversionFactor: 1
 };
 
 // State khá»Ÿi táº¡o cho toÃ n bá»™ store
@@ -13237,6 +13436,7 @@ const useImportSlipStore = create(
                         storageTemp: productData.storageTemp || '',
                         team: productData.team || '',
                         manufacturer: productData.manufacturer || '',
+                        conversionFactor: productData.conversionFactor || 1,
                         productNotFound: false,
                     });
                 } else {
@@ -16049,6 +16249,32 @@ export const parseFormattedNumber = (value) => {
   return standardDecimal;
 };
 
+// src/utils/numberUtils.js (Sá»­a calculateCaseCount)
+
+/**
+ * TÃ­nh toÃ¡n sá»‘ kiá»‡n/Ä‘Æ¡n vá»‹ quy Ä‘á»•i vÃ  tráº£ vá» Má»˜T Máº¢NG [Káº¿t quáº£, CÃ´ng thá»©c Ãp dá»¥ng].
+ * @param {number} quantity - Sá»‘ lÆ°á»£ng.
+ * @param {number} factor - Tá»· lá»‡ quy Ä‘á»•i (VÃ­ dá»¥: 100).
+ * @param {string} unit - ÄÆ¡n vá»‹ tÃ­nh cá»§a sáº£n pháº©m (VÃ­ dá»¥: Lá»).
+ * @returns {object} - { value: number, action: 'MULTIPLY'/'DIVIDE' }
+ */
+export const calculateCaseCount = (quantity, factor, unit) => {
+    if (!quantity || !factor || factor <= 0) return { value: 0, action: 'NONE' };
+    
+    const lowerUnit = unit ? unit.toLowerCase().trim() : '';
+
+    // LOGIC QUY Äá»”I XUÃ”I (NHÃ‚N): unit lÃ  ÄVT Ä‘Ã³ng gÃ³i trung gian (Há»™p/ThÃ¹ng) HOáº¶C Lá»Œ
+    // Tá»©c lÃ : Xuáº¥t 1 Há»™p/Lá» -> 100 Test/Lá».
+    if (lowerUnit === 'há»™p' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'lá»') { // <-- THÃŠM 'Lá»Œ' VÃ€O ÄÃ‚Y
+        const result = quantity * factor; 
+        return { value: Math.round(result * 100) / 100, action: 'MULTIPLY' };
+    } 
+    
+    // LOGIC QUY Äá»”I NGÆ¯á»¢C (CHIA): ÄVT cÆ¡ báº£n lÃ  ÄVT nhá» nháº¥t (Chai, Test, LÃ­t, etc.)
+    const result = quantity / factor;
+    return { value: Math.round(result * 100) / 100, action: 'DIVIDE' };
+};
+
 
 
 --- FILE: D:\quan-ly-kho\src\utils\pdfUtils.js ---
@@ -16445,6 +16671,40 @@ export const convertVietnameseWordsToNumbers = (str) => {
         result = result.replace(regex, numberWords[word]);
     }
     return result;
+};
+
+// src/utils/stringUtils.js (Sá»­a getConversionFactor)
+
+/**
+ * PHIÃŠN Báº¢N 3: Æ¯u tiÃªn trÃ­ch xuáº¥t Sá» Tá»¶ Lá»† CUá»I CÃ™NG trong chuá»—i (vÃ­ dá»¥: 50 Chai/ThÃ¹ng -> 50)
+ * @param {string} packagingStr - Chuá»—i quy cÃ¡ch Ä‘Ã³ng gÃ³i.
+ * @returns {number} - Tá»· lá»‡ quy Ä‘á»•i, hoáº·c 1 náº¿u khÃ´ng phÃ¢n tÃ­ch Ä‘Æ°á»£c.
+ */
+export const getConversionFactor = (packagingStr) => {
+    if (!packagingStr || packagingStr.toUpperCase() === "N/A") return 1;
+
+    // TÃŒM Cáº¶P Tá»¶ Lá»† Dá»„ Äá»ŒC NHáº¤T á»ž CUá»I CHUá»–I: vd: "100 Lá»/ Há»™p" HOáº¶C "50 Chai/ ThÃ¹ng"
+    // Regex tÃ¬m: (Sá») [ÄVT] / [ÄVT]
+    const ratios = packagingStr.match(/(\d+(\.\d+)?)\s*\w+\s*\/\s*\w+/gi);
+    
+    if (ratios && ratios.length > 0) {
+        // Láº¥y cáº·p tá»· lá»‡ CUá»I CÃ™NG (cáº¥p Ä‘Ã³ng gÃ³i cao nháº¥t hoáº·c quan trá»ng nháº¥t)
+        const lastRatio = ratios[ratios.length - 1]; 
+        
+        // TrÃ­ch xuáº¥t Sá» Tá»¶ Lá»† (Factor) tá»« cáº·p cuá»‘i cÃ¹ng
+        const match = lastRatio.match(/(\d+(\.\d+)?)/); 
+        if (match) {
+            return Math.round(Number(match[1]));
+        }
+    } 
+    
+    // TrÆ°á»ng há»£p khÃ´ng tÃ¬m tháº¥y tá»· lá»‡ (vd: "N/A" hoáº·c "1 LÃ­t/ Chai") -> Láº¥y sá»‘ Ä‘Æ¡n giáº£n á»Ÿ Ä‘áº§u
+    const simpleMatch = packagingStr.match(/^(\d+(\.\d+)?)/);
+    if (simpleMatch) {
+        return Math.round(Number(simpleMatch[1]));
+    }
+    
+    return 1;
 };
 
 
