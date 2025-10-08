@@ -12,7 +12,8 @@ const initialItemState = {
     availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
     expiryDate: '', quantityAvailableForExport: 0, quantityToExport: '', notes: '', 
     isOutOfStock: false,
-    isFetchingLots: false
+    isFetchingLots: false,
+    conversionFactor: 1
 };
 
 const useExportSlipStore = create(
@@ -143,6 +144,7 @@ try {
                                     unit: productData.unit || '',
                                     packaging: productData.packaging || '',
                                     storageTemp: productData.storageTemp || '',
+                                    conversionFactor: productData.conversionFactor || 1,
                                     availableLots: finalLots,
                                     isOutOfStock: outOfStock,
                                     isFetchingLots: false,

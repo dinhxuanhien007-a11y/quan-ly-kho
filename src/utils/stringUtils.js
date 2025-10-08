@@ -48,3 +48,37 @@ export const convertVietnameseWordsToNumbers = (str) => {
     }
     return result;
 };
+
+// src/utils/stringUtils.js (Sửa getConversionFactor)
+
+/**
+ * PHIÊN BẢN 3: Ưu tiên trích xuất SỐ TỶ LỆ CUỐI CÙNG trong chuỗi (ví dụ: 50 Chai/Thùng -> 50)
+ * @param {string} packagingStr - Chuỗi quy cách đóng gói.
+ * @returns {number} - Tỷ lệ quy đổi, hoặc 1 nếu không phân tích được.
+ */
+export const getConversionFactor = (packagingStr) => {
+    if (!packagingStr || packagingStr.toUpperCase() === "N/A") return 1;
+
+    // TÌM CẶP TỶ LỆ DỄ ĐỌC NHẤT Ở CUỐI CHUỖI: vd: "100 Lọ/ Hộp" HOẶC "50 Chai/ Thùng"
+    // Regex tìm: (SỐ) [ĐVT] / [ĐVT]
+    const ratios = packagingStr.match(/(\d+(\.\d+)?)\s*\w+\s*\/\s*\w+/gi);
+    
+    if (ratios && ratios.length > 0) {
+        // Lấy cặp tỷ lệ CUỐI CÙNG (cấp đóng gói cao nhất hoặc quan trọng nhất)
+        const lastRatio = ratios[ratios.length - 1]; 
+        
+        // Trích xuất SỐ TỶ LỆ (Factor) từ cặp cuối cùng
+        const match = lastRatio.match(/(\d+(\.\d+)?)/); 
+        if (match) {
+            return Math.round(Number(match[1]));
+        }
+    } 
+    
+    // Trường hợp không tìm thấy tỷ lệ (vd: "N/A" hoặc "1 Lít/ Chai") -> Lấy số đơn giản ở đầu
+    const simpleMatch = packagingStr.match(/^(\d+(\.\d+)?)/);
+    if (simpleMatch) {
+        return Math.round(Number(simpleMatch[1]));
+    }
+    
+    return 1;
+};

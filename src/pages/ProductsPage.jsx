@@ -1,6 +1,6 @@
 // src/pages/ProductsPage.jsx
-import React, { useState, useMemo } from 'react';
-import { collection, query, orderBy, where, documentId } from 'firebase/firestore';
+import React, { useState, useMemo, useEffect } from 'react'; 
+import { collection, query, orderBy, where, documentId, getDocs } from 'firebase/firestore';
 import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';

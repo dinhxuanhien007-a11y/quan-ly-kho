@@ -8,6 +8,7 @@ import {
     deleteDoc,
     serverTimestamp // <-- THÊM IMPORT
 } from 'firebase/firestore';
+import { getConversionFactor } from '../utils/stringUtils';
 
 /**
  * Thêm một sản phẩm mới vào Firestore.
@@ -15,9 +16,14 @@ import {
  * @param {object} productData - Dữ liệu của sản phẩm.
  */
 export const addProduct = async (productId, productData) => {
+    // Tính toán conversionFactor trước khi lưu
+    const factor = getConversionFactor(productData.packaging);
     const productRef = doc(db, 'products', productId);
-    // <-- THÊM DỮ LIỆU createdAt VÀO ĐÂY
-    await setDoc(productRef, { ...productData, createdAt: serverTimestamp() });
+    await setDoc(productRef, { 
+        ...productData, 
+        conversionFactor: factor, // <-- THÊM TRƯỜNG NÀY
+        createdAt: serverTimestamp() 
+    });
 };
 
 /**
@@ -26,8 +32,13 @@ export const addProduct = async (productId, productData) => {
  * @param {object} productData - Dữ liệu mới của sản phẩm.
  */
 export const updateProduct = async (productId, productData) => {
+    // Tính toán conversionFactor trước khi lưu
+    const factor = getConversionFactor(productData.packaging);
     const productDocRef = doc(db, 'products', productId);
-    await updateDoc(productDocRef, productData);
+    await updateDoc(productDocRef, {
+        ...productData,
+        conversionFactor: factor, // <-- THÊM TRƯỜNG NÀY
+    });
 };
 
 /**

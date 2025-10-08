@@ -37,3 +37,29 @@ export const parseFormattedNumber = (value) => {
   }
   return standardDecimal;
 };
+
+// src/utils/numberUtils.js (Sửa calculateCaseCount)
+
+/**
+ * Tính toán số kiện/đơn vị quy đổi và trả về MỘT MẢNG [Kết quả, Công thức Áp dụng].
+ * @param {number} quantity - Số lượng.
+ * @param {number} factor - Tỷ lệ quy đổi (Ví dụ: 100).
+ * @param {string} unit - Đơn vị tính của sản phẩm (Ví dụ: Lọ).
+ * @returns {object} - { value: number, action: 'MULTIPLY'/'DIVIDE' }
+ */
+export const calculateCaseCount = (quantity, factor, unit) => {
+    if (!quantity || !factor || factor <= 0) return { value: 0, action: 'NONE' };
+    
+    const lowerUnit = unit ? unit.toLowerCase().trim() : '';
+
+    // LOGIC QUY ĐỔI XUÔI (NHÂN): unit là ĐVT đóng gói trung gian (Hộp/Thùng) HOẶC LỌ
+    // Tức là: Xuất 1 Hộp/Lọ -> 100 Test/Lọ.
+    if (lowerUnit === 'hộp' || lowerUnit === 'thùng' || lowerUnit === 'lọ') { // <-- THÊM 'LỌ' VÀO ĐÂY
+        const result = quantity * factor; 
+        return { value: Math.round(result * 100) / 100, action: 'MULTIPLY' };
+    } 
+    
+    // LOGIC QUY ĐỔI NGƯỢC (CHIA): ĐVT cơ bản là ĐVT nhỏ nhất (Chai, Test, Lít, etc.)
+    const result = quantity / factor;
+    return { value: Math.round(result * 100) / 100, action: 'DIVIDE' };
+};

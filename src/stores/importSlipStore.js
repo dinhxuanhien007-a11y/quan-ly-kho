@@ -20,7 +20,8 @@ const initialItemState = {
     manufacturer: '',
     productNotFound: false,
     lotStatus: 'unchecked', // 'unchecked', 'exists', 'new', 'declared'
-    existingLotInfo: null
+    existingLotInfo: null,
+    conversionFactor: 1
 };
 
 // State khởi tạo cho toàn bộ store
@@ -84,6 +85,7 @@ const useImportSlipStore = create(
                         storageTemp: productData.storageTemp || '',
                         team: productData.team || '',
                         manufacturer: productData.manufacturer || '',
+                        conversionFactor: productData.conversionFactor || 1,
                         productNotFound: false,
                     });
                 } else {
