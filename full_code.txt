@@ -71,6 +71,7 @@ export default AddAllowedUserModal;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\AddNewLotModal.jsx ---
 
 
@@ -171,6 +172,7 @@ export default AddNewLotModal;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
 
 
@@ -179,7 +181,7 @@ export default AddNewLotModal;
 import React, { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
-import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants';
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS, SUBGROUP_OPTIONS } from '../constants';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { addProduct } from '../services/productService';
 
@@ -188,6 +190,7 @@ const productAndLotSchema = z.object({
   lotNumber: z.string().min(1, { message: "Sá»‘ lÃ´ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
   unit: z.string().min(1, { message: "ÄÆ¡n vá»‹ tÃ­nh khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
   team: z.string().min(1, { message: "Báº¡n pháº£i chá»n má»™t team." }),
+  subGroup: z.string().min(1, { message: "Báº¡n pháº£i chá»n má»™t nhÃ³m hÃ ng." }),
 });
 
 const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
@@ -200,12 +203,13 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [manufacturer, setManufacturer] = useState('');
     const [team, setTeam] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [subGroup, setSubGroup] = useState('');
     const formRef = useRef(null);
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
 
-        const formData = { productName, lotNumber, unit, team };
+        const formData = { productName, lotNumber, unit, team, subGroup };
         const validationResult = productAndLotSchema.safeParse(formData);
 
         if (!validationResult.success) {
@@ -215,7 +219,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
         
         setIsSaving(true);
         const newProductData = {
-            productName, unit, packaging, storageTemp, manufacturer, team,
+            productName, unit, packaging, storageTemp, manufacturer, team, subGroup,
         };
 
         try {
@@ -264,9 +268,15 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                   <option value="" disabled>-- Chá»n team --</option>
                                   <option value="MED">MED</option>
                                   <option value="BIO">BIO</option>
-                                  <option value="Spare Part">Spare Part</option>
                               </select>
                           </div>
+                          <div className="form-group">
+                      <label>NhÃ³m hÃ ng (*)</label>
+                      <select value={subGroup} onChange={(e) => setSubGroup(e.target.value)}>
+                          <option value="" disabled>-- Chá»n nhÃ³m hÃ ng --</option>
+                          {SUBGROUP_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                  </div>
                       </div>
                       <div className="form-row">
                           <div className="form-group">
@@ -351,6 +361,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
 };
 
 export default AddNewProductAndLotModal;
+
 
 
 
@@ -445,6 +456,7 @@ const AddPartnerModal = ({ onClose, onPartnerAdded }) => {
 };
 
 export default AddPartnerModal;
+
 
 
 
@@ -582,7 +594,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
             <select value={team} onChange={(e) => setTeam(e.target.value)}>
               <option value="MED">MED</option>
               <option value="BIO">BIO</option>
-              <option value="Spare Part">Spare Part</option>
             </select>
           </div>
           <div className="modal-actions">
@@ -598,6 +609,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
 };
 
 export default AddProductModal;
+
 
 
 
@@ -759,6 +771,7 @@ export default AddUnlistedItemModal;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\AddUserModal.jsx ---
 
 
@@ -876,6 +889,7 @@ const AddUserModal = ({ onClose, onUserAdded }) => {
 };
 
 export default AddUserModal;
+
 
 
 
@@ -1129,6 +1143,7 @@ export default React.memo(ConfirmationModal);
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
 
 
@@ -1231,6 +1246,7 @@ describe('Component: ConfirmationModal', () => {
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { z } from 'zod'; // <-- IMPORT ZOD
+import { TEAM_OPTIONS } from '../constants';
 
 // <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
 const stocktakeSchema = z.object({
@@ -1273,11 +1289,11 @@ const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
                     <div className="form-group">
                         <label>Pháº¡m vi kiá»ƒm kÃª</label>
                         <select value={scope} onChange={(e) => setScope(e.target.value)}>
-                            <option value="all">ToÃ n bá»™ kho</option>
-                            <option value="MED">Chá»‰ Team MED</option>
-                            <option value="BIO">Chá»‰ Team BIO</option>
-                            <option value="Spare Part">Chá»‰ Team Spare Part</option>
-                        </select>
+    <option value="all">ToÃ n bá»™ kho</option>
+    {TEAM_OPTIONS.map(team => (
+        <option key={team} value={team}>Chá»‰ Team {team}</option>
+    ))}
+</select>
                     </div>
                     <div className="modal-actions">
                         <button type="button" onClick={onClose} className="btn-secondary" disabled={isCreating}>Há»§y</button>
@@ -1292,6 +1308,7 @@ const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
 };
 
 export default CreateStocktakeModal;
+
 
 
 
@@ -1450,60 +1467,64 @@ export default CustomerAutocomplete;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\DateRangePresets.jsx ---
 
 
 // src/components/DateRangePresets.jsx
 import React from 'react';
 
-// THAY Äá»”I 1: Cáº£i thiá»‡n hÃ m formatDate Ä‘á»ƒ an toÃ n hÆ¡n
-// HÃ m nÃ y sáº½ kiá»ƒm tra ngÃ y cÃ³ há»£p lá»‡ khÃ´ng trÆ°á»›c khi Ä‘á»‹nh dáº¡ng
-const formatDate = (date) => {
-    // Kiá»ƒm tra xem date cÃ³ pháº£i lÃ  má»™t Ä‘á»‘i tÆ°á»£ng Date há»£p lá»‡ khÃ´ng
+// === Báº®T Äáº¦U Sá»¬A Lá»–I Táº I ÄÃ‚Y ===
+/**
+ * Äá»‹nh dáº¡ng Ä‘á»‘i tÆ°á»£ng Date thÃ nh chuá»—i YYYY-MM-DD an toÃ n vá»›i mÃºi giá».
+ * HÃ m nÃ y sáº½ láº¥y cÃ¡c thÃ nh pháº§n (nÄƒm, thÃ¡ng, ngÃ y) dá»±a trÃªn giá» Ä‘á»‹a phÆ°Æ¡ng,
+ * trÃ¡nh lá»—i bá»‹ lÃ¹i ngÃ y do chuyá»ƒn Ä‘á»•i sang UTC.
+ */
+const formatDateForInput = (date) => {
     if (date instanceof Date && !isNaN(date)) {
-        return date.toISOString().split('T')[0];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     // Tráº£ vá» chuá»—i rá»—ng náº¿u ngÃ y khÃ´ng há»£p lá»‡ Ä‘á»ƒ trÃ¡nh lá»—i
     return ''; 
 };
+// === Káº¾T THÃšC Sá»¬A Lá»–I ===
 
 const DateRangePresets = ({ onPresetSelect }) => {
-    
-    // THAY Äá»”I 2: XÃ³a 'const today = new Date();' khá»i Ä‘Ã¢y
 
     const presets = {
         'HÃ´m nay': () => {
-            // LuÃ´n táº¡o má»™t Ä‘á»‘i tÆ°á»£ng Date má»›i trong má»—i hÃ m
             const today = new Date();
-            const todayStr = formatDate(today);
+            const todayStr = formatDateForInput(today); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
             onPresetSelect(todayStr, todayStr);
         },
         '7 ngÃ y qua': () => {
             const today = new Date();
-            const endDate = formatDate(today);
-            // Táº¡o má»™t Ä‘á»‘i tÆ°á»£ng Date khÃ¡c Ä‘á»ƒ tÃ­nh toÃ¡n, khÃ´ng lÃ m thay Ä‘á»•i 'today'
+            const endDate = formatDateForInput(today); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(today.getDate() - 6);
-            const startDate = formatDate(sevenDaysAgo);
+            const startDate = formatDateForInput(sevenDaysAgo); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
             onPresetSelect(startDate, endDate);
         },
         'ThÃ¡ng nÃ y': () => {
             const today = new Date();
-            const startDate = formatDate(new Date(today.getFullYear(), today.getMonth(), 1));
-            const endDate = formatDate(today);
+            const startDate = formatDateForInput(new Date(today.getFullYear(), today.getMonth(), 1)); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
+            const endDate = formatDateForInput(today); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
             onPresetSelect(startDate, endDate);
         },
         'ThÃ¡ng trÆ°á»›c': () => {
             const today = new Date();
             const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            const startDate = formatDate(prevMonth);
-            const endDate = formatDate(new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0));
+            const startDate = formatDateForInput(prevMonth); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
+            const endDate = formatDateForInput(new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
             onPresetSelect(startDate, endDate);
         },
         'NÄƒm nay': () => {
             const today = new Date();
-            const startDate = formatDate(new Date(today.getFullYear(), 0, 1));
-            const endDate = formatDate(today);
+            const startDate = formatDateForInput(new Date(today.getFullYear(), 0, 1)); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
+            const endDate = formatDateForInput(today); // <-- Sá»¬ Dá»¤NG HÃ€M Má»šI
             onPresetSelect(startDate, endDate);
         }
     };
@@ -1590,6 +1611,7 @@ const EditAllowedUserModal = ({ onClose, onUserUpdated, userToEdit }) => {
 };
 
 export default EditAllowedUserModal;
+
 
 
 
@@ -1689,6 +1711,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
 Â  Â  Â  Â  Â  Â  currentItem.productName = productData.productName;
 Â  Â  Â  Â  Â  Â  currentItem.unit = productData.unit;
 Â  Â  Â  Â  Â  Â  currentItem.packaging = productData.packaging;
+            currentItem.team = productData.team;
 
 Â  Â  Â  Â  Â  Â  const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
 Â  Â  Â  Â  Â  Â  const lotsSnapshot = await getDocs(lotsQuery);
@@ -1863,7 +1886,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <option value="">-- Chá»n lÃ´ --</option>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {item.availableLots.map(lot => (
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <option key={lot.id} value={lot.id}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(Trá»‘ng)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {`${getExpiryStatusPrefix(lot.expiryDate, lot.subGroup)}LÃ´: ${lot.lotNumber || '(Trá»‘ng)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </option>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </select>
@@ -2307,6 +2330,7 @@ export default EditPartnerModal;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\EditProductModal.jsx ---
 
 
@@ -2416,6 +2440,7 @@ export default EditProductModal;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
 
 
@@ -2488,6 +2513,7 @@ export default EditUserRoleModal;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\ErrorBoundary.jsx ---
 
 
@@ -2533,6 +2559,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
+
 
 
 
@@ -2618,6 +2645,7 @@ const ExpiryNotificationBanner = () => {
 };
 
 export default ExpiryNotificationBanner;
+
 
 
 
@@ -2995,6 +3023,7 @@ export default FloatingCalculator;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
 
 
@@ -3138,6 +3167,7 @@ export default FloatingToolsModal;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\HighlightText.jsx ---
 
 
@@ -3209,6 +3239,7 @@ export default HomePage;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
 
 
@@ -3252,77 +3283,116 @@ export default ImportSlipCounter;
 
 
 // src/components/InventoryFilters.jsx
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { FiChevronDown } from 'react-icons/fi';
 
 const InventoryFilters = ({ userRole, onFilterChange, activeFilters }) => {
-    
-  const handleTeamFilter = (team) => {
-    if (activeFilters.team === team) {
-      onFilterChange('team', 'all');
-    } else {
-      onFilterChange('team', team);
-    }
-  };
+    // State Ä‘á»ƒ quáº£n lÃ½ bá»™ lá»c nhÃ³m hÃ ng má»›i
+    const [subGroups, setSubGroups] = useState([]);
+    const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
+    const subGroupRef = useRef(null);
 
-  const handleDateFilter = (status) => {
-    if (activeFilters.dateStatus === status) {
-      onFilterChange('dateStatus', 'all');
-    } else {
-      onFilterChange('dateStatus', status);
-    }
-  };
+  // src/components/InventoryFilters.jsx
 
-  return (
-    <div className="filters-container">
-      {/* Bá»™ lá»c theo Team */}
-      {/* Chá»‰ hiá»ƒn thá»‹ bá»™ lá»c team náº¿u lÃ  admin, owner, hoáº·c bio */}
-      {(userRole === 'admin' || userRole === 'owner' || userRole === 'bio') && (
-        <div className="filter-group">
-          {/* Chá»‰ admin/owner má»›i tháº¥y nÃºt lá»c MED vÃ  BIO */}
-          {(userRole === 'admin' || userRole === 'owner') && (
-            <>
-              <button
-                className={activeFilters.team === 'MED' ? 'active' : ''}
-                onClick={() => handleTeamFilter('MED')}
-              >
-                Lá»c hÃ ng MED
-              </button>
-              <button
-                className={activeFilters.team === 'BIO' ? 'active' : ''}
-                onClick={() => handleTeamFilter('BIO')}
-              >
-                 Lá»c hÃ ng BIO
-              </button>
-            </>
-          )}
-          
-          {/* Admin/owner vÃ  bio Ä‘á»u tháº¥y nÃºt nÃ y */}
-          <button
-            className={activeFilters.team === 'Spare Part' ? 'active' : ''}
-            onClick={() => handleTeamFilter('Spare Part')}
-          >
-            Lá»c hÃ ng Spare Part
-          </button>
+useEffect(() => {
+    const fetchSubGroups = async () => {
+        let productsQuery;
+        const baseCollection = collection(db, "products");
+
+        // --- LOGIC ÄÃƒ ÄÆ¯á»¢C ÄÆ N GIáº¢N HÃ“A ---
+        if (userRole === 'med') {
+            productsQuery = query(baseCollection, where("team", "==", "MED"), orderBy("subGroup"));
+        } else if (userRole === 'bio') {
+            // Role 'bio' bÃ¢y giá» chá»‰ lá»c theo team "BIO"
+            productsQuery = query(baseCollection, where("team", "==", "BIO"), orderBy("subGroup"));
+        } else { // DÃ nh cho owner vÃ  admin
+            productsQuery = query(baseCollection, orderBy("subGroup"));
+        }
+
+        const querySnapshot = await getDocs(productsQuery);
+        const uniqueSubGroups = new Set();
+        querySnapshot.forEach((doc) => {
+            const subGroup = doc.data().subGroup;
+            if (subGroup && subGroup.trim() !== '') {
+                uniqueSubGroups.add(subGroup);
+            }
+        });
+        setSubGroups(Array.from(uniqueSubGroups).sort());
+    };
+
+    fetchSubGroups().catch(console.error);
+}, [userRole]);
+
+    // Xá»­ lÃ½ viá»‡c Ä‘Ã³ng menu khi click ra bÃªn ngoÃ i
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (subGroupRef.current && !subGroupRef.current.contains(event.target)) {
+                setIsSubGroupOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // CÃ¡c hÃ m xá»­ lÃ½ filter Ä‘Ã£ cÃ³
+    const handleTeamFilter = (team) => {
+        onFilterChange('team', activeFilters.team === team ? 'all' : team);
+    };
+
+    const handleDateFilter = (status) => {
+        onFilterChange('dateStatus', activeFilters.dateStatus === status ? 'all' : status);
+    };
+
+    // HÃ m xá»­ lÃ½ cho bá»™ lá»c nhÃ³m hÃ ng má»›i
+    const handleSubGroupFilter = (subGroup) => {
+     // Náº¿u chá»n "Bá» lá»c" thÃ¬ set 'all', ngÆ°á»£c láº¡i thÃ¬ set giÃ¡ trá»‹ Ä‘Æ°á»£c chá»n
+     onFilterChange('subGroup', subGroup);
+     setIsSubGroupOpen(false);
+ };
+
+    return (
+        <div className="filters-container">
+            {/* Bá»™ lá»c theo Team (giá»¯ nguyÃªn) */}
+            {(userRole === 'admin' || userRole === 'owner' || userRole === 'bio') && (
+                <div className="filter-group">
+                    {(userRole === 'admin' || userRole === 'owner') && (
+                        <>
+                            <button className={activeFilters.team === 'MED' ? 'active' : ''} onClick={() => handleTeamFilter('MED')}>Lá»c hÃ ng MED</button>
+                            <button className={activeFilters.team === 'BIO' ? 'active' : ''} onClick={() => handleTeamFilter('BIO')}>Lá»c hÃ ng BIO</button>
+                        </>
+                    )}
+                </div>
+            )}
+            
+            {/* Bá»™ lá»c theo Date (giá»¯ nguyÃªn) */}
+            <div className="filter-group">
+                <button className={activeFilters.dateStatus === 'near_expiry' ? 'active' : ''} onClick={() => handleDateFilter('near_expiry')}>Lá»c hÃ ng cáº­n date</button>
+                <button className={activeFilters.dateStatus === 'expired' ? 'active' : ''} onClick={() => handleDateFilter('expired')}>Lá»c hÃ ng háº¿t HSD</button>
+            </div>
+
+            {/* --- Bá»˜ Lá»ŒC NHÃ“M HÃ€NG Má»šI --- */}
+            <div className="filter-group" ref={subGroupRef}>
+                <div className="dropdown-filter">
+                    <button onClick={() => setIsSubGroupOpen(!isSubGroupOpen)} className={activeFilters.subGroup && activeFilters.subGroup !== 'all' ? 'active' : ''}>
+    {activeFilters.subGroup && activeFilters.subGroup !== 'all' ? `NhÃ³m: ${activeFilters.subGroup}` : 'Lá»c theo NhÃ³m HÃ ng'}
+    <FiChevronDown style={{ marginLeft: '5px' }} />
+</button>
+                    {isSubGroupOpen && (
+                        <div className="dropdown-content">
+                            <button onClick={() => handleSubGroupFilter('all')}>Bá» lá»c nhÃ³m hÃ ng</button>
+                            {subGroups.map(sg => (
+                                <button key={sg} onClick={() => handleSubGroupFilter(sg)}>
+                                    {sg}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
-      )}
-      
-      {/* Bá»™ lá»c theo HSD */}
-      <div className="filter-group">
-        <button
-          className={activeFilters.dateStatus === 'near_expiry' ? 'active' : ''}
-          onClick={() => handleDateFilter('near_expiry')}
-        >
-          Lá»c hÃ ng cáº­n date (&lt;120 ngÃ y)
-        </button>
-        <button
-          className={activeFilters.dateStatus === 'expired' ? 'active' : ''}
-          onClick={() => handleDateFilter('expired')}
-        >
-          Lá»c hÃ ng Ä‘Ã£ háº¿t HSD
-        </button>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default React.memo(InventoryFilters);
@@ -3407,6 +3477,7 @@ export default LoginPage;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\LoginPage.module.css ---
 
 
@@ -3470,6 +3541,7 @@ export default LoginPage;
 .googleLoginButton svg {
   font-size: 22px;
 }
+
 
 
 
@@ -3713,6 +3785,7 @@ export default React.memo(Navbar);
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\NewDataNotification.jsx ---
 
 
@@ -3733,6 +3806,7 @@ const NewDataNotification = ({ isVisible, onRefresh, message }) => {
 };
 
 export default NewDataNotification;
+
 
 
 
@@ -3845,6 +3919,7 @@ export default PartnerAutocomplete;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\ProductAutocomplete.jsx ---
 
 
@@ -3859,7 +3934,7 @@ import styles from './Autocomplete.module.css';
 import { FiChevronDown } from 'react-icons/fi';
 
 // --- Báº®T Äáº¦U THAY Äá»”I 2: Bá»c component báº±ng forwardRef ---
-const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange }, ref) => {
+const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange, onEnterPress }, ref) => {
     const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
@@ -3969,13 +4044,21 @@ const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange }, r
                 e.preventDefault();
                 setActiveIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
             } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (activeIndex >= 0) {
-                    handleSuggestionClick(suggestions[activeIndex]);
-                } else {
-                    if (onBlur) onBlur();
-                    setShowSuggestions(false);
-                }
+    e.preventDefault();
+    if (activeIndex >= 0) {
+        // Náº¿u Ä‘ang chá»n má»™t gá»£i Ã½, thÃ¬ hoÃ n táº¥t viá»‡c chá»n
+        handleSuggestionClick(suggestions[activeIndex]);
+    } else {
+        // NgÆ°á»£c láº¡i, náº¿u khÃ´ng cÃ³ gá»£i Ã½ nÃ o Ä‘Æ°á»£c chá»n...
+        if (onEnterPress) {
+            // Æ¯u tiÃªn cháº¡y hÃ m onEnterPress náº¿u cÃ³ (dÃ nh cho trang BÃ¡o cÃ¡o)
+            onEnterPress();
+        } else if (onBlur) {
+            // Náº¿u khÃ´ng, quay vá» hÃ nh vi cÅ© lÃ  kÃ­ch hoáº¡t onBlur (dÃ nh cho trang Nháº­p/Xuáº¥t)
+            onBlur();
+        }
+        setShowSuggestions(false); // LuÃ´n áº©n danh sÃ¡ch gá»£i Ã½ sau khi nháº¥n Enter
+    }
             } else if (e.key === 'Escape') {
                 setShowSuggestions(false);
             }
@@ -4021,6 +4104,7 @@ const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange }, r
 }); // --- Káº¾T THÃšC THAY Äá»”I 2 ---
 
 export default ProductAutocomplete;
+
 
 
 
@@ -4235,6 +4319,7 @@ export default QuickStockLookup;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\QuickStockLookup.module.css ---
 
 
@@ -4404,6 +4489,7 @@ export default RecentActivityList;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\Sidebar.jsx ---
 
 
@@ -4474,6 +4560,7 @@ export default Sidebar;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\Spinner.jsx ---
 
 
@@ -4535,6 +4622,7 @@ export default Spinner;
     padding: 40px;
     border: none;
 }
+
 
 
 
@@ -4835,6 +4923,7 @@ export default SupplierAutocomplete;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\components\TeamBadge.jsx ---
 
 
@@ -4869,6 +4958,8 @@ export default React.memo(TeamBadge);
 --- FILE: D:\quan-ly-kho\src\components\TeamBarChart.jsx ---
 
 
+// src/components/TeamBarChart.jsx
+
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -4885,13 +4976,18 @@ const TeamBarChart = ({ chartData, isLoading }) => {
         },
     };
 
+    // --- LOGIC Má»šI: Tá»± Ä‘á»™ng táº¡o labels vÃ  data tá»« props ---
+    const labels = Object.keys(chartData);
+    const dataValues = Object.values(chartData);
+    // ----------------------------------------------------
+
     const data = {
-        labels: ['MED', 'BIO', 'Spare Part'],
+        labels: labels, // <-- Sá»­ dá»¥ng labels Ä‘á»™ng
         datasets: [
             {
                 label: 'Sá»‘ SKU',
-                data: [chartData.MED, chartData.BIO, chartData['Spare Part']],
-                backgroundColor: ['#007bff', '#28a745', '#6c757d'],
+                data: dataValues, // <-- Sá»­ dá»¥ng data Ä‘á»™ng
+                backgroundColor: ['#007bff', '#28a745', '#6c757d'], // Giá»¯ nguyÃªn máº£ng mÃ u
             },
         ],
     };
@@ -4951,17 +5047,19 @@ import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
 import MobileInventoryPage from '../pages/MobileInventoryPage';
 import companyLogo from '../assets/logo.png';
-import { usePresence } from '../hooks/usePresence'; // Import hook
+import { usePresence } from '../hooks/usePresence';
 
 const ViewerLayout = () => {
-    // Sá»­a láº¡i: Gá»i useAuth má»™t láº§n duy nháº¥t Ä‘á»ƒ láº¥y táº¥t cáº£ thÃ´ng tin cáº§n thiáº¿t
     const { role, user } = useAuth();
-    
-    // Gá»i hook usePresence Ä‘á»ƒ bÃ¡o danh tráº¡ng thÃ¡i online
     usePresence();
 
     const isMobile = useResponsive();
-    const canViewDetail = role === 'admin' || role === 'owner';
+    
+    // === THAY Äá»”I QUAN TRá»ŒNG NHáº¤T Náº°M á»ž ÄÃ‚Y ===
+    // Cho phÃ©p cáº£ 'med' vÃ  'bio' cÃ³ thá»ƒ xem chi tiáº¿t
+    const canViewDetail = ['owner', 'admin', 'med', 'bio'].includes(role);
+    // ==========================================
+
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
@@ -4987,6 +5085,7 @@ const ViewerLayout = () => {
         document.title = dynamicTitle;
     }, [dynamicTitle]);
 
+    // Náº¿u user khÃ´ng cÃ³ quyá»n xem chi tiáº¿t, luÃ´n Ä‘áº·t viewMode lÃ  'summary'
     useEffect(() => {
         if (!canViewDetail) {
             setViewMode('summary');
@@ -5018,7 +5117,7 @@ const ViewerLayout = () => {
                             <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
                                 Xem Chi Tiáº¿t
                             </button>
-                        </div>
+                         </div>
                     )}
                 </div>
 
@@ -5560,6 +5659,7 @@ export const usePresence = () => {
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\hooks\useProductLedger.js ---
 
 
@@ -5635,6 +5735,7 @@ export const useProductLedger = () => {
 
     return { productInfo, ledgerData, loading, lotNumberFilter, search, clear };
 };
+
 
 
 
@@ -6345,7 +6446,7 @@ const handleConfirmExport = async (slip) => {
         
         await batch.commit();
 
-Â  Â  Â  toast.success('XÃ¡c nháº­n xuáº¥t kho thÃƒÂ nh cÃƒÂ´ng!');
+Â  Â  Â  toast.success('XÃ¡c nháº­n xuáº¥t kho thÃ nh cÃ´ng!');
 Â  Â  Â  reset();
 Â  Â  } catch (error) {
 Â  Â  Â  console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
@@ -6869,8 +6970,8 @@ const handleConfirmImport = async (slipToConfirm) => {
                     unit: item.unit,
                     packaging: item.packaging,
                     storageTemp: item.storageTemp,
-                    team: item.team,
-                    manufacturer: item.manufacturer,
+                    team: item.team || '', // ThÃªm fallback cho cháº¯c cháº¯n
+    manufacturer: item.manufacturer || '', // ThÃªm '|| ''' Ä‘á»ƒ cung cáº¥p giÃ¡ trá»‹ máº·c Ä‘á»‹nh
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
@@ -7210,45 +7311,65 @@ import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 
 const InventoryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
-    const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
+    const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all', subGroup: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    const baseQuery = useMemo(() => {
-    // --- Báº®T Äáº¦U THAY Äá»”I ---
-    // Quay láº¡i truy váº¥n gá»‘c, chá»‰ sáº¯p xáº¿p theo MÃ£ hÃ ng vÃ  NgÃ y nháº­p
-    let q = query(
-        collection(db, "inventory_lots"),
-        where("quantityRemaining", ">", 0),
-        orderBy("productId", "asc"),
-        orderBy("importDate", "asc")
-    );
-    // --- Káº¾T THÃšC THAY Äá»”I ---
+    // src/pages/InventoryPage.jsx
 
-    // CÃ¡c bá»™ lá»c phá»¥ váº«n giá»¯ nguyÃªn
+// src/pages/InventoryPage.jsx
+
+// src/pages/InventoryPage.jsx
+
+const baseQuery = useMemo(() => {
+    const baseCollection = collection(db, "inventory_lots");
+    let constraints = [where("quantityRemaining", ">", 0)];
+
+    // --- LOGIC ÄÃƒ Sá»¬A ---
+    // 1. Ãp dá»¥ng cÃ¡c bá»™ lá»c báº±ng nhau (equality filters)
     if (userRole === 'med') {
-        q = query(q, where("team", "==", "MED"));
+        constraints.push(where("team", "==", "MED"));
     } else if (userRole === 'bio') {
-        q = query(q, where("team", "in", ["BIO", "Spare Part"]));
-    }
+    constraints.push(where("team", "==", "BIO"));
+}
 
     if (filters.team !== 'all') {
-        q = query(q, where("team", "==", filters.team));
+        constraints.push(where("team", "==", filters.team));
+    }
+    // === CHÃˆN ÄOáº N MÃƒ Má»šI VÃ€O ÄÃ‚Y ===
+if (filters.subGroup && filters.subGroup !== 'all') {
+    constraints.push(where("subGroup", "==", filters.subGroup));
+}
+// ===================================
+
+    // THÃŠM ÄIá»€U KIá»†N Lá»ŒC "subGroup" Bá»Š THIáº¾U á»ž ÄÃ‚Y
+    if (filters.subGroup && filters.subGroup !== 'all') {
+        constraints.push(where("subGroup", "==", filters.subGroup));
     }
 
+    // 2. Ãp dá»¥ng bá»™ lá»c khoáº£ng vÃ  sáº¯p xáº¿p tÆ°Æ¡ng á»©ng
     if (filters.dateStatus === 'expired') {
-        q = query(q, where("expiryDate", "<", Timestamp.now()));
+        constraints.push(where("expiryDate", "<", Timestamp.now()));
+        constraints.push(orderBy("expiryDate", "desc"));
+        constraints.push(orderBy("productId", "asc")); 
     } else if (filters.dateStatus === 'near_expiry') {
         const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 120);
-        q = query(q, where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
-    }
-    
-    if (searchTerm) {
+        futureDate.setDate(futureDate.getDate() + 210);
+        constraints.push(where("expiryDate", ">=", Timestamp.now()));
+        constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+        constraints.push(orderBy("expiryDate", "asc")); 
+        constraints.push(orderBy("productId", "asc"));
+    } else if (searchTerm) {
         const upperSearchTerm = searchTerm.toUpperCase();
-        q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
+        constraints.push(where("productId", ">=", upperSearchTerm));
+        constraints.push(where("productId", "<=", upperSearchTerm + '\uf8ff'));
+        constraints.push(orderBy("productId", "asc"));
+    } else {
+        // Sáº¯p xáº¿p máº·c Ä‘á»‹nh
+        constraints.push(orderBy("productId", "asc"), orderBy("importDate", "asc"));
     }
-    return q;
+
+    return query(baseCollection, ...constraints);
 }, [userRole, filters, searchTerm]);
 
     const {
@@ -7262,6 +7383,20 @@ const InventoryPage = ({ pageTitle }) => {
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+
+    // src/pages/InventoryPage.jsx
+
+const filteredInventory = useMemo(() => {
+    if (filters.dateStatus !== 'near_expiry') {
+        return inventory; // Tráº£ vá» danh sÃ¡ch gá»‘c náº¿u khÃ´ng lá»c cáº­n date
+    }
+    // Lá»c láº¡i danh sÃ¡ch Ä‘Ã£ láº¥y vá» tá»« server
+    return inventory.filter(lot => {
+        const colorClass = getRowColorByExpiry(lot.expiryDate, lot.subGroup);
+        // Chá»‰ giá»¯ láº¡i nhá»¯ng item nÃ o thá»±c sá»± cÃ³ mÃ u cáº£nh bÃ¡o
+        return colorClass.includes('near-expiry') || colorClass.includes('expired');
+    });
+}, [inventory, filters.dateStatus]);
 
     // <-- THÃŠM HÃ€M Xá»¬ LÃ REFRESH NÃ€Y
     const handleRefresh = () => {
@@ -7320,15 +7455,17 @@ const InventoryPage = ({ pageTitle }) => {
                                     <th>SL CÃ²n láº¡i</th>
                                     <th>Ghi chÃº</th>
                                     <th>Nhiá»‡t Ä‘á»™ BQ</th>
+                                    <th>HÃ£ng sáº£n xuáº¥t</th>
+                                    <th>NhÃ³m HÃ ng</th>
                                     <th>Team</th>
                                 </tr>
                             </thead>
                             <tbody className="inventory-table-body">
-                                {inventory.map(lot => (
+    {filteredInventory.map(lot => (
                                     <tr 
                                         key={lot.id} 
                                         onClick={() => handleRowClick(lot.id)}
-                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate, lot.subGroup)}`}
                                     >
                                         <td data-label="NgÃ y nháº­p">{formatDate(lot.importDate)}</td>
                                         <td data-label="MÃ£ hÃ ng">{lot.productId}</td>
@@ -7341,6 +7478,8 @@ const InventoryPage = ({ pageTitle }) => {
                                         <td data-label="SL CÃ²n láº¡i">{formatNumber(lot.quantityRemaining)}</td>
                                         <td data-label="Ghi chÃº">{lot.notes}</td>
                                         <td data-label="Nhiá»‡t Ä‘á»™ BQ"><TempBadge temperature={lot.storageTemp} /></td>
+                                        <td data-label="HÃ£ng sáº£n xuáº¥t">{lot.manufacturer}</td>
+                                        <td data-label="NhÃ³m HÃ ng">{lot.subGroup}</td>
                                         <td data-label="Team"><TeamBadge team={lot.team} /></td>
                                     </tr>
                                 ))}
@@ -7367,13 +7506,14 @@ export default InventoryPage;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
 // src/pages/InventorySummaryPage.jsx
 
 import { formatNumber } from '../utils/numberUtils';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import {
     collection,
@@ -7392,7 +7532,7 @@ import {
 import NewDataNotification from '../components/NewDataNotification';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { FiChevronDown, FiChevronRight, FiChevronLeft, FiPrinter } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
@@ -7401,11 +7541,14 @@ import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
-import companyLogo from '../assets/logo.png'; // <-- THÃŠM DÃ’NG NÃ€Y
+import companyLogo from '../assets/logo.png';
 
 const PAGE_SIZE = 15;
 
-const getLotItemColorClass = (expiryDate) => {
+// src/pages/InventorySummaryPage.jsx
+
+// HÃ m tÃ´ mÃ u cho cÃ¡c lÃ´ hÃ ng chi tiáº¿t (khi xá»• xuá»‘ng)
+const getLotItemColorClass = (expiryDate, subGroup) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -7413,12 +7556,25 @@ const getLotItemColorClass = (expiryDate) => {
     expDate.setHours(0, 0, 0, 0);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return 'lot-item-expired';
-    if (diffDays <= 60) return 'lot-item-red';
-    if (diffDays <= 90) return 'lot-item-orange';
-    if (diffDays <= 120) return 'lot-item-yellow';
+
+    // --- LOGIC Má»šI ---
+    // Quy táº¯c 1: Cho nhÃ³m BD BDB vÃ  BD DS
+    if (subGroup === 'BD BDB' || subGroup === 'BD DS') {
+        if (diffDays < 0) return 'lot-item-expired';
+        if (diffDays <= 30) return 'lot-item-red';
+        if (diffDays <= 60) return 'lot-item-orange';
+        if (diffDays <= 90) return 'lot-item-yellow';
+    } 
+    // Quy táº¯c 2: Cho táº¥t cáº£ cÃ¡c nhÃ³m hÃ ng cÃ²n láº¡i
+    else {
+        if (diffDays < 0) return 'lot-item-expired';
+        if (diffDays <= 70) return 'lot-item-red';
+        if (diffDays <= 140) return 'lot-item-orange';
+        if (diffDays <= 210) return 'lot-item-yellow';
+    }
     return '';
 };
+
 
 const InventorySummaryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
@@ -7432,48 +7588,58 @@ const InventorySummaryPage = ({ pageTitle }) => {
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
-    const [activeFilter, setActiveFilter] = useState({ type: 'none', value: '' });
     
-    // State vÃ  Ref cho thÃ´ng bÃ¡o real-time
+    const [filters, setFilters] = useState({ 
+        dateStatus: 'all', 
+        team: 'all', 
+        subGroup: 'all' 
+    });
+    
     const [hasNewData, setHasNewData] = useState(false);
-    const lastSeenTimestampRef = useRef(null); // Sá»­ dá»¥ng láº¡i ref Ä‘á»ƒ lÆ°u timestamp
+    const lastSeenTimestampRef = useRef(null);
+
+    const [subGroups, setSubGroups] = useState([]);
+    const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
+    const subGroupRef = useRef(null);
 
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            let baseCollectionRef;
+            const baseCollectionRef = collection(db, "product_summaries");
             let queryConstraints = [];
-            const isDateFilter = activeFilter.type === 'near_expiry' || activeFilter.type === 'expired';
 
+            // Ãp dá»¥ng bá»™ lá»c vai trÃ² trÆ°á»›c
             if (userRole === 'med') {
                 queryConstraints.push(where("team", "==", "MED"));
             } else if (userRole === 'bio') {
-                queryConstraints.push(where("team", "in", ["BIO", "Spare Part"]));
+                queryConstraints.push(where("team", "==", "BIO"));
             }
-            
-            if (isDateFilter) {
-                baseCollectionRef = collection(db, "product_summaries");
-                if (activeFilter.type === 'near_expiry') {
-                    const today = Timestamp.now();
-                    const futureDate = new Date();
-                    futureDate.setDate(futureDate.getDate() + 120);
-                    const futureTimestamp = Timestamp.fromDate(futureDate);
-                    queryConstraints.push(where("nearestExpiryDate", ">=", today));
-                    queryConstraints.push(where("nearestExpiryDate", "<=", futureTimestamp));
-                    queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
-                } else {
-                    const today = Timestamp.now();
-                    queryConstraints.push(where("nearestExpiryDate", "<", today));
-                    queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
-                }
+
+            // Ãp dá»¥ng bá»™ lá»c do ngÆ°á»i dÃ¹ng chá»n
+            if (filters.team !== 'all') {
+                queryConstraints.push(where("team", "==", filters.team));
+            }
+            if (filters.subGroup !== 'all') {
+                queryConstraints.push(where("subGroup", "==", filters.subGroup));
+            }
+
+            // Ãp dá»¥ng bá»™ lá»c HSD vÃ  sáº¯p xáº¿p
+            if (filters.dateStatus === 'expired') {
+                queryConstraints.push(where("nearestExpiryDate", "<", Timestamp.now()));
+                queryConstraints.push(orderBy("nearestExpiryDate", "desc"));
+                queryConstraints.push(orderBy(documentId(), "asc"));
+            } else if (filters.dateStatus === 'near_expiry') {
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + 210); // NgÆ°á»¡ng cao nháº¥t
+                queryConstraints.push(where("nearestExpiryDate", ">=", Timestamp.now()));
+                queryConstraints.push(where("nearestExpiryDate", "<=", Timestamp.fromDate(futureDate)));
+                queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
+                queryConstraints.push(orderBy(documentId(), "asc"));
             } else {
-                baseCollectionRef = collection(db, "products");
-                if (activeFilter.type === 'team') {
-                    queryConstraints.push(where("team", "==", activeFilter.value));
-                }
                 queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
+            // PhÃ¢n trang
             if (direction === 'next' && cursor) {
                 queryConstraints.push(startAfter(cursor));
             } else if (direction === 'first') {
@@ -7488,39 +7654,26 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 setSummaries([]);
                 setIsLastPage(true);
                 setLastVisible(null);
-                setLoading(false);
                 return;
             }
-
-            const mainDocs = mainSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            if (isDateFilter) {
-                setSummaries(mainDocs);
-            } else {
-                const productIds = mainDocs.map(doc => doc.id);
-                if (productIds.length > 0) {
-                    const summariesQuery = query(collection(db, "product_summaries"), where(documentId(), 'in', productIds));
-                    const summariesSnapshot = await getDocs(summariesQuery);
-                    const summariesMap = new Map(summariesSnapshot.docs.map(doc => [doc.id, doc.data()]));
-                    const mergedData = mainDocs.map(product => {
-                        const summaryData = summariesMap.get(product.id);
-                        return { ...product, totalRemaining: summaryData?.totalRemaining ?? 0, nearestExpiryDate: summaryData?.nearestExpiryDate ?? null };
-                    });
-                    setSummaries(mergedData);
-                } else {
-                    setSummaries([]);
-                }
-            }
+            
+            const summaryDocs = mainSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setSummaries(summaryDocs);
 
             setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
             setIsLastPage(mainSnapshot.docs.length < PAGE_SIZE);
 
         } catch (error) {
             console.error("Lá»—i khi táº£i dá»¯ liá»‡u tá»•ng há»£p: ", error);
-            toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u. Vui lÃ²ng kiá»ƒm tra Console (F12) Ä‘á»ƒ xem lá»—i vÃ  táº¡o Index náº¿u cáº§n.");
+            if (error.message.includes('requires an index')) {
+                toast.error("Lá»—i truy váº¥n, báº¡n cáº§n táº¡o Index trong Firestore. HÃ£y kiá»ƒm tra Console (F12) Ä‘á»ƒ xem link táº¡o tá»± Ä‘á»™ng.");
+            } else {
+                toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u.");
+            }
         } finally {
             setLoading(false);
         }
-    }, [activeFilter, userRole]);
+    }, [filters, userRole]);
 
     const performSearch = useCallback(async (term) => {
         if (!term) return;
@@ -7532,7 +7685,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
             if (userRole === 'med') {
                searchConstraints.push(where("team", "==", "MED"));
             } else if (userRole === 'bio') {
-                searchConstraints.push(where("team", "in", ["BIO", "Spare Part"]));
+                searchConstraints.push(where("team", "==", "BIO"));
             }
 
             const upperTerm = term.toUpperCase();
@@ -7542,7 +7695,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
             const [productSnap, lotSnap] = await Promise.all([ getDocs(productSearchQuery), getDocs(lotSearchQuery) ]);
             
             const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
-            const allowedTeams = userRole === 'med' ? ['MED'] : (userRole === 'bio' ? ['BIO', 'Spare Part'] : null);
+            const allowedTeams = userRole === 'med' ? ['MED'] : (userRole === 'bio' ? ['BIO'] : null);
             for (const lotDoc of lotSnap.docs) {
                 const productId = lotDoc.data().productId;
                 if (allowedTeams) {
@@ -7594,45 +7747,66 @@ const InventorySummaryPage = ({ pageTitle }) => {
             }
         }, 500);
         return () => clearTimeout(debounce);
-    }, [searchTerm, activeFilter, fetchData, performSearch]);
-
-    // === LOGIC Láº®NG NGHE REAL-TIME ÄÃƒ ÄÆ¯á»¢C Sá»¬A Láº I ===
+    }, [searchTerm, filters, fetchData, performSearch]);
+    
     useEffect(() => {
         const q = query(collection(db, "product_summaries"), orderBy("lastUpdatedAt", "desc"), limit(1));
-
         const unsubscribe = onSnapshot(q, (snapshot) => {
             if (snapshot.empty) return;
-
             const newestDocData = snapshot.docs[0].data();
             const newestTimestamp = newestDocData.lastUpdatedAt;
-
-            // Náº¿u khÃ´ng cÃ³ timestamp thÃ¬ khÃ´ng xá»­ lÃ½
             if (!newestTimestamp) return;
-            
-            // Láº§n Ä‘áº§u tiÃªn listener cháº¡y, chá»‰ ghi láº¡i timestamp vÃ  thoÃ¡t
             if (lastSeenTimestampRef.current === null) {
                 lastSeenTimestampRef.current = newestTimestamp;
                 return;
             }
-
-            // Tá»« láº§n thá»© hai trá»Ÿ Ä‘i, so sÃ¡nh timestamp má»›i vá»›i cÃ¡i Ä‘Ã£ lÆ°u
             if (lastSeenTimestampRef.current && newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis()) {
-                // Chá»‰ hiá»‡n thÃ´ng bÃ¡o náº¿u sá»± thay Ä‘á»•i khÃ´ng pháº£i tá»« cache cá»§a chÃ­nh client nÃ y
                  if (!snapshot.metadata.hasPendingWrites) {
-                   setHasNewData(true);
-                   // Cáº­p nháº­t láº¡i timestamp Ä‘Ã£ tháº¥y Ä‘á»ƒ khÃ´ng bÃ¡o láº¡i cho cÃ¹ng má»™t sá»± kiá»‡n
-                   lastSeenTimestampRef.current = newestTimestamp;
+                    setHasNewData(true);
+                    lastSeenTimestampRef.current = newestTimestamp;
                  }
             }
         }, (error) => {
             console.error("Lá»—i khi láº¯ng nghe real-time:", error);
         });
-
         return () => {
           unsubscribe();
-          // Reset ref khi component unmount Ä‘á»ƒ láº§n sau vÃ o láº¡i nÃ³ sáº½ thiáº¿t láº­p láº¡i tá»« Ä‘áº§u
           lastSeenTimestampRef.current = null;
         };
+    }, []);
+
+    useEffect(() => {
+        const fetchSubGroups = async () => {
+            let productsQuery;
+            const baseCollection = collection(db, "products");
+            if (userRole === 'med') {
+                productsQuery = query(baseCollection, where("team", "==", "MED"), orderBy("subGroup"));
+            } else if (userRole === 'bio') {
+                productsQuery = query(baseCollection, where("team", "==", "BIO"), orderBy("subGroup"));
+            } else {
+                productsQuery = query(baseCollection, orderBy("subGroup"));
+            }
+            const querySnapshot = await getDocs(productsQuery);
+            const uniqueSubGroups = new Set();
+            querySnapshot.forEach((doc) => {
+                const subGroup = doc.data().subGroup;
+                if (subGroup && subGroup.trim() !== '') {
+                    uniqueSubGroups.add(subGroup);
+                }
+            });
+            setSubGroups(Array.from(uniqueSubGroups).sort());
+        };
+        fetchSubGroups().catch(console.error);
+    }, [userRole]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (subGroupRef.current && !subGroupRef.current.contains(event.target)) {
+                setIsSubGroupOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const handleRefresh = () => {
@@ -7640,9 +7814,25 @@ const InventorySummaryPage = ({ pageTitle }) => {
         fetchData('first');
     };
     
-     const toggleRow = async (productId) => {
+    const handleFilterChange = (filterName, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterName]: prev[filterName] === value ? 'all' : value
+        }));
+    };
+
+    const handleSubGroupFilter = (subGroup) => {
+        setFilters(prev => ({ ...prev, subGroup: prev.subGroup === subGroup ? 'all' : subGroup }));
+        setIsSubGroupOpen(false);
+    };
+    
+    const toggleRow = async (productId) => {
         const isCurrentlyExpanded = !!expandedRows[productId];
-        // LUÃ”N LUÃ”N Táº¢I Láº I Dá»® LIá»†U LÃ” KHI Báº¤M VÃ€O Äá»‚ Äáº¢M Báº¢O TÃNH Tá»¨C THá»œI
+        if (isCurrentlyExpanded) {
+            setExpandedRows(prev => ({ ...prev, [productId]: false }));
+            return;
+        }
+
         setLoadingLots(prev => ({ ...prev, [productId]: true }));
         try {
             const lotsQuery = query(
@@ -7653,94 +7843,74 @@ const InventorySummaryPage = ({ pageTitle }) => {
             );
             const lotsSnapshot = await getDocs(lotsQuery);
             const lots = lotsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            // --- LOGIC Gá»˜P LÃ” Báº®T Äáº¦U Tá»ª ÄÃ‚Y ---
-            const lotAggregator = new Map();
-
-            for (const lot of lots) {
-                const lotKey = lot.lotNumber || 'KHONG_CO_LO';
-
-                if (lotAggregator.has(lotKey)) {
-                    // Náº¿u lÃ´ Ä‘Ã£ cÃ³, cá»™ng dá»“n sá»‘ lÆ°á»£ng
-                    const existingLot = lotAggregator.get(lotKey);
-                    existingLot.quantityRemaining += lot.quantityRemaining;
-                } else {
-                    // Náº¿u lÃ´ chÆ°a cÃ³, thÃªm má»›i vÃ o Map
-                    // Táº¡o má»™t báº£n sao Ä‘á»ƒ khÃ´ng lÃ m thay Ä‘á»•i dá»¯ liá»‡u gá»‘c
-                    lotAggregator.set(lotKey, { ...lot });
-                }
-            }
-            const aggregatedLots = Array.from(lotAggregator.values());
-setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots })); // <-- Sá»­a "lots" thÃ nh "aggregatedLots"
+            setLotDetails(prev => ({ ...prev, [productId]: lots }));
         } catch (error) {
             console.error("Lá»—i khi táº£i chi tiáº¿t lÃ´:", error);
-            setLotDetails(prev => ({ ...prev, [productId]: [] }));
         } finally {
             setLoadingLots(prev => ({ ...prev, [productId]: false }));
         }
-        
-        setExpandedRows(prev => ({ ...prev, [productId]: !isCurrentlyExpanded }));
+        setExpandedRows(prev => ({ ...prev, [productId]: true }));
     };
 
     const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
-    const handlePrevPage = () => {
-    // LuÃ´n quay vá» trang Ä‘áº§u tiÃªn, lÃ  cÃ¡ch hoáº¡t Ä‘á»™ng Ä‘Æ¡n giáº£n vÃ  á»•n Ä‘á»‹nh nháº¥t
-    // vá»›i cursor-based pagination cá»§a Firestore khi chá»‰ tiáº¿n tá»›i.
-    fetchData('first'); 
-};
-    const handleFilterChange = (type, value = '') => { if (activeFilter.type === type && activeFilter.value === value) { setActiveFilter({ type: 'none', value: '' }); } else { setActiveFilter({ type, value }); } };
-    
-    const handlePrint = async () => {
-        const originalTitle = document.title;
-        document.title = `BaoCao_TonKho_TongHop_${new Date().toLocaleDateString('vi-VN')}`;
-        const allProductIds = summaries.map(s => s.id);
-        const fetchPromises = allProductIds.map(id => {
-            if (!lotDetails[id]) return toggleRow(id);
-            return Promise.resolve();
-        });
-        toast.info("Äang chuáº©n bá»‹ dá»¯ liá»‡u Ä‘á»ƒ in, vui lÃ²ng chá»...");
-        await Promise.all(fetchPromises);
-        const allExpanded = allProductIds.reduce((acc, id) => ({...acc, [id]: true}), {});
-        setExpandedRows(allExpanded);
-        
-        setTimeout(() => {
-            window.print();
-            document.title = originalTitle;
-            setExpandedRows({});
-        }, 500);
-    };
+    const handlePrevPage = () => { fetchData('first'); };
+
+    // src/pages/InventorySummaryPage.jsx
+
+const filteredSummaries = useMemo(() => {
+    if (filters.dateStatus !== 'near_expiry') {
+        return summaries;
+    }
+    return summaries.filter(product => {
+        const colorClass = getRowColorByExpiry(product.nearestExpiryDate, product.subGroup);
+        return colorClass.includes('near-expiry') || colorClass.includes('expired');
+    });
+}, [summaries, filters.dateStatus]);
 
     return (
         <div className="printable-inventory-area">
-    
             <NewDataNotification
                 isVisible={hasNewData}
                 onRefresh={handleRefresh}
                 message="CÃ³ cáº­p nháº­t tá»“n kho má»›i!"
             />
-
+            
             <div className="controls-container" style={{justifyContent: 'flex-start', flexWrap: 'wrap'}}>
-                 {(userRole === 'owner' || userRole === 'admin') && (
+                {(userRole === 'owner' || userRole === 'admin') && (
                     <div className="filter-group">
-                        <button className={activeFilter.value === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lá»c hÃ ng MED</button>
-                        <button className={activeFilter.value === 'BIO' ? 'active' : ''} onClick={() => handleFilterChange('team', 'BIO')}>Lá»c hÃ ng BIO</button>
-                        <button className={activeFilter.value === 'Spare Part' ? 'active' : ''} onClick={() => handleFilterChange('team', 'Spare Part')}>Lá»c hÃ ng Spare Part</button>
+                        <button className={filters.team === 'MED' ? 'active' : ''} onClick={() => handleFilterChange('team', 'MED')}>Lá»c hÃ ng MED</button>
+                        <button className={filters.team === 'BIO' ? 'active' : ''} onClick={() => handleFilterChange('team', 'BIO')}>Lá»c hÃ ng BIO</button>
                     </div>
                 )}
                 
-                {userRole === 'bio' && (
-                     <div className="filter-group">
-                        <button className={activeFilter.value === 'Spare Part' ? 'active' : ''} onClick={() => handleFilterChange('team', 'Spare Part')}>Lá»c hÃ ng Spare Part</button>
-                    </div>
-                )}
-
                 <div className="filter-group">
-                    <button className={activeFilter.type === 'near_expiry' ? 'active' : ''} onClick={() => handleFilterChange('near_expiry')}>Lá»c hÃ ng cáº­n date</button>
-                    <button className={activeFilter.type === 'expired' ? 'active' : ''} onClick={() => handleFilterChange('expired')}>Lá»c hÃ ng háº¿t date</button>
+                    <button className={filters.dateStatus === 'near_expiry' ? 'active' : ''} onClick={() => handleFilterChange('dateStatus', 'near_expiry')}>Lá»c hÃ ng cáº­n date</button>
+                    <button className={filters.dateStatus === 'expired' ? 'active' : ''} onClick={() => handleFilterChange('dateStatus', 'expired')}>Lá»c hÃ ng háº¿t date</button>
                 </div>
+
+                <div className="filter-group" ref={subGroupRef}>
+                    <div className="dropdown-filter">
+                        <button onClick={() => setIsSubGroupOpen(!isSubGroupOpen)} className={filters.subGroup !== 'all' ? 'active' : ''}>
+                            {filters.subGroup !== 'all' ? `NhÃ³m: ${filters.subGroup}` : 'Lá»c theo NhÃ³m HÃ ng'}
+                            <FiChevronDown style={{ marginLeft: '5px' }} />
+                        </button>
+                        {isSubGroupOpen && (
+                            <div className="dropdown-content">
+                                <button onClick={() => handleSubGroupFilter('all')}>Bá» lá»c nhÃ³m hÃ ng</button>
+                                {subGroups.map(sg => (
+                                    <button key={sg} onClick={() => handleSubGroupFilter(sg)}>
+                                        {sg}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="search-container" style={{ flexGrow: 1, maxWidth: '400px' }}>
                     <input
                         type="text"
-                        placeholder="TÃ¬m theo MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..."
+                        placeholder="TÃ¬m theo MÃ£ hÃ ng..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
@@ -7762,45 +7932,40 @@ setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots })); // <-- Sá»�
                                     <th>ÄVT</th>
                                     <th>Quy cÃ¡ch</th>
                                     <th>Nhiá»‡t Ä‘á»™ BQ</th>
+                                    <th>HÃ£ng sáº£n xuáº¥t</th>
+                                    <th>NhÃ³m HÃ ng</th>
                                     <th>Team</th>
                                 </tr>
                             </thead>
-                 
                             <tbody>
-                                {summaries.map(product => (
+                                {filteredSummaries.map(product => (
                                     <React.Fragment key={product.id}>
                                         <tr 
                                             onClick={() => toggleRow(product.id)} 
                                             style={{cursor: 'pointer'}}
-                                            className={getRowColorByExpiry(product.nearestExpiryDate)}
+                                            className={getRowColorByExpiry(product.nearestExpiryDate, product.subGroup)}
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
-                                            <td data-label="MÃ£ hÃ ng">
-    <strong>
-        <HighlightText text={product.id} highlight={searchTerm} />
-    </strong>
-</td>
-                                            <td data-label="TÃªn hÃ ng">
-    <HighlightText text={product.productName} highlight={searchTerm} />
-</td>
+                                            <td data-label="MÃ£ hÃ ng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
+                                            <td data-label="TÃªn hÃ ng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
                                             <td data-label="HSD Gáº§n Nháº¥t">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(KhÃ´ng cÃ³)'}</td>
                                             <td data-label="Tá»•ng Tá»“n"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ÄVT">{product.unit}</td>
                                             <td data-label="Quy cÃ¡ch">{product.packaging}</td>
                                             <td data-label="Nhiá»‡t Ä‘á»™ BQ"><TempBadge temperature={product.storageTemp} /></td>
+                                            <td data-label="HÃ£ng sáº£n xuáº¥t">{product.manufacturer}</td>
+                                            <td data-label="NhÃ³m HÃ ng">{product.subGroup}</td>
                                             <td data-label="Team"><TeamBadge team={product.team} /></td>
                                         </tr>
-                             
+                                    
                                         {expandedRows[product.id] && (
                                             <tr className="lot-details-row">
-                                                <td colSpan="9">
+                                                <td colSpan="11">
                                                     <div className="lot-details-container">
                                                         {loadingLots[product.id] ? (
                                                             <SkeletonTheme baseColor="#e9ecef" highlightColor="#f8f9fa">
                                                                 <h4><Skeleton width={200} /></h4>
-                                                                <ul>
-                                                                    <li><Skeleton height={35} count={3} style={{ marginBottom: '8px' }}/></li>
-                                                                </ul>
+                                                                <ul><li><Skeleton height={35} count={3} style={{ marginBottom: '8px' }}/></li></ul>
                                                             </SkeletonTheme>
                                                         ) : (
                                                             (lotDetails[product.id] && lotDetails[product.id].length > 0) ? (
@@ -7808,7 +7973,7 @@ setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots })); // <-- Sá»�
                                                                     <h4>Chi tiáº¿t cÃ¡c lÃ´ hÃ ng (FEFO):</h4>
                                                                     <ul>
                                                                         {lotDetails[product.id].map(lot => (
-                                                                            <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate)}`}>
+                                                                            <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`}>
                                                                                 <span>LÃ´: <strong>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</strong></span>
                                                                                 <span>HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</strong></span>
                                                                                 <span>Tá»“n: <strong>{formatNumber(lot.quantityRemaining)}</strong></span>
@@ -8419,44 +8584,49 @@ import useExportSlipStore from '../stores/exportSlipStore';
  * @param {string} currentUnit - ÄVT hiá»‡n táº¡i cá»§a item.
  * @returns {string} - ÄÆ¡n vá»‹ quy Ä‘á»•i (vd: Lá», ThÃ¹ng, Test).
  */
+// src/pages/NewExportPage.jsx (Ãp dá»¥ng tÆ°Æ¡ng tá»± cho NewImportPage.jsx)
+// Thay tháº¿ hÃ m getTargetUnit
+
 const getTargetUnit = (packagingStr, currentUnit) => {
     if (!packagingStr || !currentUnit) return 'ÄÆ¡n vá»‹';
     const lowerUnit = currentUnit.toLowerCase().trim();
 
-    // 1. DÃ¹ng phÃ©p NHÃ‚N (XuÃ´i: ÄVT lÃ  Há»™p/ThÃ¹ng/Lá» -> ÄV nhá»)
-    if (lowerUnit === 'há»™p' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'lá»') { 
+    // --- QUY Táº®C NHáº®M Má»¤C TIÃŠU: Lá»Œ/Há»˜P ---
+    // Xá»­ lÃ½ mÃ£ 246001 vÃ  cÃ¡c mÃ£ Há»™p tÆ°Æ¡ng tá»±: LuÃ´n Æ°u tiÃªn Lá» hÆ¡n mL/G.
+    if (lowerUnit === 'há»™p') {
+        // Cá»‘ gáº¯ng tÃ¬m Ä‘Æ¡n vá»‹ Ä‘áº¿m (Lá», Test, CÃ¡i)
+        const countMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(Test|Lá»|CÃ¡i|á»ng|Bá»™|GÃ³i)\s*\//i);
+        if (countMatch && countMatch[3]) {
+            return countMatch[3].trim(); // Tráº£ vá» Lá» (hoáº·c Test)
+        }
+    }
+    // ----------------------------------------
+    
+    // --- LOGIC Gá»C (Ãp dá»¥ng cho cÃ¡c mÃ£ ThÃ¹ng/LÃ­t/Khay) ---
+    if (lowerUnit === 'há»™p' || lowerUnit === 'lá»' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'khay') { 
         
-        // Regex tÃ¬m: (Sá») [ÄÆ¡n vá»‹ má»¥c tiÃªu] / [ÄÆ¡n vá»‹ lá»›n]
-        // Cá»T LÃ•I: ChÃºng ta chá»‰ muá»‘n láº¥y ÄÆ¡n vá»‹ má»¥c tiÃªu (vÃ­ dá»¥: LÃ­t)
-        // NhÃ³m thá»© 3 (targetMatch[3]) pháº£i chá»©a tÃªn Ä‘Æ¡n vá»‹
-        const targetUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(\w+)\s*\//i);
-        
-        if (targetUnitMatch && targetUnitMatch[3]) {
-            let unitCandidate = targetUnitMatch[3].trim();
-            
-            // Loáº¡i bá» cÃ¡c Ä‘Æ¡n vá»‹ phá»©c táº¡p Ä‘á»ƒ Ä‘Æ¡n giáº£n hÃ³a hiá»ƒn thá»‹
-            if (unitCandidate.includes('/')) {
-                // Náº¿u lÃ  5 LÃ­t/ThÃ¹ng -> chá»‰ láº¥y LÃ­t
-                unitCandidate = unitCandidate.split('/')[0].trim();
-            }
-            return unitCandidate; 
+        // 1. Æ¯u tiÃªn tÃ¬m Ä‘Æ¡n vá»‹ THá»‚ TÃCH/KHá»I LÆ¯á»¢NG (LÃ­t, mL, G)
+        const volumeUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(LÃ­t|mL|G|Âµg)\s*\//i);
+        if (volumeUnitMatch && volumeUnitMatch[3]) {
+             return volumeUnitMatch[3].trim(); 
+        }
+
+        // 2. Náº¿u khÃ´ng pháº£i thá»ƒ tÃ­ch, Æ°u tiÃªn tÃ¬m Ä‘Æ¡n vá»‹ Äáº¾M (Lá», Test, CÃ¡i)
+        const countMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(Test|Lá»|CÃ¡i|á»ng|Bá»™|GÃ³i)\s*\//i);
+        if (countMatch && countMatch[3]) {
+            return countMatch[3].trim();
         }
         
-        // Náº¿u khÃ´ng khá»›p regex nÃ o, kiá»ƒm tra xem cÃ³ Ä‘Æ¡n vá»‹ thá»ƒ tÃ­ch/khá»‘i lÆ°á»£ng nÃ o khÃ´ng
-        const volumeMatch = packagingStr.match(/(LÃ­t|mL|G|Âµg)/i);
-        if (volumeMatch) return volumeMatch[1];
-        
-        return 'ÄÆ¡n vá»‹'; // Fallback an toÃ n
+        return 'ÄÆ¡n vá»‹'; 
     }
 
-    // 2. DÃ¹ng phÃ©p CHIA (NgÆ°á»£c: ÄVT nhá» quy Ä‘á»•i sang ÄVT lá»›n)
-    // TÃ¬m ÄÆ¡n vá»‹ Ä‘Ã³ng gÃ³i lá»›n nháº¥t á»Ÿ cuá»‘i chuá»—i. 
-    const largeUnitMatch = packagingStr.match(/\/ (Há»™p|ThÃ¹ng|Can|Kiá»‡n|Lá»|Bá»™|GÃ³i)$/i);
+    // ... (Logic phÃ©p Chia giá»¯ nguyÃªn)
+    const largeUnitMatch = packagingStr.match(/\/ (Há»™p|ThÃ¹ng|Can|Kiá»‡n|Lá»|Bá»™|GÃ³i|Khay)$/i);
     if (largeUnitMatch) {
         return largeUnitMatch[1].trim();
     }
     
-    return 'ThÃ¹ng'; // Fallback phá»• biáº¿n nháº¥t
+    return 'ThÃ¹ng'; 
 }
 
 const exportItemSchema = z.object({
@@ -8691,6 +8861,7 @@ const handleLotSelection = (index, selectedLotId) => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  unit: item.unit,
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  packaging: item.packaging,
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storageTemp: item.storageTemp || '',
+                    team: item.team,
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityToExport: quantityFromThisLot,
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  notes: item.notes || ''
 Â  Â  Â  Â  Â  Â  Â  Â  });
@@ -8906,7 +9077,7 @@ const handleLotSelection = (index, selectedLotId) => {
                                     }
                                     {item.availableLots.map(lot => (
     <option key={lot.id} value={lot.id}>
-        {`${getExpiryStatusPrefix(lot.expiryDate)}LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'} | Tá»“n: ${formatNumber(lot.availableQty)}`} 
+        {`${getExpiryStatusPrefix(lot.expiryDate, lot.subGroup)}LÃ´: ${lot.lotNumber || '(KhÃ´ng cÃ³)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'} | Tá»“n: ${formatNumber(lot.availableQty)}`} 
     </option>
 ))}
                                 </select>
@@ -8950,19 +9121,22 @@ const handleLotSelection = (index, selectedLotId) => {
 
 {/* HIá»‚N THá»Š Sá» KIá»†N */}
 {item.packaging && item.conversionFactor > 1 && (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Quy Ä‘á»•i: <strong>
-                                        {/* Gá»ŒI HÃ€M Má»šI VÃ€ Láº¤Y GIÃ TRá»Š */}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {formatNumber(calculateCaseCount(
-                                            Number(item.quantityToExport), 
-                                            item.conversionFactor, 
-                                            item.unit
-                                        ).value)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </strong> 
-                                        {/* Gá»ŒI HÃ€M Má»šI Láº¤Y ÄÆ N Vá»Š */}
-                                        {getTargetUnit(item.packaging, item.unit)} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
+    <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+        Quy Ä‘á»•i: <strong>
+            {/* LÆ¯U Ã: Láº¤Y ÄÆ N Vá»Š VÃ€ Káº¾T QUáº¢ Tá»ª HÃ€M calculateCaseCount */}
+            {formatNumber(calculateCaseCount(
+                Number(item.quantityToExport), 
+                item.conversionFactor, 
+                item.unit
+            ).value)}
+        </strong> 
+        
+        {/* ÄÆ N Vá»Š HIá»‚N THá»Š */}
+        {calculateCaseCount(Number(item.quantityToExport), item.conversionFactor, item.unit).action === 'MULTIPLY'
+            ? getTargetUnit(item.packaging, item.unit) // Logic Lá»/Test
+            : 'ThÃ¹ng'} 
+    </div>
+)}
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
                         <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.storageTemp} readOnly /></div>
@@ -9027,44 +9201,49 @@ import useImportSlipStore from '../stores/importSlipStore';
  * @param {string} currentUnit - ÄVT hiá»‡n táº¡i cá»§a item.
  * @returns {string} - ÄÆ¡n vá»‹ quy Ä‘á»•i (vd: Lá», ThÃ¹ng, Test).
  */
+// src/pages/NewExportPage.jsx (Ãp dá»¥ng tÆ°Æ¡ng tá»± cho NewImportPage.jsx)
+// Thay tháº¿ hÃ m getTargetUnit
+
 const getTargetUnit = (packagingStr, currentUnit) => {
     if (!packagingStr || !currentUnit) return 'ÄÆ¡n vá»‹';
     const lowerUnit = currentUnit.toLowerCase().trim();
 
-    // 1. DÃ¹ng phÃ©p NHÃ‚N (XuÃ´i: ÄVT lÃ  Há»™p/ThÃ¹ng/Lá» -> ÄV nhá»)
-    if (lowerUnit === 'há»™p' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'lá»') { 
+    // --- QUY Táº®C NHáº®M Má»¤C TIÃŠU: Lá»Œ/Há»˜P ---
+    // Xá»­ lÃ½ mÃ£ 246001 vÃ  cÃ¡c mÃ£ Há»™p tÆ°Æ¡ng tá»±: LuÃ´n Æ°u tiÃªn Lá» hÆ¡n mL/G.
+    if (lowerUnit === 'há»™p') {
+        // Cá»‘ gáº¯ng tÃ¬m Ä‘Æ¡n vá»‹ Ä‘áº¿m (Lá», Test, CÃ¡i)
+        const countMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(Test|Lá»|CÃ¡i|á»ng|Bá»™|GÃ³i)\s*\//i);
+        if (countMatch && countMatch[3]) {
+            return countMatch[3].trim(); // Tráº£ vá» Lá» (hoáº·c Test)
+        }
+    }
+    // ----------------------------------------
+    
+    // --- LOGIC Gá»C (Ãp dá»¥ng cho cÃ¡c mÃ£ ThÃ¹ng/LÃ­t/Khay) ---
+    if (lowerUnit === 'há»™p' || lowerUnit === 'lá»' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'khay') { 
         
-        // Regex tÃ¬m: (Sá») [ÄÆ¡n vá»‹ má»¥c tiÃªu] / [ÄÆ¡n vá»‹ lá»›n]
-        // Cá»T LÃ•I: ChÃºng ta chá»‰ muá»‘n láº¥y ÄÆ¡n vá»‹ má»¥c tiÃªu (vÃ­ dá»¥: LÃ­t)
-        // NhÃ³m thá»© 3 (targetMatch[3]) pháº£i chá»©a tÃªn Ä‘Æ¡n vá»‹
-        const targetUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(\w+)\s*\//i);
-        
-        if (targetUnitMatch && targetUnitMatch[3]) {
-            let unitCandidate = targetUnitMatch[3].trim();
-            
-            // Loáº¡i bá» cÃ¡c Ä‘Æ¡n vá»‹ phá»©c táº¡p Ä‘á»ƒ Ä‘Æ¡n giáº£n hÃ³a hiá»ƒn thá»‹
-            if (unitCandidate.includes('/')) {
-                // Náº¿u lÃ  5 LÃ­t/ThÃ¹ng -> chá»‰ láº¥y LÃ­t
-                unitCandidate = unitCandidate.split('/')[0].trim();
-            }
-            return unitCandidate; 
+        // 1. Æ¯u tiÃªn tÃ¬m Ä‘Æ¡n vá»‹ THá»‚ TÃCH/KHá»I LÆ¯á»¢NG (LÃ­t, mL, G)
+        const volumeUnitMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(LÃ­t|mL|G|Âµg)\s*\//i);
+        if (volumeUnitMatch && volumeUnitMatch[3]) {
+             return volumeUnitMatch[3].trim(); 
+        }
+
+        // 2. Náº¿u khÃ´ng pháº£i thá»ƒ tÃ­ch, Æ°u tiÃªn tÃ¬m Ä‘Æ¡n vá»‹ Äáº¾M (Lá», Test, CÃ¡i)
+        const countMatch = packagingStr.match(/(\d+(\.\d+)?)\s*(Test|Lá»|CÃ¡i|á»ng|Bá»™|GÃ³i)\s*\//i);
+        if (countMatch && countMatch[3]) {
+            return countMatch[3].trim();
         }
         
-        // Náº¿u khÃ´ng khá»›p regex nÃ o, kiá»ƒm tra xem cÃ³ Ä‘Æ¡n vá»‹ thá»ƒ tÃ­ch/khá»‘i lÆ°á»£ng nÃ o khÃ´ng
-        const volumeMatch = packagingStr.match(/(LÃ­t|mL|G|Âµg)/i);
-        if (volumeMatch) return volumeMatch[1];
-        
-        return 'ÄÆ¡n vá»‹'; // Fallback an toÃ n
+        return 'ÄÆ¡n vá»‹'; 
     }
 
-    // 2. DÃ¹ng phÃ©p CHIA (NgÆ°á»£c: ÄVT nhá» quy Ä‘á»•i sang ÄVT lá»›n)
-    // TÃ¬m ÄÆ¡n vá»‹ Ä‘Ã³ng gÃ³i lá»›n nháº¥t á»Ÿ cuá»‘i chuá»—i. 
-    const largeUnitMatch = packagingStr.match(/\/ (Há»™p|ThÃ¹ng|Can|Kiá»‡n|Lá»|Bá»™|GÃ³i)$/i);
+    // ... (Logic phÃ©p Chia giá»¯ nguyÃªn)
+    const largeUnitMatch = packagingStr.match(/\/ (Há»™p|ThÃ¹ng|Can|Kiá»‡n|Lá»|Bá»™|GÃ³i|Khay)$/i);
     if (largeUnitMatch) {
         return largeUnitMatch[1].trim();
     }
     
-    return 'ThÃ¹ng'; // Fallback phá»• biáº¿n nháº¥t
+    return 'ThÃ¹ng'; 
 }
 
 // --- PHáº¦N SCHEMAS GIá»® NGUYÃŠN ---
@@ -9557,19 +9736,22 @@ const NewImportPage = () => {
                             />
                             {/* HIá»‚N THá»Š Sá» KIá»†N */}
 {item.packaging && item.conversionFactor > 1 && (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Quy Ä‘á»•i: <strong>
-                                        {/* Gá»ŒI HÃ€M Má»šI VÃ€ Láº¤Y GIÃ TRá»Š */}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {formatNumber(calculateCaseCount(
-                                            Number(item.quantityToExport), 
-                                            item.conversionFactor, 
-                                            item.unit
-                                        ).value)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </strong> 
-                                        {/* Gá»ŒI HÃ€M Má»šI Láº¤Y ÄÆ N Vá»Š */}
-                                        {getTargetUnit(item.packaging, item.unit)} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
+    <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+        Quy Ä‘á»•i: <strong>
+            {/* LÆ¯U Ã: Láº¤Y ÄÆ N Vá»Š VÃ€ Káº¾T QUáº¢ Tá»ª HÃ€M calculateCaseCount */}
+            {formatNumber(calculateCaseCount(
+                Number(item.quantity), 
+                item.conversionFactor, 
+                item.unit
+            ).value)}
+        </strong> 
+        
+        {/* ÄÆ N Vá»Š HIá»‚N THá»Š */}
+        {calculateCaseCount(Number(item.quantityToExport), item.conversionFactor, item.unit).action === 'MULTIPLY'
+            ? getTargetUnit(item.packaging, item.unit) // Logic Lá»/Test
+            : 'ThÃ¹ng'} 
+    </div>
+)}
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
@@ -9877,6 +10059,7 @@ export default PartnersPage;
     font-style: italic;
     color: #555;
 }
+
 
 
 
@@ -10817,12 +11000,15 @@ import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
-import { FiCalendar, FiArrowUp, FiArrowDown, FiXCircle } from 'react-icons/fi';
+// === Báº®T Äáº¦U Sá»¬A Lá»–I Táº I ÄÃ‚Y ===
+import { FiCalendar, FiArrowUp, FiArrowDown, FiXCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+// === Káº¾T THÃšC Sá»¬A Lá»–I ===
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import { getElementAtEvent } from 'react-chartjs-2';
+import { TEAM_OPTIONS } from '../constants';
 
 // ÄÄƒng kÃ½ cÃ¡c thÃ nh pháº§n cá»§a ChartJS
 ChartJS.register(
@@ -10845,30 +11031,23 @@ const SalesAnalyticsPage = () => {
         customerId: '',
         customerName: '',
         productId: '',
-        team: 'all'
     });
     const [results, setResults] = useState([]);
     const [summary, setSummary] = useState({ totalQuantity: 0, totalSlips: 0 });
     const [loading, setLoading] = useState(false);
     const chartRef = useRef();
 
-    // NÃ‚NG Cáº¤P 1: STATE CHO TÆ¯Æ NG TÃC SÃ‚U (DRILL-DOWN)
     const [drillDownFilter, setDrillDownFilter] = useState({ type: null, value: null });
-
-    // NÃ‚NG Cáº¤P 2: STATE CHO TÃ™Y CHá»ˆNH TOP N
     const [topN, setTopN] = useState(5);
-
-    // NÃ‚NG Cáº¤P 3: STATE CHO PHÃ‚N TRANG Báº¢NG Dá»® LIá»†U
     const [currentPage, setCurrentPage] = useState(1);
     const ROWS_PER_PAGE = 20;
 
-    // Láº¥y danh sÃ¡ch khÃ¡ch hÃ ng (khÃ´ng Ä‘á»•i)
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
                 const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
                 const querySnapshot = await getDocs(q);
-                const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().partnerName }));
+                // DÃ²ng nÃ y khÃ´ng cáº§n thiáº¿t vÃ¬ autocomplete Ä‘Ã£ tá»± xá»­ lÃ½
             } catch (error) {
                 console.error("Lá»—i khi táº£i danh sÃ¡ch khÃ¡ch hÃ ng:", error);
                 toast.error("KhÃ´ng thá»ƒ táº£i danh sÃ¡ch khÃ¡ch hÃ ng.");
@@ -10877,7 +11056,6 @@ const SalesAnalyticsPage = () => {
         fetchCustomers();
     }, []);
     
-    // NÃ‚NG Cáº¤P 1: Xá»¬ LÃ Dá»® LIá»†U SAU KHI ÄÃƒ Lá»ŒC DRILL-DOWN (Náº¾U CÃ“)
     const filteredResults = useMemo(() => {
         if (!drillDownFilter.value) {
             return results;
@@ -10888,7 +11066,6 @@ const SalesAnalyticsPage = () => {
         return results;
     }, [results, drillDownFilter]);
 
-    // === CÃC HÃ€M TÃNH TOÃN Dá»® LIá»†U (useMemo) ===
     const topStats = useMemo(() => {
         if (!filteredResults || filteredResults.length === 0) return { topCustomers: [], topProducts: [] };
         
@@ -10898,7 +11075,7 @@ const SalesAnalyticsPage = () => {
         }, {});
         const topCustomers = Object.entries(salesByCustomer)
             .sort(([, qtyA], [, qtyB]) => qtyB - qtyA)
-            .slice(0, topN) // NÃ‚NG Cáº¤P 2: Sá»­ dá»¥ng topN
+            .slice(0, topN)
             .map(([name, quantity]) => ({ name, quantity }));
 
         const salesByProduct = filteredResults.reduce((acc, row) => {
@@ -10910,7 +11087,7 @@ const SalesAnalyticsPage = () => {
         }, {});
         const topProducts = Object.entries(salesByProduct)
             .sort(([, dataA], [, dataB]) => dataB.quantity - dataA.quantity)
-            .slice(0, topN) // NÃ‚NG Cáº¤P 2: Sá»­ dá»¥ng topN
+            .slice(0, topN)
             .map(([name, data]) => ({ name, ...data }));
 
         return { topCustomers, topProducts };
@@ -10993,7 +11170,7 @@ const SalesAnalyticsPage = () => {
             direction = 'descending';
         }
         setSortConfig({ key, direction });
-        setCurrentPage(1); // Reset vá» trang 1 khi sáº¯p xáº¿p
+        setCurrentPage(1);
     };
 
     const SortIndicator = ({ columnKey }) => {
@@ -11014,7 +11191,7 @@ const SalesAnalyticsPage = () => {
                 borderWidth: 1
             }]
         };
-    }, [topStats.topProducts]);
+    }, [topStats.topProducts, topN]);
 
     const barChartOptions = {
         indexAxis: 'y',
@@ -11110,19 +11287,11 @@ const SalesAnalyticsPage = () => {
                     <div className="form-group" style={{flex: 1.5}}>
                         <label>Sáº£n pháº©m (TÃ¹y chá»n)</label>
                         <ProductAutocomplete
-                            value={filters.productId}
-                            onSelect={(product) => setFilters(prev => ({ ...prev, productId: product.id }))}
-                            onChange={(value) => setFilters(prev => ({ ...prev, productId: value }))}
-                        />
-                    </div>
-                    <div className="form-group" style={{flex: 1}}>
-                        <label>Team (TÃ¹y chá»n)</label>
-                        <select name="team" value={filters.team} onChange={handleFilterChange}>
-                            <option value="all">Táº¥t cáº£ Team</option>
-                            <option value="MED">MED</option>
-                            <option value="BIO">BIO</option>
-                            <option value="Spare Part">Spare Part</option>
-                        </select>
+    value={filters.productId}
+    onSelect={(product) => setFilters(prev => ({ ...prev, productId: product.id }))}
+    onChange={(value) => setFilters(prev => ({ ...prev, productId: value }))}
+    onEnterPress={() => handleSearch(filters)}
+/>
                     </div>
                 </div>
                 <div className="page-actions" style={{ justifyContent: 'flex-start', marginTop: '15px' }}>
@@ -11246,6 +11415,7 @@ export default SalesAnalyticsPage;
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
@@ -11321,6 +11491,7 @@ useEffect(() => {
                 storageTemp: data.storageTemp || '',
                 team: data.team || '',
                 manufacturer: data.manufacturer || '',
+                subGroup: data.subGroup || '',
                 notes: data.notes || '',
                 lotId: doc.id,
                 systemQty: data.quantityRemaining || 0,
@@ -12010,7 +12181,7 @@ const StocktakeSessionPage = () => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <thead>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <tr>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>HSD</th><th>ÄVT</th><th>Quy cÃ¡ch</th><th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>HSD</th><th>ÄVT</th><th>Quy cÃ¡ch</th><th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>NhÃ³m hÃ ng</th>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
@@ -12024,8 +12195,9 @@ const StocktakeSessionPage = () => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.packaging}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.systemQty}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <CountInput item={item} onCountSubmit={handleCountSubmit} />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </td>
+    <CountInput item={item} onCountSubmit={handleCountSubmit} />
+</td>
+<td>{item.subGroup}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tbody>
@@ -12361,8 +12533,10 @@ export default UsersPage;
 import { collection, getDocs, query, where, orderBy, limit, Timestamp, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { formatDate, parseDateString } from '../utils/dateUtils';
+import { SUBGROUP_OPTIONS } from '../constants';
+import { TEAM_OPTIONS } from '../constants';
 
-// --- Báº®T Äáº¦U THÃŠM Láº I CÃC HÃ€M Bá»Š THIáº¾U ---
+// --- Báº®T Äáº¦U Bá»” SUNG CÃC HÃ€M Bá»Š THIáº¾U ---
 
 /**
  * Láº¥y danh sÃ¡ch cÃ¡c phiáº¿u nháº­p Ä‘ang á»Ÿ tráº¡ng thÃ¡i "pending".
@@ -12392,41 +12566,61 @@ export const getPendingExportTickets = async () => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-// --- Káº¾T THÃšC PHáº¦N THÃŠM Láº I ---
+// --- Káº¾T THÃšC PHáº¦N Bá»” SUNG ---
 
 
-/**
- * Láº¥y cÃ¡c thá»‘ng kÃª nhanh cho Dashboard.
- */
+// src/services/dashboardService.js
+
 export const getDashboardStats = async () => {
-    // 1. Äáº¿m sá»‘ lÃ´ sáº¯p háº¿t háº¡n (trong 120 ngÃ y tá»›i)
     const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + 120);
-    const nearExpiryQuery = query(
-        collection(db, "inventory_lots"),
-        where("expiryDate", ">=", Timestamp.now()),
-        where("expiryDate", "<=", Timestamp.fromDate(futureDate))
-    );
-    const nearExpirySnap = await getCountFromServer(nearExpiryQuery);
 
-    // 2. Äáº¿m sá»‘ lÃ´ Ä‘Ã£ háº¿t háº¡n
+    // --- LOGIC Má»šI Äá»‚ Äáº¾M HÃ€NG Cáº¬N DATE ---
+    // 1. Äáº¿m cho cÃ¡c nhÃ³m Ä‘áº·c biá»‡t (BD BDB, BD DS) vá»›i ngÆ°á»¡ng 90 ngÃ y
+    const specialGroups = ['BD BDB', 'BD DS'];
+    const specialFutureDate = new Date();
+    specialFutureDate.setDate(today.getDate() + 90);
+    const specialNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", specialGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(specialFutureDate))
+    );
+
+    // 2. Äáº¿m cho cÃ¡c nhÃ³m cÃ²n láº¡i vá»›i ngÆ°á»¡ng 210 ngÃ y
+    const otherGroups = SUBGROUP_OPTIONS.filter(group => !specialGroups.includes(group));
+    const otherFutureDate = new Date();
+    otherFutureDate.setDate(today.getDate() + 210);
+    const otherNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", otherGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(otherFutureDate))
+    );
+
+    // 3. Äáº¿m sá»‘ lÃ´ Ä‘Ã£ háº¿t háº¡n (giá»¯ nguyÃªn)
     const expiredQuery = query(
         collection(db, "inventory_lots"),
         where("expiryDate", "<", Timestamp.now())
     );
-    const expiredSnap = await getCountFromServer(expiredQuery);
 
-    // 3. Äáº¿m tá»•ng sá»‘ mÃ£ hÃ ng (SKU)
+    // CÃ¡c truy váº¥n khÃ¡c giá»¯ nguyÃªn
     const productsQuery = query(collection(db, "products"));
-    const productsSnap = await getCountFromServer(productsQuery);
-    
-    // 4. Äáº¿m tá»•ng sá»‘ Ä‘á»‘i tÃ¡c
     const partnersQuery = query(collection(db, "partners"));
-    const partnersSnap = await getCountFromServer(partnersQuery);
+
+    // Thá»±c thi táº¥t cáº£ cÃ¡c truy váº¥n cÃ¹ng lÃºc
+    const [specialSnap, otherSnap, expiredSnap, productsSnap, partnersSnap] = await Promise.all([
+        getCountFromServer(specialNearExpiryQuery),
+        getCountFromServer(otherNearExpiryQuery),
+        getCountFromServer(expiredQuery),
+        getCountFromServer(productsQuery),
+        getCountFromServer(partnersQuery),
+    ]);
+
+    // Cá»™ng dá»“n káº¿t quáº£ Ä‘áº¿m cáº­n date
+    const nearExpiryCount = specialSnap.data().count + otherSnap.data().count;
 
     return {
-        nearExpiryCount: nearExpirySnap.data().count,
+        nearExpiryCount: nearExpiryCount,
         expiredCount: expiredSnap.data().count,
         skuCount: productsSnap.data().count,
         partnerCount: partnersSnap.data().count,
@@ -12461,42 +12655,76 @@ export const getRecentCompletedExports = async (count = 5) => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-/**
- * Láº¥y dá»¯ liá»‡u cho cÃ¡c biá»ƒu Ä‘á»“.
- */
-export const getChartData = async () => {
-    // 1. Dá»¯ liá»‡u cho biá»ƒu Ä‘á»“ HSD
-    const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + 120);
+// src/services/dashboardService.js
 
-    const safeQuery = query(collection(db, "inventory_lots"), where("expiryDate", ">", Timestamp.fromDate(futureDate)));
-    const nearExpiryQuery = query(collection(db, "inventory_lots"), where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+export const getChartData = async () => {
+    // --- LOGIC Má»šI CHO BIá»‚U Äá»’ HSD ---
+    const today = new Date();
+
+    // 1. Láº¥y sá»‘ lÃ´ cáº­n date cho nhÃ³m Ä‘áº·c biá»‡t (ngÆ°á»¡ng 90 ngÃ y)
+    const specialGroups = ['BD BDB', 'BD DS'];
+    const specialFutureDate = new Date();
+    specialFutureDate.setDate(today.getDate() + 90);
+    const specialNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", specialGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(specialFutureDate))
+    );
+
+    // 2. Láº¥y sá»‘ lÃ´ cáº­n date cho nhÃ³m cÃ²n láº¡i (ngÆ°á»¡ng 210 ngÃ y)
+    const otherGroups = SUBGROUP_OPTIONS.filter(group => !specialGroups.includes(group));
+    const otherFutureDate = new Date();
+    otherFutureDate.setDate(today.getDate() + 210);
+    const otherNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", otherGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(otherFutureDate))
+    );
+
+    // 3. Láº¥y sá»‘ lÃ´ Ä‘Ã£ háº¿t háº¡n (giá»¯ nguyÃªn)
     const expiredQuery = query(collection(db, "inventory_lots"), where("expiryDate", "<", Timestamp.now()));
 
-    const [safeSnap, nearExpirySnap, expiredSnap] = await Promise.all([
-        getCountFromServer(safeQuery),
-        getCountFromServer(nearExpiryQuery),
+    // 4. Láº¥y sá»‘ lÃ´ an toÃ n (phá»©c táº¡p hÆ¡n, cáº§n láº¥y tá»•ng sá»‘ lÃ´ rá»“i trá»« Ä‘i)
+    const allLotsQuery = query(collection(db, "inventory_lots"));
+
+    const [specialSnap, otherSnap, expiredSnap, allLotsSnap] = await Promise.all([
+        getCountFromServer(specialNearExpiryQuery),
+        getCountFromServer(otherNearExpiryQuery),
         getCountFromServer(expiredQuery),
+        getCountFromServer(allLotsQuery)
     ]);
-    
+
+    const nearExpiryCount = specialSnap.data().count + otherSnap.data().count;
+    const expiredCount = expiredSnap.data().count;
+    const totalCount = allLotsSnap.data().count;
+    const safeCount = totalCount - nearExpiryCount - expiredCount;
+
     const expiryData = {
-        safe: safeSnap.data().count,
-        near_expiry: nearExpirySnap.data().count,
-        expired: expiredSnap.data().count,
+        safe: safeCount,
+        near_expiry: nearExpiryCount,
+        expired: expiredCount,
     };
 
-    // 2. Dá»¯ liá»‡u cho biá»ƒu Ä‘á»“ Team
-    const productsSnapshot = await getDocs(collection(db, "products"));
-    const teamCounts = { MED: 0, BIO: 0, 'Spare Part': 0 };
-    productsSnapshot.forEach(doc => {
-        const team = doc.data().team;
-        if (team in teamCounts) {
-            teamCounts[team]++;
-        }
-    });
+    // 2. Dá»¯ liá»‡u cho biá»ƒu Ä‘á»“ Team (PHIÃŠN Báº¢N Má»šI LINH HOáº T)
+const productsSnapshot = await getDocs(collection(db, "products"));
 
-    return { expiryData, teamData: teamCounts };
+// Khá»Ÿi táº¡o Ä‘á»‘i tÆ°á»£ng Ä‘áº¿m dá»±a trÃªn TEAM_OPTIONS
+const teamCounts = TEAM_OPTIONS.reduce((acc, team) => {
+    acc[team] = 0;
+    return acc;
+}, {});
+
+productsSnapshot.forEach(doc => {
+    const team = doc.data().team;
+    // Chá»‰ Ä‘áº¿m náº¿u team cá»§a sáº£n pháº©m cÃ³ trong danh sÃ¡ch TEAM_OPTIONS
+    if (team in teamCounts) {
+        teamCounts[team]++;
+    }
+});
+
+return { expiryData, teamData: teamCounts };
 };
 
 /**
@@ -12570,7 +12798,7 @@ export const getSalesAnalytics = async (filters = {}) => {
                 lotNumber: item.lotNumber,
                 quantityExported: item.quantityToExport || item.quantityExported,
                 unit: item.unit,
-                team: item.team // Äáº£m báº£o trÆ°á»ng team Ä‘Æ°á»£c tráº£ vá»
+                team: item.team // Äáº£m báº£o trÆ°á»ng team Ä‘Æ°á»£c tráº£ vá» 
             });
         });
     });
@@ -12763,7 +12991,8 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
         closingBalance: currentBalance,
         rows: ledgerRows
     };
-};    
+};
+
 
 
 
@@ -13159,7 +13388,7 @@ describe('Service: stocktakeService', () => {
 --- FILE: D:\quan-ly-kho\src\stores\exportSlipStore.js ---
 
 
-// src/stores/exportSlipStore.js (ÄÃ£ sá»­a lá»—i hiá»ƒn thá»‹ Dropdown)
+// src/stores/exportSlipStore.js
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -13168,90 +13397,90 @@ import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const initialItemState = {
-Â  Â  id: Date.now(),
-Â  Â  productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
-Â  Â  availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
-Â  Â  expiryDate: '', quantityAvailableForExport: 0, quantityToExport: '', notes: '', 
-Â  Â  isOutOfStock: false,
-Â  Â  isFetchingLots: false,
+    id: Date.now(),
+    productId: '', productName: '', unit: '', packaging: '', storageTemp: '',
+    team: '',
+    availableLots: [], selectedLotId: '', lotNumber: '', displayLotText: '',
+    expiryDate: '', quantityAvailableForExport: 0, quantityToExport: '', notes: '', 
+    isOutOfStock: false,
+    isFetchingLots: false,
     conversionFactor: 1
 };
 
 const useExportSlipStore = create(
-Â  Â  persist(
-Â  Â  Â  Â  (set, get) => ({
-Â  Â  Â  Â  Â  Â  // === STATE ===
-Â  Â  Â  Â  Â  Â  customerId: '',
-Â  Â  Â  Â  Â  Â  customerName: '',
-Â  Â  Â  Â  Â  Â  description: '',
-Â  Â  Â  Â  Â  Â  exportDate: new Date().toISOString().split('T')[0],
-Â  Â  Â  Â  Â  Â  items: [{ ...initialItemState, id: Date.now() }],
+    persist(
+        (set, get) => ({
+            // === STATE ===
+            customerId: '',
+            customerName: '',
+            description: '',
+            exportDate: new Date().toISOString().split('T')[0],
+            items: [{ ...initialItemState, id: Date.now() }],
 
-Â  Â  Â  Â  Â  Â  // === ACTIONS ===
-Â  Â  Â  Â  Â  Â  setCustomer: (id, name) => set({ customerId: id, customerName: name }),
-Â  Â  Â  Â  Â  Â  setDescription: (description) => set({ description }),
+            // === ACTIONS ===
+            setCustomer: (id, name) => set({ customerId: id, customerName: name }),
+            setDescription: (description) => set({ description }),
 
-Â  Â  Â  Â  Â  Â  updateItem: (index, field, value) => set(state => {
-Â  Â  Â  Â  Â  Â  Â  Â  const newItems = state.items.map((item, i) => {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return { ...item, [field]: value };
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
-Â  Â  Â  Â  Â  Â  Â  Â  });
-Â  Â  Â  Â  Â  Â  Â  Â  return { items: newItems };
-Â  Â  Â  Â  Â  Â  }),
-Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  // --- HÃ€M Xá»¬ LÃ Káº¾T QUáº¢ TÃŒM KIáº¾M Sáº¢N PHáº¨M (SOFT ALLOCATION LOGIC) ---
-Â  Â  Â  Â  Â  Â  handleProductSearchResult: async (index, productData) => {
-Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  // BÆ°á»›c 1: Cáº­p nháº­t UI ngay láº­p tá»©c Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i "Äang táº£i..."
-Â  Â  Â  Â  Â  Â  Â  Â  set(state => ({
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  items: state.items.map((item, i) => {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ...item,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productId: productData ? productData.id : item.productId,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productName: productData ? 'Äang táº£i...' : '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  unit: '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  packaging: '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storageTemp: '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  availableLots: [],
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  selectedLotId: '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  lotNumber: '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  displayLotText: '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  expiryDate: '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAvailableForExport: 0, 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isOutOfStock: false,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isFetchingLots: !!productData,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  };
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  })
-Â  Â  Â  Â  Â  Â  Â  Â  }));
+            updateItem: (index, field, value) => set(state => {
+                const newItems = state.items.map((item, i) => {
+                    if (i === index) {
+                        return { ...item, [field]: value };
+                    }
+                    return item;
+                });
+                return { items: newItems };
+            }),
+            
+            // --- HÃ€M Xá»¬ LÃ Káº¾T QUáº¢ TÃŒM KIáº¾M Sáº¢N PHáº¨M (SOFT ALLOCATION LOGIC) ---
+            handleProductSearchResult: async (index, productData) => {
+                
+                // BÆ°á»›c 1: Cáº­p nháº­t UI ngay láº­p tá»©c Ä‘á»ƒ hiá»ƒn thá»‹ tráº¡ng thÃ¡i "Äang táº£i..."
+                set(state => ({
+                    items: state.items.map((item, i) => {
+                        if (i === index) {
+                            return {
+                                ...item,
+                                productId: productData ? productData.id : item.productId,
+                                productName: productData ? 'Äang táº£i...' : '',
+                                unit: '',
+                                packaging: '',
+                                storageTemp: '',
+                                availableLots: [],
+                                selectedLotId: '',
+                                lotNumber: '',
+                                displayLotText: '',
+                                expiryDate: '',
+                                quantityAvailableForExport: 0, 
+                                isOutOfStock: false,
+                                isFetchingLots: !!productData,
+                            };
+                        }
+                        return item;
+                    })
+                }));
 
-Â  Â  Â  Â  Â  Â  Â  Â  if (!productData) return;
+                if (!productData) return;
 
-Â  Â  Â  Â  Â  Â  Â  Â  // BÆ¯á»šC 2: Báº¯t Ä‘áº§u tÃ¬m kiáº¿m dá»¯ liá»‡u tá»« server
+                // BÆ°á»›c 2: Báº¯t Ä‘áº§u tÃ¬m kiáº¿m dá»¯ liá»‡u tá»« server
 try {
     // 1. CHá»ˆ TRUY Váº¤N CÃC LÃ” CÃ“ Tá»’N THá»°C Táº¾ > 0
-    const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id), where("quantityRemaining", ">", 0));
+    const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productData.id));
     const lotsSnapshot = await getDocs(lotsQuery);
 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  let finalLots = [];
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  let outOfStock = false;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lotsSnapshot.empty) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  outOfStock = true;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  } else {
+                    let finalLots = [];
+                    let outOfStock = false;
+                    
+                    if (lotsSnapshot.empty) {
+                        outOfStock = true;
+                    } else {
         const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const lotAggregator = new Map();
         
         for (const lot of foundLots) {
             // 1. TÃNH TOÃN Tá»’N KHO KHáº¢ Dá»¤NG: Tá»“n thá»±c - Äáº·t giá»¯
-            const allocatedQty = lot.quantityAllocated || 0; // 
+            const allocatedQty = lot.quantityAllocated || 0; 
             const availableQty = lot.quantityRemaining - allocatedQty;
             
-            // THAY Äá»”I Cá»T LÃ•I Táº I ÄÃ‚Y:
             if (availableQty <= 0) continue; // Bá» qua náº¿u tá»“n kháº£ dá»¥ng <= 0
 
             const lotKey = lot.lotNumber || 'KHONG_CO_LO';
@@ -13259,17 +13488,15 @@ try {
             if (lotAggregator.has(lotKey)) {
                 const existing = lotAggregator.get(lotKey);
                 
-                // Gá»˜P NHÃ“M cÃ¡c trÆ°á»ng
                 existing.quantityRemaining += lot.quantityRemaining; 
                 existing.quantityAllocated += allocatedQty;
-                existing.availableQty += availableQty; // Tá»“n Kháº£ Dá»¥ng Ä‘Ã£ gá»™p
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.expiryDate = lot.expiryDate;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  existing.originalLots.push(lot);
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  } else {
-                // KHá»žI Táº O LÃ” Má»šI TRONG AGGREGATOR
+                existing.availableQty += availableQty; 
+                
+                if (lot.expiryDate && (!existing.expiryDate || lot.expiryDate.toDate() < existing.expiryDate.toDate())) {
+                    existing.expiryDate = lot.expiryDate;
+                }
+                existing.originalLots.push(lot);
+            } else {
                 lotAggregator.set(lotKey, { 
                     ...lot, 
                     id: lotKey, 
@@ -13280,69 +13507,83 @@ try {
                 });
             }
         }
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const aggregatedLots = Array.from(lotAggregator.values());
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  aggregatedLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  finalLots = aggregatedLots;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // TÃ­nh tá»•ng tá»“n kháº£ dá»¥ng
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const totalAvailable = finalLots.reduce((sum, lot) => sum + lot.availableQty, 0);
+                        
+                        const aggregatedLots = Array.from(lotAggregator.values());
+                        
+                        // ===== Báº®T Äáº¦U THAY Äá»”I LOGIC Sáº®P Xáº¾P Táº I ÄÃ‚Y =====
+                        aggregatedLots.sort((a, b) => {
+                            const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                            const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // Náº¿u sau khi lá»c Allocation mÃ  háº¿t hÃ ng, Ä‘Ã¡nh dáº¥u lÃ  OutOfStock
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (aggregatedLots.length === 0 || totalAvailable <= 0) outOfStock = true;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
+                            // 1. Æ¯u tiÃªn sáº¯p xáº¿p theo HSD tÄƒng dáº§n (date gáº§n nháº¥t lÃªn trÆ°á»›c)
+                            if (dateA !== dateB) {
+                                return dateA - dateB;
+                            }
 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // BÆ°á»›c 3: Cáº­p nháº­t UI láº§n cuá»‘i vá»›i dá»¯ liá»‡u Ä‘áº§y Ä‘á»§ Ä‘Ã£ tÃ¬m Ä‘Æ°á»£c
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  set(state => ({
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  items: state.items.map((item, i) => {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // TÃ­nh tá»•ng tá»“n kháº£ dá»¥ng cá»§a Táº¤T Cáº¢ cÃ¡c lÃ´ Ä‘Ã£ gom nhÃ³m
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  const totalAvailable = finalLots.reduce((sum, lot) => sum + lot.availableQty, 0);
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ...item,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productName: productData.productName || '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  unit: productData.unit || '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  packaging: productData.packaging || '',
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storageTemp: productData.storageTemp || '',
+                            // 2. Náº¿u HSD báº±ng nhau, Æ°u tiÃªn sáº¯p xáº¿p theo sá»‘ lÆ°á»£ng tá»“n kháº£ dá»¥ng tÄƒng dáº§n (Ã­t hÆ¡n lÃªn trÆ°á»›c)
+                            return a.availableQty - b.availableQty;
+                        });
+                        // ===== Káº¾T THÃšC THAY Äá»”I LOGIC Sáº®P Xáº¾P =====
+
+                        finalLots = aggregatedLots;
+                        
+                        const totalAvailable = finalLots.reduce((sum, lot) => sum + lot.availableQty, 0);
+
+                        if (aggregatedLots.length === 0 || totalAvailable <= 0) outOfStock = true;
+                    }
+
+                    // BÆ°á»›c 3: Cáº­p nháº­t UI láº§n cuá»‘i vá»›i dá»¯ liá»‡u Ä‘áº§y Ä‘á»§ Ä‘Ã£ tÃ¬m Ä‘Æ°á»£c
+                    set(state => ({
+                        items: state.items.map((item, i) => {
+                            if (i === index) {
+                                const totalAvailable = finalLots.reduce((sum, lot) => sum + lot.availableQty, 0);
+                                
+                                return {
+                                    ...item,
+                                    productName: productData.productName || '',
+                                    unit: productData.unit || '',
+                                    packaging: productData.packaging || '',
+                                    storageTemp: productData.storageTemp || '',
+                                    team: productData.team || '',
                                     conversionFactor: productData.conversionFactor || 1,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  availableLots: finalLots,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isOutOfStock: outOfStock,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  isFetchingLots: false,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAvailableForExport: totalAvailable, // GÃ¡n Tá»”NG Tá»’N KHáº¢ Dá»¤NG
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  };
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  })
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }));
+                                    availableLots: finalLots,
+                                    isOutOfStock: outOfStock,
+                                    isFetchingLots: false,
+                                    quantityAvailableForExport: totalAvailable, 
+                                };
+                            }
+                            return item;
+                        })
+                    }));
 
-Â  Â  Â  Â  Â  Â  Â  Â  } catch (e) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m lÃ´ hÃ ng:", e);
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  toast.error("Lá»—i khi táº£i danh sÃ¡ch lÃ´ hÃ ng.");
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  set(state => ({
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  items: state.items.map((item, i) => {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  if (i === index) {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return { ...item, isOutOfStock: true, productName: 'Lá»—i táº£i dá»¯ liá»‡u', isFetchingLots: false };
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  return item;
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  })
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }));
-Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  },
-Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  // CÃ¡c hÃ m cÃ²n láº¡i giá»¯ nguyÃªn
-Â  Â  Â  Â  Â  Â  addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
-Â  Â  Â  Â  Â  Â  removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
-Â  Â  Â  Â  Â  Â  replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
-Â  Â  Â  Â  Â  Â  resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ ...initialItemState, id: Date.now() }] })
-Â  Â  Â  Â  }),
-Â  Â  Â  Â  {
-Â  Â  Â  Â  Â  Â  name: 'export-slip-storage',
-Â  Â  Â  Â  }
-Â  Â  )
+                } catch (e) {
+                    console.error("Lá»—i khi tÃ¬m lÃ´ hÃ ng:", e);
+                    toast.error("Lá»—i khi táº£i danh sÃ¡ch lÃ´ hÃ ng.");
+                    set(state => ({
+                        items: state.items.map((item, i) => {
+                            if (i === index) {
+                                return { ...item, isOutOfStock: true, productName: 'Lá»—i táº£i dá»¯ liá»‡u', isFetchingLots: false };
+                            }
+                            return item;
+                        })
+                    }));
+                }
+            },
+            
+            // CÃ¡c hÃ m cÃ²n láº¡i giá»¯ nguyÃªn
+            addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
+            removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
+            replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
+            resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ ...initialItemState, id: Date.now() }] })
+        }),
+        {
+            name: 'export-slip-storage',
+        }
+    )
 );
 
 export default useExportSlipStore;
+
 
 
 
@@ -14283,30 +14524,49 @@ tbody tr.selected-row td {
     text-align: center;
 }
 
-/* ========================================================================= */
 /* === TÃ™Y CHá»ˆNH RIÃŠNG CHO TRANG CHI TIáº¾T KIá»‚M KÃŠ (StocktakeSessionPage) === */
-/* ========================================================================= */
 .stocktake-session-page-container .products-table {
     table-layout: fixed;
 }
-/* Cá»™t 2 (TÃªn hÃ ng) -> Rá»˜NG RA */
+
+/* Cá»™t 2 (TÃªn hÃ ng) -> THU Háº¸P Láº I */
 .stocktake-session-page-container .products-table th:nth-child(2),
 .stocktake-session-page-container .products-table td:nth-child(2) {
-    width: 40%;
+    width: 30%; /* Giáº£m tá»« 40% xuá»‘ng 30% */
     text-align: left;
     white-space: normal;
     word-break: break-word;
 }
-/* Cá»™t 3 (Sá»‘ lÃ´) -> Háº¸P Láº I */
+
+/* Cá»™t 3 (Sá»‘ lÃ´) -> HÆ¡i háº¹p láº¡i má»™t chÃºt */
 .stocktake-session-page-container .products-table th:nth-child(3),
 .stocktake-session-page-container .products-table td:nth-child(3) {
+    width: 130px; /* Giáº£m tá»« 150px */
+}
+
+/* Cá»™t 4 (HSD) -> Rá»˜NG RA */
+.stocktake-session-page-container .products-table th:nth-child(4),
+.stocktake-session-page-container .products-table td:nth-child(4) {
+    width: 130px;
+}
+
+/* Cá»™t 6 (Quy cÃ¡ch) -> Rá»˜NG RA */
+.stocktake-session-page-container .products-table th:nth-child(6),
+.stocktake-session-page-container .products-table td:nth-child(6) {
     width: 150px;
-    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Cá»™t 8 (Tá»“n thá»±c táº¿) -> Rá»˜NG RA */
+.stocktake-session-page-container .products-table th:nth-child(8),
+.stocktake-session-page-container .products-table td:nth-child(8) {
+    width: 150px;
 }
 
 .stocktake-session-page-container .products-table td:nth-child(8) input {
     width: 100%;
-    box-sizing: border-box; /* Äáº£m báº£o padding khÃ´ng lÃ m trÃ n input */
+    box-sizing: border-box; 
 }
 
 /* CSS Má»šI: Cho mÃ u ná»n cá»§a tá»«ng lÃ´ hÃ ng con */
@@ -14953,6 +15213,65 @@ tbody tr.selected-row td {
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
 }
 
+/* --- CSS CHO Bá»˜ Lá»ŒC DROPDOWN --- */
+.dropdown-filter {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-filter > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #adb5bd;
+  color: #495057;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dropdown-filter > button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.dropdown-content {
+  display: block;
+  position: absolute;
+  background-color: #ffffff;
+  min-width: 220px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 10;
+  border-radius: 8px;
+  padding: 8px 0;
+  margin-top: 5px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+}
+
+.dropdown-content button {
+  color: black;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-weight: normal;
+  border-radius: 0;
+  font-size: 14px;
+}
+
+.dropdown-content button:hover {
+  background-color: #f1f1f1;
+}
+
 /* --- CSS CHO GIAO DIá»†N RESPONSIVE TRÃŠN DI Äá»˜NG --- */
 @media (max-width: 768px) {
   /* Pháº§n nÃ y Ã¡p dá»¥ng cho cáº£ 2 báº£ng:
@@ -15246,6 +15565,7 @@ tbody tr.selected-row td {
   font-size: 28px;
   font-weight: bold;
 }
+
 
 
 
@@ -15685,6 +16005,8 @@ tbody tr.selected-row td {
 
 
 
+
+
 --- FILE: D:\quan-ly-kho\src\styles\print.css ---
 
 
@@ -16052,31 +16374,20 @@ afterEach(() => {
 
 /**
  * Chuyá»ƒn Ä‘á»•i má»™t Ä‘á»‘i tÆ°á»£ng Firebase Timestamp hoáº·c Date thÃ nh chuá»—i dd/mm/yyyy.
- * @param {object | Date} dateOrTimestamp - Äá»‘i tÆ°á»£ng Timestamp cá»§a Firebase hoáº·c Ä‘á»‘i tÆ°á»£ng Date.
- * @returns {string} - Chuá»—i ngÃ y thÃ¡ng Ä‘Ã£ Ä‘á»‹nh dáº¡ng hoáº·c 'N/A'.
  */
 export const formatDate = (dateOrTimestamp) => {
-  // --- Báº®T Äáº¦U NÃ‚NG Cáº¤P ---
   let date;
-
-  // Kiá»ƒm tra xem cÃ³ pháº£i lÃ  Timestamp cá»§a Firebase khÃ´ng vÃ  chuyá»ƒn Ä‘á»•i nÃ³
   if (dateOrTimestamp && typeof dateOrTimestamp.toDate === 'function') {
     date = dateOrTimestamp.toDate();
-  }
-  // Náº¿u khÃ´ng, kiá»ƒm tra xem nÃ³ cÃ³ pháº£i lÃ  má»™t Ä‘á»‘i tÆ°á»£ng Date cá»§a JavaScript khÃ´ng
-  else if (dateOrTimestamp instanceof Date) {
+  } else if (dateOrTimestamp instanceof Date) {
     date = dateOrTimestamp;
-  }
-  // Náº¿u khÃ´ng pháº£i cáº£ hai, chÃºng ta khÃ´ng thá»ƒ Ä‘á»‹nh dáº¡ng nÃ³
-  else {
+  } else {
     return 'N/A';
   }
 
-  // Äáº£m báº£o chÃºng ta cÃ³ má»™t ngÃ y há»£p lá»‡ trÆ°á»›c khi tiáº¿p tá»¥c
   if (isNaN(date.getTime())) {
       return 'N/A';
   }
-  // --- Káº¾T THÃšC NÃ‚NG Cáº¤P ---
 
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -16086,8 +16397,6 @@ export const formatDate = (dateOrTimestamp) => {
 
 /**
  * Chuyá»ƒn Ä‘á»•i má»™t chuá»—i dd/mm/yyyy thÃ nh Ä‘á»‘i tÆ°á»£ng Date.
- * @param {string} dateString - Chuá»—i ngÃ y thÃ¡ng theo Ä‘á»‹nh dáº¡ng dd/mm/yyyy.
- * @returns {Date | null} - Äá»‘i tÆ°á»£ng Date hoáº·c null náº¿u Ä‘á»‹nh dáº¡ng sai.
  */
 export const parseDateString = (dateString) => {
   if (!dateString) return null;
@@ -16108,8 +16417,6 @@ export const parseDateString = (dateString) => {
 
 /**
  * Äá»‹nh dáº¡ng má»™t chuá»—i sá»‘ thÃ nh Ä‘á»‹nh dáº¡ng ngÃ y dd/mm/yyyy khi ngÆ°á»i dÃ¹ng gÃµ.
- * @param {string} value - GiÃ¡ trá»‹ tá»« Ã´ input.
- * @returns {string} - Chuá»—i Ä‘Ã£ Ä‘Æ°á»£c Ä‘á»‹nh dáº¡ng.
  */
 export const formatExpiryDate = (value) => {
     if (!value) return '';
@@ -16117,41 +16424,50 @@ export const formatExpiryDate = (value) => {
     const truncatedDigits = digitsOnly.slice(0, 8);
     const len = truncatedDigits.length;
 
-    if (len <= 2) {
-        return truncatedDigits;
-    }
-    if (len <= 4) {
-        return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2)}`;
-    }
+    if (len <= 2) return truncatedDigits;
+    if (len <= 4) return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2)}`;
     return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2, 4)}/${truncatedDigits.slice(4)}`;
 };
 
+// src/utils/dateUtils.js
+
 /**
- * XÃ¡c Ä‘á»‹nh class mÃ u sáº¯c cho má»™t dÃ²ng dá»±a trÃªn ngÃ y háº¿t háº¡n.
- * @param {object} expiryDate - Äá»‘i tÆ°á»£ng Timestamp cá»§a Firebase.
- * @returns {string} - TÃªn class CSS tÆ°Æ¡ng á»©ng.
+ * PHIÃŠN Báº¢N Má»šI: XÃ¡c Ä‘á»‹nh class mÃ u sáº¯c cho má»™t dÃ²ng dá»±a trÃªn ngÃ y háº¿t háº¡n vÃ  nhÃ³m hÃ ng.
  */
-export const getRowColorByExpiry = (expiryDate) => {
+export const getRowColorByExpiry = (expiryDate, subGroup) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const expDate = expiryDate.toDate();
+    expDate.setHours(0, 0, 0, 0);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return 'expired-black';
-    if (diffDays <= 60) return 'near-expiry-red';
-    if (diffDays <= 90) return 'near-expiry-orange';
-    if (diffDays <= 120) return 'near-expiry-yellow';
-    return '';
+
+    // --- LOGIC Má»šI ---
+    // Quy táº¯c 1: Cho nhÃ³m BD BDB vÃ  BD DS
+    if (subGroup === 'BD BDB' || subGroup === 'BD DS') {
+        if (diffDays < 0) return 'expired-black';   // ÄÃ£ háº¿t háº¡n
+        if (diffDays <= 30) return 'near-expiry-red';   // DÆ°á»›i 30 ngÃ y
+        if (diffDays <= 60) return 'near-expiry-orange';// DÆ°á»›i 60 ngÃ y
+        if (diffDays <= 90) return 'near-expiry-yellow';// DÆ°á»›i 90 ngÃ y
+    } 
+    // Quy táº¯c 2: Cho táº¥t cáº£ cÃ¡c nhÃ³m hÃ ng cÃ²n láº¡i
+    else {
+        if (diffDays < 0) return 'expired-black';   // ÄÃ£ háº¿t háº¡n
+        if (diffDays <= 70) return 'near-expiry-red';   // DÆ°á»›i 70 ngÃ y
+        if (diffDays <= 140) return 'near-expiry-orange';// DÆ°á»›i 140 ngÃ y
+        if (diffDays <= 210) return 'near-expiry-yellow';// DÆ°á»›i 210 ngÃ y
+    }
+
+    return ''; // An toÃ n
 };
 
+// src/utils/dateUtils.js
+
 /**
- * Tráº£ vá» má»™t chuá»—i tiá»n tá»‘ cáº£nh bÃ¡o dá»±a trÃªn ngÃ y háº¿t háº¡n.
- * @param {object} expiryDate - Äá»‘i tÆ°á»£ng Timestamp cá»§a Firebase.
- * @returns {string} - Chuá»—i tiá»n tá»‘ cáº£nh bÃ¡o (vÃ­ dá»¥: 'âš ï¸ Cáº¬N DATE - ').
+ * PHIÃŠN Báº¢N Má»šI: Tráº£ vá» má»™t chuá»—i tiá»n tá»‘ cáº£nh bÃ¡o dá»±a trÃªn ngÃ y háº¿t háº¡n vÃ  nhÃ³m hÃ ng.
  */
-export const getExpiryStatusPrefix = (expiryDate) => {
+export const getExpiryStatusPrefix = (expiryDate, subGroup) => {
   if (!expiryDate || !expiryDate.toDate) return '';
 
   const today = new Date();
@@ -16160,8 +16476,14 @@ export const getExpiryStatusPrefix = (expiryDate) => {
   const diffTime = expDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return 'âŒ - ';
-  if (diffDays <= 120) return 'âš ï¸ - ';
+  if (diffDays < 0) return 'âŒ - '; // Háº¿t háº¡n
+
+  // --- LOGIC Má»šI ---
+  // XÃ¡c Ä‘á»‹nh ngÆ°á»¡ng cáº­n date dá»±a trÃªn nhÃ³m hÃ ng
+  const nearExpiryThreshold = (subGroup === 'BD BDB' || subGroup === 'BD DS') ? 90 : 210;
+
+  if (diffDays <= nearExpiryThreshold) return 'âš ï¸ - '; // Cáº­n date
+
   return '';
 };
 
@@ -16258,19 +16580,22 @@ export const parseFormattedNumber = (value) => {
  * @param {string} unit - ÄÆ¡n vá»‹ tÃ­nh cá»§a sáº£n pháº©m (VÃ­ dá»¥: Lá»).
  * @returns {object} - { value: number, action: 'MULTIPLY'/'DIVIDE' }
  */
+// src/utils/numberUtils.js (Sá»­a calculateCaseCount)
+
 export const calculateCaseCount = (quantity, factor, unit) => {
     if (!quantity || !factor || factor <= 0) return { value: 0, action: 'NONE' };
     
     const lowerUnit = unit ? unit.toLowerCase().trim() : '';
 
-    // LOGIC QUY Äá»”I XUÃ”I (NHÃ‚N): unit lÃ  ÄVT Ä‘Ã³ng gÃ³i trung gian (Há»™p/ThÃ¹ng) HOáº¶C Lá»Œ
-    // Tá»©c lÃ : Xuáº¥t 1 Há»™p/Lá» -> 100 Test/Lá».
-    if (lowerUnit === 'há»™p' || lowerUnit === 'thÃ¹ng' || lowerUnit === 'lá»') { // <-- THÃŠM 'Lá»Œ' VÃ€O ÄÃ‚Y
+    // LOGIC QUY Äá»”I XUÃ”I (NHÃ‚N): unit lÃ  ÄVT Ä‘Ã³ng gÃ³i Cáº¤P 1 (Há»™p, Lá», ThÃ¹ng - cho trÆ°á»ng há»£p LÃ­t)
+    // Ãp dá»¥ng cho: 246001 (Há»™p -> Lá»), 334224 (ThÃ¹ng -> LÃ­t)
+    if (lowerUnit === 'há»™p' || lowerUnit === 'lá»' || lowerUnit === 'thÃ¹ng') {
         const result = quantity * factor; 
         return { value: Math.round(result * 100) / 100, action: 'MULTIPLY' };
     } 
     
-    // LOGIC QUY Äá»”I NGÆ¯á»¢C (CHIA): ÄVT cÆ¡ báº£n lÃ  ÄVT nhá» nháº¥t (Chai, Test, LÃ­t, etc.)
+    // LOGIC QUY Äá»”I NGÆ¯á»¢C (CHIA): unit lÃ  ÄVT Ä‘Ã³ng gÃ³i Cáº¤P CAO HÆ N hoáº·c ÄVT nhá» (Khay, Chai, Test)
+    // Ãp dá»¥ng cho: 491452 (Khay -> ThÃ¹ng)
     const result = quantity / factor;
     return { value: Math.round(result * 100) / 100, action: 'DIVIDE' };
 };
@@ -16619,6 +16944,7 @@ export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filt
 
 
 
+
 --- FILE: D:\quan-ly-kho\src\utils\stringUtils.js ---
 
 
@@ -16683,8 +17009,8 @@ export const convertVietnameseWordsToNumbers = (str) => {
 export const getConversionFactor = (packagingStr) => {
     if (!packagingStr || packagingStr.toUpperCase() === "N/A") return 1;
 
-    // TÃŒM Cáº¶P Tá»¶ Lá»† Dá»„ Äá»ŒC NHáº¤T á»ž CUá»I CHUá»–I: vd: "100 Lá»/ Há»™p" HOáº¶C "50 Chai/ ThÃ¹ng"
-    // Regex tÃ¬m: (Sá») [ÄVT] / [ÄVT]
+    // TÃŒM Cáº¶P Tá»¶ Lá»† Dá»„ Äá»ŒC NHáº¤T á»ž CUá»I CHUá»–I: vd: "100 Lá» / Há»™p" HOáº¶C "50 Chai/ ThÃ¹ng"
+    // Regex tÃ¬m: (Sá»‘) [ÄVT] / [ÄVT]
     const ratios = packagingStr.match(/(\d+(\.\d+)?)\s*\w+\s*\/\s*\w+/gi);
     
     if (ratios && ratios.length > 0) {
@@ -16706,6 +17032,7 @@ export const getConversionFactor = (packagingStr) => {
     
     return 1;
 };
+
 
 
 
@@ -16792,6 +17119,9 @@ export default App;
 
 /// src/constants.js
 
+// Danh sÃ¡ch cÃ¡c Team chÃ­nh cá»§a há»‡ thá»‘ng
+export const TEAM_OPTIONS = ["MED", "BIO"];
+
 // <-- THÃŠM Má»šI: Háº±ng sá»‘ dÃ¹ng chung cho viá»‡c phÃ¢n trang
 export const PAGE_SIZE = 15;
 
@@ -16800,6 +17130,25 @@ export const TEMP_OPTIONS = ["Nhiá»‡t Ä‘á»™ phÃ²ng", "2 â†’ 8�
 export const MANUFACTURER_OPTIONS = ["Becton Dickinson", "Smiths Medical", "DentaLife", "Schulke", "Intra", "Rovers", "Corning", "Thermo Fisher", "Cytiva"];
 
 export const UNIT_OPTIONS = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»ng", "Lá»", "Sá»£i", "CÃ¢y", "Can", "TuÃ½p", "Bá»™", "MÃ¡ng", "GÃ³i", "Khay"];
+
+// THÃŠM ÄOáº N MÃƒ NÃ€Y VÃ€O CUá»I FILE
+export const SUBGROUP_OPTIONS = [
+    "BD BDB",
+    "BD DS",
+    "BD MDS",
+    "BD SM",
+    "BD BDC",
+    "BD BDI",
+    "CVC",
+    "DentaLife",
+    "Schulke",
+    "Smiths Medical",
+    "Rovers",
+    "Spare Part",
+    "Gojo",
+    "Purell",
+    "KHÃC",
+];
 
 
 
@@ -16854,6 +17203,7 @@ body {
 * {
   box-sizing: border-box;
 }
+
 
 
 

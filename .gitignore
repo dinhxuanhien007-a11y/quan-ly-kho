@@ -27,3 +27,6 @@ dist-ssr
 
 # Service account keys
 scripts/serviceAccountKey.json
+
+# Firebase Admin SDK key
+serviceAccountKey.json

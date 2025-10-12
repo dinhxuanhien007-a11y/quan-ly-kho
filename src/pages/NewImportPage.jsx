@@ -561,7 +561,7 @@ const NewImportPage = () => {
         Quy đổi: <strong>
             {/* LƯU Ý: LẤY ĐƠN VỊ VÀ KẾT QUẢ TỪ HÀM calculateCaseCount */}
             {formatNumber(calculateCaseCount(
-                Number(item.quantityToExport), 
+                Number(item.quantity), 
                 item.conversionFactor, 
                 item.unit
             ).value)}

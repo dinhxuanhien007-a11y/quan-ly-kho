@@ -129,7 +129,6 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
             <select value={team} onChange={(e) => setTeam(e.target.value)}>
               <option value="MED">MED</option>
               <option value="BIO">BIO</option>
-              <option value="Spare Part">Spare Part</option>
             </select>
           </div>
           <div className="modal-actions">

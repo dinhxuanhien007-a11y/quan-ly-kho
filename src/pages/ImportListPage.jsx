@@ -120,8 +120,8 @@ const handleConfirmImport = async (slipToConfirm) => {
                     unit: item.unit,
                     packaging: item.packaging,
                     storageTemp: item.storageTemp,
-                    team: item.team,
-                    manufacturer: item.manufacturer,
+                    team: item.team || '', // Thêm fallback cho chắc chắn
+    manufacturer: item.manufacturer || '', // Thêm '|| ''' để cung cấp giá trị mặc định
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,

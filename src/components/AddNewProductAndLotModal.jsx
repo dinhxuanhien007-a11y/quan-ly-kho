@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
-import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS } from '../constants';
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS, ALL_SUBGROUPS } from '../constants';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { addProduct } from '../services/productService';
 
@@ -12,6 +12,7 @@ const productAndLotSchema = z.object({
   lotNumber: z.string().min(1, { message: "Số lô không được để trống." }),
   unit: z.string().min(1, { message: "Đơn vị tính không được để trống." }),
   team: z.string().min(1, { message: "Bạn phải chọn một team." }),
+  subGroup: z.string().min(1, { message: "Bạn phải chọn một nhóm hàng." }),
 });
 
 const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
@@ -24,12 +25,13 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
     const [manufacturer, setManufacturer] = useState('');
     const [team, setTeam] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [subGroup, setSubGroup] = useState('');
     const formRef = useRef(null);
 
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
 
-        const formData = { productName, lotNumber, unit, team };
+        const formData = { productName, lotNumber, unit, team, subGroup };
         const validationResult = productAndLotSchema.safeParse(formData);
 
         if (!validationResult.success) {
@@ -39,7 +41,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
         
         setIsSaving(true);
         const newProductData = {
-            productName, unit, packaging, storageTemp, manufacturer, team,
+            productName, unit, packaging, storageTemp, manufacturer, team, subGroup,
         };
 
         try {
@@ -88,9 +90,15 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                                   <option value="" disabled>-- Chọn team --</option>
                                   <option value="MED">MED</option>
                                   <option value="BIO">BIO</option>
-                                  <option value="Spare Part">Spare Part</option>
                               </select>
                           </div>
+                          <div className="form-group">
+                      <label>Nhóm hàng (*)</label>
+                      <select value={subGroup} onChange={(e) => setSubGroup(e.target.value)}>
+                          <option value="" disabled>-- Chọn nhóm hàng --</option>
+                          {ALL_SUBGROUPS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                  </div>
                       </div>
                       <div className="form-row">
                           <div className="form-group">

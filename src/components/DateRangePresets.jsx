@@ -1,54 +1,57 @@
 // src/components/DateRangePresets.jsx
 import React from 'react';
 
-// THAY ĐỔI 1: Cải thiện hàm formatDate để an toàn hơn
-// Hàm này sẽ kiểm tra ngày có hợp lệ không trước khi định dạng
-const formatDate = (date) => {
-    // Kiểm tra xem date có phải là một đối tượng Date hợp lệ không
+// === BẮT ĐẦU SỬA LỖI TẠI ĐÂY ===
+/**
+ * Định dạng đối tượng Date thành chuỗi YYYY-MM-DD an toàn với múi giờ.
+ * Hàm này sẽ lấy các thành phần (năm, tháng, ngày) dựa trên giờ địa phương,
+ * tránh lỗi bị lùi ngày do chuyển đổi sang UTC.
+ */
+const formatDateForInput = (date) => {
     if (date instanceof Date && !isNaN(date)) {
-        return date.toISOString().split('T')[0];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     // Trả về chuỗi rỗng nếu ngày không hợp lệ để tránh lỗi
     return ''; 
 };
+// === KẾT THÚC SỬA LỖI ===
 
 const DateRangePresets = ({ onPresetSelect }) => {
-    
-    // THAY ĐỔI 2: Xóa 'const today = new Date();' khỏi đây
 
     const presets = {
         'Hôm nay': () => {
-            // Luôn tạo một đối tượng Date mới trong mỗi hàm
             const today = new Date();
-            const todayStr = formatDate(today);
+            const todayStr = formatDateForInput(today); // <-- SỬ DỤNG HÀM MỚI
             onPresetSelect(todayStr, todayStr);
         },
         '7 ngày qua': () => {
             const today = new Date();
-            const endDate = formatDate(today);
-            // Tạo một đối tượng Date khác để tính toán, không làm thay đổi 'today'
+            const endDate = formatDateForInput(today); // <-- SỬ DỤNG HÀM MỚI
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(today.getDate() - 6);
-            const startDate = formatDate(sevenDaysAgo);
+            const startDate = formatDateForInput(sevenDaysAgo); // <-- SỬ DỤNG HÀM MỚI
             onPresetSelect(startDate, endDate);
         },
         'Tháng này': () => {
             const today = new Date();
-            const startDate = formatDate(new Date(today.getFullYear(), today.getMonth(), 1));
-            const endDate = formatDate(today);
+            const startDate = formatDateForInput(new Date(today.getFullYear(), today.getMonth(), 1)); // <-- SỬ DỤNG HÀM MỚI
+            const endDate = formatDateForInput(today); // <-- SỬ DỤNG HÀM MỚI
             onPresetSelect(startDate, endDate);
         },
         'Tháng trước': () => {
             const today = new Date();
             const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            const startDate = formatDate(prevMonth);
-            const endDate = formatDate(new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0));
+            const startDate = formatDateForInput(prevMonth); // <-- SỬ DỤNG HÀM MỚI
+            const endDate = formatDateForInput(new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)); // <-- SỬ DỤNG HÀM MỚI
             onPresetSelect(startDate, endDate);
         },
         'Năm nay': () => {
             const today = new Date();
-            const startDate = formatDate(new Date(today.getFullYear(), 0, 1));
-            const endDate = formatDate(today);
+            const startDate = formatDateForInput(new Date(today.getFullYear(), 0, 1)); // <-- SỬ DỤNG HÀM MỚI
+            const endDate = formatDateForInput(today); // <-- SỬ DỤNG HÀM MỚI
             onPresetSelect(startDate, endDate);
         }
     };

@@ -91,6 +91,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
             currentItem.productName = productData.productName;
             currentItem.unit = productData.unit;
             currentItem.packaging = productData.packaging;
+            currentItem.team = productData.team;
 
             const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
             const lotsSnapshot = await getDocs(lotsQuery);
@@ -265,7 +266,7 @@ const EditExportSlipModal = ({ slip, onClose, onSave }) => {
                                                 <option value="">-- Chọn lô --</option>
                                                 {item.availableLots.map(lot => (
                                                     <option key={lot.id} value={lot.id}>
-                                                        {`${getExpiryStatusPrefix(lot.expiryDate)}Lô: ${lot.lotNumber || '(Trống)'} | Tồn: ${formatNumber(lot.quantityRemaining)}`}
+                                                        {`${getExpiryStatusPrefix(lot.expiryDate, lot.subGroup)}Lô: ${lot.lotNumber || '(Trống)'} | Tồn: ${formatNumber(lot.quantityRemaining)}`}
                                                     </option>
                                                 ))}
                                             </select>

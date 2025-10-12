@@ -22,45 +22,59 @@ import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 
 const InventoryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
-    const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all' });
+    const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all', subGroup: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    const baseQuery = useMemo(() => {
-    // --- BẮT ĐẦU THAY ĐỔI ---
-    // Quay lại truy vấn gốc, chỉ sắp xếp theo Mã hàng và Ngày nhập
-    let q = query(
-        collection(db, "inventory_lots"),
-        where("quantityRemaining", ">", 0),
-        orderBy("productId", "asc"),
-        orderBy("importDate", "asc")
-    );
-    // --- KẾT THÚC THAY ĐỔI ---
+    // src/pages/InventoryPage.jsx
 
-    // Các bộ lọc phụ vẫn giữ nguyên
+// src/pages/InventoryPage.jsx
+
+// src/pages/InventoryPage.jsx
+
+const baseQuery = useMemo(() => {
+    const baseCollection = collection(db, "inventory_lots");
+    let constraints = [where("quantityRemaining", ">", 0)];
+
+    // --- LOGIC ĐÃ SỬA ---
+    // 1. Áp dụng các bộ lọc bằng nhau (equality filters)
     if (userRole === 'med') {
-        q = query(q, where("team", "==", "MED"));
+        constraints.push(where("team", "==", "MED"));
     } else if (userRole === 'bio') {
-        q = query(q, where("team", "in", ["BIO", "Spare Part"]));
-    }
+    constraints.push(where("team", "==", "BIO"));
+}
 
     if (filters.team !== 'all') {
-        q = query(q, where("team", "==", filters.team));
+        constraints.push(where("team", "==", filters.team));
     }
+    // === CHÈN ĐOẠN MÃ MỚI VÀO ĐÂY ===
+if (filters.subGroup && filters.subGroup !== 'all') {
+    constraints.push(where("subGroup", "==", filters.subGroup));
+}
 
+    // 2. Áp dụng bộ lọc khoảng và sắp xếp tương ứng
     if (filters.dateStatus === 'expired') {
-        q = query(q, where("expiryDate", "<", Timestamp.now()));
+        constraints.push(where("expiryDate", "<", Timestamp.now()));
+        constraints.push(orderBy("expiryDate", "desc"));
+        constraints.push(orderBy("productId", "asc")); 
     } else if (filters.dateStatus === 'near_expiry') {
         const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 120);
-        q = query(q, where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
-    }
-    
-    if (searchTerm) {
+        futureDate.setDate(futureDate.getDate() + 210);
+        constraints.push(where("expiryDate", ">=", Timestamp.now()));
+        constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+        constraints.push(orderBy("expiryDate", "asc")); 
+        constraints.push(orderBy("productId", "asc"));
+    } else if (searchTerm) {
         const upperSearchTerm = searchTerm.toUpperCase();
-        q = query(q, where("productId", ">=", upperSearchTerm), where("productId", "<=", upperSearchTerm + '\uf8ff'));
+        constraints.push(where("productId", ">=", upperSearchTerm));
+        constraints.push(where("productId", "<=", upperSearchTerm + '\uf8ff'));
+        constraints.push(orderBy("productId", "asc"));
+    } else {
+        // Sắp xếp mặc định
+        constraints.push(orderBy("productId", "asc"), orderBy("importDate", "asc"));
     }
-    return q;
+
+    return query(baseCollection, ...constraints);
 }, [userRole, filters, searchTerm]);
 
     const {
@@ -74,6 +88,20 @@ const InventoryPage = ({ pageTitle }) => {
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+
+    // src/pages/InventoryPage.jsx
+
+const filteredInventory = useMemo(() => {
+    if (filters.dateStatus !== 'near_expiry') {
+        return inventory; // Trả về danh sách gốc nếu không lọc cận date
+    }
+    // Lọc lại danh sách đã lấy về từ server
+    return inventory.filter(lot => {
+        const colorClass = getRowColorByExpiry(lot.expiryDate, lot.subGroup);
+        // Chỉ giữ lại những item nào thực sự có màu cảnh báo
+        return colorClass.includes('near-expiry') || colorClass.includes('expired');
+    });
+}, [inventory, filters.dateStatus]);
 
     // <-- THÊM HÀM XỬ LÝ REFRESH NÀY
     const handleRefresh = () => {
@@ -132,15 +160,17 @@ const InventoryPage = ({ pageTitle }) => {
                                     <th>SL Còn lại</th>
                                     <th>Ghi chú</th>
                                     <th>Nhiệt độ BQ</th>
+                                    <th>Hãng sản xuất</th>
+                                    <th>Nhóm Hàng</th>
                                     <th>Team</th>
                                 </tr>
                             </thead>
                             <tbody className="inventory-table-body">
-                                {inventory.map(lot => (
+    {filteredInventory.map(lot => (
                                     <tr 
                                         key={lot.id} 
                                         onClick={() => handleRowClick(lot.id)}
-                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate)}`}
+                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate, lot.subGroup)}`}
                                     >
                                         <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
                                         <td data-label="Mã hàng">{lot.productId}</td>
@@ -153,6 +183,8 @@ const InventoryPage = ({ pageTitle }) => {
                                         <td data-label="SL Còn lại">{formatNumber(lot.quantityRemaining)}</td>
                                         <td data-label="Ghi chú">{lot.notes}</td>
                                         <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
+                                        <td data-label="Hãng sản xuất">{lot.manufacturer}</td>
+                                        <td data-label="Nhóm Hàng">{lot.subGroup}</td>
                                         <td data-label="Team"><TeamBadge team={lot.team} /></td>
                                     </tr>
                                 ))}

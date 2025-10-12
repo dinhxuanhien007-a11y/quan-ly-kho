@@ -136,7 +136,7 @@ const handleConfirmExport = async (slip) => {
         
         await batch.commit();
 
-      toast.success('Xác nhận xuất kho thÃ nh cÃ´ng!');
+      toast.success('Xác nhận xuất kho thành công!');
       reset();
     } catch (error) {
       console.error("Lỗi khi xác nhận xuất kho: ", error);

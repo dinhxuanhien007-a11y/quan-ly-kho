@@ -1,5 +1,5 @@
 // src/components/FloatingToolsModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FloatingCalculator from './FloatingCalculator'; // Component máy tính cũ
 import QuickStockLookup from './QuickStockLookup'; // Component tra cứu mới
 import { FiTool, FiSearch, FiX } from 'react-icons/fi';
@@ -7,6 +7,25 @@ import styles from './FloatingToolsModal.module.css';
 
 const FloatingToolsModal = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('lookup');
+
+  // --- THÊM MỚI TẠI ĐÂY ---
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Đóng modal khi bấm phím Escape
+      if (event.key === 'Escape') {
+        onClose();
+      }
+      // Chuyển tab qua lại khi bấm phím Tab
+      else if (event.key === 'Tab') {
+        event.preventDefault(); // Ngăn hành vi mặc định của phím Tab
+        setActiveTab(prevTab => (prevTab === 'lookup' ? 'calculator' : 'lookup'));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]); // Phụ thuộc vào onClose
+  // ------------------------
 
   return (
     <div className={styles.modalBackdrop}>

@@ -1,6 +1,6 @@
 // src/components/AdminLayout.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
@@ -24,26 +24,41 @@ import ViewerLayout from './ViewerLayout';
 import { useAuth } from '../context/UserContext';
 import FloatingToolsModal from './FloatingToolsModal'; 
 import { FiGrid } from 'react-icons/fi';
-import SalesAnalyticsPage from '../pages/SalesAnalyticsPage'; // Thêm import
+import SalesAnalyticsPage from '../pages/SalesAnalyticsPage';
 import ProductLedgerPage from '../pages/ProductLedgerPage';
 import { usePresence } from '../hooks/usePresence';
 
 const AdminLayout = () => {
   const location = useLocation();
-  const { role, user } = useAuth(); // Lấy cả `role` và `user`
-  
-  usePresence(); // <-- Gọi hook mới ở đây để báo trạng thái online
-  
+  const { role, user } = useAuth();
+
+  usePresence();
+
+  // === BƯỚC 1: DI CHUYỂN CÁC STATE VÀ HÀM LÊN TRÊN ===
   const [isToolsModalVisible, setIsToolsModalVisible] = useState(false);
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
-  // HÀM MỚI: TẠO CHỨC NĂNG CHUYỂN ĐỔI (TOGGLE)
   const toggleToolsModal = () => {
     setIsToolsModalVisible(prev => !prev);
   };
   const toggleCalculator = () => {
     setIsCalculatorVisible(prev => !prev);
   };
+  // =======================================================
+
+  // === BƯỚC 2: ĐẶT useEffect Ở DƯỚI SAU KHI CÁC HÀM ĐÃ ĐƯỢC ĐỊNH NGHĨA ===
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'F2') {
+        event.preventDefault();
+        toggleToolsModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleToolsModal]); 
+  // =======================================================================
 
   return (
     <div className="admin-layout-horizontal">
@@ -54,14 +69,10 @@ const AdminLayout = () => {
         {location.pathname === '/new-import' && <ImportSlipCounter />}
 
         <Routes>
-          {/* TỰ ĐỘNG CHUYỂN HƯỚNG TỪ TRANG GỐC SANG DASHBOARD */}
-  <Route path="/" element={<Navigate to="/dashboard" />} />
-  
-  {/* ĐỊNH NGHĨA LẠI ĐƯỜNG DẪN CỤ THỂ CHO DASHBOARD */}
-  <Route path="/dashboard" element={<DashboardPage />} />
-
-  <Route path="/view" element={<ViewerLayout />} />
-  <Route path="/products" element={<ProductsPage />} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/view" element={<ViewerLayout />} />
+          <Route path="/products" element={<ProductsPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/new-import" element={<NewImportPage />} />
           <Route path="/new-export" element={<NewExportPage />} />
@@ -72,24 +83,24 @@ const AdminLayout = () => {
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
           <Route path="/users" element={<UsersPage />} />
-          <Route path="/sales-analytics" element={<SalesAnalyticsPage />} /> // Thêm route mới
-          <Route path="/product-ledger" element={<ProductLedgerPage />} /> {/* THÊM DÒNG NÀY */}
+          <Route path="/sales-analytics" element={<SalesAnalyticsPage />} />
+          <Route path="/product-ledger" element={<ProductLedgerPage />} />
         </Routes>
       </main>
-      
+
       {role === 'owner' ? (
         <button 
           className="floating-toggle-btn" 
-          onClick={toggleToolsModal} // SỬ DỤNG HÀM MỚI
-          title="Mở công cụ nhanh"
+          onClick={toggleToolsModal}
+          title="Mở công cụ nhanh (F2)"
         >
           <FiGrid />
         </button>
       ) : (
         <button 
           className="floating-toggle-btn" 
-          onClick={toggleCalculator} // SỬ DỤNG HÀM MỚI
-          title="Mở máy tính (Có thể dùng bàn phím)"
+          onClick={toggleCalculator}
+          title="Mở máy tính (F2)"
         >
           <MdCalculate />
         </button>
@@ -98,7 +109,7 @@ const AdminLayout = () => {
       {isToolsModalVisible && role === 'owner' && (
         <FloatingToolsModal onClose={toggleToolsModal} />
       )}
-      
+
       {isCalculatorVisible && role !== 'owner' && (
         <FloatingCalculator onClose={toggleCalculator} />
       )}

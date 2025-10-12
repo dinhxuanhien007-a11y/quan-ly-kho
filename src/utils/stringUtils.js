@@ -59,8 +59,8 @@ export const convertVietnameseWordsToNumbers = (str) => {
 export const getConversionFactor = (packagingStr) => {
     if (!packagingStr || packagingStr.toUpperCase() === "N/A") return 1;
 
-    // TÌM CẶP TỶ LỆ DỄ ĐỌC NHẤT Ở CUỐI CHUỖI: vd: "100 Lọ/ Hộp" HOẶC "50 Chai/ Thùng"
-    // Regex tìm: (SỐ) [ĐVT] / [ĐVT]
+    // TÌM CẶP TỶ LỆ DỄ ĐỌC NHẤT Ở CUỐI CHUỖI: vd: "100 Lọ / Hộp" HOẶC "50 Chai/ Thùng"
+    // Regex tìm: (Số) [ĐVT] / [ĐVT]
     const ratios = packagingStr.match(/(\d+(\.\d+)?)\s*\w+\s*\/\s*\w+/gi);
     
     if (ratios && ratios.length > 0) {

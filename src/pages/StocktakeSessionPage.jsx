@@ -514,7 +514,7 @@ const StocktakeSessionPage = () => {
                             <thead>
                                  <tr>
                                     <th>Mã hàng</th><th>Tên hàng</th><th>Số lô</th>
-                                    <th>HSD</th><th>ĐVT</th><th>Quy cách</th><th>Tồn hệ thống</th><th>Tồn thực tế</th>
+                                    <th>HSD</th><th>ĐVT</th><th>Quy cách</th><th>Tồn hệ thống</th><th>Tồn thực tế</th><th>Nhóm hàng</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -528,8 +528,9 @@ const StocktakeSessionPage = () => {
                                         <td>{item.packaging}</td>
                                         <td>{item.systemQty}</td>
                                         <td>
-                                            <CountInput item={item} onCountSubmit={handleCountSubmit} />
-                                        </td>
+    <CountInput item={item} onCountSubmit={handleCountSubmit} />
+</td>
+<td>{item.subGroup}</td>
                                     </tr>
                                 ))}
                             </tbody>

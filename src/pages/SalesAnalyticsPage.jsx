@@ -9,12 +9,15 @@ import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import Spinner from '../components/Spinner';
 import { toast } from 'react-toastify';
-import { FiCalendar, FiArrowUp, FiArrowDown, FiXCircle } from 'react-icons/fi';
+// === BẮT ĐẦU SỬA LỖI TẠI ĐÂY ===
+import { FiCalendar, FiArrowUp, FiArrowDown, FiXCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+// === KẾT THÚC SỬA LỖI ===
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import { getElementAtEvent } from 'react-chartjs-2';
+import { TEAM_OPTIONS } from '../constants';
 
 // Đăng ký các thành phần của ChartJS
 ChartJS.register(
@@ -37,30 +40,23 @@ const SalesAnalyticsPage = () => {
         customerId: '',
         customerName: '',
         productId: '',
-        team: 'all'
     });
     const [results, setResults] = useState([]);
     const [summary, setSummary] = useState({ totalQuantity: 0, totalSlips: 0 });
     const [loading, setLoading] = useState(false);
     const chartRef = useRef();
 
-    // NÂNG CẤP 1: STATE CHO TƯƠNG TÁC SÂU (DRILL-DOWN)
     const [drillDownFilter, setDrillDownFilter] = useState({ type: null, value: null });
-
-    // NÂNG CẤP 2: STATE CHO TÙY CHỈNH TOP N
     const [topN, setTopN] = useState(5);
-
-    // NÂNG CẤP 3: STATE CHO PHÂN TRANG BẢNG DỮ LIỆU
     const [currentPage, setCurrentPage] = useState(1);
     const ROWS_PER_PAGE = 20;
 
-    // Lấy danh sách khách hàng (không đổi)
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
                 const q = query(collection(db, "partners"), where("partnerType", "==", "customer"));
                 const querySnapshot = await getDocs(q);
-                const customerList = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().partnerName }));
+                // Dòng này không cần thiết vì autocomplete đã tự xử lý
             } catch (error) {
                 console.error("Lỗi khi tải danh sách khách hàng:", error);
                 toast.error("Không thể tải danh sách khách hàng.");
@@ -69,7 +65,6 @@ const SalesAnalyticsPage = () => {
         fetchCustomers();
     }, []);
     
-    // NÂNG CẤP 1: XỬ LÝ DỮ LIỆU SAU KHI ĐÃ LỌC DRILL-DOWN (NẾU CÓ)
     const filteredResults = useMemo(() => {
         if (!drillDownFilter.value) {
             return results;
@@ -80,7 +75,6 @@ const SalesAnalyticsPage = () => {
         return results;
     }, [results, drillDownFilter]);
 
-    // === CÁC HÀM TÍNH TOÁN DỮ LIỆU (useMemo) ===
     const topStats = useMemo(() => {
         if (!filteredResults || filteredResults.length === 0) return { topCustomers: [], topProducts: [] };
         
@@ -90,7 +84,7 @@ const SalesAnalyticsPage = () => {
         }, {});
         const topCustomers = Object.entries(salesByCustomer)
             .sort(([, qtyA], [, qtyB]) => qtyB - qtyA)
-            .slice(0, topN) // NÂNG CẤP 2: Sử dụng topN
+            .slice(0, topN)
             .map(([name, quantity]) => ({ name, quantity }));
 
         const salesByProduct = filteredResults.reduce((acc, row) => {
@@ -102,7 +96,7 @@ const SalesAnalyticsPage = () => {
         }, {});
         const topProducts = Object.entries(salesByProduct)
             .sort(([, dataA], [, dataB]) => dataB.quantity - dataA.quantity)
-            .slice(0, topN) // NÂNG CẤP 2: Sử dụng topN
+            .slice(0, topN)
             .map(([name, data]) => ({ name, ...data }));
 
         return { topCustomers, topProducts };
@@ -185,7 +179,7 @@ const SalesAnalyticsPage = () => {
             direction = 'descending';
         }
         setSortConfig({ key, direction });
-        setCurrentPage(1); // Reset về trang 1 khi sắp xếp
+        setCurrentPage(1);
     };
 
     const SortIndicator = ({ columnKey }) => {
@@ -206,7 +200,7 @@ const SalesAnalyticsPage = () => {
                 borderWidth: 1
             }]
         };
-    }, [topStats.topProducts]);
+    }, [topStats.topProducts, topN]);
 
     const barChartOptions = {
         indexAxis: 'y',
@@ -302,19 +296,11 @@ const SalesAnalyticsPage = () => {
                     <div className="form-group" style={{flex: 1.5}}>
                         <label>Sản phẩm (Tùy chọn)</label>
                         <ProductAutocomplete
-                            value={filters.productId}
-                            onSelect={(product) => setFilters(prev => ({ ...prev, productId: product.id }))}
-                            onChange={(value) => setFilters(prev => ({ ...prev, productId: value }))}
-                        />
-                    </div>
-                    <div className="form-group" style={{flex: 1}}>
-                        <label>Team (Tùy chọn)</label>
-                        <select name="team" value={filters.team} onChange={handleFilterChange}>
-                            <option value="all">Tất cả Team</option>
-                            <option value="MED">MED</option>
-                            <option value="BIO">BIO</option>
-                            <option value="Spare Part">Spare Part</option>
-                        </select>
+    value={filters.productId}
+    onSelect={(product) => setFilters(prev => ({ ...prev, productId: product.id }))}
+    onChange={(value) => setFilters(prev => ({ ...prev, productId: value }))}
+    onEnterPress={() => handleSearch(filters)}
+/>
                     </div>
                 </div>
                 <div className="page-actions" style={{ justifyContent: 'flex-start', marginTop: '15px' }}>

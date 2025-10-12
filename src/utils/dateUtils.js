@@ -1,32 +1,23 @@
+import { SPECIAL_EXPIRY_SUBGROUPS } from '../constants'; // <-- THÊM DÒNG NÀY VÀO ĐẦU FILE
+
 // src/utils/dateUtils.js
 
 /**
  * Chuyển đổi một đối tượng Firebase Timestamp hoặc Date thành chuỗi dd/mm/yyyy.
- * @param {object | Date} dateOrTimestamp - Đối tượng Timestamp của Firebase hoặc đối tượng Date.
- * @returns {string} - Chuỗi ngày tháng đã định dạng hoặc 'N/A'.
  */
 export const formatDate = (dateOrTimestamp) => {
-  // --- BẮT ĐẦU NÂNG CẤP ---
   let date;
-
-  // Kiểm tra xem có phải là Timestamp của Firebase không và chuyển đổi nó
   if (dateOrTimestamp && typeof dateOrTimestamp.toDate === 'function') {
     date = dateOrTimestamp.toDate();
-  }
-  // Nếu không, kiểm tra xem nó có phải là một đối tượng Date của JavaScript không
-  else if (dateOrTimestamp instanceof Date) {
+  } else if (dateOrTimestamp instanceof Date) {
     date = dateOrTimestamp;
-  }
-  // Nếu không phải cả hai, chúng ta không thể định dạng nó
-  else {
+  } else {
     return 'N/A';
   }
 
-  // Đảm bảo chúng ta có một ngày hợp lệ trước khi tiếp tục
   if (isNaN(date.getTime())) {
       return 'N/A';
   }
-  // --- KẾT THÚC NÂNG CẤP ---
 
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -36,8 +27,6 @@ export const formatDate = (dateOrTimestamp) => {
 
 /**
  * Chuyển đổi một chuỗi dd/mm/yyyy thành đối tượng Date.
- * @param {string} dateString - Chuỗi ngày tháng theo định dạng dd/mm/yyyy.
- * @returns {Date | null} - Đối tượng Date hoặc null nếu định dạng sai.
  */
 export const parseDateString = (dateString) => {
   if (!dateString) return null;
@@ -47,7 +36,7 @@ export const parseDateString = (dateString) => {
     const [day, month, year] = parts;
     const dateObj = new Date(year, month - 1, day);
     if (dateObj.getFullYear() != year || dateObj.getMonth() != month - 1 || dateObj.getDate() != day) {
-      return null;
+       return null;
     }
     return dateObj;
   } catch (error) {
@@ -58,8 +47,6 @@ export const parseDateString = (dateString) => {
 
 /**
  * Định dạng một chuỗi số thành định dạng ngày dd/mm/yyyy khi người dùng gõ.
- * @param {string} value - Giá trị từ ô input.
- * @returns {string} - Chuỗi đã được định dạng.
  */
 export const formatExpiryDate = (value) => {
     if (!value) return '';
@@ -67,41 +54,44 @@ export const formatExpiryDate = (value) => {
     const truncatedDigits = digitsOnly.slice(0, 8);
     const len = truncatedDigits.length;
 
-    if (len <= 2) {
-        return truncatedDigits;
-    }
-    if (len <= 4) {
-        return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2)}`;
-    }
+    if (len <= 2) return truncatedDigits;
+    if (len <= 4) return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2)}`;
     return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2, 4)}/${truncatedDigits.slice(4)}`;
 };
 
 /**
- * Xác định class màu sắc cho một dòng dựa trên ngày hết hạn.
- * @param {object} expiryDate - Đối tượng Timestamp của Firebase.
- * @returns {string} - Tên class CSS tương ứng.
+ * PHIÊN BẢN MỚI: Xác định class màu sắc cho một dòng dựa trên ngày hết hạn và nhóm hàng.
  */
-export const getRowColorByExpiry = (expiryDate) => {
+export const getRowColorByExpiry = (expiryDate, subGroup) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const expDate = expiryDate.toDate();
+    expDate.setHours(0, 0, 0, 0);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return 'expired-black';
-    if (diffDays <= 60) return 'near-expiry-red';
-    if (diffDays <= 90) return 'near-expiry-orange';
-    if (diffDays <= 120) return 'near-expiry-yellow';
+
+    // --- SỬA LẠI TẠI ĐÂY ---
+    if (SPECIAL_EXPIRY_SUBGROUPS.includes(subGroup)) {
+        if (diffDays < 0) return 'expired-black';
+        if (diffDays <= 30) return 'near-expiry-red';
+        if (diffDays <= 60) return 'near-expiry-orange';
+        if (diffDays <= 90) return 'near-expiry-yellow';
+    } 
+    else {
+        if (diffDays < 0) return 'expired-black';
+        if (diffDays <= 70) return 'near-expiry-red';
+        if (diffDays <= 140) return 'near-expiry-orange';
+        if (diffDays <= 210) return 'near-expiry-yellow';
+    }
+
     return '';
 };
 
 /**
- * Trả về một chuỗi tiền tố cảnh báo dựa trên ngày hết hạn.
- * @param {object} expiryDate - Đối tượng Timestamp của Firebase.
- * @returns {string} - Chuỗi tiền tố cảnh báo (ví dụ: '⚠️ CẬN DATE - ').
+ * PHIÊN BẢN MỚI: Trả về một chuỗi tiền tố cảnh báo dựa trên ngày hết hạn và nhóm hàng.
  */
-export const getExpiryStatusPrefix = (expiryDate) => {
+export const getExpiryStatusPrefix = (expiryDate, subGroup) => {
   if (!expiryDate || !expiryDate.toDate) return '';
 
   const today = new Date();
@@ -111,6 +101,11 @@ export const getExpiryStatusPrefix = (expiryDate) => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) return '❌ - ';
-  if (diffDays <= 120) return '⚠️ - ';
+
+  // --- SỬA LẠI TẠI ĐÂY ---
+  const nearExpiryThreshold = SPECIAL_EXPIRY_SUBGROUPS.includes(subGroup) ? 90 : 210;
+
+  if (diffDays <= nearExpiryThreshold) return '⚠️ - ';
+
   return '';
 };

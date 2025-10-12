@@ -167,6 +167,12 @@ const QuickStockLookup = () => {
                 <strong>Team:</strong>
                 <p>{productData.generalInfo.team}</p>
               </div>
+              {/* --- THÊM MỚI TẠI ĐÂY --- */}
+<div className={styles.gridItem}>
+    <strong>Nhóm hàng:</strong>
+    <p>{productData.generalInfo.subGroup}</p>
+</div>
+{/* ------------------------- */}
               <div className={styles.gridItem} style={{gridColumn: '1 / -1'}}>
                 <strong>Tổng tồn:</strong>
                 <p style={{color: 'green', fontSize: '1.2rem', fontWeight: 'bold'}}>{formatNumber(productData.totalRemaining)} {productData.generalInfo.unit}</p>

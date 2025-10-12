@@ -70,6 +70,7 @@ useEffect(() => {
                 storageTemp: data.storageTemp || '',
                 team: data.team || '',
                 manufacturer: data.manufacturer || '',
+                subGroup: data.subGroup || '',
                 notes: data.notes || '',
                 lotId: doc.id,
                 systemQty: data.quantityRemaining || 0,

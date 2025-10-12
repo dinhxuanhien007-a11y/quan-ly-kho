@@ -1,3 +1,5 @@
+// src/components/TeamBarChart.jsx
+
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -14,13 +16,18 @@ const TeamBarChart = ({ chartData, isLoading }) => {
         },
     };
 
+    // --- LOGIC MỚI: Tự động tạo labels và data từ props ---
+    const labels = Object.keys(chartData);
+    const dataValues = Object.values(chartData);
+    // ----------------------------------------------------
+
     const data = {
-        labels: ['MED', 'BIO', 'Spare Part'],
+        labels: labels, // <-- Sử dụng labels động
         datasets: [
             {
                 label: 'Số SKU',
-                data: [chartData.MED, chartData.BIO, chartData['Spare Part']],
-                backgroundColor: ['#007bff', '#28a745', '#6c757d'],
+                data: dataValues, // <-- Sử dụng data động
+                backgroundColor: ['#007bff', '#28a745', '#6c757d'], // Giữ nguyên mảng màu
             },
         ],
     };

@@ -298,6 +298,7 @@ const handleLotSelection = (index, selectedLotId) => {
                     unit: item.unit,
                     packaging: item.packaging,
                     storageTemp: item.storageTemp || '',
+                    team: item.team,
                     quantityToExport: quantityFromThisLot,
                     notes: item.notes || ''
                 });
@@ -513,7 +514,7 @@ const handleLotSelection = (index, selectedLotId) => {
                                     }
                                     {item.availableLots.map(lot => (
     <option key={lot.id} value={lot.id}>
-        {`${getExpiryStatusPrefix(lot.expiryDate)}Lô: ${lot.lotNumber || '(Không có)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'} | Tồn: ${formatNumber(lot.availableQty)}`} 
+        {`${getExpiryStatusPrefix(lot.expiryDate, lot.subGroup)}Lô: ${lot.lotNumber || '(Không có)'} | HSD: ${lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'} | Tồn: ${formatNumber(lot.availableQty)}`} 
     </option>
 ))}
                                 </select>

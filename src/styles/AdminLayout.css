@@ -700,30 +700,49 @@ tbody tr.selected-row td {
     text-align: center;
 }
 
-/* ========================================================================= */
 /* === TÙY CHỈNH RIÊNG CHO TRANG CHI TIẾT KIỂM KÊ (StocktakeSessionPage) === */
-/* ========================================================================= */
 .stocktake-session-page-container .products-table {
     table-layout: fixed;
 }
-/* Cột 2 (Tên hàng) -> RỘNG RA */
+
+/* Cột 2 (Tên hàng) -> THU HẸP LẠI */
 .stocktake-session-page-container .products-table th:nth-child(2),
 .stocktake-session-page-container .products-table td:nth-child(2) {
-    width: 40%;
+    width: 30%; /* Giảm từ 40% xuống 30% */
     text-align: left;
     white-space: normal;
     word-break: break-word;
 }
-/* Cột 3 (Số lô) -> HẸP LẠI */
+
+/* Cột 3 (Số lô) -> Hơi hẹp lại một chút */
 .stocktake-session-page-container .products-table th:nth-child(3),
 .stocktake-session-page-container .products-table td:nth-child(3) {
+    width: 130px; /* Giảm từ 150px */
+}
+
+/* Cột 4 (HSD) -> RỘNG RA */
+.stocktake-session-page-container .products-table th:nth-child(4),
+.stocktake-session-page-container .products-table td:nth-child(4) {
+    width: 130px;
+}
+
+/* Cột 6 (Quy cách) -> RỘNG RA */
+.stocktake-session-page-container .products-table th:nth-child(6),
+.stocktake-session-page-container .products-table td:nth-child(6) {
     width: 150px;
-    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Cột 8 (Tồn thực tế) -> RỘNG RA */
+.stocktake-session-page-container .products-table th:nth-child(8),
+.stocktake-session-page-container .products-table td:nth-child(8) {
+    width: 150px;
 }
 
 .stocktake-session-page-container .products-table td:nth-child(8) input {
     width: 100%;
-    box-sizing: border-box; /* Đảm bảo padding không làm tràn input */
+    box-sizing: border-box; 
 }
 
 /* CSS MỚI: Cho màu nền của từng lô hàng con */
@@ -1368,6 +1387,65 @@ tbody tr.selected-row td {
 .react-datepicker__input-container input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* --- CSS CHO BỘ LỌC DROPDOWN --- */
+.dropdown-filter {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-filter > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #adb5bd;
+  color: #495057;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dropdown-filter > button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.dropdown-content {
+  display: block;
+  position: absolute;
+  background-color: #ffffff;
+  min-width: 220px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 10;
+  border-radius: 8px;
+  padding: 8px 0;
+  margin-top: 5px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+}
+
+.dropdown-content button {
+  color: black;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-weight: normal;
+  border-radius: 0;
+  font-size: 14px;
+}
+
+.dropdown-content button:hover {
+  background-color: #f1f1f1;
 }
 
 /* --- CSS CHO GIAO DIỆN RESPONSIVE TRÊN DI ĐỘNG --- */

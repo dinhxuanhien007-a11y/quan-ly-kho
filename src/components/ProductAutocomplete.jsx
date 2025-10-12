@@ -9,7 +9,7 @@ import styles from './Autocomplete.module.css';
 import { FiChevronDown } from 'react-icons/fi';
 
 // --- BẮT ĐẦU THAY ĐỔI 2: Bọc component bằng forwardRef ---
-const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange }, ref) => {
+const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange, onEnterPress }, ref) => {
     const [inputValue, setInputValue] = useState(value);
     const [suggestions, setSuggestions] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
@@ -119,13 +119,21 @@ const ProductAutocomplete = forwardRef(({ value, onSelect, onBlur, onChange }, r
                 e.preventDefault();
                 setActiveIndex(prevIndex => (prevIndex - 1 + suggestions.length) % suggestions.length);
             } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (activeIndex >= 0) {
-                    handleSuggestionClick(suggestions[activeIndex]);
-                } else {
-                    if (onBlur) onBlur();
-                    setShowSuggestions(false);
-                }
+    e.preventDefault();
+    if (activeIndex >= 0) {
+        // Nếu đang chọn một gợi ý, thì hoàn tất việc chọn
+        handleSuggestionClick(suggestions[activeIndex]);
+    } else {
+        // Ngược lại, nếu không có gợi ý nào được chọn...
+        if (onEnterPress) {
+            // Ưu tiên chạy hàm onEnterPress nếu có (dành cho trang Báo cáo)
+            onEnterPress();
+        } else if (onBlur) {
+            // Nếu không, quay về hành vi cũ là kích hoạt onBlur (dành cho trang Nhập/Xuất)
+            onBlur();
+        }
+        setShowSuggestions(false); // Luôn ẩn danh sách gợi ý sau khi nhấn Enter
+    }
             } else if (e.key === 'Escape') {
                 setShowSuggestions(false);
             }

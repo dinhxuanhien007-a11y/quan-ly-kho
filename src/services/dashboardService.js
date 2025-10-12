@@ -2,8 +2,8 @@
 import { collection, getDocs, query, where, orderBy, limit, Timestamp, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { formatDate, parseDateString } from '../utils/dateUtils';
-
-// --- BẮT ĐẦU THÊM LẠI CÁC HÀM BỊ THIẾU ---
+import { ALL_SUBGROUPS, TEAM_OPTIONS, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
+// --- BẮT ĐẦU BỔ SUNG CÁC HÀM BỊ THIẾU ---
 
 /**
  * Lấy danh sách các phiếu nhập đang ở trạng thái "pending".
@@ -33,41 +33,61 @@ export const getPendingExportTickets = async () => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-// --- KẾT THÚC PHẦN THÊM LẠI ---
+// --- KẾT THÚC PHẦN BỔ SUNG ---
 
 
-/**
- * Lấy các thống kê nhanh cho Dashboard.
- */
+// src/services/dashboardService.js
+
 export const getDashboardStats = async () => {
-    // 1. Đếm số lô sắp hết hạn (trong 120 ngày tới)
     const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + 120);
-    const nearExpiryQuery = query(
-        collection(db, "inventory_lots"),
-        where("expiryDate", ">=", Timestamp.now()),
-        where("expiryDate", "<=", Timestamp.fromDate(futureDate))
-    );
-    const nearExpirySnap = await getCountFromServer(nearExpiryQuery);
 
-    // 2. Đếm số lô đã hết hạn
+    // --- LOGIC MỚI ĐỂ ĐẾM HÀNG CẬN DATE ---
+    // 1. Đếm cho các nhóm đặc biệt (BD BDB, BD DS) với ngưỡng 90 ngày
+    const specialGroups = SPECIAL_EXPIRY_SUBGROUPS;
+    const specialFutureDate = new Date();
+    specialFutureDate.setDate(today.getDate() + 90);
+    const specialNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", specialGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(specialFutureDate))
+    );
+
+    // 2. Đếm cho các nhóm còn lại với ngưỡng 210 ngày
+    const otherGroups = ALL_SUBGROUPS.filter(group => !specialGroups.includes(group));
+    const otherFutureDate = new Date();
+    otherFutureDate.setDate(today.getDate() + 210);
+    const otherNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", otherGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(otherFutureDate))
+    );
+
+    // 3. Đếm số lô đã hết hạn (giữ nguyên)
     const expiredQuery = query(
         collection(db, "inventory_lots"),
         where("expiryDate", "<", Timestamp.now())
     );
-    const expiredSnap = await getCountFromServer(expiredQuery);
 
-    // 3. Đếm tổng số mã hàng (SKU)
+    // Các truy vấn khác giữ nguyên
     const productsQuery = query(collection(db, "products"));
-    const productsSnap = await getCountFromServer(productsQuery);
-    
-    // 4. Đếm tổng số đối tác
     const partnersQuery = query(collection(db, "partners"));
-    const partnersSnap = await getCountFromServer(partnersQuery);
+
+    // Thực thi tất cả các truy vấn cùng lúc
+    const [specialSnap, otherSnap, expiredSnap, productsSnap, partnersSnap] = await Promise.all([
+        getCountFromServer(specialNearExpiryQuery),
+        getCountFromServer(otherNearExpiryQuery),
+        getCountFromServer(expiredQuery),
+        getCountFromServer(productsQuery),
+        getCountFromServer(partnersQuery),
+    ]);
+
+    // Cộng dồn kết quả đếm cận date
+    const nearExpiryCount = specialSnap.data().count + otherSnap.data().count;
 
     return {
-        nearExpiryCount: nearExpirySnap.data().count,
+        nearExpiryCount: nearExpiryCount,
         expiredCount: expiredSnap.data().count,
         skuCount: productsSnap.data().count,
         partnerCount: partnersSnap.data().count,
@@ -102,42 +122,76 @@ export const getRecentCompletedExports = async (count = 5) => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-/**
- * Lấy dữ liệu cho các biểu đồ.
- */
-export const getChartData = async () => {
-    // 1. Dữ liệu cho biểu đồ HSD
-    const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + 120);
+// src/services/dashboardService.js
 
-    const safeQuery = query(collection(db, "inventory_lots"), where("expiryDate", ">", Timestamp.fromDate(futureDate)));
-    const nearExpiryQuery = query(collection(db, "inventory_lots"), where("expiryDate", ">=", Timestamp.now()), where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+export const getChartData = async () => {
+    // --- LOGIC MỚI CHO BIỂU ĐỒ HSD ---
+    const today = new Date();
+
+    // 1. Lấy số lô cận date cho nhóm đặc biệt (ngưỡng 90 ngày)
+    const specialGroups = SPECIAL_EXPIRY_SUBGROUPS;
+    const specialFutureDate = new Date();
+    specialFutureDate.setDate(today.getDate() + 90);
+    const specialNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", specialGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(specialFutureDate))
+    );
+
+    // 2. Lấy số lô cận date cho nhóm còn lại (ngưỡng 210 ngày)
+    const otherGroups = ALL_SUBGROUPS.filter(group => !specialGroups.includes(group));
+    const otherFutureDate = new Date();
+    otherFutureDate.setDate(today.getDate() + 210);
+    const otherNearExpiryQuery = query(
+        collection(db, "inventory_lots"),
+        where("subGroup", "in", otherGroups),
+        where("expiryDate", ">=", Timestamp.now()),
+        where("expiryDate", "<=", Timestamp.fromDate(otherFutureDate))
+    );
+
+    // 3. Lấy số lô đã hết hạn (giữ nguyên)
     const expiredQuery = query(collection(db, "inventory_lots"), where("expiryDate", "<", Timestamp.now()));
 
-    const [safeSnap, nearExpirySnap, expiredSnap] = await Promise.all([
-        getCountFromServer(safeQuery),
-        getCountFromServer(nearExpiryQuery),
+    // 4. Lấy số lô an toàn (phức tạp hơn, cần lấy tổng số lô rồi trừ đi)
+    const allLotsQuery = query(collection(db, "inventory_lots"));
+
+    const [specialSnap, otherSnap, expiredSnap, allLotsSnap] = await Promise.all([
+        getCountFromServer(specialNearExpiryQuery),
+        getCountFromServer(otherNearExpiryQuery),
         getCountFromServer(expiredQuery),
+        getCountFromServer(allLotsQuery)
     ]);
-    
+
+    const nearExpiryCount = specialSnap.data().count + otherSnap.data().count;
+    const expiredCount = expiredSnap.data().count;
+    const totalCount = allLotsSnap.data().count;
+    const safeCount = totalCount - nearExpiryCount - expiredCount;
+
     const expiryData = {
-        safe: safeSnap.data().count,
-        near_expiry: nearExpirySnap.data().count,
-        expired: expiredSnap.data().count,
+        safe: safeCount,
+        near_expiry: nearExpiryCount,
+        expired: expiredCount,
     };
 
-    // 2. Dữ liệu cho biểu đồ Team
-    const productsSnapshot = await getDocs(collection(db, "products"));
-    const teamCounts = { MED: 0, BIO: 0, 'Spare Part': 0 };
-    productsSnapshot.forEach(doc => {
-        const team = doc.data().team;
-        if (team in teamCounts) {
-            teamCounts[team]++;
-        }
-    });
+    // 2. Dữ liệu cho biểu đồ Team (PHIÊN BẢN MỚI LINH HOẠT)
+const productsSnapshot = await getDocs(collection(db, "products"));
 
-    return { expiryData, teamData: teamCounts };
+// Khởi tạo đối tượng đếm dựa trên TEAM_OPTIONS
+const teamCounts = TEAM_OPTIONS.reduce((acc, team) => {
+    acc[team] = 0;
+    return acc;
+}, {});
+
+productsSnapshot.forEach(doc => {
+    const team = doc.data().team;
+    // Chỉ đếm nếu team của sản phẩm có trong danh sách TEAM_OPTIONS
+    if (team in teamCounts) {
+        teamCounts[team]++;
+    }
+});
+
+return { expiryData, teamData: teamCounts };
 };
 
 /**
@@ -211,7 +265,7 @@ export const getSalesAnalytics = async (filters = {}) => {
                 lotNumber: item.lotNumber,
                 quantityExported: item.quantityToExport || item.quantityExported,
                 unit: item.unit,
-                team: item.team // Đảm bảo trường team được trả về
+                team: item.team // Đảm bảo trường team được trả về 
             });
         });
     });
@@ -404,4 +458,4 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
         closingBalance: currentBalance,
         rows: ledgerRows
     };
-};    
+};

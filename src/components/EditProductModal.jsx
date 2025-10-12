@@ -85,7 +85,6 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
             <select name="team" value={productData.team} onChange={handleChange}>
               <option value="MED">MED</option>
               <option value="BIO">BIO</option>
-              <option value="Spare Part">Spare Part</option>
             </select>
           </div>
           <div className="modal-actions">

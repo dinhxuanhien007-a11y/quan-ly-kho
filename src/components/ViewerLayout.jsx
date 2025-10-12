@@ -10,23 +10,38 @@ import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
 import MobileInventoryPage from '../pages/MobileInventoryPage';
 import companyLogo from '../assets/logo.png';
-import { usePresence } from '../hooks/usePresence'; // Import hook
+import { usePresence } from '../hooks/usePresence';
 
 const ViewerLayout = () => {
-    // Sửa lại: Gọi useAuth một lần duy nhất để lấy tất cả thông tin cần thiết
     const { role, user } = useAuth();
-    
-    // Gọi hook usePresence để báo danh trạng thái online
     usePresence();
 
     const isMobile = useResponsive();
-    const canViewDetail = role === 'admin' || role === 'owner';
+    const canViewDetail = ['owner', 'admin', 'med', 'bio'].includes(role);
+
+    // === BƯỚC 1: DI CHUYỂN STATE VÀ HÀM LÊN TRÊN ===
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
     const toggleCalculator = () => {
         setIsCalculatorVisible(prev => !prev);
     };
+    // =======================================================
+
+    // === BƯỚC 2: ĐẶT useEffect Ở DƯỚI SAU KHI CÁC HÀM ĐÃ ĐƯỢC ĐỊNH NGHĨA ===
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            // Mở/Đóng máy tính bằng phím F2
+            if (event.key === 'F2') {
+                event.preventDefault();
+                toggleCalculator();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [toggleCalculator]);
+    // =======================================================================
 
     const dynamicTitle = useMemo(() => {
         switch (role) {
@@ -77,7 +92,7 @@ const ViewerLayout = () => {
                             <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
                                 Xem Chi Tiết
                             </button>
-                        </div>
+                         </div>
                     )}
                 </div>
 
@@ -98,7 +113,7 @@ const ViewerLayout = () => {
                 }
             </div>
 
-            <button className="floating-toggle-btn" onClick={toggleCalculator} title="Mở máy tính (Có thể dùng bàn phím)">
+            <button className="floating-toggle-btn" onClick={toggleCalculator} title="Mở máy tính (F2)">
                 <MdCalculate />
             </button>
             {isCalculatorVisible && <FloatingCalculator onClose={toggleCalculator} />}

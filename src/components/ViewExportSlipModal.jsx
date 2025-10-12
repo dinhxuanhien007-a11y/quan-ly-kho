@@ -78,7 +78,7 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                         <td>{renderExpiryDate(item.expiryDate)}</td>
                                         
                                         <td>{item.unit}</td>
-                                        <td>{item?.specification || ''}</td>
+                                        <td>{item?.packaging || ''}</td>
                                         <td style={{ textAlign: 'center' }}>
                                             {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
                                         </td>

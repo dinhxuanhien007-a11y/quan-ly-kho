@@ -190,108 +190,127 @@ exports.updateAllowlistRole = onCall({ region: ASIA_REGION }, async (request) =>
 });
 
 
-// =================================================================
-// CÁC HÀM CẢNH BÁO HÀNG HẾT HẠN (CHUYỂN VÙNG SANG ASIA)
-// =================================================================
+// File: functions/index.js
 
-/**
- * Hàm 5: Cloud Function chạy tự động mỗi ngày vào lúc 01:00 sáng.
- */
-exports.checkExpiredLots = onSchedule({
-  schedule: "every day 01:00",
-  timeZone: "Asia/Ho_Chi_Minh",
-  region: ASIA_REGION
+// ===================================================================================
+// === HÀM KIỂM TRA HẠN SỬ DỤNG (PHIÊN BẢN SỬA LỖI) ===
+// ===================================================================================
+exports.checkexpiredlots = onSchedule({ // Giữ nguyên tên chữ thường để deploy
+    schedule: "every day 01:00",
+    timeZone: "Asia/Ho_Chi_Minh",
+    region: ASIA_REGION
 }, async (event) => {
-  logger.info("Bắt đầu quét các lô hàng hết hạn...");
+    logger.info("Bắt đầu quét các lô hàng hết hạn (phiên bản sửa lỗi)...");
 
-  // 1. XÁC ĐỊNH NGÀY HÔM NAY (00:00:00)
-  const today = new Date(); 
-  today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
 
-  const inventoryRef = db.collection("inventory_lots"); 
-  
-  // 2. TRUY VẤN: 
-  //    - expiryDate < today (Lô hết hạn trước 00:00:00 hôm nay)
-  //    - quantityRemaining > 0 (Chỉ lô còn tồn)
-  const expiredLotsQuery = inventoryRef
-    .where("expiryDate", "<", today) 
-    .where("quantityRemaining", ">", 0); 
-    
-  const snapshot = await expiredLotsQuery.get();
+    const expiredLotsQuery = db.collection("inventory_lots")
+        .where("expiryDate", "<", today)
+        .where("quantityRemaining", ">", 0);
 
-  if (snapshot.empty) {
-    logger.info("Không tìm thấy lô hàng nào hết hạn hôm nay.");
-    return null;
-  }
+    try {
+        const [expiredLotsSnapshot, notificationsSnapshot] = await Promise.all([
+            expiredLotsQuery.get(),
+            // THAY ĐỔI 1: Lấy ID của TẤT CẢ thông báo đã tồn tại
+            db.collection("notifications").get() 
+        ]);
 
-  const batch = db.batch();
-  const notificationsRef = db.collection("notifications");
+        if (expiredLotsSnapshot.empty) {
+            logger.info("Không tìm thấy lô hàng nào hết hạn.");
+            return null;
+        }
 
-  snapshot.forEach(doc => {
-    const lotData = doc.data();
-    const notificationMessage = `Lô '${lotData.lotNumber}' của sản phẩm '${lotData.productId} - ${lotData.productName}' đã hết hạn sử dụng.`;
-    
-    const newNotifRef = notificationsRef.doc();
-    batch.set(newNotifRef, {
-      lotId: doc.id,
-      productId: lotData.productId,
-      lotNumber: lotData.lotNumber,
-      productName: lotData.productName,
-      expiryDate: lotData.expiryDate,
-      message: notificationMessage,
-      status: "UNCONFIRMED",
-      createdAt: FieldValue.serverTimestamp(),
-      confirmedBy: null,
-      confirmedAt: null,
-    });
-    logger.log(`Đã tạo cảnh báo cho lô: ${doc.id}`);
-  });
+        // Tạo một Set chứa ID của tất cả các lô hàng đã từng được thông báo
+        const existingNotificationLotIds = new Set(notificationsSnapshot.docs.map(doc => doc.id));
 
-  await batch.commit();
-  logger.info(`Hoàn tất. Đã tạo ${snapshot.size} cảnh báo mới.`);
-  return null;
+        const batch = db.batch();
+        let newNotificationCount = 0;
+
+        expiredLotsSnapshot.forEach(doc => {
+            const lot = doc.data();
+            const lotId = doc.id;
+
+            // THAY ĐỔI 2: Logic kiểm tra đã được sửa
+            // Chỉ tạo thông báo mới nếu ID của lô hàng này CHƯA TỪNG tồn tại trong collection notifications
+            if (!existingNotificationLotIds.has(lotId)) {
+                const newNotifRef = db.collection("notifications").doc(lotId);
+                const message = `Lô '${lot.lotNumber || 'N/A'}' của sản phẩm '${lot.productId} - ${lot.productName}' đã hết hạn sử dụng.`;
+                
+                batch.set(newNotifRef, {
+                    lotId: lotId,
+                    message: message,
+                    createdAt: FieldValue.serverTimestamp(),
+                    status: "UNCONFIRMED" // Luôn tạo mới với trạng thái này
+                });
+
+                newNotificationCount++;
+                logger.info(`Đã thêm thông báo MỚI cho lô: ${lotId}`);
+            }
+        });
+
+        if (newNotificationCount > 0) {
+            await batch.commit();
+            logger.info(`Hoàn tất! Đã tạo ${newNotificationCount} thông báo hết hạn mới.`);
+        } else {
+            logger.info("Không có lô hàng hết hạn mới nào cần tạo thông báo.");
+        }
+
+        return null;
+
+    } catch (error) {
+        logger.error("Lỗi khi quét lô hàng hết hạn:", error);
+        return null;
+    }
 });
 
+// ===================================================================================
+// === HÀM 2: XỬ LÝ KHI USER BẤM NÚT "XÁC NHẬN" (HÀM MỚI BỔ SUNG) ===
+// ===================================================================================
+// File: functions/index.js
 
-/**
- * Hàm 6: Cloud Function được gọi để xác nhận đã xử lý một cảnh báo.
- */
-exports.confirmExpiryNotification = onCall({ region: ASIA_REGION }, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Bạn phải đăng nhập để thực hiện hành động này.");
-  }
+// ===================================================================================
+// === HÀM XỬ LÝ KHI USER BẤM NÚT "XÁC NHẬN" (PHIÊN BẢN SẠCH SẼ) ===
+// ===================================================================================
+exports.confirmExpiryNotification = onCall({
+    region: ASIA_REGION,
+}, async (request) => {
+    // 1. KIỂM TRA QUYỀN HẠN: Chỉ 'owner' hoặc 'admin' mới được thực hiện
+    if (!request.auth || !['owner', 'admin'].includes(request.auth.token.role)) {
+        logger.error("Yêu cầu bị từ chối. Người dùng không có quyền admin hoặc owner.", { uid: request.auth ? request.auth.uid : 'none' });
+        throw new HttpsError('permission-denied', 'Bạn không có quyền thực hiện hành động này.');
+    }
 
-  const { notificationId, lotId } = request.data;
-  if (!notificationId || !lotId) {
-    throw new HttpsError("invalid-argument", "Thiếu notificationId hoặc lotId.");
-  }
+    // Lấy notificationId từ dữ liệu gửi lên (bỏ lotId vì không cần nữa)
+    const { notificationId } = request.data;
+    const confirmedBy = request.auth.uid;
 
-  const uid = request.auth.uid;
-  const timestamp = FieldValue.serverTimestamp();
+    if (!notificationId) {
+        logger.error("Yêu cầu không hợp lệ, thiếu notificationId.", request.data);
+        throw new HttpsError('invalid-argument', 'Yêu cầu không hợp lệ, vui lòng cung cấp đủ thông tin.');
+    }
 
-  const notificationRef = db.collection("notifications").doc(notificationId);
-  const lotRef = db.collection("inventory_lots").doc(lotId); // SỬA LỖI: Đổi tên collection
+    logger.info(`Bắt đầu xử lý xác nhận cho thông báo: ${notificationId} bởi user: ${confirmedBy}`);
+    
+    // 2. TIẾN HÀNH CẬP NHẬT TRẠNG THÁI CỦA THÔNG BÁO
+    const notificationRef = db.collection('notifications').doc(notificationId);
 
-  try {
-    await db.runTransaction(async (transaction) => {
-      transaction.update(notificationRef, {
-        status: "CONFIRMED",
-        confirmedBy: uid,
-        confirmedAt: timestamp,
-      });
-      // Logic xử lý lô hàng (ví dụ: đổi trạng thái) có thể thêm ở đây nếu cần
-      // transaction.update(lotRef, { inventoryStatus: "EXPIRED_HANDLED" });
-    });
+    try {
+        // Chỉ cập nhật trạng thái của thông báo để ẩn nó đi khỏi banner
+        await notificationRef.update({
+            status: 'CONFIRMED',
+            confirmedBy: confirmedBy,
+            confirmedAt: FieldValue.serverTimestamp()
+        });
 
-    logger.info(`User ${uid} đã xác nhận cảnh báo ${notificationId} cho lô ${lotId}.`);
-    return { success: true, message: "Xác nhận thành công!" };
+        logger.info(`Xác nhận thành công, đã ẩn thông báo ${notificationId}.`);
+        return { success: true, message: "Đã ẩn thông báo thành công!" };
 
-  } catch (error) {
-    logger.error("Lỗi khi chạy transaction xác nhận:", error);
-    throw new HttpsError("internal", "Đã xảy ra lỗi khi xác nhận.");
-  }
+    } catch (error) {
+        logger.error(`Lỗi khi xử lý xác nhận cho thông báo ${notificationId}:`, error);
+        throw new HttpsError('internal', 'Đã xảy ra lỗi khi cập nhật cơ sở dữ liệu.');
+    }
 });
-
 
 // =================================================================
 // === HÀM TỰ ĐỘNG ĐỒNG BỘ PRODUCT_SUMMARIES (CHUYỂN VÙNG SANG ASIA) ===
@@ -367,6 +386,7 @@ exports.updateProductSummary = onDocumentWritten({
     storageTemp: productData.storageTemp || "",
     manufacturer: productData.manufacturer || "",
     team: productData.team,
+    subGroup: productData.subGroup || "",
     totalRemaining: totalRemaining,
     nearestExpiryDate: nearestExpiryDate,
     lastUpdatedAt: FieldValue.serverTimestamp(),
