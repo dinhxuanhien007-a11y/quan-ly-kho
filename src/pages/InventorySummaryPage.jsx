@@ -30,7 +30,7 @@ import '../styles/Responsive.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
 import companyLogo from '../assets/logo.png';
-import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM } from '../constants';
+import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 
 const PAGE_SIZE = 15;
 

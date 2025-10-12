@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { FiChevronDown } from 'react-icons/fi';
-import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM } from '../constants';
+import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 
 const InventoryFilters = ({ userRole, onFilterChange, activeFilters }) => {
     // State để quản lý bộ lọc nhóm hàng mới

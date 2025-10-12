@@ -181,7 +181,7 @@ export default AddNewLotModal;
 import React, { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
-import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS, SUBGROUP_OPTIONS } from '../constants';
+import { TEMP_OPTIONS, MANUFACTURER_OPTIONS, UNIT_OPTIONS, ALL_SUBGROUPS } from '../constants';
 import { formatExpiryDate } from '../utils/dateUtils';
 import { addProduct } from '../services/productService';
 
@@ -274,7 +274,7 @@ const AddNewProductAndLotModal = ({ productId, onClose, onSave }) => {
                       <label>NhÃ³m hÃ ng (*)</label>
                       <select value={subGroup} onChange={(e) => setSubGroup(e.target.value)}>
                           <option value="" disabled>-- Chá»n nhÃ³m hÃ ng --</option>
-                          {SUBGROUP_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                          {ALL_SUBGROUPS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                       </select>
                   </div>
                       </div>
@@ -898,7 +898,7 @@ export default AddUserModal;
 
 // src/components/AdminLayout.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import DashboardPage from '../pages/DashboardPage';
@@ -922,26 +922,41 @@ import ViewerLayout from './ViewerLayout';
 import { useAuth } from '../context/UserContext';
 import FloatingToolsModal from './FloatingToolsModal'; 
 import { FiGrid } from 'react-icons/fi';
-import SalesAnalyticsPage from '../pages/SalesAnalyticsPage'; // ThÃªm import
+import SalesAnalyticsPage from '../pages/SalesAnalyticsPage';
 import ProductLedgerPage from '../pages/ProductLedgerPage';
 import { usePresence } from '../hooks/usePresence';
 
 const AdminLayout = () => {
   const location = useLocation();
-  const { role, user } = useAuth(); // Láº¥y cáº£ `role` vÃ  `user`
-  
-  usePresence(); // <-- Gá»i hook má»›i á»Ÿ Ä‘Ã¢y Ä‘á»ƒ bÃ¡o tráº¡ng thÃ¡i online
-  
+  const { role, user } = useAuth();
+
+  usePresence();
+
+  // === BÆ¯á»šC 1: DI CHUYá»‚N CÃC STATE VÃ€ HÃ€M LÃŠN TRÃŠN ===
   const [isToolsModalVisible, setIsToolsModalVisible] = useState(false);
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
-  // HÃ€M Má»šI: Táº O CHá»¨C NÄ‚NG CHUYá»‚N Äá»”I (TOGGLE)
   const toggleToolsModal = () => {
     setIsToolsModalVisible(prev => !prev);
   };
   const toggleCalculator = () => {
     setIsCalculatorVisible(prev => !prev);
   };
+  // =======================================================
+
+  // === BÆ¯á»šC 2: Äáº¶T useEffect á»ž DÆ¯á»šI SAU KHI CÃC HÃ€M ÄÃƒ ÄÆ¯á»¢C Äá»ŠNH NGHÄ¨A ===
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'F2') {
+        event.preventDefault();
+        toggleToolsModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleToolsModal]); 
+  // =======================================================================
 
   return (
     <div className="admin-layout-horizontal">
@@ -952,14 +967,10 @@ const AdminLayout = () => {
         {location.pathname === '/new-import' && <ImportSlipCounter />}
 
         <Routes>
-          {/* Tá»° Äá»˜NG CHUYá»‚N HÆ¯á»šNG Tá»ª TRANG Gá»C SANG DASHBOARD */}
-  <Route path="/" element={<Navigate to="/dashboard" />} />
-  
-  {/* Äá»ŠNH NGHÄ¨A Láº I ÄÆ¯á»œNG DáºªN Cá»¤ THá»‚ CHO DASHBOARD */}
-  <Route path="/dashboard" element={<DashboardPage />} />
-
-  <Route path="/view" element={<ViewerLayout />} />
-  <Route path="/products" element={<ProductsPage />} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/view" element={<ViewerLayout />} />
+          <Route path="/products" element={<ProductsPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/new-import" element={<NewImportPage />} />
           <Route path="/new-export" element={<NewExportPage />} />
@@ -970,24 +981,24 @@ const AdminLayout = () => {
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
           <Route path="/users" element={<UsersPage />} />
-          <Route path="/sales-analytics" element={<SalesAnalyticsPage />} /> // ThÃªm route má»›i
-          <Route path="/product-ledger" element={<ProductLedgerPage />} /> {/* THÃŠM DÃ’NG NÃ€Y */}
+          <Route path="/sales-analytics" element={<SalesAnalyticsPage />} />
+          <Route path="/product-ledger" element={<ProductLedgerPage />} />
         </Routes>
       </main>
-      
+
       {role === 'owner' ? (
         <button 
           className="floating-toggle-btn" 
-          onClick={toggleToolsModal} // Sá»¬ Dá»¤NG HÃ€M Má»šI
-          title="Má»Ÿ cÃ´ng cá»¥ nhanh"
+          onClick={toggleToolsModal}
+          title="Má»Ÿ cÃ´ng cá»¥ nhanh (F2)"
         >
           <FiGrid />
         </button>
       ) : (
         <button 
           className="floating-toggle-btn" 
-          onClick={toggleCalculator} // Sá»¬ Dá»¤NG HÃ€M Má»šI
-          title="Má»Ÿ mÃ¡y tÃ­nh (CÃ³ thá»ƒ dÃ¹ng bÃ n phÃ­m)"
+          onClick={toggleCalculator}
+          title="Má»Ÿ mÃ¡y tÃ­nh (F2)"
         >
           <MdCalculate />
         </button>
@@ -996,7 +1007,7 @@ const AdminLayout = () => {
       {isToolsModalVisible && role === 'owner' && (
         <FloatingToolsModal onClose={toggleToolsModal} />
       )}
-      
+
       {isCalculatorVisible && role !== 'owner' && (
         <FloatingCalculator onClose={toggleCalculator} />
       )}
@@ -2421,7 +2432,6 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
             <select name="team" value={productData.team} onChange={handleChange}>
               <option value="MED">MED</option>
               <option value="BIO">BIO</option>
-              <option value="Spare Part">Spare Part</option>
             </select>
           </div>
           <div className="modal-actions">
@@ -3028,7 +3038,7 @@ export default FloatingCalculator;
 
 
 // src/components/FloatingToolsModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FloatingCalculator from './FloatingCalculator'; // Component mÃ¡y tÃ­nh cÅ©
 import QuickStockLookup from './QuickStockLookup'; // Component tra cá»©u má»›i
 import { FiTool, FiSearch, FiX } from 'react-icons/fi';
@@ -3036,6 +3046,25 @@ import styles from './FloatingToolsModal.module.css';
 
 const FloatingToolsModal = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('lookup');
+
+  // --- THÃŠM Má»šI Táº I ÄÃ‚Y ---
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // ÄÃ³ng modal khi báº¥m phÃ­m Escape
+      if (event.key === 'Escape') {
+        onClose();
+      }
+      // Chuyá»ƒn tab qua láº¡i khi báº¥m phÃ­m Tab
+      else if (event.key === 'Tab') {
+        event.preventDefault(); // NgÄƒn hÃ nh vi máº·c Ä‘á»‹nh cá»§a phÃ­m Tab
+        setActiveTab(prevTab => (prevTab === 'lookup' ? 'calculator' : 'lookup'));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]); // Phá»¥ thuá»™c vÃ o onClose
+  // ------------------------
 
   return (
     <div className={styles.modalBackdrop}>
@@ -3283,46 +3312,26 @@ export default ImportSlipCounter;
 
 
 // src/components/InventoryFilters.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { FiChevronDown } from 'react-icons/fi';
+import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 
 const InventoryFilters = ({ userRole, onFilterChange, activeFilters }) => {
     // State Ä‘á»ƒ quáº£n lÃ½ bá»™ lá»c nhÃ³m hÃ ng má»›i
-    const [subGroups, setSubGroups] = useState([]);
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
     const subGroupRef = useRef(null);
 
-  // src/components/InventoryFilters.jsx
-
-useEffect(() => {
-    const fetchSubGroups = async () => {
-        let productsQuery;
-        const baseCollection = collection(db, "products");
-
-        // --- LOGIC ÄÃƒ ÄÆ¯á»¢C ÄÆ N GIáº¢N HÃ“A ---
-        if (userRole === 'med') {
-            productsQuery = query(baseCollection, where("team", "==", "MED"), orderBy("subGroup"));
-        } else if (userRole === 'bio') {
-            // Role 'bio' bÃ¢y giá» chá»‰ lá»c theo team "BIO"
-            productsQuery = query(baseCollection, where("team", "==", "BIO"), orderBy("subGroup"));
-        } else { // DÃ nh cho owner vÃ  admin
-            productsQuery = query(baseCollection, orderBy("subGroup"));
-        }
-
-        const querySnapshot = await getDocs(productsQuery);
-        const uniqueSubGroups = new Set();
-        querySnapshot.forEach((doc) => {
-            const subGroup = doc.data().subGroup;
-            if (subGroup && subGroup.trim() !== '') {
-                uniqueSubGroups.add(subGroup);
-            }
-        });
-        setSubGroups(Array.from(uniqueSubGroups).sort());
-    };
-
-    fetchSubGroups().catch(console.error);
+  const subGroups = useMemo(() => {
+    if (userRole === 'med') {
+        return SUBGROUPS_BY_TEAM.MED;
+    } else if (userRole === 'bio') { // <-- Sá»­a thÃ nh "else if"
+        return SUBGROUPS_BY_TEAM.BIO;
+    } else { // <-- ThÃªm "else" cho rÃµ rÃ ng
+        // DÃ nh cho admin/owner
+        return ALL_SUBGROUPS;
+    }
 }, [userRole]);
 
     // Xá»­ lÃ½ viá»‡c Ä‘Ã³ng menu khi click ra bÃªn ngoÃ i
@@ -4280,6 +4289,12 @@ const QuickStockLookup = () => {
                 <strong>Team:</strong>
                 <p>{productData.generalInfo.team}</p>
               </div>
+              {/* --- THÃŠM Má»šI Táº I ÄÃ‚Y --- */}
+<div className={styles.gridItem}>
+    <strong>NhÃ³m hÃ ng:</strong>
+    <p>{productData.generalInfo.subGroup}</p>
+</div>
+{/* ------------------------- */}
               <div className={styles.gridItem} style={{gridColumn: '1 / -1'}}>
                 <strong>Tá»•ng tá»“n:</strong>
                 <p style={{color: 'green', fontSize: '1.2rem', fontWeight: 'bold'}}>{formatNumber(productData.totalRemaining)} {productData.generalInfo.unit}</p>
@@ -5054,18 +5069,31 @@ const ViewerLayout = () => {
     usePresence();
 
     const isMobile = useResponsive();
-    
-    // === THAY Äá»”I QUAN TRá»ŒNG NHáº¤T Náº°M á»ž ÄÃ‚Y ===
-    // Cho phÃ©p cáº£ 'med' vÃ  'bio' cÃ³ thá»ƒ xem chi tiáº¿t
     const canViewDetail = ['owner', 'admin', 'med', 'bio'].includes(role);
-    // ==========================================
 
+    // === BÆ¯á»šC 1: DI CHUYá»‚N STATE VÃ€ HÃ€M LÃŠN TRÃŠN ===
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
     const toggleCalculator = () => {
         setIsCalculatorVisible(prev => !prev);
     };
+    // =======================================================
+
+    // === BÆ¯á»šC 2: Äáº¶T useEffect á»ž DÆ¯á»šI SAU KHI CÃC HÃ€M ÄÃƒ ÄÆ¯á»¢C Äá»ŠNH NGHÄ¨A ===
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            // Má»Ÿ/ÄÃ³ng mÃ¡y tÃ­nh báº±ng phÃ­m F2
+            if (event.key === 'F2') {
+                event.preventDefault();
+                toggleCalculator();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [toggleCalculator]);
+    // =======================================================================
 
     const dynamicTitle = useMemo(() => {
         switch (role) {
@@ -5085,7 +5113,6 @@ const ViewerLayout = () => {
         document.title = dynamicTitle;
     }, [dynamicTitle]);
 
-    // Náº¿u user khÃ´ng cÃ³ quyá»n xem chi tiáº¿t, luÃ´n Ä‘áº·t viewMode lÃ  'summary'
     useEffect(() => {
         if (!canViewDetail) {
             setViewMode('summary');
@@ -5138,7 +5165,7 @@ const ViewerLayout = () => {
                 }
             </div>
 
-            <button className="floating-toggle-btn" onClick={toggleCalculator} title="Má»Ÿ mÃ¡y tÃ­nh (CÃ³ thá»ƒ dÃ¹ng bÃ n phÃ­m)">
+            <button className="floating-toggle-btn" onClick={toggleCalculator} title="Má»Ÿ mÃ¡y tÃ­nh (F2)">
                 <MdCalculate />
             </button>
             {isCalculatorVisible && <FloatingCalculator onClose={toggleCalculator} />}
@@ -5233,7 +5260,7 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{renderExpiryDate(item.expiryDate)}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.unit}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item?.specification || ''}</td>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item?.packaging || ''}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td style={{ textAlign: 'center' }}>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </td>
@@ -7340,12 +7367,6 @@ const baseQuery = useMemo(() => {
 if (filters.subGroup && filters.subGroup !== 'all') {
     constraints.push(where("subGroup", "==", filters.subGroup));
 }
-// ===================================
-
-    // THÃŠM ÄIá»€U KIá»†N Lá»ŒC "subGroup" Bá»Š THIáº¾U á»ž ÄÃ‚Y
-    if (filters.subGroup && filters.subGroup !== 'all') {
-        constraints.push(where("subGroup", "==", filters.subGroup));
-    }
 
     // 2. Ãp dá»¥ng bá»™ lá»c khoáº£ng vÃ  sáº¯p xáº¿p tÆ°Æ¡ng á»©ng
     if (filters.dateStatus === 'expired') {
@@ -7542,6 +7563,7 @@ import '../styles/Responsive.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
 import companyLogo from '../assets/logo.png';
+import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 
 const PAGE_SIZE = 15;
 
@@ -7559,7 +7581,7 @@ const getLotItemColorClass = (expiryDate, subGroup) => {
 
     // --- LOGIC Má»šI ---
     // Quy táº¯c 1: Cho nhÃ³m BD BDB vÃ  BD DS
-    if (subGroup === 'BD BDB' || subGroup === 'BD DS') {
+    if (SPECIAL_EXPIRY_SUBGROUPS.includes(subGroup)) {
         if (diffDays < 0) return 'lot-item-expired';
         if (diffDays <= 30) return 'lot-item-red';
         if (diffDays <= 60) return 'lot-item-orange';
@@ -7598,7 +7620,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
     const [hasNewData, setHasNewData] = useState(false);
     const lastSeenTimestampRef = useRef(null);
 
-    const [subGroups, setSubGroups] = useState([]);
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
     const subGroupRef = useRef(null);
 
@@ -7775,29 +7796,16 @@ const InventorySummaryPage = ({ pageTitle }) => {
         };
     }, []);
 
-    useEffect(() => {
-        const fetchSubGroups = async () => {
-            let productsQuery;
-            const baseCollection = collection(db, "products");
-            if (userRole === 'med') {
-                productsQuery = query(baseCollection, where("team", "==", "MED"), orderBy("subGroup"));
-            } else if (userRole === 'bio') {
-                productsQuery = query(baseCollection, where("team", "==", "BIO"), orderBy("subGroup"));
-            } else {
-                productsQuery = query(baseCollection, orderBy("subGroup"));
-            }
-            const querySnapshot = await getDocs(productsQuery);
-            const uniqueSubGroups = new Set();
-            querySnapshot.forEach((doc) => {
-                const subGroup = doc.data().subGroup;
-                if (subGroup && subGroup.trim() !== '') {
-                    uniqueSubGroups.add(subGroup);
-                }
-            });
-            setSubGroups(Array.from(uniqueSubGroups).sort());
-        };
-        fetchSubGroups().catch(console.error);
-    }, [userRole]);
+    const subGroups = useMemo(() => {
+    if (userRole === 'med') {
+        return SUBGROUPS_BY_TEAM.MED;
+    }
+    if (userRole === 'bio') {
+        return SUBGROUPS_BY_TEAM.BIO;
+    }
+    // DÃ nh cho admin/owner
+    return ALL_SUBGROUPS;
+}, [userRole]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -12533,9 +12541,7 @@ export default UsersPage;
 import { collection, getDocs, query, where, orderBy, limit, Timestamp, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { formatDate, parseDateString } from '../utils/dateUtils';
-import { SUBGROUP_OPTIONS } from '../constants';
-import { TEAM_OPTIONS } from '../constants';
-
+import { ALL_SUBGROUPS, TEAM_OPTIONS, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 // --- Báº®T Äáº¦U Bá»” SUNG CÃC HÃ€M Bá»Š THIáº¾U ---
 
 /**
@@ -12576,7 +12582,7 @@ export const getDashboardStats = async () => {
 
     // --- LOGIC Má»šI Äá»‚ Äáº¾M HÃ€NG Cáº¬N DATE ---
     // 1. Äáº¿m cho cÃ¡c nhÃ³m Ä‘áº·c biá»‡t (BD BDB, BD DS) vá»›i ngÆ°á»¡ng 90 ngÃ y
-    const specialGroups = ['BD BDB', 'BD DS'];
+    const specialGroups = SPECIAL_EXPIRY_SUBGROUPS;
     const specialFutureDate = new Date();
     specialFutureDate.setDate(today.getDate() + 90);
     const specialNearExpiryQuery = query(
@@ -12587,7 +12593,7 @@ export const getDashboardStats = async () => {
     );
 
     // 2. Äáº¿m cho cÃ¡c nhÃ³m cÃ²n láº¡i vá»›i ngÆ°á»¡ng 210 ngÃ y
-    const otherGroups = SUBGROUP_OPTIONS.filter(group => !specialGroups.includes(group));
+    const otherGroups = ALL_SUBGROUPS.filter(group => !specialGroups.includes(group));
     const otherFutureDate = new Date();
     otherFutureDate.setDate(today.getDate() + 210);
     const otherNearExpiryQuery = query(
@@ -12662,7 +12668,7 @@ export const getChartData = async () => {
     const today = new Date();
 
     // 1. Láº¥y sá»‘ lÃ´ cáº­n date cho nhÃ³m Ä‘áº·c biá»‡t (ngÆ°á»¡ng 90 ngÃ y)
-    const specialGroups = ['BD BDB', 'BD DS'];
+    const specialGroups = SPECIAL_EXPIRY_SUBGROUPS;
     const specialFutureDate = new Date();
     specialFutureDate.setDate(today.getDate() + 90);
     const specialNearExpiryQuery = query(
@@ -12673,7 +12679,7 @@ export const getChartData = async () => {
     );
 
     // 2. Láº¥y sá»‘ lÃ´ cáº­n date cho nhÃ³m cÃ²n láº¡i (ngÆ°á»¡ng 210 ngÃ y)
-    const otherGroups = SUBGROUP_OPTIONS.filter(group => !specialGroups.includes(group));
+    const otherGroups = ALL_SUBGROUPS.filter(group => !specialGroups.includes(group));
     const otherFutureDate = new Date();
     otherFutureDate.setDate(today.getDate() + 210);
     const otherNearExpiryQuery = query(
@@ -16370,6 +16376,8 @@ afterEach(() => {
 --- FILE: D:\quan-ly-kho\src\utils\dateUtils.js ---
 
 
+import { SPECIAL_EXPIRY_SUBGROUPS } from '../constants'; // <-- THÃŠM DÃ’NG NÃ€Y VÃ€O Äáº¦U FILE
+
 // src/utils/dateUtils.js
 
 /**
@@ -16406,7 +16414,7 @@ export const parseDateString = (dateString) => {
     const [day, month, year] = parts;
     const dateObj = new Date(year, month - 1, day);
     if (dateObj.getFullYear() != year || dateObj.getMonth() != month - 1 || dateObj.getDate() != day) {
-      return null;
+       return null;
     }
     return dateObj;
   } catch (error) {
@@ -16429,8 +16437,6 @@ export const formatExpiryDate = (value) => {
     return `${truncatedDigits.slice(0, 2)}/${truncatedDigits.slice(2, 4)}/${truncatedDigits.slice(4)}`;
 };
 
-// src/utils/dateUtils.js
-
 /**
  * PHIÃŠN Báº¢N Má»šI: XÃ¡c Ä‘á»‹nh class mÃ u sáº¯c cho má»™t dÃ²ng dá»±a trÃªn ngÃ y háº¿t háº¡n vÃ  nhÃ³m hÃ ng.
  */
@@ -16443,26 +16449,22 @@ export const getRowColorByExpiry = (expiryDate, subGroup) => {
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // --- LOGIC Má»šI ---
-    // Quy táº¯c 1: Cho nhÃ³m BD BDB vÃ  BD DS
-    if (subGroup === 'BD BDB' || subGroup === 'BD DS') {
-        if (diffDays < 0) return 'expired-black';   // ÄÃ£ háº¿t háº¡n
-        if (diffDays <= 30) return 'near-expiry-red';   // DÆ°á»›i 30 ngÃ y
-        if (diffDays <= 60) return 'near-expiry-orange';// DÆ°á»›i 60 ngÃ y
-        if (diffDays <= 90) return 'near-expiry-yellow';// DÆ°á»›i 90 ngÃ y
+    // --- Sá»¬A Láº I Táº I ÄÃ‚Y ---
+    if (SPECIAL_EXPIRY_SUBGROUPS.includes(subGroup)) {
+        if (diffDays < 0) return 'expired-black';
+        if (diffDays <= 30) return 'near-expiry-red';
+        if (diffDays <= 60) return 'near-expiry-orange';
+        if (diffDays <= 90) return 'near-expiry-yellow';
     } 
-    // Quy táº¯c 2: Cho táº¥t cáº£ cÃ¡c nhÃ³m hÃ ng cÃ²n láº¡i
     else {
-        if (diffDays < 0) return 'expired-black';   // ÄÃ£ háº¿t háº¡n
-        if (diffDays <= 70) return 'near-expiry-red';   // DÆ°á»›i 70 ngÃ y
-        if (diffDays <= 140) return 'near-expiry-orange';// DÆ°á»›i 140 ngÃ y
-        if (diffDays <= 210) return 'near-expiry-yellow';// DÆ°á»›i 210 ngÃ y
+        if (diffDays < 0) return 'expired-black';
+        if (diffDays <= 70) return 'near-expiry-red';
+        if (diffDays <= 140) return 'near-expiry-orange';
+        if (diffDays <= 210) return 'near-expiry-yellow';
     }
 
-    return ''; // An toÃ n
+    return '';
 };
-
-// src/utils/dateUtils.js
 
 /**
  * PHIÃŠN Báº¢N Má»šI: Tráº£ vá» má»™t chuá»—i tiá»n tá»‘ cáº£nh bÃ¡o dá»±a trÃªn ngÃ y háº¿t háº¡n vÃ  nhÃ³m hÃ ng.
@@ -16476,13 +16478,12 @@ export const getExpiryStatusPrefix = (expiryDate, subGroup) => {
   const diffTime = expDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return 'âŒ - '; // Háº¿t háº¡n
+  if (diffDays < 0) return 'âŒ - ';
 
-  // --- LOGIC Má»šI ---
-  // XÃ¡c Ä‘á»‹nh ngÆ°á»¡ng cáº­n date dá»±a trÃªn nhÃ³m hÃ ng
-  const nearExpiryThreshold = (subGroup === 'BD BDB' || subGroup === 'BD DS') ? 90 : 210;
+  // --- Sá»¬A Láº I Táº I ÄÃ‚Y ---
+  const nearExpiryThreshold = SPECIAL_EXPIRY_SUBGROUPS.includes(subGroup) ? 90 : 210;
 
-  if (diffDays <= nearExpiryThreshold) return 'âš ï¸ - '; // Cáº­n date
+  if (diffDays <= nearExpiryThreshold) return 'âš ï¸ - ';
 
   return '';
 };
@@ -17119,6 +17120,11 @@ export default App;
 
 /// src/constants.js
 
+// --- THÃŠM Má»šI ---
+// Danh sÃ¡ch cÃ¡c nhÃ³m hÃ ng cÃ³ quy táº¯c HSD Ä‘áº·c biá»‡t (90 ngÃ y)
+export const SPECIAL_EXPIRY_SUBGROUPS = ["BD BDB", "BD DS"];
+// -----------------
+
 // Danh sÃ¡ch cÃ¡c Team chÃ­nh cá»§a há»‡ thá»‘ng
 export const TEAM_OPTIONS = ["MED", "BIO"];
 
@@ -17131,24 +17137,34 @@ export const MANUFACTURER_OPTIONS = ["Becton Dickinson", "Smiths Medical", "Dent
 
 export const UNIT_OPTIONS = ["CÃ¡i", "Há»™p", "ThÃ¹ng", "Chai", "á»ng", "Lá»", "Sá»£i", "CÃ¢y", "Can", "TuÃ½p", "Bá»™", "MÃ¡ng", "GÃ³i", "Khay"];
 
-// THÃŠM ÄOáº N MÃƒ NÃ€Y VÃ€O CUá»I FILE
-export const SUBGROUP_OPTIONS = [
-    "BD BDB",
-    "BD DS",
-    "BD MDS",
-    "BD SM",
-    "BD BDC",
-    "BD BDI",
-    "CVC",
-    "DentaLife",
-    "Schulke",
-    "Smiths Medical",
-    "Rovers",
-    "Spare Part",
-    "Gojo",
-    "Purell",
-    "KHÃC",
-];
+// Äá»‹nh nghÄ©a cÃ¡c nhÃ³m hÃ ng theo tá»«ng team
+export const SUBGROUPS_BY_TEAM = {
+    MED: [
+        "BD MDS",
+        "BD SM",
+        "BD BDC",
+        "BD BDI",
+        "CVC",
+        "DentaLife",
+        "Schulke",
+        "Smiths Medical",
+        "Gojo",
+        "Purell",
+    ],
+    BIO: [
+        "BD BDB",
+        "BD DS",
+        "Spare Part", // "Spare Part" giá» lÃ  má»™t nhÃ³m hÃ ng cá»§a BIO
+        "Rovers",
+        "KHÃC",
+    ]
+};
+
+// Tá»± Ä‘á»™ng táº¡o ra má»™t máº£ng chá»©a táº¥t cáº£ cÃ¡c nhÃ³m hÃ ng
+export const ALL_SUBGROUPS = [
+    ...SUBGROUPS_BY_TEAM.MED,
+    ...SUBGROUPS_BY_TEAM.BIO
+].sort(); // Sáº¯p xáº¿p theo ABC
 
 
 
