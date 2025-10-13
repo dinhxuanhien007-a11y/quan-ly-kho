@@ -26,33 +26,27 @@ const InventoryPage = ({ pageTitle }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    // src/pages/InventoryPage.jsx
-
-// src/pages/InventoryPage.jsx
-
-// src/pages/InventoryPage.jsx
+ // src/pages/InventoryPage.jsx
 
 const baseQuery = useMemo(() => {
     const baseCollection = collection(db, "inventory_lots");
     let constraints = [where("quantityRemaining", ">", 0)];
 
-    // --- LOGIC ĐÃ SỬA ---
-    // 1. Áp dụng các bộ lọc bằng nhau (equality filters)
+    // --- Logic lọc theo vai trò và các bộ lọc khác (giữ nguyên) ---
     if (userRole === 'med') {
         constraints.push(where("team", "==", "MED"));
     } else if (userRole === 'bio') {
-    constraints.push(where("team", "==", "BIO"));
-}
+        constraints.push(where("team", "==", "BIO"));
+    }
 
     if (filters.team !== 'all') {
         constraints.push(where("team", "==", filters.team));
     }
-    // === CHÈN ĐOẠN MÃ MỚI VÀO ĐÂY ===
-if (filters.subGroup && filters.subGroup !== 'all') {
-    constraints.push(where("subGroup", "==", filters.subGroup));
-}
+    if (filters.subGroup && filters.subGroup !== 'all') {
+        constraints.push(where("subGroup", "==", filters.subGroup));
+    }
 
-    // 2. Áp dụng bộ lọc khoảng và sắp xếp tương ứng
+    // --- Logic sắp xếp đã được sửa lỗi ---
     if (filters.dateStatus === 'expired') {
         constraints.push(where("expiryDate", "<", Timestamp.now()));
         constraints.push(orderBy("expiryDate", "desc"));
@@ -63,14 +57,17 @@ if (filters.subGroup && filters.subGroup !== 'all') {
         constraints.push(where("expiryDate", ">=", Timestamp.now()));
         constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
         constraints.push(orderBy("expiryDate", "asc")); 
-        constraints.push(orderBy("productId", "asc"));
+        constraints.push(orderBy("quantityRemaining", "asc")); // Sửa ở đây
     } else if (searchTerm) {
         const upperSearchTerm = searchTerm.toUpperCase();
         constraints.push(where("productId", ">=", upperSearchTerm));
         constraints.push(where("productId", "<=", upperSearchTerm + '\uf8ff'));
-        constraints.push(orderBy("productId", "asc"));
+
+        // SỬA LỖI TẠI ĐÂY: Thêm quy tắc sắp xếp FEFO khi tìm kiếm
+        constraints.push(orderBy("productId", "asc"), orderBy("expiryDate", "asc"), orderBy("quantityRemaining", "asc"));
+
     } else {
-        // Sắp xếp mặc định
+        // Sắp xếp mặc định MỚI: Theo HSD gần nhất, sau đó là SL tồn ít hơn lên trước
         constraints.push(orderBy("productId", "asc"), orderBy("importDate", "asc"));
     }
 

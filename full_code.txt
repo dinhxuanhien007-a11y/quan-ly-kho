@@ -1635,323 +1635,370 @@ import React, { useState } from 'react';
 import { FiXCircle, FiCalendar } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import ProductAutocomplete from './ProductAutocomplete';
-// Äáº£m báº£o cÃ¡c hÃ m nÃ y Ä‘Æ°á»£c import
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 
 const exportItemSchema = z.object({
-Â  quantityToExport: z.preprocess(
-Â  Â  Â  val => Number(String(val).trim()),
-Â  Â  Â  z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
-Â  Â  Â  Â .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
-Â  ),
-Â  productId: z.string(),
-Â  lotNumber: z.string().nullable(),
+  quantityToExport: z.preprocess(
+    val => Number(String(val).trim()),
+    z.number({ invalid_type_error: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lÃ  má»™t con sá»‘." })
+     .gt(0, { message: "Sá»‘ lÆ°á»£ng xuáº¥t pháº£i lá»›n hÆ¡n 0." })
+  ),
+  productId: z.string(),
+  lotNumber: z.string().nullable(),
 });
 
 const EditExportSlipModal = ({ slip, onClose, onSave }) => {
-Â  Â  const [slipData, setSlipData] = useState(() => ({
-Â  Â  Â  Â  ...slip,
-Â  Â  Â  Â  // Báº¯t Ä‘áº§u: Äáº£m báº£o item.expiryDate khá»Ÿi táº¡o lÃ  Timestamp hoáº·c chuá»—i (khÃ´ng pháº£i null)
-Â  Â  Â  Â  items: slip.items.map(item => ({ 
-Â  Â  Â  Â  Â  Â  ...item, 
-Â  Â  Â  Â  Â  Â  isNew: false, 
-Â  Â  Â  Â  Â  Â  availableLots: [],
-Â  Â  Â  Â  Â  Â  isOutOfStock: false 
-Â  Â  Â  Â  }))
-Â  Â  }));
+    const [slipData, setSlipData] = useState(() => ({
+        ...slip,
+        items: slip.items.map(item => ({
+            ...item,
+            isNew: false,
+            availableLots: [],
+            isOutOfStock: false
+        }))
+    }));
 
-Â  Â  const dateToInputValue = (dateStr) => {
-Â  Â  Â  Â  if (!dateStr || dateStr.split('/').length !== 3) return '';
-Â  Â  Â  Â  const [day, month, year] = dateStr.split('/');
-Â  Â  Â  Â  return `${year}-${month}-${day}`;
-Â  Â  };
+    const dateToInputValue = (dateStr) => {
+        if (!dateStr || dateStr.split('/').length !== 3) return '';
+        const [day, month, year] = dateStr.split('/');
+        return `${year}-${month}-${day}`;
+    };
 
-Â  Â  const handleInfoChange = (field, value) => {
-Â  Â  Â  Â  let finalValue = value;
-Â  Â  Â  Â  if (field === 'exportDate') {
-Â  Â  Â  Â  Â  Â  const [year, month, day] = value.split('-');
-Â  Â  Â  Â  Â  Â  finalValue = `${day}/${month}/${year}`;
-Â  Â  Â  Â  }
-Â  Â  Â  Â  setSlipData(prev => ({ ...prev, [field]: finalValue }));
-Â  Â  };
+    const handleInfoChange = (field, value) => {
+        let finalValue = value;
+        if (field === 'exportDate') {
+            const [year, month, day] = value.split('-');
+            finalValue = `${day}/${month}/${year}`;
+        }
+        setSlipData(prev => ({ ...prev, [field]: finalValue }));
+    };
 
-Â  Â  const handleItemChange = (index, field, value) => {
-Â  Â  Â  Â  const updatedItems = [...slipData.items];
-Â  Â  Â  Â  if (field === 'quantityToExport') {
-Â  Â  Â  Â  Â  Â  const numericValue = Number(value);
-Â  Â  Â  Â  Â  Â  const originalExportedQty = slip.items[index]?.quantityToExport || slip.items[index]?.quantityExported || 0;
-Â  Â  Â  Â  Â  Â  const availableStock = (updatedItems[index].quantityRemaining || 0) + originalExportedQty;
-Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  if (numericValue < 0) return;
+    const handleItemChange = (index, field, value) => {
+        const updatedItems = [...slipData.items];
+        if (field === 'quantityToExport') {
+            const numericValue = Number(value);
+            const originalExportedQty = slip.items[index]?.quantityToExport || slip.items[index]?.quantityExported || 0;
+            const availableStock = (updatedItems[index].quantityRemaining || 0) + originalExportedQty;
 
-Â  Â  Â  Â  Â  Â  if (numericValue > availableStock) {
-Â  Â  Â  Â  Â  Â  Â  Â  toast.warn(`Sá»‘ lÆ°á»£ng xuáº¥t (${numericValue}) khÃ´ng thá»ƒ vÆ°á»£t quÃ¡ tá»“n kho hiá»‡n cÃ³ (${availableStock}).`);
-Â  Â  Â  Â  Â  Â  Â  Â  updatedItems[index][field] = availableStock;
-Â  Â  Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  Â  Â  updatedItems[index][field] = value;
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  updatedItems[index][field] = value;
-Â  Â  Â  Â  }
-Â  Â  Â  Â  setSlipData(prev => ({ ...prev, items: updatedItems }));
-Â  Â  };
-Â  Â  
-Â  Â  const handleProductSearch = async (index, productOrId) => {
-Â  Â  Â  Â  if (!productOrId) return;
-Â  Â  Â  Â  const productId = (typeof productOrId === 'object' ? productOrId.id : String(productOrId)).trim().toUpperCase();
-Â  Â  Â  Â  if (!productId) return;
-Â  Â  Â  Â  
-Â  Â  Â  Â  const updatedItems = [...slipData.items];
-Â  Â  Â  Â  const currentItem = { ...updatedItems[index] };
+            if (numericValue < 0) return;
 
-Â  Â  Â  Â  try {
-Â  Â  Â  Â  Â  Â  const productRef = doc(db, 'products', productId);
-Â  Â  Â  Â  Â  Â  const productSnap = await getDoc(productRef);
+            if (numericValue > availableStock) {
+                toast.warn(`Sá»‘ lÆ°á»£ng xuáº¥t (${numericValue}) khÃ´ng thá»ƒ vÆ°á»£t quÃ¡ tá»“n kho hiá»‡n cÃ³ (${availableStock}).`);
+                updatedItems[index][field] = availableStock;
+            } else {
+                updatedItems[index][field] = value;
+            }
+        } else {
+            updatedItems[index][field] = value;
+        }
+        setSlipData(prev => ({ ...prev, items: updatedItems }));
+    };
 
-Â  Â  Â  Â  Â  Â  if (!productSnap.exists()) {
-Â  Â  Â  Â  Â  Â  Â  Â  toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
-Â  Â  Â  Â  Â  Â  Â  Â  return;
-Â  Â  Â  Â  Â  Â  }
+    const handleProductSearch = async (index, productOrId) => {
+        if (!productOrId) return;
+        const productId = (typeof productOrId === 'object' ? productOrId.id : String(productOrId)).trim().toUpperCase();
+        if (!productId) return;
 
-Â  Â  Â  Â  Â  Â  const productData = productSnap.data();
-Â  Â  Â  Â  Â  Â  currentItem.productId = productId;
-Â  Â  Â  Â  Â  Â  currentItem.productName = productData.productName;
-Â  Â  Â  Â  Â  Â  currentItem.unit = productData.unit;
-Â  Â  Â  Â  Â  Â  currentItem.packaging = productData.packaging;
+        const updatedItems = [...slipData.items];
+        const currentItem = { ...updatedItems[index] };
+
+        try {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+
+            if (!productSnap.exists()) {
+                toast.warn(`KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m vá»›i mÃ£: ${productId}`);
+                return;
+            }
+
+            const productData = productSnap.data();
+            currentItem.productId = productId;
+            currentItem.productName = productData.productName;
+            currentItem.unit = productData.unit;
+            currentItem.packaging = productData.packaging;
             currentItem.team = productData.team;
+            currentItem.storageTemp = productData.storageTemp || '';
 
-Â  Â  Â  Â  Â  Â  const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId), where("quantityRemaining", ">", 0));
-Â  Â  Â  Â  Â  Â  const lotsSnapshot = await getDocs(lotsQuery);
+            const lotsQuery = query(collection(db, 'inventory_lots'), where("productId", "==", productId));
+            const lotsSnapshot = await getDocs(lotsQuery);
 
-Â  Â  Â  Â  Â  Â  if (lotsSnapshot.empty) {
-Â  Â  Â  Â  Â  Â  Â  Â  currentItem.isOutOfStock = true;
-Â  Â  Â  Â  Â  Â  Â  Â  currentItem.availableLots = [];
-Â  Â  Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  Â  Â  const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-Â  Â  Â  Â  Â  Â  Â  Â  foundLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
-Â  Â  Â  Â  Â  Â  Â  Â  currentItem.isOutOfStock = false;
-Â  Â  Â  Â  Â  Â  Â  Â  currentItem.availableLots = foundLots;
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  updatedItems[index] = currentItem;
-Â  Â  Â  Â  Â  Â  setSlipData(prev => ({ ...prev, items: updatedItems }));
+            if (lotsSnapshot.empty) {
+                currentItem.isOutOfStock = true;
+                currentItem.availableLots = [];
+            } else {
+                const foundLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-Â  Â  Â  Â  } catch (error) {
-Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m sáº£n pháº©m/lÃ´ hÃ ng:", error);
-Â  Â  Â  Â  Â  Â  toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m.");
-Â  Â  Â  Â  }
-Â  Â  };
-Â  Â  
-Â  Â  const handleLotSelection = (index, selectedLotId) => {
-Â  Â  Â  Â  const updatedItems = [...slipData.items];
-Â  Â  Â  Â  const currentItem = { ...updatedItems[index] };
-Â  Â  Â  Â  const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
+                const availableLots = foundLots.filter(lot => {
+                    const allocatedQty = lot.quantityAllocated || 0;
+                    const availableQty = lot.quantityRemaining - allocatedQty;
+                    return availableQty > 0;
+                });
 
-Â  Â  Â  Â  if (selectedLot) {
-Â  Â  Â  Â  Â  Â  currentItem.lotNumber = selectedLot.lotNumber;
-Â  Â  Â  Â  Â  Â  currentItem.lotId = selectedLot.id;
-Â  Â  Â  Â  Â  Â  // Báº®T Lá»–I Táº I ÄÃ‚Y: GÃ¡n Ä‘á»‘i tÆ°á»£ng Timestamp hoáº·c chuá»—i 'N/A'
-Â  Â  Â  Â  Â  Â  currentItem.expiryDate = selectedLot.expiryDate || 'N/A'; 
-Â  Â  Â  Â  Â  Â  currentItem.quantityRemaining = selectedLot.quantityRemaining;
-Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  currentItem.lotNumber = '';
-Â  Â  Â  Â  Â  Â  currentItem.lotId = '';
-Â  Â  Â  Â  Â  Â  // Báº®T Lá»–I Táº I ÄÃ‚Y: Reset vá» chuá»—i 'N/A'
-Â  Â  Â  Â  Â  Â  currentItem.expiryDate = 'N/A'; 
-Â  Â  Â  Â  Â  Â  currentItem.quantityRemaining = 0;
-Â  Â  Â  Â  }
-Â  Â  Â  Â  updatedItems[index] = currentItem;
-Â  Â  Â  Â  setSlipData(prev => ({ ...prev, items: updatedItems }));
-Â  Â  };
+                if (availableLots.length === 0) {
+                    currentItem.isOutOfStock = true;
+                    currentItem.availableLots = [];
+                } else {
+                    availableLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+                    currentItem.isOutOfStock = false;
+                    currentItem.availableLots = availableLots;
+                }
+            }
 
-Â  Â  const addNewRow = () => {
-Â  Â  Â  Â  setSlipData(prev => ({
-Â  Â  Â  Â  Â  Â  ...prev,
-Â  Â  Â  Â  Â  Â  items: [...prev.items, {
-Â  Â  Â  Â  Â  Â  Â  Â  id: Date.now(),
-Â  Â  Â  Â  Â  Â  Â  Â  productId: '',
-Â  Â  Â  Â  Â  Â  Â  Â  productName: '',
-Â  Â  Â  Â  Â  Â  Â  Â  lotNumber: '',
-Â  Â  Â  Â  Â  Â  Â  Â  unit: '',
-Â  Â  Â  Â  Â  Â  Â  Â  packaging: '',
-Â  Â  Â  Â  Â  Â  Â  Â  quantityToExport: '',
-Â  Â  Â  Â  Â  Â  Â  Â  notes: '',
-Â  Â  Â  Â  Â  Â  Â  Â  quantityRemaining: 0,
-Â  Â  Â  Â  Â  Â  Â  Â  // THÃŠM: ThÃªm trÆ°á»ng expiryDate vÃ o item má»›i
-Â  Â  Â  Â  Â  Â  Â  Â  expiryDate: 'N/A', 
-Â  Â  Â  Â  Â  Â  Â  Â  isNew: true,
-Â  Â  Â  Â  Â  Â  Â  Â  availableLots: [],
-Â  Â  Â  Â  Â  Â  Â  Â  isOutOfStock: false
-Â  Â  Â  Â  Â  Â  }]
-Â  Â  Â  Â  }));
-Â  Â  };
+            updatedItems[index] = currentItem;
+            setSlipData(prev => ({ ...prev, items: updatedItems }));
 
-Â  Â  const removeRow = (indexToRemove) => {
-Â  Â  Â  Â  const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
-Â  Â  Â  Â  setSlipData({ ...slipData, items: newItems });
-Â  Â  };
+        } catch (error) {
+            console.error("Lá»—i khi tÃ¬m sáº£n pháº©m/lÃ´ hÃ ng:", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m.");
+        }
+    };
 
-Â  Â  const handleSaveChanges = () => {
-Â  Â  Â  Â  const itemsToValidate = slipData.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
-Â  Â  Â  Â  
-Â  Â  Â  Â  if (itemsToValidate.length === 0) {
-Â  Â  Â  Â  Â  Â  toast.warn("Phiáº¿u xuáº¥t pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng vá»›i sá»‘ lÆ°á»£ng lá»›n hÆ¡n 0.");
-Â  Â  Â  Â  Â  Â  onSave({ ...slipData, items: [] });
-Â  Â  Â  Â  Â  Â  return;
-Â  Â  Â  Â  }
+    const handleLotSelection = (index, selectedLotId) => {
+        const updatedItems = [...slipData.items];
+        const currentItem = { ...updatedItems[index] };
+        const selectedLot = currentItem.availableLots.find(lot => lot.id === selectedLotId);
 
-Â  Â  Â  Â  for (let i = 0; i < itemsToValidate.length; i++) {
-Â  Â  Â  Â  Â  Â  const item = itemsToValidate[i];
-Â  Â  Â  Â  Â  Â  const validationResult = exportItemSchema.safeParse(item);
-Â  Â  Â  Â  Â  Â  if (!validationResult.success) {
-Â  Â  Â  Â  Â  Â  Â  Â  const originalIndex = slipData.items.findIndex(originalItem => originalItem.id === item.id);
-Â  Â  Â  Â  Â  Â  Â  Â  const errorMessage = `Lá»—i á»Ÿ dÃ²ng ${originalIndex + 1} (MÃ£: ${item.productId}): ${validationResult.error.issues[0].message}`;
-Â  Â  Â  Â  Â  Â  Â  Â  toast.warn(errorMessage);
-Â  Â  Â  Â  Â  Â  Â  Â  return;
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  }
+        if (selectedLot) {
+            currentItem.lotNumber = selectedLot.lotNumber;
+            currentItem.lotId = selectedLot.id;
+            currentItem.expiryDate = selectedLot.expiryDate || 'N/A';
+            currentItem.quantityRemaining = selectedLot.quantityRemaining;
+        } else {
+            currentItem.lotNumber = '';
+            currentItem.lotId = '';
+            currentItem.expiryDate = 'N/A';
+            currentItem.quantityRemaining = 0;
+        }
+        updatedItems[index] = currentItem;
+        setSlipData(prev => ({ ...prev, items: updatedItems }));
+    };
 
-Â  Â  Â  Â  const finalSlipData = {
-Â  Â  Â  Â  Â  Â  ...slipData,
-Â  Â  Â  Â  Â  Â  items: itemsToValidate
-Â  Â  Â  Â  };
-Â  Â  Â  Â  onSave(finalSlipData);
-Â  Â  };
+    const addNewRow = () => {
+        setSlipData(prev => ({
+            ...prev,
+            items: [...prev.items, {
+                id: Date.now(),
+                productId: '',
+                productName: '',
+                lotNumber: '',
+                unit: '',
+                packaging: '',
+                quantityToExport: '',
+                notes: '',
+                quantityRemaining: 0,
+                expiryDate: 'N/A',
+                isNew: true,
+                availableLots: [],
+                isOutOfStock: false
+            }]
+        }));
+    };
 
-Â  Â  return (
-Â  Â  Â  Â  <div className="modal-backdrop">
-Â  Â  Â  Â  Â  Â  <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
-Â  Â  Â  Â  Â  Â  Â  Â  <h2>Chá»‰nh sá»­a Phiáº¿u Xuáº¥t Kho (ID: {slipData.id})</h2>
-Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-section" style={{padding: '15px', marginTop: '10px'}}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-row">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-group">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <label>NgÃ y xuáº¥t (*)</label>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="date-input-wrapper">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="date"
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={dateToInputValue(slipData.exportDate)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(e) => handleInfoChange('exportDate', e.target.value)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiCalendar className="date-input-icon" />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-group">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <label>KhÃ¡ch hÃ ng</label>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input type="text" value={slipData.customer} readOnly disabled />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-group">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <label>Diá»…n giáº£i</label>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <textarea 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={slipData.description || ''} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(e) => handleInfoChange('description', e.target.value)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  rows={1}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  </div>
+    const removeRow = (indexToRemove) => {
+        const newItems = slipData.items.filter((_, index) => index !== indexToRemove);
+        setSlipData({ ...slipData, items: newItems });
+    };
 
-Â  Â  Â  Â  Â  Â  Â  Â  <div className="modal-body">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">MÃ£ hÃ ng</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">TÃªn hÃ ng</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Sá»‘ lÃ´</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">HSD</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">ÄVT</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Quy cÃ¡ch</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">SL Xuáº¥t (*)</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Ghi chÃº</div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-header">Thao tÃ¡c</div>
+    const handleSaveChanges = async (updatedSlip) => {
+        const itemsToValidate = updatedSlip.items.filter(item => item.productId && Number(item.quantityToExport) > 0);
 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {slipData.items.map((item, index) => (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <React.Fragment key={item.id || index}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {item.isNew ? (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <ProductAutocomplete
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={item.productId}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(value) => handleItemChange(index, 'productId', value.toUpperCase())}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onSelect={(product) => handleProductSearch(index, product)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onBlur={() => handleProductSearch(index, item.productId)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input type="text" value={item.productId} readOnly title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng Ä‘Ã£ cÃ³." />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {item.isNew ? (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  item.isOutOfStock ? (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <span style={{color: 'red'}}>Háº¿t hÃ ng</span>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <select
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={item.lotId || ''}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={e => handleLotSelection(index, e.target.value)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  disabled={!item.availableLots || item.availableLots.length === 0}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  style={{width: '100%'}}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  >
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <option value="">-- Chá»n lÃ´ --</option>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {item.availableLots.map(lot => (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <option key={lot.id} value={lot.id}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {`${getExpiryStatusPrefix(lot.expiryDate, lot.subGroup)}LÃ´: ${lot.lotNumber || '(Trá»‘ng)'} | Tá»“n: ${formatNumber(lot.quantityRemaining)}`}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </option>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </select>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input type="text" value={item.lotNumber || '(KhÃ´ng cÃ³)'} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng Ä‘Ã£ cÃ³." />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {/* THÃŠM Táº I ÄÃ‚Y: Ã” INPUT HIá»‚N THá»Š HSD */}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="text" 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  // Sá»¬A Lá»–I: Kiá»ƒm tra kiá»ƒu dá»¯ liá»‡u trÆ°á»›c khi Ä‘á»‹nh dáº¡ng
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={
-                                            // Náº¿u lÃ  chuá»—i (dá»¯ liá»‡u cÅ©/N/A), hiá»ƒn thá»‹ chuá»—i
-                                            typeof item.expiryDate === 'string' 
-                                                ? item.expiryDate 
-                                                // Náº¿u lÃ  Timestamp (tá»« lÃ´ má»›i chá»n), Ä‘á»‹nh dáº¡ng
+        for (let i = 0; i < itemsToValidate.length; i++) {
+            const item = itemsToValidate[i];
+            const validationResult = exportItemSchema.safeParse(item);
+            if (!validationResult.success) {
+                const originalIndex = updatedSlip.items.findIndex(originalItem => originalItem.id === item.id);
+                const errorMessage = `Lá»—i á»Ÿ dÃ²ng ${originalIndex + 1} (MÃ£: ${item.productId}): ${validationResult.error.issues[0].message}`;
+                toast.warn(errorMessage);
+                return;
+            }
+        }
+
+        const finalSlipData = { ...updatedSlip, items: itemsToValidate };
+
+        try {
+            const batch = writeBatch(db);
+            const slipDocRef = doc(db, "export_tickets", finalSlipData.id);
+
+            const allocationChanges = new Map();
+
+            // 1a. TRá»ª Ä‘i lÆ°á»£ng Ä‘áº·t giá»¯ CÅ¨ tá»« phiáº¿u gá»‘c
+            slip.items.forEach(item => {
+                if (item.lotId) {
+                    const change = allocationChanges.get(item.lotId) || 0;
+                    allocationChanges.set(item.lotId, change - Number(item.quantityToExport || item.quantityExported || 0));
+                }
+            });
+
+            // 1b. Cá»˜NG láº¡i lÆ°á»£ng Ä‘áº·t giá»¯ Má»šI tá»« phiáº¿u Ä‘Ã£ cáº­p nháº­t
+            finalSlipData.items.forEach(item => {
+                if (item.lotId) {
+                    const change = allocationChanges.get(item.lotId) || 0;
+                    allocationChanges.set(item.lotId, change + Number(item.quantityToExport));
+                }
+            });
+
+            // 2. Duyá»‡t qua báº£n Ä‘á»“ thay Ä‘á»•i vÃ  cáº­p nháº­t vÃ o Firestore
+            for (const [lotId, change] of allocationChanges.entries()) {
+                if (!lotId || change === 0) continue;
+
+                const lotRef = doc(db, 'inventory_lots', lotId);
+                const lotSnap = await getDoc(lotRef);
+                if (lotSnap.exists()) {
+                    const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                    const newAllocated = Math.max(0, currentAllocated + change); // Äáº£m báº£o khÃ´ng Ã¢m
+                    batch.update(lotRef, { quantityAllocated: newAllocated });
+                }
+            }
+
+            // 3. Cáº­p nháº­t láº¡i ná»™i dung cá»§a phiáº¿u xuáº¥t
+            batch.update(slipDocRef, {
+                items: finalSlipData.items,
+                customer: finalSlipData.customer,
+                description: finalSlipData.description,
+                exportDate: finalSlipData.exportDate
+            });
+
+            await batch.commit();
+
+            onSave(finalSlipData);
+            toast.success('Cáº­p nháº­t phiáº¿u xuáº¥t thÃ nh cÃ´ng!');
+
+        } catch (error) {
+            console.error("Lá»—i khi cáº­p nháº­t phiáº¿u xuáº¥t: ", error);
+            toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
+        }
+    };
+
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content" style={{ width: '90vw', maxWidth: '1200px' }}>
+                <h2>Chá»‰nh sá»­a Phiáº¿u Xuáº¥t Kho (ID: {slipData.id})</h2>
+
+                <div className="form-section" style={{ padding: '15px', marginTop: '10px' }}>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>NgÃ y xuáº¥t (*)</label>
+                            <div className="date-input-wrapper">
+                                <input
+                                    type="date"
+                                    value={dateToInputValue(slipData.exportDate)}
+                                    onChange={(e) => handleInfoChange('exportDate', e.target.value)}
+                                />
+                                <FiCalendar className="date-input-icon" />
+                            </div>
+                        </div>
+                        <div className="form-group">
+                            <label>KhÃ¡ch hÃ ng</label>
+                            <input type="text" value={slipData.customer} readOnly disabled />
+                        </div>
+                        <div className="form-group">
+                            <label>Diá»…n giáº£i</label>
+                            <textarea
+                                value={slipData.description || ''}
+                                onChange={(e) => handleInfoChange('description', e.target.value)}
+                                rows={1}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="modal-body">
+                    <h3>Chi tiáº¿t hÃ ng hÃ³a</h3>
+                    <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+                        <div className="grid-header">MÃ£ hÃ ng</div>
+                        <div className="grid-header">TÃªn hÃ ng</div>
+                        <div className="grid-header">Sá»‘ lÃ´</div>
+                        <div className="grid-header">HSD</div>
+                        <div className="grid-header">ÄVT</div>
+                        <div className="grid-header">Quy cÃ¡ch</div>
+                        <div className="grid-header">SL Xuáº¥t (*)</div>
+                        <div className="grid-header">Ghi chÃº</div>
+                        <div className="grid-header">Thao tÃ¡c</div>
+
+                        {slipData.items.map((item, index) => (
+                            <React.Fragment key={item.id || index}>
+                                <div className="grid-cell">
+                                    {item.isNew ? (
+                                        <ProductAutocomplete
+                                            value={item.productId}
+                                            onChange={(value) => handleItemChange(index, 'productId', value.toUpperCase())}
+                                            onSelect={(product) => handleProductSearch(index, product)}
+                                            onBlur={() => handleProductSearch(index, item.productId)}
+                                        />
+                                    ) : (
+                                        <input type="text" value={item.productId} readOnly title="KhÃ´ng thá»ƒ sá»­a MÃ£ hÃ ng Ä‘Ã£ cÃ³." />
+                                    )}
+                                </div>
+                                <div className="grid-cell"><input type="text" value={item.productName} readOnly /></div>
+                                <div className="grid-cell">
+                                    {item.isNew ? (
+                                        item.isOutOfStock ? (
+                                            <span style={{ color: 'red' }}>Háº¿t hÃ ng</span>
+                                        ) : (
+                                            <select
+                                                value={item.lotId || ''}
+                                                onChange={e => handleLotSelection(index, e.target.value)}
+                                                disabled={!item.availableLots || item.availableLots.length === 0}
+                                                style={{ width: '100%' }}
+                                            >
+                                                <option value="">-- Chá»n lÃ´ --</option>
+                                                {item.availableLots.map(lot => (
+                                                    <option key={lot.id} value={lot.id}>
+                                                        {`${getExpiryStatusPrefix(lot.expiryDate, lot.subGroup)}LÃ´: ${lot.lotNumber || '(Trá»‘ng)'} | Tá»“n: ${formatNumber(lot.quantityRemaining - (lot.quantityAllocated || 0))}`}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )
+                                    ) : (
+                                        <input type="text" value={item.lotNumber || '(KhÃ´ng cÃ³)'} readOnly title="KhÃ´ng thá»ƒ sá»­a LÃ´ hÃ ng Ä‘Ã£ cÃ³." />
+                                    )}
+                                </div>
+                                <div className="grid-cell">
+                                    <input
+                                        type="text"
+                                        value={
+                                            typeof item.expiryDate === 'string'
+                                                ? item.expiryDate
                                                 : (item.expiryDate ? formatDate(item.expiryDate) : '(N/A)')
-                                        } 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  readOnly 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  title="Háº¡n sá»­ dá»¥ng cá»§a lÃ´ hÃ ng Ä‘Ã£ chá»n"
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  style={{ backgroundColor: '#f0f0f0' }}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <input 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="number"
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  step="any"
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={item.quantityToExport} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="grid-cell">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiXCircle />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </button>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </React.Fragment>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  <div className="modal-actions">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" onClick={addNewRow} className="btn-secondary">ThÃªm dÃ²ng</button>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button type="button" onClick={handleSaveChanges} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
-Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  </div>
-Â  Â  );
+                                        }
+                                        readOnly
+                                        title="Háº¡n sá»­ dá»¥ng cá»§a lÃ´ hÃ ng Ä‘Ã£ chá»n"
+                                        style={{ backgroundColor: '#f0f0f0' }}
+                                    />
+                                </div>
+                                <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
+                                <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
+                                <div className="grid-cell">
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        value={item.quantityToExport}
+                                        onChange={e => handleItemChange(index, 'quantityToExport', e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => handleItemChange(index, 'notes', e.target.value)} /></div>
+                                <div className="grid-cell">
+                                    <button type="button" className="btn-icon btn-delete" onClick={() => removeRow(index)}>
+                                        <FiXCircle />
+                                    </button>
+                                </div>
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="modal-actions">
+                    <button type="button" onClick={addNewRow} className="btn-secondary">ThÃªm dÃ²ng</button>
+                    <button type="button" onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
+                    <button type="button" onClick={() => handleSaveChanges(slipData)} className="btn-primary">LÆ°u thay Ä‘á»•i</button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default EditExportSlipModal;
@@ -7342,33 +7389,27 @@ const InventoryPage = ({ pageTitle }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    // src/pages/InventoryPage.jsx
-
-// src/pages/InventoryPage.jsx
-
-// src/pages/InventoryPage.jsx
+ // src/pages/InventoryPage.jsx
 
 const baseQuery = useMemo(() => {
     const baseCollection = collection(db, "inventory_lots");
     let constraints = [where("quantityRemaining", ">", 0)];
 
-    // --- LOGIC ÄÃƒ Sá»¬A ---
-    // 1. Ãp dá»¥ng cÃ¡c bá»™ lá»c báº±ng nhau (equality filters)
+    // --- Logic lá»c theo vai trÃ² vÃ  cÃ¡c bá»™ lá»c khÃ¡c (giá»¯ nguyÃªn) ---
     if (userRole === 'med') {
         constraints.push(where("team", "==", "MED"));
     } else if (userRole === 'bio') {
-    constraints.push(where("team", "==", "BIO"));
-}
+        constraints.push(where("team", "==", "BIO"));
+    }
 
     if (filters.team !== 'all') {
         constraints.push(where("team", "==", filters.team));
     }
-    // === CHÃˆN ÄOáº N MÃƒ Má»šI VÃ€O ÄÃ‚Y ===
-if (filters.subGroup && filters.subGroup !== 'all') {
-    constraints.push(where("subGroup", "==", filters.subGroup));
-}
+    if (filters.subGroup && filters.subGroup !== 'all') {
+        constraints.push(where("subGroup", "==", filters.subGroup));
+    }
 
-    // 2. Ãp dá»¥ng bá»™ lá»c khoáº£ng vÃ  sáº¯p xáº¿p tÆ°Æ¡ng á»©ng
+    // --- Logic sáº¯p xáº¿p Ä‘Ã£ Ä‘Æ°á»£c sá»­a lá»—i ---
     if (filters.dateStatus === 'expired') {
         constraints.push(where("expiryDate", "<", Timestamp.now()));
         constraints.push(orderBy("expiryDate", "desc"));
@@ -7379,14 +7420,17 @@ if (filters.subGroup && filters.subGroup !== 'all') {
         constraints.push(where("expiryDate", ">=", Timestamp.now()));
         constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
         constraints.push(orderBy("expiryDate", "asc")); 
-        constraints.push(orderBy("productId", "asc"));
+        constraints.push(orderBy("quantityRemaining", "asc")); // Sá»­a á»Ÿ Ä‘Ã¢y
     } else if (searchTerm) {
         const upperSearchTerm = searchTerm.toUpperCase();
         constraints.push(where("productId", ">=", upperSearchTerm));
         constraints.push(where("productId", "<=", upperSearchTerm + '\uf8ff'));
-        constraints.push(orderBy("productId", "asc"));
+
+        // Sá»¬A Lá»–I Táº I ÄÃ‚Y: ThÃªm quy táº¯c sáº¯p xáº¿p FEFO khi tÃ¬m kiáº¿m
+        constraints.push(orderBy("productId", "asc"), orderBy("expiryDate", "asc"), orderBy("quantityRemaining", "asc"));
+
     } else {
-        // Sáº¯p xáº¿p máº·c Ä‘á»‹nh
+        // Sáº¯p xáº¿p máº·c Ä‘á»‹nh Má»šI: Theo HSD gáº§n nháº¥t, sau Ä‘Ã³ lÃ  SL tá»“n Ã­t hÆ¡n lÃªn trÆ°á»›c
         constraints.push(orderBy("productId", "asc"), orderBy("importDate", "asc"));
     }
 
@@ -8530,6 +8574,7 @@ const MobileInventoryPage = () => {
                             <div><strong>Nhiá»‡t Ä‘á»™ BQ:</strong><span>{productData.generalInfo.storageTemp}</span></div>
                             <div><strong>HÃ£ng SX:</strong><span>{productData.generalInfo.manufacturer}</span></div>
                             <div><strong>Team:</strong><span>{productData.generalInfo.team}</span></div>
+                            <div><strong>NhÃ³m hÃ ng:</strong><span>{productData.generalInfo.subGroup}</span></div>
                         </div>
                         <div className={styles.totalInfo}>
                             <strong>Tá»•ng tá»“n:</strong>

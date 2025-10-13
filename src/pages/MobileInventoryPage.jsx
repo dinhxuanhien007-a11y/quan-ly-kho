@@ -194,6 +194,7 @@ const MobileInventoryPage = () => {
                             <div><strong>Nhiệt độ BQ:</strong><span>{productData.generalInfo.storageTemp}</span></div>
                             <div><strong>Hãng SX:</strong><span>{productData.generalInfo.manufacturer}</span></div>
                             <div><strong>Team:</strong><span>{productData.generalInfo.team}</span></div>
+                            <div><strong>Nhóm hàng:</strong><span>{productData.generalInfo.subGroup}</span></div>
                         </div>
                         <div className={styles.totalInfo}>
                             <strong>Tổng tồn:</strong>
