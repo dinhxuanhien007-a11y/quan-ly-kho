@@ -302,30 +302,68 @@ const InventorySummaryPage = ({ pageTitle }) => {
     };
     
     const toggleRow = async (productId) => {
-        const isCurrentlyExpanded = !!expandedRows[productId];
-        if (isCurrentlyExpanded) {
-            setExpandedRows(prev => ({ ...prev, [productId]: false }));
-            return;
-        }
+    const isCurrentlyExpanded = !!expandedRows[productId];
+    if (isCurrentlyExpanded) {
+        setExpandedRows(prev => ({ ...prev, [productId]: false }));
+        return;
+    }
 
-        setLoadingLots(prev => ({ ...prev, [productId]: true }));
-        try {
-            const lotsQuery = query(
-                collection(db, "inventory_lots"),
-                where("productId", "==", productId),
-                where("quantityRemaining", ">", 0),
-                orderBy("expiryDate", "asc")
-            );
-            const lotsSnapshot = await getDocs(lotsQuery);
-            const lots = lotsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            setLotDetails(prev => ({ ...prev, [productId]: lots }));
-        } catch (error) {
-            console.error("Lỗi khi tải chi tiết lô:", error);
-        } finally {
-            setLoadingLots(prev => ({ ...prev, [productId]: false }));
+    setLoadingLots(prev => ({ ...prev, [productId]: true }));
+    try {
+        // 1. Lấy tất cả các bản ghi lô hàng còn tồn kho của sản phẩm
+        const lotsQuery = query(
+            collection(db, "inventory_lots"),
+            where("productId", "==", productId),
+            where("quantityRemaining", ">", 0)
+        );
+        const lotsSnapshot = await getDocs(lotsQuery);
+        const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // 2. Bắt đầu gộp các lô có cùng số lô
+        const lotAggregator = new Map();
+        for (const lot of allLots) {
+            const lotKey = lot.lotNumber || '(Không có)'; // Dùng key chung cho các lô không có số
+
+            if (lotAggregator.has(lotKey)) {
+                const existingLot = lotAggregator.get(lotKey);
+                // Cộng dồn số lượng tồn
+                existingLot.quantityRemaining += lot.quantityRemaining;
+                // Luôn giữ lại HSD ngắn nhất cho nhóm
+                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                    existingLot.expiryDate = lot.expiryDate;
+                }
+            } else {
+                // Thêm mới nếu chưa có trong Map, tạo một bản sao để tránh thay đổi dữ liệu gốc
+                lotAggregator.set(lotKey, { ...lot });
+            }
         }
-        setExpandedRows(prev => ({ ...prev, [productId]: true }));
-    };
+        const aggregatedLots = Array.from(lotAggregator.values());
+
+        // 3. Sắp xếp danh sách đã gộp theo quy tắc bạn yêu cầu
+        aggregatedLots.sort((a, b) => {
+            const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+            const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+
+            // Quy tắc 1: HSD gần nhất lên trước
+            if (dateA !== dateB) {
+                return dateA - dateB;
+            }
+
+            // Quy tắc 2: Nếu HSD bằng nhau, số lượng ít hơn lên trước
+            return a.quantityRemaining - b.quantityRemaining;
+        });
+
+        // 4. Cập nhật state với danh sách đã được xử lý
+        setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots }));
+
+    } catch (error) {
+        console.error("Lỗi khi tải chi tiết lô:", error);
+        toast.error("Không thể tải chi tiết các lô hàng.");
+    } finally {
+        setLoadingLots(prev => ({ ...prev, [productId]: false }));
+    }
+    setExpandedRows(prev => ({ ...prev, [productId]: true }));
+};
 
     const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
     const handlePrevPage = () => { fetchData('first'); };
