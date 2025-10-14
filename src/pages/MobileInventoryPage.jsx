@@ -51,34 +51,58 @@ const MobileInventoryPage = () => {
                 ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
             ];
             const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
-            if (uniqueLots.length > 0) {
-                const productId = uniqueLots[0].productId;
-                const productDocRef = doc(db, 'products', productId);
-                const productSnap = await getDoc(productDocRef);
-                const productInfo = productSnap.exists() ? productSnap.data() : null;
-                if (productInfo) {
-                    const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
-                    setProductData({
-                        generalInfo: { ...productInfo, productId: productId },
-                        lots: uniqueLots.filter(lot => lot.quantityRemaining > 0).sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
-                        totalRemaining: totalRemaining
-                    });
-                } else {
-                    setProductData(null);
+            // Đoạn code mới để thay thế
+if (uniqueLots.length > 0) {
+    const productId = uniqueLots[0].productId;
+    const productDocRef = doc(db, 'products', productId);
+    const productSnap = await getDoc(productDocRef);
+    const productInfo = productSnap.exists() ? productSnap.data() : null;
+
+    if (productInfo) {
+        // BẮT ĐẦU LOGIC MỚI: Gộp các lô có cùng số lô
+        const lotAggregator = new Map();
+        for (const lot of uniqueLots) {
+            if (lot.quantityRemaining <= 0) continue;
+
+            const lotKey = lot.lotNumber || '(Không có)'; // Dùng '(Không có)' làm key nếu lotNumber là null
+            if (lotAggregator.has(lotKey)) {
+                const existingLot = lotAggregator.get(lotKey);
+                existingLot.quantityRemaining += lot.quantityRemaining;
+                // Ưu tiên giữ lại HSD ngắn nhất
+                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                    existingLot.expiryDate = lot.expiryDate;
                 }
             } else {
-                const productDocRef = doc(db, 'products', trimmedTerm);
-                const productSnap = await getDoc(productDocRef);
-                if (productSnap.exists()) {
-                    setProductData({
-                        generalInfo: { ...productSnap.data(), productId: trimmedTerm },
-                        lots: [],
-                        totalRemaining: 0
-                    });
-                } else {
-                    setProductData(null);
-                }
+                lotAggregator.set(lotKey, { ...lot });
             }
+        }
+        const aggregatedLots = Array.from(lotAggregator.values());
+        // KẾT THÚC LOGIC MỚI
+
+        const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+        setProductData({
+            generalInfo: { ...productInfo, productId: productId },
+            // THAY ĐỔI LOGIC SẮP XẾP TẠI ĐÂY
+            lots: aggregatedLots.sort((a, b) => {
+                // Xử lý trường hợp không có HSD (đưa xuống cuối)
+                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+
+                // 1. Ưu tiên sắp xếp theo HSD tăng dần (date gần nhất lên trước)
+                if (dateA !== dateB) {
+                    return dateA - dateB;
+                }
+
+                // 2. Nếu HSD bằng nhau, ưu tiên sắp xếp theo số lượng tồn tăng dần (số lượng ít hơn lên trước)
+                return a.quantityRemaining - b.quantityRemaining;
+            }),
+            totalRemaining: totalRemaining
+        });
+    } else {
+        setProductData(null);
+    }
+}
         } catch (error) {
             console.error("Lỗi tra cứu tồn kho:", error);
             setProductData(null);
