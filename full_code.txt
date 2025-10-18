@@ -5228,7 +5228,7 @@ export default ViewerLayout;
 
 
 // src/components/ViewExportSlipModal.jsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import Modal from 'react-modal';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
@@ -5240,6 +5240,35 @@ Modal.setAppElement('#root');
 
 const ViewExportSlipModal = ({ slip, onClose }) => {
 Â  Â  if (!slip) return null;
+
+// === DÃN TOÃ€N Bá»˜ KHá»I CODE NÃ€Y VÃ€O ÄÃ‚Y ===
+    // Logic Ä‘á»ƒ gá»™p cÃ¡c dÃ²ng cÃ³ cÃ¹ng MÃ£ hÃ ng vÃ  Sá»‘ lÃ´ láº¡i vá»›i nhau
+    const aggregatedItems = useMemo(() => {
+        if (!slip || !slip.items) return [];
+
+        const aggregator = new Map();
+
+        for (const item of slip.items) {
+            // Táº¡o má»™t key duy nháº¥t cho má»—i nhÃ³m sáº£n pháº©m-lÃ´
+            const key = `${item.productId}-${item.lotNumber}`;
+            const quantity = Number(item.quantity || item.quantityToExport || item.quantityExported || 0);
+
+            if (aggregator.has(key)) {
+                // Náº¿u Ä‘Ã£ cÃ³, cá»™ng dá»“n sá»‘ lÆ°á»£ng
+                const existingItem = aggregator.get(key);
+                existingItem.quantity += quantity;
+            } else {
+                // Náº¿u chÆ°a cÃ³, thÃªm má»›i vÃ o Map
+                aggregator.set(key, {
+                    ...item,
+                    quantity: quantity, // Táº¡o má»™t trÆ°á»ng `quantity` Ä‘Ã£ Ä‘Æ°á»£c chuáº©n hÃ³a
+                });
+            }
+        }
+
+        return Array.from(aggregator.values());
+    }, [slip]); // Chá»‰ cháº¡y láº¡i logic nÃ y khi dá»¯ liá»‡u `slip` thay Ä‘á»•i
+    // === Káº¾T THÃšC PHáº¦N DÃN ===
 
 Â  Â  console.log("Dá»¯ liá»‡u Phiáº¿u Xuáº¥t Ä‘Æ°á»£c truyá»n vÃ o Modal:", slip);
 Â  Â  
@@ -5297,25 +5326,22 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {slip.items.map((item, index) => (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tr key={index}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productId}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productName}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.lotNumber}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {/* Sá»¬A Lá»–I 2: Sá»­ dá»¥ng hÃ m helper má»›i Ä‘á»ƒ xá»­ lÃ½ cáº£ chuá»—i vÃ  Timestamp */}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{renderExpiryDate(item.expiryDate)}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.unit}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item?.packaging || ''}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td style={{ textAlign: 'center' }}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.notes || ''}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.storageTemp}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tbody>
+    {aggregatedItems.map((item, index) => (
+        <tr key={index}>
+            <td>{item.productId}</td>
+            <td>{item.productName}</td>
+            <td>{item.lotNumber}</td>
+            <td>{renderExpiryDate(item.expiryDate)}</td>
+            <td>{item.unit}</td>
+            <td>{item?.packaging || ''}</td>
+            <td style={{ textAlign: 'center' }}>
+                {formatNumber(item.quantity)}
+            </td>
+            <td>{item.notes || ''}</td>
+            <td>{item.storageTemp}</td>
+        </tr>
+    ))}
+</tbody>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </table>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
 Â  Â  Â  Â  Â  Â  Â  Â  </div>
@@ -5942,26 +5968,52 @@ const DashboardPage = () => {
     const [viewModal, setViewModal] = useState({ isOpen: false, slip: null, type: '' });
 
     const handleViewSlip = async (slipId, slipType) => {
-        const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
-        toast.info("Äang táº£i chi tiáº¿t phiáº¿u...");
-        try {
-            const docRef = doc(db, collectionName, slipId);
-            const docSnap = await getDoc(docRef);
+    const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
+    toast.info("Äang táº£i chi tiáº¿t phiáº¿u...");
+    try {
+        const docRef = doc(db, collectionName, slipId);
+        const docSnap = await getDoc(docRef);
 
-            if (docSnap.exists()) {
-                setViewModal({ 
-                    isOpen: true, 
-                    slip: { id: docSnap.id, ...docSnap.data() }, 
-                    type: slipType 
-                });
-            } else {
-                toast.error("KhÃ´ng tÃ¬m tháº¥y chi tiáº¿t cá»§a phiáº¿u nÃ y.");
-            }
-        } catch (error) {
-            toast.error("Lá»—i khi táº£i chi tiáº¿t phiáº¿u.");
-            console.error(error);
+        if (docSnap.exists()) {
+            const slipData = { id: docSnap.id, ...docSnap.data() };
+
+            // --- Báº®T Äáº¦U LOGIC LÃ€M GIÃ€U Dá»® LIá»†U ÄÆ¯á»¢C Bá»” SUNG ---
+            const productPromises = slipData.items.map(item => getDoc(doc(db, 'products', item.productId)));
+            const productSnapshots = await Promise.all(productPromises);
+            
+            const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                if (docSn.exists()) {
+                    acc[docSn.id] = docSn.data();
+                }
+                return acc;
+            }, {});
+
+            // Gá»™p thÃ´ng tin chi tiáº¿t vÃ o tá»«ng item cá»§a phiáº¿u
+            const enrichedItems = slipData.items.map(item => {
+                const details = productDetailsMap[item.productId] || {};
+                return {
+                    ...item,
+                    // Äá»•i tÃªn 'packaging' thÃ nh 'specification' Ä‘á»ƒ modal cÃ³ thá»ƒ Ä‘á»c Ä‘Æ°á»£c
+                    specification: details.packaging || '', 
+                };
+            });
+
+            const enrichedSlip = { ...slipData, items: enrichedItems };
+            // --- Káº¾T THÃšC LOGIC LÃ€M GIÃ€U Dá»® LIá»†U ---
+
+            setViewModal({
+                isOpen: true,
+                slip: enrichedSlip, // <-- Sá»­ dá»¥ng dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c lÃ m giÃ u
+                type: slipType
+            });
+        } else {
+            toast.error("KhÃ´ng tÃ¬m tháº¥y chi tiáº¿t cá»§a phiáº¿u nÃ y.");
         }
-    };
+    } catch (error) {
+        toast.error("Lá»—i khi táº£i chi tiáº¿t phiáº¿u.");
+        console.error(error);
+    }
+};
 
     const closeViewModal = () => {
         setViewModal({ isOpen: false, slip: null, type: '' });
@@ -6477,58 +6529,57 @@ const ExportListPage = () => {
         reset();
     };
 
-// src/pages/ExportListPage.jsx
+// File: src/pages/ExportListPage.jsx
 
-// THAY THáº¾ HÃ€M CÅ¨ Báº°NG HÃ€M NÃ€Y:
 const handleConfirmExport = async (slip) => {
-Â  Â  setIsProcessing(true);
+    setIsProcessing(true);
     const batch = writeBatch(db); // DÃ¹ng Batch Writes
     
-Â  Â  try {
-Â  Â  Â  for (const item of slip.items) {
-Â  Â  Â  Â  const lotRef = doc(db, 'inventory_lots', item.lotId);
-Â  Â  Â  Â  const lotSnap = await getDoc(lotRef);
-Â  Â  Â  Â  
-Â  Â  Â  Â  if (lotSnap.exists()) {
-            const currentRemaining = lotSnap.data().quantityRemaining;
-            const currentAllocated = lotSnap.data().quantityAllocated || 0;
-Â  Â  Â  Â  Â  Â  const quantityToExport = item.quantityToExport || item.quantityExported;
-Â  Â  Â  Â  Â  Â  
-            // 1. Kiá»ƒm tra tá»“n kho thá»±c táº¿
-Â  Â  Â  Â  Â  Â  const newQuantityRemaining = currentRemaining - quantityToExport; 
-Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  if (newQuantityRemaining < 0) {
-Â  Â  Â  Â  Â  Â  Â  Â  toast.error(`Lá»—i: Tá»“n kho cá»§a lÃ´ ${item.lotNumber} khÃ´ng Ä‘á»§ (${currentRemaining}) Ä‘á»ƒ xuáº¥t.`);
-Â  Â  Â  Â  Â  Â  Â  Â  setIsProcessing(false); 
-Â  Â  Â  Â  Â  Â  Â  Â  return;
-Â  Â  Â  Â  Â  Â  }
+    try {
+        for (const item of slip.items) {
+            const lotRef = doc(db, 'inventory_lots', item.lotId);
+            const lotSnap = await getDoc(lotRef);
             
-            // 2. Giáº£i phÃ³ng Ä‘áº·t giá»¯ (trá»« Ä‘i lÆ°á»£ng Ä‘Ã£ xuáº¥t)
-            const newAllocated = Math.max(0, currentAllocated - quantityToExport);
-            
-            // 3. Cáº­p nháº­t cáº£ 2 trÆ°á»ng
-Â  Â  Â  Â  Â  Â  batch.update(lotRef, { 
-                quantityRemaining: newQuantityRemaining,
-                quantityAllocated: newAllocated // Giáº£i phÃ³ng Ä‘áº·t giá»¯
-            });
-Â  Â  Â  Â  }
-Â  Â  Â  }
+            if (lotSnap.exists()) {
+                const currentRemaining = lotSnap.data().quantityRemaining;
+                const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                const quantityToExport = item.quantityToExport || item.quantityExported;
+                
+                const newQuantityRemaining = currentRemaining - quantityToExport; 
+                
+                if (newQuantityRemaining < 0) {
+                    toast.error(`Lá»—i: Tá»“n kho cá»§a lÃ´ ${item.lotNumber} khÃ´ng Ä‘á»§.`);
+                    setIsProcessing(false); 
+                    return;
+                }
+                
+                // *** DÃ’NG Sá»¬A Lá»–I QUAN TRá»ŒNG Náº°M á»ž ÄÃ‚Y ***
+                // Trá»« Ä‘i sá»‘ lÆ°á»£ng Ä‘Ã£ xuáº¥t khá»i pháº§n Ä‘áº·t giá»¯
+                const newAllocated = Math.max(0, currentAllocated - quantityToExport);
+                
+                // Cáº­p nháº­t cáº£ 2 trÆ°á»ng
+                batch.update(lotRef, { 
+                    quantityRemaining: newQuantityRemaining,
+                    quantityAllocated: newAllocated // <--- Sá»­a lá»—i á»Ÿ Ä‘Ã¢y
+                });
+            }
+        }
         
         // Cáº­p nháº­t tráº¡ng thÃ¡i phiáº¿u
-Â  Â  Â  const slipRef = doc(db, 'export_tickets', slip.id);
-Â  Â  Â  batch.update(slipRef, { status: 'completed' });
+        const slipRef = doc(db, 'export_tickets', slip.id);
+        batch.update(slipRef, { status: 'completed' });
         
         await batch.commit();
 
-Â  Â  Â  toast.success('XÃ¡c nháº­n xuáº¥t kho thÃ nh cÃ´ng!');
-Â  Â  Â  reset();
-Â  Â  } catch (error) {
-Â  Â  Â  console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
-Â  Â  Â  toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n.');
-Â  Â  } finally {
-Â  Â  Â  Â  setIsProcessing(false);
-Â  Â  Â  Â  setConfirmModal({ isOpen: false });
-Â  Â  }
+        toast.success('XÃ¡c nháº­n xuáº¥t kho thÃ nh cÃ´ng!');
+        reset(); // Táº£i láº¡i danh sÃ¡ch
+    } catch (error) {
+        console.error("Lá»—i khi xÃ¡c nháº­n xuáº¥t kho: ", error);
+        toast.error('ÄÃ£ xáº£y ra lá»—i khi xÃ¡c nháº­n.');
+    } finally {
+        setIsProcessing(false);
+        setConfirmModal({ isOpen: false });
+    }
 };
 
 // THAY THáº¾ HÃ€M CÅ¨ Báº°NG HÃ€M NÃ€Y (Ä‘á»ƒ Ä‘á»“ng bá»™):
@@ -7879,30 +7930,68 @@ const InventorySummaryPage = ({ pageTitle }) => {
     };
     
     const toggleRow = async (productId) => {
-        const isCurrentlyExpanded = !!expandedRows[productId];
-        if (isCurrentlyExpanded) {
-            setExpandedRows(prev => ({ ...prev, [productId]: false }));
-            return;
-        }
+    const isCurrentlyExpanded = !!expandedRows[productId];
+    if (isCurrentlyExpanded) {
+        setExpandedRows(prev => ({ ...prev, [productId]: false }));
+        return;
+    }
 
-        setLoadingLots(prev => ({ ...prev, [productId]: true }));
-        try {
-            const lotsQuery = query(
-                collection(db, "inventory_lots"),
-                where("productId", "==", productId),
-                where("quantityRemaining", ">", 0),
-                orderBy("expiryDate", "asc")
-            );
-            const lotsSnapshot = await getDocs(lotsQuery);
-            const lots = lotsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            setLotDetails(prev => ({ ...prev, [productId]: lots }));
-        } catch (error) {
-            console.error("Lá»—i khi táº£i chi tiáº¿t lÃ´:", error);
-        } finally {
-            setLoadingLots(prev => ({ ...prev, [productId]: false }));
+    setLoadingLots(prev => ({ ...prev, [productId]: true }));
+    try {
+        // 1. Láº¥y táº¥t cáº£ cÃ¡c báº£n ghi lÃ´ hÃ ng cÃ²n tá»“n kho cá»§a sáº£n pháº©m
+        const lotsQuery = query(
+            collection(db, "inventory_lots"),
+            where("productId", "==", productId),
+            where("quantityRemaining", ">", 0)
+        );
+        const lotsSnapshot = await getDocs(lotsQuery);
+        const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // 2. Báº¯t Ä‘áº§u gá»™p cÃ¡c lÃ´ cÃ³ cÃ¹ng sá»‘ lÃ´
+        const lotAggregator = new Map();
+        for (const lot of allLots) {
+            const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)'; // DÃ¹ng key chung cho cÃ¡c lÃ´ khÃ´ng cÃ³ sá»‘
+
+            if (lotAggregator.has(lotKey)) {
+                const existingLot = lotAggregator.get(lotKey);
+                // Cá»™ng dá»“n sá»‘ lÆ°á»£ng tá»“n
+                existingLot.quantityRemaining += lot.quantityRemaining;
+                // LuÃ´n giá»¯ láº¡i HSD ngáº¯n nháº¥t cho nhÃ³m
+                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                    existingLot.expiryDate = lot.expiryDate;
+                }
+            } else {
+                // ThÃªm má»›i náº¿u chÆ°a cÃ³ trong Map, táº¡o má»™t báº£n sao Ä‘á»ƒ trÃ¡nh thay Ä‘á»•i dá»¯ liá»‡u gá»‘c
+                lotAggregator.set(lotKey, { ...lot });
+            }
         }
-        setExpandedRows(prev => ({ ...prev, [productId]: true }));
-    };
+        const aggregatedLots = Array.from(lotAggregator.values());
+
+        // 3. Sáº¯p xáº¿p danh sÃ¡ch Ä‘Ã£ gá»™p theo quy táº¯c báº¡n yÃªu cáº§u
+        aggregatedLots.sort((a, b) => {
+            const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+            const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+
+            // Quy táº¯c 1: HSD gáº§n nháº¥t lÃªn trÆ°á»›c
+            if (dateA !== dateB) {
+                return dateA - dateB;
+            }
+
+            // Quy táº¯c 2: Náº¿u HSD báº±ng nhau, sá»‘ lÆ°á»£ng Ã­t hÆ¡n lÃªn trÆ°á»›c
+            return a.quantityRemaining - b.quantityRemaining;
+        });
+
+        // 4. Cáº­p nháº­t state vá»›i danh sÃ¡ch Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½
+        setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots }));
+
+    } catch (error) {
+        console.error("Lá»—i khi táº£i chi tiáº¿t lÃ´:", error);
+        toast.error("KhÃ´ng thá»ƒ táº£i chi tiáº¿t cÃ¡c lÃ´ hÃ ng.");
+    } finally {
+        setLoadingLots(prev => ({ ...prev, [productId]: false }));
+    }
+    setExpandedRows(prev => ({ ...prev, [productId]: true }));
+};
 
     const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
     const handlePrevPage = () => { fetchData('first'); };
@@ -8431,34 +8520,58 @@ const MobileInventoryPage = () => {
                 ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
             ];
             const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
-            if (uniqueLots.length > 0) {
-                const productId = uniqueLots[0].productId;
-                const productDocRef = doc(db, 'products', productId);
-                const productSnap = await getDoc(productDocRef);
-                const productInfo = productSnap.exists() ? productSnap.data() : null;
-                if (productInfo) {
-                    const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
-                    setProductData({
-                        generalInfo: { ...productInfo, productId: productId },
-                        lots: uniqueLots.filter(lot => lot.quantityRemaining > 0).sort((a, b) => (a.expiryDate && b.expiryDate) ? a.expiryDate.toDate() - b.expiryDate.toDate() : 0),
-                        totalRemaining: totalRemaining
-                    });
-                } else {
-                    setProductData(null);
+            // Äoáº¡n code má»›i Ä‘á»ƒ thay tháº¿
+if (uniqueLots.length > 0) {
+    const productId = uniqueLots[0].productId;
+    const productDocRef = doc(db, 'products', productId);
+    const productSnap = await getDoc(productDocRef);
+    const productInfo = productSnap.exists() ? productSnap.data() : null;
+
+    if (productInfo) {
+        // Báº®T Äáº¦U LOGIC Má»šI: Gá»™p cÃ¡c lÃ´ cÃ³ cÃ¹ng sá»‘ lÃ´
+        const lotAggregator = new Map();
+        for (const lot of uniqueLots) {
+            if (lot.quantityRemaining <= 0) continue;
+
+            const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)'; // DÃ¹ng '(KhÃ´ng cÃ³)' lÃ m key náº¿u lotNumber lÃ  null
+            if (lotAggregator.has(lotKey)) {
+                const existingLot = lotAggregator.get(lotKey);
+                existingLot.quantityRemaining += lot.quantityRemaining;
+                // Æ¯u tiÃªn giá»¯ láº¡i HSD ngáº¯n nháº¥t
+                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                    existingLot.expiryDate = lot.expiryDate;
                 }
             } else {
-                const productDocRef = doc(db, 'products', trimmedTerm);
-                const productSnap = await getDoc(productDocRef);
-                if (productSnap.exists()) {
-                    setProductData({
-                        generalInfo: { ...productSnap.data(), productId: trimmedTerm },
-                        lots: [],
-                        totalRemaining: 0
-                    });
-                } else {
-                    setProductData(null);
-                }
+                lotAggregator.set(lotKey, { ...lot });
             }
+        }
+        const aggregatedLots = Array.from(lotAggregator.values());
+        // Káº¾T THÃšC LOGIC Má»šI
+
+        const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+        setProductData({
+            generalInfo: { ...productInfo, productId: productId },
+            // THAY Äá»”I LOGIC Sáº®P Xáº¾P Táº I ÄÃ‚Y
+            lots: aggregatedLots.sort((a, b) => {
+                // Xá»­ lÃ½ trÆ°á»ng há»£p khÃ´ng cÃ³ HSD (Ä‘Æ°a xuá»‘ng cuá»‘i)
+                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+
+                // 1. Æ¯u tiÃªn sáº¯p xáº¿p theo HSD tÄƒng dáº§n (date gáº§n nháº¥t lÃªn trÆ°á»›c)
+                if (dateA !== dateB) {
+                    return dateA - dateB;
+                }
+
+                // 2. Náº¿u HSD báº±ng nhau, Æ°u tiÃªn sáº¯p xáº¿p theo sá»‘ lÆ°á»£ng tá»“n tÄƒng dáº§n (sá»‘ lÆ°á»£ng Ã­t hÆ¡n lÃªn trÆ°á»›c)
+                return a.quantityRemaining - b.quantityRemaining;
+            }),
+            totalRemaining: totalRemaining
+        });
+    } else {
+        setProductData(null);
+    }
+}
         } catch (error) {
             console.error("Lá»—i tra cá»©u tá»“n kho:", error);
             setProductData(null);

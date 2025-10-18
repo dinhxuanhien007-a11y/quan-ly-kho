@@ -93,58 +93,57 @@ const ExportListPage = () => {
         reset();
     };
 
-// src/pages/ExportListPage.jsx
+// File: src/pages/ExportListPage.jsx
 
-// THAY THẾ HÀM CŨ BẰNG HÀM NÀY:
 const handleConfirmExport = async (slip) => {
-    setIsProcessing(true);
+    setIsProcessing(true);
     const batch = writeBatch(db); // Dùng Batch Writes
     
-    try {
-      for (const item of slip.items) {
-        const lotRef = doc(db, 'inventory_lots', item.lotId);
-        const lotSnap = await getDoc(lotRef);
-        
-        if (lotSnap.exists()) {
-            const currentRemaining = lotSnap.data().quantityRemaining;
-            const currentAllocated = lotSnap.data().quantityAllocated || 0;
-            const quantityToExport = item.quantityToExport || item.quantityExported;
-            
-            // 1. Kiểm tra tồn kho thực tế
-            const newQuantityRemaining = currentRemaining - quantityToExport; 
-            
-            if (newQuantityRemaining < 0) {
-                toast.error(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ (${currentRemaining}) để xuất.`);
-                setIsProcessing(false); 
-                return;
-            }
+    try {
+        for (const item of slip.items) {
+            const lotRef = doc(db, 'inventory_lots', item.lotId);
+            const lotSnap = await getDoc(lotRef);
             
-            // 2. Giải phóng đặt giữ (trừ đi lượng đã xuất)
-            const newAllocated = Math.max(0, currentAllocated - quantityToExport);
-            
-            // 3. Cập nhật cả 2 trường
-            batch.update(lotRef, { 
-                quantityRemaining: newQuantityRemaining,
-                quantityAllocated: newAllocated // Giải phóng đặt giữ
-            });
-        }
-      }
+            if (lotSnap.exists()) {
+                const currentRemaining = lotSnap.data().quantityRemaining;
+                const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                const quantityToExport = item.quantityToExport || item.quantityExported;
+                
+                const newQuantityRemaining = currentRemaining - quantityToExport; 
+                
+                if (newQuantityRemaining < 0) {
+                    toast.error(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ.`);
+                    setIsProcessing(false); 
+                    return;
+                }
+                
+                // *** DÒNG SỬA LỖI QUAN TRỌNG NẰM Ở ĐÂY ***
+                // Trừ đi số lượng đã xuất khỏi phần đặt giữ
+                const newAllocated = Math.max(0, currentAllocated - quantityToExport);
+                
+                // Cập nhật cả 2 trường
+                batch.update(lotRef, { 
+                    quantityRemaining: newQuantityRemaining,
+                    quantityAllocated: newAllocated // <--- Sửa lỗi ở đây
+                });
+            }
+        }
         
         // Cập nhật trạng thái phiếu
-      const slipRef = doc(db, 'export_tickets', slip.id);
-      batch.update(slipRef, { status: 'completed' });
+        const slipRef = doc(db, 'export_tickets', slip.id);
+        batch.update(slipRef, { status: 'completed' });
         
         await batch.commit();
 
-      toast.success('Xác nhận xuất kho thành công!');
-      reset();
-    } catch (error) {
-      console.error("Lỗi khi xác nhận xuất kho: ", error);
-      toast.error('Đã xảy ra lỗi khi xác nhận.');
-    } finally {
-        setIsProcessing(false);
-        setConfirmModal({ isOpen: false });
-    }
+        toast.success('Xác nhận xuất kho thành công!');
+        reset(); // Tải lại danh sách
+    } catch (error) {
+        console.error("Lỗi khi xác nhận xuất kho: ", error);
+        toast.error('Đã xảy ra lỗi khi xác nhận.');
+    } finally {
+        setIsProcessing(false);
+        setConfirmModal({ isOpen: false });
+    }
 };
 
 // THAY THẾ HÀM CŨ BẰNG HÀM NÀY (để đồng bộ):

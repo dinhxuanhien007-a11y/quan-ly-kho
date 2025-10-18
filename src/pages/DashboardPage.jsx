@@ -36,26 +36,52 @@ const DashboardPage = () => {
     const [viewModal, setViewModal] = useState({ isOpen: false, slip: null, type: '' });
 
     const handleViewSlip = async (slipId, slipType) => {
-        const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
-        toast.info("Đang tải chi tiết phiếu...");
-        try {
-            const docRef = doc(db, collectionName, slipId);
-            const docSnap = await getDoc(docRef);
+    const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
+    toast.info("Đang tải chi tiết phiếu...");
+    try {
+        const docRef = doc(db, collectionName, slipId);
+        const docSnap = await getDoc(docRef);
 
-            if (docSnap.exists()) {
-                setViewModal({ 
-                    isOpen: true, 
-                    slip: { id: docSnap.id, ...docSnap.data() }, 
-                    type: slipType 
-                });
-            } else {
-                toast.error("Không tìm thấy chi tiết của phiếu này.");
-            }
-        } catch (error) {
-            toast.error("Lỗi khi tải chi tiết phiếu.");
-            console.error(error);
+        if (docSnap.exists()) {
+            const slipData = { id: docSnap.id, ...docSnap.data() };
+
+            // --- BẮT ĐẦU LOGIC LÀM GIÀU DỮ LIỆU ĐƯỢC BỔ SUNG ---
+            const productPromises = slipData.items.map(item => getDoc(doc(db, 'products', item.productId)));
+            const productSnapshots = await Promise.all(productPromises);
+            
+            const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                if (docSn.exists()) {
+                    acc[docSn.id] = docSn.data();
+                }
+                return acc;
+            }, {});
+
+            // Gộp thông tin chi tiết vào từng item của phiếu
+            const enrichedItems = slipData.items.map(item => {
+                const details = productDetailsMap[item.productId] || {};
+                return {
+                    ...item,
+                    // Đổi tên 'packaging' thành 'specification' để modal có thể đọc được
+                    specification: details.packaging || '', 
+                };
+            });
+
+            const enrichedSlip = { ...slipData, items: enrichedItems };
+            // --- KẾT THÚC LOGIC LÀM GIÀU DỮ LIỆU ---
+
+            setViewModal({
+                isOpen: true,
+                slip: enrichedSlip, // <-- Sử dụng dữ liệu đã được làm giàu
+                type: slipType
+            });
+        } else {
+            toast.error("Không tìm thấy chi tiết của phiếu này.");
         }
-    };
+    } catch (error) {
+        toast.error("Lỗi khi tải chi tiết phiếu.");
+        console.error(error);
+    }
+};
 
     const closeViewModal = () => {
         setViewModal({ isOpen: false, slip: null, type: '' });

@@ -1,5 +1,5 @@
 // src/components/ViewExportSlipModal.jsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import Modal from 'react-modal';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
@@ -11,6 +11,35 @@ Modal.setAppElement('#root');
 
 const ViewExportSlipModal = ({ slip, onClose }) => {
     if (!slip) return null;
+
+// === DÁN TOÀN BỘ KHỐI CODE NÀY VÀO ĐÂY ===
+    // Logic để gộp các dòng có cùng Mã hàng và Số lô lại với nhau
+    const aggregatedItems = useMemo(() => {
+        if (!slip || !slip.items) return [];
+
+        const aggregator = new Map();
+
+        for (const item of slip.items) {
+            // Tạo một key duy nhất cho mỗi nhóm sản phẩm-lô
+            const key = `${item.productId}-${item.lotNumber}`;
+            const quantity = Number(item.quantity || item.quantityToExport || item.quantityExported || 0);
+
+            if (aggregator.has(key)) {
+                // Nếu đã có, cộng dồn số lượng
+                const existingItem = aggregator.get(key);
+                existingItem.quantity += quantity;
+            } else {
+                // Nếu chưa có, thêm mới vào Map
+                aggregator.set(key, {
+                    ...item,
+                    quantity: quantity, // Tạo một trường `quantity` đã được chuẩn hóa
+                });
+            }
+        }
+
+        return Array.from(aggregator.values());
+    }, [slip]); // Chỉ chạy lại logic này khi dữ liệu `slip` thay đổi
+    // === KẾT THÚC PHẦN DÁN ===
 
     console.log("Dữ liệu Phiếu Xuất được truyền vào Modal:", slip);
     
@@ -68,25 +97,22 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {slip.items.map((item, index) => (
-                                    <tr key={index}>
-                                        <td>{item.productId}</td>
-                                        <td>{item.productName}</td>
-                                        <td>{item.lotNumber}</td>
-                                        
-                                        {/* SỬA LỖI 2: Sử dụng hàm helper mới để xử lý cả chuỗi và Timestamp */}
-                                        <td>{renderExpiryDate(item.expiryDate)}</td>
-                                        
-                                        <td>{item.unit}</td>
-                                        <td>{item?.packaging || ''}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            {formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0)}
-                                        </td>
-                                        <td>{item.notes || ''}</td>
-                                        <td>{item.storageTemp}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
+    {aggregatedItems.map((item, index) => (
+        <tr key={index}>
+            <td>{item.productId}</td>
+            <td>{item.productName}</td>
+            <td>{item.lotNumber}</td>
+            <td>{renderExpiryDate(item.expiryDate)}</td>
+            <td>{item.unit}</td>
+            <td>{item?.packaging || ''}</td>
+            <td style={{ textAlign: 'center' }}>
+                {formatNumber(item.quantity)}
+            </td>
+            <td>{item.notes || ''}</td>
+            <td>{item.storageTemp}</td>
+        </tr>
+    ))}
+</tbody>
                         </table>
                     </div>
                 </div>
