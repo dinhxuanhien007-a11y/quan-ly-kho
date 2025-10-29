@@ -7071,39 +7071,66 @@ const handleConfirmImport = async (slipToConfirm) => {
         const slip = slipToConfirm;
         
         try {
-            for (const item of slip.items) {
-                let expiryTimestamp = null;
-                if (item.expiryDate && item.expiryDate.trim() !== '' && item.expiryDate.toUpperCase() !== 'N/A') {
-                    const expiryDateObject = parseDateString(item.expiryDate);
-                    if (!expiryDateObject) {
-                        toast.error(`HSD cá»§a máº·t hÃ ng ${item.productName} (${item.lotNumber}) cÃ³ Ä‘á»‹nh dáº¡ng sai. Vui lÃ²ng sá»­a láº¡i.`);
-                        return; // Dá»«ng hÃ m ngay táº¡i Ä‘Ã¢y
-                    }
-                    expiryTimestamp = Timestamp.fromDate(expiryDateObject);
-                }
-
-                const importDateObject = parseDateString(slip.importDate);
-                const importTimestamp = importDateObject ? Timestamp.fromDate(importDateObject) : Timestamp.now();
-
-                const newLotData = {
-                    importTicketId: slip.id,
-                    importDate: importTimestamp,
-                    productId: item.productId,
-                    productName: item.productName,
-                    lotNumber: item.lotNumber,
-                    expiryDate: expiryTimestamp,
-                    unit: item.unit,
-                    packaging: item.packaging,
-                    storageTemp: item.storageTemp,
-                    team: item.team || '', // ThÃªm fallback cho cháº¯c cháº¯n
-    manufacturer: item.manufacturer || '', // ThÃªm '|| ''' Ä‘á»ƒ cung cáº¥p giÃ¡ trá»‹ máº·c Ä‘á»‹nh
-                    quantityImported: Number(item.quantity),
-                    quantityRemaining: Number(item.quantity),
-                    notes: item.notes,
-                    supplierName: slip.supplierName,
-                };
-                await addDoc(collection(db, "inventory_lots"), newLotData);
+        // === BÆ¯á»šC 1: TRUY Váº¤N VÃ€ LÃ€M GIÃ€U Dá»® LIá»†U Sáº¢N PHáº¨M Gá»C (THÃŠM subGroup) ===
+        const productIdsInSlip = [...new Set(slip.items.map(item => item.productId))];
+        const productPromises = productIdsInSlip.map(productId => getDoc(doc(db, 'products', productId)));
+        const productSnapshots = await Promise.all(productPromises);
+        
+        const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+            if (docSn.exists()) {
+                // Sá»¬ Dá»¤NG product ID LÃ€M KEY, CHUáº¨N HÃ“A Vá»€ CHUá»–I VÃ€ LOWERCASE Äá»‚ Xá»¬ LÃ Lá»–I KEY Bá»Š Bá»Ž QUA á»ž BÆ¯á»šC 1
+                const standardizedId = String(docSn.id).trim().toLowerCase(); 
+                acc[standardizedId] = docSn.data();
             }
+            return acc;
+        }, {});
+        
+        // === BÆ¯á»šC 2: Táº O LÃ” HÃ€NG Vá»šI subGroup ===
+        for (const item of slip.items) {
+            // Chuáº©n hÃ³a key cá»§a item Ä‘á»ƒ tra cá»©u
+            const itemKey = String(item.productId).trim().toLowerCase();
+            const productDetails = productDetailsMap[itemKey] || {};
+            
+            // Láº¥y subGroup vÃ  Ä‘áº£m báº£o nÃ³ lÃ  chuá»—i, náº¿u khÃ´ng cÃ³ thÃ¬ lÃ  chuá»—i rá»—ng
+            const subGroupValue = productDetails.subGroup || ''; 
+            
+            // Xá»­ lÃ½ HSD
+            let expiryTimestamp = null;
+            if (item.expiryDate && item.expiryDate.trim() !== '' && item.expiryDate.toUpperCase() !== 'N/A') {
+                const expiryDateObject = parseDateString(item.expiryDate);
+                if (!expiryDateObject) {
+                    toast.error(`HSD cá»§a máº·t hÃ ng ${item.productName} (${item.lotNumber}) cÃ³ Ä‘á»‹nh dáº¡ng sai. Vui lÃ²ng sá»­a láº¡i.`);
+                    setIsProcessing(false);
+                    return; // Dá»«ng hÃ m ngay táº¡i Ä‘Ã¢y
+                }
+                expiryTimestamp = Timestamp.fromDate(expiryDateObject);
+            }
+
+            const importDateObject = parseDateString(slip.importDate);
+            const importTimestamp = importDateObject ? Timestamp.fromDate(importDateObject) : Timestamp.now();
+
+            const newLotData = {
+                importTicketId: slip.id,
+                importDate: importTimestamp,
+                productId: item.productId,
+                productName: item.productName,
+                lotNumber: item.lotNumber,
+                expiryDate: expiryTimestamp,
+                unit: item.unit,
+                packaging: item.packaging,
+                storageTemp: item.storageTemp,
+                team: item.team || '', 
+                manufacturer: item.manufacturer || '',
+                // === THÃŠM subGroup VÃ€O ÄÃ‚Y ===
+                subGroup: subGroupValue,
+                // ==============================
+                quantityImported: Number(item.quantity),
+                quantityRemaining: Number(item.quantity),
+                notes: item.notes,
+                supplierName: slip.supplierName,
+            };
+            await addDoc(collection(db, "inventory_lots"), newLotData);
+        }
 
             const slipDocRef = doc(db, "import_tickets", slip.id);
             await updateDoc(slipDocRef, { status: "completed" });
@@ -9586,8 +9613,17 @@ const NewImportPage = () => {
 
     // --- Báº®T Äáº¦U THAY Äá»”I: Cáº­p nháº­t hÃ m checkExistingLot ---
     const checkExistingLot = async (index) => {
-        const currentItem = items[index];
-        if (!currentItem.productId || !currentItem.lotNumber) return;
+Â  Â  Â  Â  const currentItem = items[index];
+Â  Â  Â  Â  if (!currentItem.productId || !currentItem.lotNumber) return;
+
+Â  Â  Â  Â  // BÆ¯á»šC 0: Äáº£m báº£o thÃ´ng tin sáº£n pháº©m Ä‘Æ°á»£c load trÆ°á»›c (náº¿u chÆ°a cÃ³)
+Â  Â  Â  Â  // TrÆ°á»ng há»£p ngÆ°á»i dÃ¹ng nháº­p LotNumber trÆ°á»›c khi ProductAutocomplete ká»‹p cáº­p nháº­t
+Â  Â  Â  Â  if (!currentItem.productName) {
+Â  Â  Â  Â  Â  Â  await handleProductSearch(index, currentItem.productId);
+Â  Â  Â  Â  Â  Â  // Láº¥y láº¡i item sau khi product Ä‘Ã£ Ä‘Æ°á»£c cáº­p nháº­t
+Â  Â  Â  Â  Â  Â  const updatedItem = items[index]; 
+Â  Â  Â  Â  Â  Â  if (updatedItem.productNotFound) return; // KhÃ´ng tÃ¬m tháº¥y sáº£n pháº©m thÃ¬ dá»«ng
+Â  Â  Â  Â  }
 
         try {
             const q = query(
@@ -9600,22 +9636,20 @@ const NewImportPage = () => {
             if (!querySnapshot.empty) {
                 // Láº¥y dá»¯ liá»‡u cá»§a láº§n nháº­p Ä‘áº§u tiÃªn Ä‘á»ƒ cÃ³ HSD
                 const baseLotData = querySnapshot.docs[0].data();
-                
-                // Cá»™ng dá»“n sá»‘ lÆ°á»£ng tá»“n tá»« Táº¤T Cáº¢ cÃ¡c láº§n nháº­p
-                let totalQuantityRemaining = 0;
-                querySnapshot.forEach(doc => {
-                    totalQuantityRemaining += doc.data().quantityRemaining;
-                });
+Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  let totalQuantityRemaining = 0;
+Â  Â  Â  Â  Â  Â  Â  Â  querySnapshot.forEach(doc => {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  totalQuantityRemaining += doc.data().quantityRemaining;
+Â  Â  Â  Â  Â  Â  Â  Â  });
 
-                // Táº¡o má»™t Ä‘á»‘i tÆ°á»£ng dá»¯ liá»‡u tá»•ng há»£p
-                const aggregatedLotData = {
-                    ...baseLotData,
-                    quantityRemaining: totalQuantityRemaining
-                };
-                
-                handleLotCheckResult(index, aggregatedLotData, true);
-                setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
-            } else {
+Â  Â  Â  Â  Â  Â  Â  Â  const aggregatedLotData = {
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ...baseLotData,
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityRemaining: totalQuantityRemaining
+Â  Â  Â  Â  Â  Â  Â  Â  };
+Â  Â  Â  Â  Â  Â  Â  Â  
+Â  Â  Â  Â  Â  Â  Â  Â  handleLotCheckResult(index, aggregatedLotData, true);
+Â  Â  Â  Â  Â  Â  Â  Â  setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
+Â  Â  Â  Â  Â  Â  } else {
                 handleLotCheckResult(index, null, false);
                 setNewLotModal({ isOpen: true, index: index });
             }

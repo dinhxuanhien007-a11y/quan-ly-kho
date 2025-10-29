@@ -96,39 +96,66 @@ const handleConfirmImport = async (slipToConfirm) => {
         const slip = slipToConfirm;
         
         try {
-            for (const item of slip.items) {
-                let expiryTimestamp = null;
-                if (item.expiryDate && item.expiryDate.trim() !== '' && item.expiryDate.toUpperCase() !== 'N/A') {
-                    const expiryDateObject = parseDateString(item.expiryDate);
-                    if (!expiryDateObject) {
-                        toast.error(`HSD của mặt hàng ${item.productName} (${item.lotNumber}) có định dạng sai. Vui lòng sửa lại.`);
-                        return; // Dừng hàm ngay tại đây
-                    }
-                    expiryTimestamp = Timestamp.fromDate(expiryDateObject);
-                }
-
-                const importDateObject = parseDateString(slip.importDate);
-                const importTimestamp = importDateObject ? Timestamp.fromDate(importDateObject) : Timestamp.now();
-
-                const newLotData = {
-                    importTicketId: slip.id,
-                    importDate: importTimestamp,
-                    productId: item.productId,
-                    productName: item.productName,
-                    lotNumber: item.lotNumber,
-                    expiryDate: expiryTimestamp,
-                    unit: item.unit,
-                    packaging: item.packaging,
-                    storageTemp: item.storageTemp,
-                    team: item.team || '', // Thêm fallback cho chắc chắn
-    manufacturer: item.manufacturer || '', // Thêm '|| ''' để cung cấp giá trị mặc định
-                    quantityImported: Number(item.quantity),
-                    quantityRemaining: Number(item.quantity),
-                    notes: item.notes,
-                    supplierName: slip.supplierName,
-                };
-                await addDoc(collection(db, "inventory_lots"), newLotData);
+        // === BƯỚC 1: TRUY VẤN VÀ LÀM GIÀU DỮ LIỆU SẢN PHẨM GỐC (THÊM subGroup) ===
+        const productIdsInSlip = [...new Set(slip.items.map(item => item.productId))];
+        const productPromises = productIdsInSlip.map(productId => getDoc(doc(db, 'products', productId)));
+        const productSnapshots = await Promise.all(productPromises);
+        
+        const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+            if (docSn.exists()) {
+                // SỬ DỤNG product ID LÀM KEY, CHUẨN HÓA VỀ CHUỖI VÀ LOWERCASE ĐỂ XỬ LÝ LỖI KEY BỊ BỎ QUA Ở BƯỚC 1
+                const standardizedId = String(docSn.id).trim().toLowerCase(); 
+                acc[standardizedId] = docSn.data();
             }
+            return acc;
+        }, {});
+        
+        // === BƯỚC 2: TẠO LÔ HÀNG VỚI subGroup ===
+        for (const item of slip.items) {
+            // Chuẩn hóa key của item để tra cứu
+            const itemKey = String(item.productId).trim().toLowerCase();
+            const productDetails = productDetailsMap[itemKey] || {};
+            
+            // Lấy subGroup và đảm bảo nó là chuỗi, nếu không có thì là chuỗi rỗng
+            const subGroupValue = productDetails.subGroup || ''; 
+            
+            // Xử lý HSD
+            let expiryTimestamp = null;
+            if (item.expiryDate && item.expiryDate.trim() !== '' && item.expiryDate.toUpperCase() !== 'N/A') {
+                const expiryDateObject = parseDateString(item.expiryDate);
+                if (!expiryDateObject) {
+                    toast.error(`HSD của mặt hàng ${item.productName} (${item.lotNumber}) có định dạng sai. Vui lòng sửa lại.`);
+                    setIsProcessing(false);
+                    return; // Dừng hàm ngay tại đây
+                }
+                expiryTimestamp = Timestamp.fromDate(expiryDateObject);
+            }
+
+            const importDateObject = parseDateString(slip.importDate);
+            const importTimestamp = importDateObject ? Timestamp.fromDate(importDateObject) : Timestamp.now();
+
+            const newLotData = {
+                importTicketId: slip.id,
+                importDate: importTimestamp,
+                productId: item.productId,
+                productName: item.productName,
+                lotNumber: item.lotNumber,
+                expiryDate: expiryTimestamp,
+                unit: item.unit,
+                packaging: item.packaging,
+                storageTemp: item.storageTemp,
+                team: item.team || '', 
+                manufacturer: item.manufacturer || '',
+                // === THÊM subGroup VÀO ĐÂY ===
+                subGroup: subGroupValue,
+                // ==============================
+                quantityImported: Number(item.quantity),
+                quantityRemaining: Number(item.quantity),
+                notes: item.notes,
+                supplierName: slip.supplierName,
+            };
+            await addDoc(collection(db, "inventory_lots"), newLotData);
+        }
 
             const slipDocRef = doc(db, "import_tickets", slip.id);
             await updateDoc(slipDocRef, { status: "completed" });

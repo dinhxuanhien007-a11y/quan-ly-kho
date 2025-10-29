@@ -241,8 +241,17 @@ const NewImportPage = () => {
 
     // --- BẮT ĐẦU THAY ĐỔI: Cập nhật hàm checkExistingLot ---
     const checkExistingLot = async (index) => {
-        const currentItem = items[index];
-        if (!currentItem.productId || !currentItem.lotNumber) return;
+        const currentItem = items[index];
+        if (!currentItem.productId || !currentItem.lotNumber) return;
+
+        // BƯỚC 0: Đảm bảo thông tin sản phẩm được load trước (nếu chưa có)
+        // Trường hợp người dùng nhập LotNumber trước khi ProductAutocomplete kịp cập nhật
+        if (!currentItem.productName) {
+            await handleProductSearch(index, currentItem.productId);
+            // Lấy lại item sau khi product đã được cập nhật
+            const updatedItem = items[index]; 
+            if (updatedItem.productNotFound) return; // Không tìm thấy sản phẩm thì dừng
+        }
 
         try {
             const q = query(
@@ -255,22 +264,20 @@ const NewImportPage = () => {
             if (!querySnapshot.empty) {
                 // Lấy dữ liệu của lần nhập đầu tiên để có HSD
                 const baseLotData = querySnapshot.docs[0].data();
-                
-                // Cộng dồn số lượng tồn từ TẤT CẢ các lần nhập
-                let totalQuantityRemaining = 0;
-                querySnapshot.forEach(doc => {
-                    totalQuantityRemaining += doc.data().quantityRemaining;
-                });
+                
+                let totalQuantityRemaining = 0;
+                querySnapshot.forEach(doc => {
+                    totalQuantityRemaining += doc.data().quantityRemaining;
+                });
 
-                // Tạo một đối tượng dữ liệu tổng hợp
-                const aggregatedLotData = {
-                    ...baseLotData,
-                    quantityRemaining: totalQuantityRemaining
-                };
-                
-                handleLotCheckResult(index, aggregatedLotData, true);
-                setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
-            } else {
+                const aggregatedLotData = {
+                    ...baseLotData,
+                    quantityRemaining: totalQuantityRemaining
+                };
+                
+                handleLotCheckResult(index, aggregatedLotData, true);
+                setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
+            } else {
                 handleLotCheckResult(index, null, false);
                 setNewLotModal({ isOpen: true, index: index });
             }
@@ -375,6 +382,7 @@ const NewImportPage = () => {
                     storageTemp: item.storageTemp,
                     team: item.team,
                     manufacturer: item.manufacturer,
+                    subGroup: item.subGroup || '',
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
