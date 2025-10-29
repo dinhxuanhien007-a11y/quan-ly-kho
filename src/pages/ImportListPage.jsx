@@ -110,6 +110,7 @@ const handleConfirmImport = async (slipToConfirm) => {
             return acc;
         }, {});
         
+        console.log("PRODUCT DETAILS MAP:", productDetailsMap); // Xem map có đầy đủ không
         // === BƯỚC 2: TẠO LÔ HÀNG VỚI subGroup ===
         for (const item of slip.items) {
             // Chuẩn hóa key của item để tra cứu
@@ -118,6 +119,10 @@ const handleConfirmImport = async (slipToConfirm) => {
             
             // Lấy subGroup và đảm bảo nó là chuỗi, nếu không có thì là chuỗi rỗng
             const subGroupValue = productDetails.subGroup || ''; 
+
+            console.log(`Processing item: ${item.productId}, Key: ${itemKey}`);
+            console.log("Product Details Found:", productDetails);
+            console.log("SubGroup Value:", subGroupValue);
             
             // Xử lý HSD
             let expiryTimestamp = null;

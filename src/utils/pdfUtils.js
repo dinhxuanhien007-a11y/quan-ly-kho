@@ -219,20 +219,21 @@ export const exportStocktakeToPDF = async (session, items) => {
     doc.text(`Ghi chú phiên: ${session.notes || 'Không có'}`, 14, 31);
 
     // --- SỬA LỖI: Bỏ cột STT khỏi tiêu đề ---
-    const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Nhiệt độ BQ', 'Tồn kho HT', 'Tồn kho TT', 'Ghi chú']];
+    const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Nhiệt độ BQ', 'Tồn kho HT', 'Tồn kho TT', 'Nhóm Hàng', 'Ghi chú']]; // <-- Thêm "Nhóm Hàng" vào đây
     
     // --- SỬA LỖI: Bỏ cột STT khỏi nội dung ---
     const body = items.map(item => [
         item.productId,
         item.productName,
-        item.lotNumber,
+        item.lotNumber || '(Không có)', // Thêm fallback
         item.expiryDate ? formatDate(item.expiryDate.toDate()) : 'N/A',
         item.unit,
         item.packaging,
         item.storageTemp || 'N/A',
-        formatNumber(item.systemQty || item.expectedQuantity),
-        '', 
-        ''
+        formatNumber(item.systemQty || 0), // Thêm fallback
+        item.countedQty !== null && item.countedQty !== undefined ? formatNumber(item.countedQty) : '', // Chỉ hiển thị nếu đã đếm
+        item.subGroup || '', // <-- Thêm subGroup vào đây
+        item.notes || '' // <-- Di chuyển Ghi chú ra cuối
     ]);
 
     autoTable(doc, {
@@ -246,21 +247,26 @@ export const exportStocktakeToPDF = async (session, items) => {
         // --- SỬA LỖI: Cập nhật lại chỉ số các cột ---
         columnStyles: {
             0: { cellWidth: 27 },  // Mã hàng
-            1: { cellWidth: 71, halign: 'left' }, // Tên sản phẩm
-            2: { cellWidth: 27 },  // Số lô
-            3: { cellWidth: 27 },  // HSD
-            4: { cellWidth: 16 },  // ĐVT
-            5: { cellWidth: 31 },  // Quy cách
-            6: { cellWidth: 21 },  // Nhiệt độ BQ
-            7: { cellWidth: 21, halign: 'center' }, // Tồn kho HT
-            8: { cellWidth: 21 },  // Tồn kho TT
-            9: { cellWidth: 'auto', halign: 'left' }, // Ghi chú
+            1: { cellWidth: 60, halign: 'left' }, // Tên sản phẩm
+            2: { cellWidth: 25 },  // Số lô
+            3: { cellWidth: 25 },  // HSD
+            4: { cellWidth: 14 },  // ĐVT
+            5: { cellWidth: 30 },  // Quy cách
+            6: { cellWidth: 20 },  // Nhiệt độ BQ
+            7: { cellWidth: 18 }, // Tồn kho HT
+            8: { cellWidth: 18 }, // Tồn kho TT
+            9: { cellWidth: 21 }, // Nhóm Hàng <-- Thêm style cho cột mới
+            10: { cellWidth: 'auto', halign: 'left' }, // Ghi chú <-- Cập nhật index
         },
         didParseCell: function (data) {
-            // Cập nhật lại chỉ số cột cần in đậm
+            // Cập nhật lại chỉ số cột cần in đậm (Tồn HT là cột 8, index 7)
             if (data.section === 'body' && data.column.index === 7) {
                 data.cell.styles.fontStyle = 'bold';
             }
+            // In đậm cột Tồn TT (cột 9, index 8) nếu nó có giá trị
+             if (data.section === 'body' && data.column.index === 8 && data.cell.raw !== '') {
+                 data.cell.styles.fontStyle = 'bold';
+             }
         }
     });
 

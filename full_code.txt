@@ -7085,6 +7085,7 @@ const handleConfirmImport = async (slipToConfirm) => {
             return acc;
         }, {});
         
+        console.log("PRODUCT DETAILS MAP:", productDetailsMap); // Xem map cÃ³ Ä‘áº§y Ä‘á»§ khÃ´ng
         // === BÆ¯á»šC 2: Táº O LÃ” HÃ€NG Vá»šI subGroup ===
         for (const item of slip.items) {
             // Chuáº©n hÃ³a key cá»§a item Ä‘á»ƒ tra cá»©u
@@ -7093,6 +7094,10 @@ const handleConfirmImport = async (slipToConfirm) => {
             
             // Láº¥y subGroup vÃ  Ä‘áº£m báº£o nÃ³ lÃ  chuá»—i, náº¿u khÃ´ng cÃ³ thÃ¬ lÃ  chuá»—i rá»—ng
             const subGroupValue = productDetails.subGroup || ''; 
+
+            console.log(`Processing item: ${item.productId}, Key: ${itemKey}`);
+            console.log("Product Details Found:", productDetails);
+            console.log("SubGroup Value:", subGroupValue);
             
             // Xá»­ lÃ½ HSD
             let expiryTimestamp = null;
@@ -9743,6 +9748,8 @@ const NewImportPage = () => {
                 const expiryDateObj = parseDateString(item.expiryDate);
                 const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
                 
+                
+                console.log("Item from store for direct import:", item); // Xem item cÃ³ subGroup khÃ´ng
                 const newLotData = {
                     importDate: Timestamp.now(),
                     productId: item.productId,
@@ -9754,11 +9761,13 @@ const NewImportPage = () => {
                     storageTemp: item.storageTemp,
                     team: item.team,
                     manufacturer: item.manufacturer,
+                    subGroup: item.subGroup || '',
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
                     supplierName: slipData.supplierName,
                 };
+                console.log("Data to save to inventory_lots (direct):", newLotData); // Xem dá»¯ liá»‡u cuá»‘i cÃ¹ng
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
             
@@ -13868,6 +13877,8 @@ const useImportSlipStore = create(
                 const newItems = [...state.items];
                 const currentItem = { ...newItems[index] };
                 if (found) {
+                    const subGroupValue = productData.subGroup || ''; // Láº¥y subGroup
+                    console.log(`Updating store for ${productData.id}, subGroup: ${subGroupValue}`); // Log giÃ¡ trá»‹ subGroup
                     Object.assign(currentItem, {
                         productName: productData.productName || '',
                         unit: productData.unit || '',
@@ -13876,6 +13887,8 @@ const useImportSlipStore = create(
                         team: productData.team || '',
                         manufacturer: productData.manufacturer || '',
                         conversionFactor: productData.conversionFactor || 1,
+                        subGroup: productData.subGroup || '',
+                        subGroup: subGroupValue,
                         productNotFound: false,
                     });
                 } else {

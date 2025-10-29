@@ -364,13 +364,35 @@ const NewImportPage = () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
 
+        console.log("Data AFTER getValidSlipData:", slipData);
+
         setConfirmModal({ isOpen: false });
         setIsSaving(true);
         try {
+            // === BẮT ĐẦU THAY ĐỔI: Truy vấn lại thông tin sản phẩm ===
+         const productIdsInSlip = [...new Set(slipData.items.map(item => item.productId))];
+         const productPromises = productIdsInSlip.map(productId => getDoc(doc(db, 'products', productId.trim().toUpperCase()))); // Chuẩn hóa ID ở đây
+         const productSnapshots = await Promise.all(productPromises);
+
+         const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+             if (docSn.exists()) {
+                 // Dùng ID đã chuẩn hóa làm key
+                 acc[docSn.id] = docSn.data();
+             }
+             return acc;
+         }, {});
+         console.log("Product Details Map (Direct Import):", productDetailsMap);
+         // === KẾT THÚC THAY ĐỔI ===
             for (const item of slipData.items) {
                 const expiryDateObj = parseDateString(item.expiryDate);
                 const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
                 
+                
+                // === THAY ĐỔI: Lấy subGroup từ productDetailsMap ===
+             const productDetails = productDetailsMap[item.productId.trim().toUpperCase()] || {}; // Lấy thông tin đã truy vấn
+             const subGroupValue = productDetails.subGroup || ''; // Lấy subGroup
+             console.log(`[Direct Import] Processing item: ${item.productId}, Found SubGroup: ${subGroupValue}`);
+             // === KẾT THÚC THAY ĐỔI ===
                 const newLotData = {
                     importDate: Timestamp.now(),
                     productId: item.productId,
@@ -382,12 +404,14 @@ const NewImportPage = () => {
                     storageTemp: item.storageTemp,
                     team: item.team,
                     manufacturer: item.manufacturer,
-                    subGroup: item.subGroup || '',
+                    subGroup: subGroupValue,
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
                     supplierName: slipData.supplierName,
                 };
+                console.log("Data to save to inventory_lots (direct):", newLotData); // Xem dữ liệu cuối cùng
+                console.log("[After Assignment] Data to save:", newLotData); // Log đối tượng hoàn chỉnh
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
             
@@ -479,7 +503,7 @@ const NewImportPage = () => {
             </div>
 
             <h2>Chi tiết hàng hóa</h2>
-            <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 0.5fr' }}>
+            <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 1fr 0.5fr' }}>
                 <div className="grid-header">Mã hàng (*)</div>
                 <div className="grid-header">Tên hàng</div>
                 <div className="grid-header">Số lô</div>
@@ -489,6 +513,7 @@ const NewImportPage = () => {
                 <div className="grid-header">Số lượng (*)</div>
                 <div className="grid-header">Ghi chú</div>
                 <div className="grid-header">Team</div>
+                <div className="grid-header">Nhóm Hàng</div>
                 <div className="grid-header">Xóa</div>
 
                 {items.map((item, index) => (
@@ -584,6 +609,18 @@ const NewImportPage = () => {
                         </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
+                        {/* ===== CHÈN KHỐI NÀY VÀO ĐÂY ===== */}
+<div className="grid-cell"> {/* Nhóm Hàng */}
+    <input
+        type="text"
+        value={item.subGroup || ''}
+        onChange={e => updateItem(index, 'subGroup', e.target.value)}
+        // readOnly // Bỏ comment nếu không cho sửa
+        title={item.subGroup ? `Nhóm hàng: ${item.subGroup}` : "Nhóm hàng sẽ tự điền"}
+        style={{ backgroundColor: item.subGroup ? '#f0f0f0' : '#fff' }}
+    />
+</div>
+{/* ===== KẾT THÚC KHỐI CHÈN ===== */}
                         <div className="grid-cell">
                             <button 
                                 type="button" 

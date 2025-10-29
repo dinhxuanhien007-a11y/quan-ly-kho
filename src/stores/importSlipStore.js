@@ -78,6 +78,8 @@ const useImportSlipStore = create(
                 const newItems = [...state.items];
                 const currentItem = { ...newItems[index] };
                 if (found) {
+                    const subGroupValue = productData.subGroup || ''; // Lấy subGroup
+                    console.log(`Updating store for ${productData.id}, subGroup: ${subGroupValue}`); // Log giá trị subGroup
                     Object.assign(currentItem, {
                         productName: productData.productName || '',
                         unit: productData.unit || '',
@@ -86,6 +88,7 @@ const useImportSlipStore = create(
                         team: productData.team || '',
                         manufacturer: productData.manufacturer || '',
                         conversionFactor: productData.conversionFactor || 1,
+                        subGroup: subGroupValue,
                         productNotFound: false,
                     });
                 } else {
