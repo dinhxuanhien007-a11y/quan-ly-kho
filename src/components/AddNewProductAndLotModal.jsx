@@ -9,7 +9,7 @@ import { addProduct } from '../services/productService';
 
 const productAndLotSchema = z.object({
   productName: z.string().min(1, { message: "Tên hàng không được để trống." }),
-  lotNumber: z.string().min(1, { message: "Số lô không được để trống." }),
+  lotNumber: z.string(), // <-- Chỉ cần như thế này
   unit: z.string().min(1, { message: "Đơn vị tính không được để trống." }),
   team: z.string().min(1, { message: "Bạn phải chọn một team." }),
   subGroup: z.string().min(1, { message: "Bạn phải chọn một nhóm hàng." }),
