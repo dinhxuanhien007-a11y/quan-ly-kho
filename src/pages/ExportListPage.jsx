@@ -210,45 +210,14 @@ const handleDeleteSlip = async (slipToDelete) => {
     }
 };
 
-  const handleSaveSlipChanges = async (updatedSlip) => {
+  const handleSaveSlipChanges = (updatedSlip) => {
     try {
-        const batch = writeBatch(db); // Dùng Batch Writes
-        const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
-        
-        // 1. CẬP NHẬT TRƯỜNG quantityAllocated TRONG INVENTORY_LOTS
-        for (const item of updatedSlip.items) {
-            // Lô hàng trong phiếu chỉnh sửa cần được đặt giữ
-            const lotRef = doc(db, 'inventory_lots', item.lotId);
-            const lotSnap = await getDoc(lotRef);
-            
-            if (lotSnap.exists()) {
-                const currentAllocated = lotSnap.data().quantityAllocated || 0;
-                // Đặt giữ số lượng mới/đã chỉnh sửa
-                const newAllocated = currentAllocated + item.quantityToExport; 
-                
-                batch.update(lotRef, { 
-                    quantityAllocated: newAllocated 
-                });
-            }
-        }
-
-        // 2. Cập nhật phiếu xuất
-        batch.update(slipDocRef, { 
-            items: updatedSlip.items,
-            customer: updatedSlip.customer,
-            description: updatedSlip.description,
-            exportDate: updatedSlip.exportDate
-        });
-        
-        await batch.commit(); // Ghi tất cả một lần
-
-        setIsEditModalOpen(false);
-        reset();
-        toast.success('Cập nhật phiếu xuất thành công và đặt giữ tồn kho!');
-
+        setIsEditModalOpen(false); // Đóng modal
+        reset(); // Tải lại danh sách
+        // Thông báo đã được modal hiển thị, không cần toast ở đây nữa.
     } catch (error) {
-        console.error("Lỗi khi cập nhật phiếu xuất: ", error);
-        toast.error('Đã xảy ra lỗi khi cập nhật.');
+        console.error("Lỗi sau khi lưu phiếu xuất: ", error);
+        toast.error('Đã xảy ra lỗi khi làm mới danh sách.');
     }
 };
 

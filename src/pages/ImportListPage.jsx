@@ -150,7 +150,7 @@ const handleConfirmImport = async (slipToConfirm) => {
                 packaging: item.packaging,
                 storageTemp: item.storageTemp,
                 team: item.team || '', 
-                manufacturer: item.manufacturer || '',
+                manufacturer: productDetails.manufacturer || '', // <-- Sửa ở đây, lấy từ productDetails
                 // === THÊM subGroup VÀO ĐÂY ===
                 subGroup: subGroupValue,
                 // ==============================
