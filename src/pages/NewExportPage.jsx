@@ -5,7 +5,7 @@ import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore'; // THÊM writeBatch
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, writeBatch, FieldValue } from 'firebase/firestore'; // THÊM writeBatch
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
@@ -324,43 +324,41 @@ const handleLotSelection = (index, selectedLotId) => {
         };
     };
     
-    const handleSaveDraft = async () => {
-        const slipData = getValidSlipData();
-        if (!slipData) return;
-        setIsProcessing(true);
-        
-        try {
-            const batch = writeBatch(db); // Dùng Batch Writes
-            
-            // 1. Đặt giữ các lô hàng (Soft Lock)
-            for (const item of slipData.items) {
-                const lotRef = doc(db, 'inventory_lots', item.lotId);
-                const lotSnap = await getDoc(lotRef); 
-                if (lotSnap.exists()) {
-                    const currentAllocated = lotSnap.data().quantityAllocated || 0;
-                    const newAllocated = currentAllocated + item.quantityToExport;
+    // src/pages/NewExportPage.jsx
 
-                    batch.update(lotRef, { 
-                        quantityAllocated: newAllocated // Tăng lượng đặt giữ
-                    });
-                }
-            }
+const handleSaveDraft = async () => {
+    const slipData = getValidSlipData();
+    if (!slipData) return;
+    setIsProcessing(true);
+    
+    try {
+        const batch = writeBatch(db); // Dùng Batch Writes
+        
+        // 1. Đặt giữ các lô hàng (Soft Lock) - ĐÃ SỬA LỖI
+        for (const item of slipData.items) {
+            const lotRef = doc(db, 'inventory_lots', item.lotId);
+            
+            // Yêu cầu Firestore tự cộng dồn giá trị trên server
+            batch.update(lotRef, { 
+                quantityAllocated: FieldValue.increment(item.quantityToExport) 
+            });
+        }
 
-            // 2. Lưu phiếu xuất nháp
-            const slipRef = doc(collection(db, 'export_tickets'));
-            batch.set(slipRef, { ...slipData, status: 'pending' });
+        // 2. Lưu phiếu xuất nháp
+        const slipRef = doc(collection(db, 'export_tickets'));
+        batch.set(slipRef, { ...slipData, status: 'pending' });
 
-            await batch.commit(); // Ghi tất cả một lần
+        await batch.commit(); // Ghi tất cả một lần
 
-            toast.success('Lưu nháp phiếu xuất thành công và đặt giữ tồn kho!');
-            resetSlip();
-        } catch (error) {
-            console.error("Lỗi khi lưu nháp phiếu xuất: ", error);
-            toast.error('Đã xảy ra lỗi khi lưu nháp.');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+        toast.success('Lưu nháp phiếu xuất thành công và đặt giữ tồn kho!');
+        resetSlip();
+    } catch (error) {
+        console.error("Lỗi khi lưu nháp phiếu xuất: ", error);
+        toast.error('Đã xảy ra lỗi khi lưu nháp.');
+    } finally {
+        setIsProcessing(false);
+    }
+};
 
     const handleDirectExport = async () => {
         const slipData = getValidSlipData();
