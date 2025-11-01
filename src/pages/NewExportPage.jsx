@@ -5,7 +5,7 @@ import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, writeBatch, FieldValue } from 'firebase/firestore'; // THÊM writeBatch
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, writeBatch, increment } from 'firebase/firestore'; // Thay FieldValue bằng increment
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
@@ -280,7 +280,26 @@ const handleLotSelection = (index, selectedLotId) => {
 
             if (!selectedAggregatedLot || quantityToDistribute <= 0) continue;
 
-            const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+            // === BẮT ĐẦU SỬA LỖI SẮP XẾP ===
+const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => {
+    // Kiểm tra an toàn xem expiryDate có tồn tại VÀ có hàm .toDate() không
+    const dateA = (a.expiryDate && typeof a.expiryDate.toDate === 'function') 
+        ? a.expiryDate.toDate().getTime() // Lấy mili-giây
+        : Infinity; // Nếu không có HSD, đẩy xuống cuối cùng
+
+    const dateB = (b.expiryDate && typeof b.expiryDate.toDate === 'function')
+        ? b.expiryDate.toDate().getTime() // Lấy mili-giây
+        : Infinity; // Nếu không có HSD, đẩy xuống cuối cùng
+
+    // Nếu cả hai đều không có HSD, giữ nguyên thứ tự
+    if (dateA === Infinity && dateB === Infinity) {
+        return 0;
+    }
+
+    // Sắp xếp HSD sớm nhất (số nhỏ nhất) lên đầu
+    return dateA - dateB;
+});
+// === KẾT THÚC SỬA LỖI SẮP XẾP ===
 
             for (const originalLot of originalLotsSorted) {
                 if (quantityToDistribute <= 0) break;
@@ -334,15 +353,15 @@ const handleSaveDraft = async () => {
     try {
         const batch = writeBatch(db); // Dùng Batch Writes
         
-        // 1. Đặt giữ các lô hàng (Soft Lock) - ĐÃ SỬA LỖI
-        for (const item of slipData.items) {
-            const lotRef = doc(db, 'inventory_lots', item.lotId);
-            
-            // Yêu cầu Firestore tự cộng dồn giá trị trên server
-            batch.update(lotRef, { 
-                quantityAllocated: FieldValue.increment(item.quantityToExport) 
-            });
-        }
+        // 1. Đặt giữ các lô hàng (Soft Lock) - ĐÃ SỬA LỖI RACE CONDITION
+            for (const item of slipData.items) {
+                const lotRef = doc(db, 'inventory_lots', item.lotId);
+                
+                // Yêu cầu Firestore tự cộng dồn giá trị trên server
+                batch.update(lotRef, { 
+                    quantityAllocated: increment(item.quantityToExport) // <-- Chỉ dùng increment()
+                });
+            }
 
         // 2. Lưu phiếu xuất nháp
         const slipRef = doc(collection(db, 'export_tickets'));
