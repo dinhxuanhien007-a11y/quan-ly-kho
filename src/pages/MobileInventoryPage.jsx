@@ -7,7 +7,7 @@ import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import { FiSearch, FiAlertCircle, FiMic } from 'react-icons/fi';
 import styles from '../styles/MobileInventoryPage.module.css';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import companyLogo from '../assets/logo.png';
 import { toast } from 'react-toastify';
@@ -226,17 +226,23 @@ if (uniqueLots.length > 0) {
                         </div>
                     </div>
                     <div className={styles.lotListCard}>
-                        <h3>Tồn kho theo lô</h3>
-                        {productData.lots.length > 0 ? (
-                            productData.lots.map(lot => (
-                                <div key={lot.id} className={styles.lotItem}>
-                                    <div><strong>Số lô:</strong><span>{lot.lotNumber}</span></div>
-                                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
-                                    <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
-                                    {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
-                                </div>
-                            ))
-                        ) : (
+    <h3>Tồn kho theo lô</h3>
+    {productData.lots.length > 0 ? (
+        productData.lots.map(lot => {
+            // 2. Tính toán màu sắc
+            const colorClass = getRowColorByExpiry(lot.expiryDate, productData.generalInfo.subGroup);
+
+            return (
+                // 3. Áp dụng class màu vào thẻ div
+                <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
+                    <div><strong>Số lô:</strong><span>{lot.lotNumber}</span></div>
+                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                    <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
+                    {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
+                </div>
+            );
+        })
+    ) : (
                             <p className={styles.emptyMessage}>Không có lô hàng nào còn tồn kho.</p>
                         )}
                     </div>

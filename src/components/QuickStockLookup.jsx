@@ -5,7 +5,7 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { FiSearch, FiAlertCircle } from 'react-icons/fi';
 import Spinner from './Spinner';
 import styles from './QuickStockLookup.module.css';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 
 const QuickStockLookup = () => {
@@ -180,17 +180,23 @@ const QuickStockLookup = () => {
             </div>
 
             <div className={styles.lotList}>
-              <h4>Tồn kho theo lô:</h4>
-              {productData.lots.length > 0 ? (
-                productData.lots.map(lot => (
-                  <div key={lot.id} className={styles.lotItem}>
-                    <div><strong>Số lô:</strong><span>{lot.lotNumber || '(Không có)'}</span></div>
-                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</span></div>
-                    <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
-                    {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
-                  </div>
-                ))
-              ) : (
+  <h4>Tồn kho theo lô:</h4>
+  {productData.lots.length > 0 ? (
+    productData.lots.map(lot => {
+      // 2. Tính toán class màu sắc dựa trên HSD và Nhóm hàng
+      const colorClass = getRowColorByExpiry(lot.expiryDate, productData.generalInfo.subGroup);
+      
+      return (
+        // 3. Thêm styles[colorClass] vào className
+        <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
+          <div><strong>Số lô:</strong><span>{lot.lotNumber || '(Không có)'}</span></div>
+          <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</span></div>
+          <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
+          {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
+        </div>
+      );
+    })
+  ) : (
                 <div className={styles.noResults}>
                   <p>Không có lô hàng nào còn tồn kho.</p>
                 </div>

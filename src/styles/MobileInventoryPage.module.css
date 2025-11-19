@@ -205,3 +205,32 @@
     font-size: 24px;
 }
 
+/* --- THÊM MỚI: Màu sắc cảnh báo HSD (Copy y nguyên từ QuickStockLookup) --- */
+
+.expired-black {
+    background-color: #343a40 !important;
+    color: white !important;
+    border-left: 5px solid #000 !important; /* Thêm viền trái đậm cho mobile dễ nhìn */
+}
+.expired-black strong, 
+.expired-black span {
+    color: white !important;
+}
+
+.near-expiry-red {
+    background-color: #f8d7da !important;
+    border-left: 5px solid #dc3545 !important;
+}
+.near-expiry-red strong, .near-expiry-red span { color: #721c24 !important; }
+
+.near-expiry-orange {
+    background-color: #ffe8cc !important;
+    border-left: 5px solid #fd7e14 !important;
+}
+.near-expiry-orange strong, .near-expiry-orange span { color: #856404 !important; }
+
+.near-expiry-yellow {
+    background-color: #fff3cd !important;
+    border-left: 5px solid #ffc107 !important;
+}
+.near-expiry-yellow strong, .near-expiry-yellow span { color: #856404 !important; }

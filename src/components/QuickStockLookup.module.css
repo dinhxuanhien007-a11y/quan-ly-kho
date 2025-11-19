@@ -123,3 +123,40 @@
 .noResults svg {
     font-size: 24px;
 }
+
+/* --- THÊM MỚI: Màu sắc cảnh báo HSD --- */
+
+/* 1. Hết hạn (Màu đen/xám đậm, chữ trắng) */
+.expired-black {
+    background-color: #343a40 !important;
+    color: white !important;
+    border-color: #212529;
+}
+.expired-black strong, 
+.expired-black span {
+    color: white !important;
+}
+
+/* 2. Cận date đỏ (< 30 hoặc 70 ngày) */
+.near-expiry-red {
+    background-color: #f8d7da !important;
+    border-color: #f5c6cb;
+}
+.near-expiry-red strong { color: #721c24 !important; }
+.near-expiry-red span { color: #721c24 !important; }
+
+/* 3. Cận date cam (< 60 hoặc 140 ngày) */
+.near-expiry-orange {
+    background-color: #ffe8cc !important;
+    border-color: #ffd8b8;
+}
+.near-expiry-orange strong { color: #856404 !important; }
+.near-expiry-orange span { color: #856404 !important; }
+
+/* 4. Cận date vàng (< 90 hoặc 210 ngày) */
+.near-expiry-yellow {
+    background-color: #fff3cd !important;
+    border-color: #ffeeba;
+}
+.near-expiry-yellow strong { color: #856404 !important; }
+.near-expiry-yellow span { color: #856404 !important; }
