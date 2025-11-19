@@ -8,7 +8,7 @@ import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { formatDate, parseDateString } from '../utils/dateUtils';
+import { formatDate, parseDateString, getRowColorByExpiry } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
@@ -519,8 +519,12 @@ const StocktakeSessionPage = () => {
                             </thead>
                             <tbody>
                                  {items.map((item) => (
-                                    <tr key={item.id}>
-                                        <td>{item.productId}</td>
+    <tr 
+        key={item.id}
+        // --- THÊM DÒNG NÀY: Tính toán và áp dụng class màu sắc dựa trên HSD ---
+        className={getRowColorByExpiry(item.expiryDate, item.subGroup)} 
+    >
+        <td>{item.productId}</td>
                                         <td>{item.productName}</td>
                                         <td>{item.lotNumber || '(Không có)'}</td>
                                         <td>{item.expiryDate ? formatDate(item.expiryDate) : '(Không có)'}</td>
