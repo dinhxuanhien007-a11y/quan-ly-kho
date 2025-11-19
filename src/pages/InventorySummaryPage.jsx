@@ -31,6 +31,10 @@ import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
 import companyLogo from '../assets/logo.png';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
+import { getInventoryHistory } from '../services/dashboardService'; // <-- Đảm bảo dòng này có
+import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines'; // <-- THÊM DÒNG NÀY
+import { FiDownload } from 'react-icons/fi'; // Thêm icon Download
+import { exportFullInventoryToExcel } from '../utils/excelExportUtils'; // Import hàm vừa tạo
 
 const PAGE_SIZE = 15;
 
@@ -67,12 +71,24 @@ const getLotItemColorClass = (expiryDate, subGroup) => {
 
 const InventorySummaryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
+    // ==================================================================
+    // CẤU HÌNH: Ai được phép xuất file Excel?
+    // Muốn thêm quyền cho ai, bạn chỉ cần thêm tên role vào trong ngoặc vuông []
+    // Ví dụ muốn thêm admin: ['owner', 'admin']
+    // Ví dụ muốn cho tất cả: ['owner', 'admin', 'med', 'bio']
+    
+    const ALLOWED_EXPORT_ROLES = ['owner']; 
+    
+    // Biến này sẽ tự động kiểm tra xem user hiện tại có nằm trong danh sách trên không
+    const canExport = ALLOWED_EXPORT_ROLES.includes(userRole);
+    // ==================================================================
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState({});
     const [lotDetails, setLotDetails] = useState({});
     const [loadingLots, setLoadingLots] = useState({});
+    const [sparklineRange, setSparklineRange] = useState(30); // <-- THÊM DÒNG NÀY (Mặc định là 30 ngày)
     
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
@@ -89,6 +105,9 @@ const InventorySummaryPage = ({ pageTitle }) => {
 
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
     const subGroupRef = useRef(null);
+    const [historyData, setHistoryData] = useState({}); // <-- THÊM LẠI DÒNG NÀY
+    const [loadingHistory, setLoadingHistory] = useState({}); // <-- THÊM LẠI DÒNG NÀY
+    const [isSparklineDropdownOpen, setIsSparklineDropdownOpen] = useState(false);
 
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
@@ -339,10 +358,18 @@ const InventorySummaryPage = ({ pageTitle }) => {
         }
         const aggregatedLots = Array.from(lotAggregator.values());
 
-        // 3. Sắp xếp danh sách đã gộp theo quy tắc bạn yêu cầu
+        // 3. Sắp xếp danh sách đã gộp (SỬA LỖI CRASH TẠI ĐÂY)
         aggregatedLots.sort((a, b) => {
-            const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
-            const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+            // Hàm phụ để lấy giá trị thời gian an toàn
+            const getTime = (dateObj) => {
+                if (!dateObj) return Infinity; // Không có HSD thì đẩy xuống cuối
+                if (typeof dateObj.toDate === 'function') return dateObj.toDate().getTime(); // Là Firestore Timestamp
+                if (dateObj instanceof Date) return dateObj.getTime(); // Là JS Date
+                return Infinity; // Các trường hợp khác (VD: chuỗi) coi như không có HSD để tránh lỗi
+            };
+
+            const dateA = getTime(a.expiryDate);
+            const dateB = getTime(b.expiryDate);
 
             // Quy tắc 1: HSD gần nhất lên trước
             if (dateA !== dateB) {
@@ -379,6 +406,23 @@ const filteredSummaries = useMemo(() => {
         return colorClass.includes('near-expiry') || colorClass.includes('expired');
     });
 }, [summaries, filters.dateStatus]);
+
+const [isExporting, setIsExporting] = useState(false);
+
+const handleExportExcel = async () => {
+    if (!canExport) return;
+    setIsExporting(true);
+    toast.info("Đang tạo file Excel toàn bộ tồn kho...");
+
+    try {
+        await exportFullInventoryToExcel();
+        toast.success("Xuất file Excel thành công!");
+    } catch (error) {
+        toast.error("Có lỗi xảy ra khi xuất file.");
+    } finally {
+        setIsExporting(false);
+    }
+};
 
     return (
         <div className="printable-inventory-area">
@@ -429,6 +473,31 @@ const filteredSummaries = useMemo(() => {
                         className="search-input"
                     />
                 </div>
+                {/* === THÊM NÚT TẢI EXCEL TẠI ĐÂY === */}
+    {canExport && (
+        <button 
+            onClick={handleExportExcel} 
+            className="btn-success" // Bạn có thể dùng btn-primary hoặc tạo class mới
+            disabled={isExporting}
+            style={{ 
+                marginLeft: '10px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '5px',
+                backgroundColor: '#28a745', // Màu xanh lá cho Excel
+                color: 'white',
+                border: 'none',
+                padding: '10px 15px',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                fontWeight: '500'
+            }}
+        >
+            <FiDownload /> 
+            {isExporting ? 'Đang xuất...' : 'Xuất Excel (Full)'}
+        </button>
+    )}
+    {/* =================================== */}
             </div>
 
             {loading ? <Spinner /> : (
@@ -441,6 +510,22 @@ const filteredSummaries = useMemo(() => {
                                     <th>Mã hàng</th>
                                     <th>Tên hàng</th>
                                     <th>HSD Gần Nhất</th>
+                                    <th className="sparkline-header-cell">
+                <div className="dropdown-filter">
+                    <button onClick={() => setIsSparklineDropdownOpen(prev => !prev)}>
+                        Biến động ({sparklineRange} ngày)
+                        <FiChevronDown style={{ marginLeft: '5px' }} />
+                    </button>
+                    {isSparklineDropdownOpen && (
+                        <div className="dropdown-content">
+                            <button onClick={() => { setSparklineRange(7); setIsSparklineDropdownOpen(false); }}>7 ngày</button>
+                            <button onClick={() => { setSparklineRange(30); setIsSparklineDropdownOpen(false); }}>30 ngày</button>
+                            <button onClick={() => { setSparklineRange(90); setIsSparklineDropdownOpen(false); }}>90 ngày</button>
+                            <button onClick={() => { setSparklineRange(365); setIsSparklineDropdownOpen(false); }}>1 năm</button>
+                        </div>
+                    )}
+                </div>
+            </th>
                                     <th>Tổng Tồn</th>
                                     <th>ĐVT</th>
                                     <th>Quy cách</th>
@@ -462,6 +547,18 @@ const filteredSummaries = useMemo(() => {
                                             <td data-label="Mã hàng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
                                             <td data-label="Tên hàng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
                                             <td data-label="HSD Gần Nhất">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(Không có)'}</td>
+                                            <td data-label="Biến động">
+                    {product.inventoryHistory && product.inventoryHistory.length > 0 ? (
+        <Sparklines data={product.inventoryHistory.slice(-sparklineRange)} width={120} height={25} margin={5}>
+            {/* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^         */}
+            {/* SỬA LOGIC LẤY DỮ LIỆU Ở ĐÂY                   */}
+            <SparklinesLine color="#007bff" style={{ strokeWidth: 2 }} />
+            <SparklinesSpots style={{ fill: "#007bff" }} />
+        </Sparklines>
+    ) : (
+        <span style={{ fontSize: '12px', color: '#888' }}>Chưa có dữ liệu</span>
+    )}
+</td>
                                             <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
                                             <td data-label="Quy cách">{product.packaging}</td>

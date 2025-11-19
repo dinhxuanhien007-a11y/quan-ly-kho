@@ -459,3 +459,39 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
         rows: ledgerRows
     };
 };
+
+/**
+ * Hàm lấy lịch sử tồn kho để vẽ biểu đồ Sparklines (Biến động)
+ * @param {string} productId - ID của sản phẩm
+ * @param {number} days - Số ngày muốn lấy dữ liệu (mặc định 30)
+ * @returns {Promise<number[]>} - Mảng các con số tồn kho
+ */
+export const getInventoryHistory = async (productId, days = 30) => {
+    try {
+        // 1. Định nghĩa Collection lưu lịch sử (Giả sử bạn có collection này)
+        // Nếu chưa có logic lưu lịch sử hàng ngày, hàm này sẽ trả về mảng rỗng để không bị lỗi web.
+        const historyRef = collection(db, "inventory_snapshots"); 
+        
+        const q = query(
+            historyRef,
+            where("productId", "==", productId),
+            orderBy("date", "asc"), // Sắp xếp ngày tăng dần
+            limit(days)
+        );
+
+        const querySnapshot = await getDocs(q);
+        
+        // 2. Lấy ra mảng số lượng tồn (Ví dụ: [100, 98, 95, 102...])
+        const data = querySnapshot.docs.map(doc => doc.data().totalQuantity || 0);
+        
+        // Nếu không có dữ liệu (do chưa setup job lưu snapshot), trả về mảng rỗng
+        if (!data || data.length === 0) {
+             return []; 
+        }
+
+        return data;
+    } catch (error) {
+        console.warn(`Không thể lấy lịch sử cho SP ${productId} (có thể do chưa tạo collection 'inventory_snapshots'):`, error);
+        return []; // Trả về mảng rỗng để web vẫn chạy bình thường
+    }
+};
