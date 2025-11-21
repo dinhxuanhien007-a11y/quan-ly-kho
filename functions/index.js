@@ -5,9 +5,11 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore"); // <-- THÊM Timestamp
 const { getAuth } = require("firebase-admin/auth");
+const functions = require("firebase-functions"); // <-- THÊM DÒNG NÀY (CHO LOGGING)
 const logger = require("firebase-functions/logger");
+const speech = require("@google-cloud/speech"); // <-- DI CHUYỂN LÊN ĐÂY
 
 // --- ĐỊNH NGHĨA VÙNG CHUNG ---
 const ASIA_REGION = "asia-southeast1";
@@ -322,80 +324,108 @@ exports.confirmExpiryNotification = onCall({
  */
 exports.updateProductSummary = onDocumentWritten({
     document: "/inventory_lots/{lotId}",
-    region: ASIA_REGION // <-- ĐÃ THÊM region
+    region: ASIA_REGION 
 }, async (event) => {
-  const beforeData = event.data.before.data();
-  const afterData = event.data.after.data();
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
 
-  const productId = afterData?.productId || beforeData?.productId;
+    // Lấy productId (có thể từ dữ liệu cũ hoặc mới)
+    const productId = afterData?.productId || beforeData?.productId;
 
-  if (!productId) {
-    logger.log(`Không tìm thấy productId cho lotId: ${event.params.lotId}. Bỏ qua.`);
-    return null;
-  }
-
-  logger.log(`Bắt đầu cập nhật summary cho sản phẩm: ${productId}`);
-
-  // 1. TRUY VẤN TẤT CẢ CÁC LÔ CÒN LẠI CỦA SẢN PHẨM NÀY
-  const lotsCollectionRef = db.collection("inventory_lots");
-  const lotsQuery = lotsCollectionRef
-    .where("productId", "==", productId)
-    .where("quantityRemaining", ">", 0);
-
-  const lotsSnapshot = await lotsQuery.get();
-  const summaryDocRef = db.collection("product_summaries").doc(productId);
-
-  // 2. NẾU KHÔNG CÒN LÔ NÀO TỒN KHO > 0
-  if (lotsSnapshot.empty) {
-    logger.log(`Sản phẩm ${productId} đã hết hàng. Xóa document summary.`);
-    await summaryDocRef.delete();
-    return null;
-  }
-
-  // 3. NẾU CÒN TỒN KHO, TÍNH TOÁN LẠI DỮ LIỆU TỔNG HỢP
-  let totalRemaining = 0;
-  let nearestExpiryDate = null;
-
-  lotsSnapshot.forEach((doc) => {
-    const lot = doc.data();
-    totalRemaining += lot.quantityRemaining;
-    if (lot.expiryDate) {
-      if (!nearestExpiryDate || lot.expiryDate.toMillis() < nearestExpiryDate.toMillis()) {
-        nearestExpiryDate = lot.expiryDate;
-      }
+    if (!productId) {
+        logger.log(`Không tìm thấy productId cho lotId: ${event.params.lotId}. Bỏ qua.`);
+        return null;
     }
-  });
 
-  // 4. LẤY THÔNG TIN GỐC TỪ COLLECTION 'products'
-  const productDocRef = db.collection("products").doc(productId);
-  const productDoc = await productDocRef.get();
+    logger.log(`Bắt đầu tính toán lại tồn kho cho sản phẩm: ${productId}`);
 
-  if (!productDoc.exists) {
-    logger.error(`Không tìm thấy document gốc cho sản phẩm ${productId} trong collection 'products'.`);
-    // Nếu sản phẩm gốc bị xóa, cũng nên xóa summary
-    await summaryDocRef.delete();
+    // 1. TRUY VẤN TẤT CẢ CÁC LÔ CÒN LẠI CỦA SẢN PHẨM NÀY
+    const lotsCollectionRef = db.collection("inventory_lots");
+    const lotsQuery = lotsCollectionRef
+        .where("productId", "==", productId)
+        .where("quantityRemaining", ">", 0);
+
+    const lotsSnapshot = await lotsQuery.get();
+    
+    // Khai báo tham chiếu đến các document cần cập nhật
+    const summaryDocRef = db.collection("product_summaries").doc(productId);
+    const productDocRef = db.collection("products").doc(productId);
+
+    // 2. NẾU KHÔNG CÒN LÔ NÀO (HẾT HÀNG)
+    if (lotsSnapshot.empty) {
+        logger.log(`Sản phẩm ${productId} đã hết hàng.`);
+        
+        // Xóa summary
+        const deleteSummary = summaryDocRef.delete();
+        
+        // Cập nhật sản phẩm gốc về 0
+        const updateProduct = productDocRef.update({
+            totalRemaining: 0,
+            nearestExpiryDate: null,
+            hasInventory: false // Cờ đánh dấu hết hàng (tuỳ chọn)
+        });
+
+        await Promise.all([deleteSummary, updateProduct]);
+        return null;
+    }
+
+    // 3. TÍNH TOÁN DỮ LIỆU TỔNG HỢP
+    let totalRemaining = 0;
+    let nearestExpiryDate = null;
+
+    lotsSnapshot.forEach((doc) => {
+        const lot = doc.data();
+        totalRemaining += lot.quantityRemaining;
+        
+        // Tìm HSD gần nhất
+        if (lot.expiryDate) {
+            if (!nearestExpiryDate || lot.expiryDate.toMillis() < nearestExpiryDate.toMillis()) {
+                nearestExpiryDate = lot.expiryDate;
+            }
+        }
+    });
+
+    // 4. LẤY THÔNG TIN GỐC (để cập nhật summary)
+    const productDoc = await productDocRef.get();
+
+    if (!productDoc.exists) {
+        logger.error(`Không tìm thấy sản phẩm ${productId} trong 'products'. Xóa summary.`);
+        await summaryDocRef.delete();
+        return null;
+    }
+    const productData = productDoc.data();
+
+    // 5. CHUẨN BỊ DỮ LIỆU
+    // Dữ liệu cho product_summaries (giữ nguyên như cũ để tương thích ngược nếu cần)
+    const summaryData = {
+        productName: productData.productName,
+        unit: productData.unit,
+        packaging: productData.packaging || "",
+        storageTemp: productData.storageTemp || "",
+        manufacturer: productData.manufacturer || "",
+        team: productData.team,
+        subGroup: productData.subGroup || "",
+        totalRemaining: totalRemaining,
+        nearestExpiryDate: nearestExpiryDate,
+        lastUpdatedAt: FieldValue.serverTimestamp(),
+        inventoryHistory: [], 
+    };
+
+    // 6. THỰC HIỆN CẬP NHẬT SONG SONG
+    // Cập nhật bảng Summary
+    const updateSummaryPromise = summaryDocRef.set(summaryData, { merge: true });
+
+    // === QUAN TRỌNG: Cập nhật ngược lại vào bảng Products ===
+    const updateProductPromise = productDocRef.update({
+        totalRemaining: totalRemaining,         // <-- Lưu số lượng tồn vào đây
+        nearestExpiryDate: nearestExpiryDate,   // <-- Lưu HSD gần nhất vào đây
+        hasInventory: true                      // <-- Đánh dấu có hàng
+    });
+
+    await Promise.all([updateSummaryPromise, updateProductPromise]);
+    
+    logger.log(`Đã cập nhật đồng bộ cho ${productId}. Tổng tồn: ${totalRemaining}`);
     return null;
-  }
-  const productData = productDoc.data();
-
-  // 5. TẠO DỮ LIỆU MỚI VÀ CẬP NHẬT 'product_summaries'
-  const summaryData = {
-    productName: productData.productName,
-    unit: productData.unit,
-    packaging: productData.packaging || "",
-    storageTemp: productData.storageTemp || "",
-    manufacturer: productData.manufacturer || "",
-    team: productData.team,
-    subGroup: productData.subGroup || "",
-    totalRemaining: totalRemaining,
-    nearestExpiryDate: nearestExpiryDate,
-    lastUpdatedAt: FieldValue.serverTimestamp(),
-  };
-
-  logger.log(`Cập nhật summary cho ${productId} với tổng tồn là ${totalRemaining}.`);
-  await summaryDocRef.set(summaryData, { merge: true }); // Dùng merge để không ghi đè các trường khác nếu có
-
-  return null;
 });
 
 // =================================================================
@@ -479,10 +509,6 @@ exports.archiveMonthlyData = onSchedule({
 // =================================================================
 // === HÀM NHẬN DẠNG GIỌNG NÓI (SPEECH-TO-TEXT) (GIỮ NGUYÊN ASIA) ===
 // =================================================================
-const speech = require("@google-cloud/speech");
-
-// Khởi tạo client cho Speech-to-Text một lần duy nhất
-const speechClient = new speech.SpeechClient();
 
 /**
  * Hàm 9: Cloud Function được gọi từ client để nhận dạng giọng nói.
@@ -490,6 +516,7 @@ const speechClient = new speech.SpeechClient();
 exports.transcribeAudio = onCall({
     region: ASIA_REGION // <-- ĐÃ ĐƯỢC CHỈ ĐỊNH
 }, async (request) => {
+  const speechClient = new speech.SpeechClient();
     // Lấy dữ liệu âm thanh dưới dạng base64 từ client
     const audioBytes = request.data.audioData;
 

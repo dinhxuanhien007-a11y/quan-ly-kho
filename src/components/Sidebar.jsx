@@ -1,13 +1,19 @@
 // src/components/Sidebar.jsx
 
 import React, { useState } from 'react';
-// CẬP NHẬT: Thay đổi bộ icon cho phù hợp
-import { FiHome, FiArchive, FiPlusCircle, FiMinusCircle, FiFileText, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
+import { 
+  FiHome, FiArchive, FiPlusCircle, FiMinusCircle, 
+  FiFileText, FiChevronsLeft, FiChevronsRight, FiClipboard 
+} from 'react-icons/fi'; // <-- Đã thêm FiClipboard
 import { NavLink } from 'react-router-dom';
 import '../styles/AdminLayout.css';
+import { useAuth } from '../context/UserContext'; // <-- BƯỚC 1: Import useAuth
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const { role } = useAuth(); // <-- BƯỚC 2: Lấy role hiện tại
+
+  console.log("DEBUG ROLE:", role); // <--- THÊM DÒNG NÀY ĐỂ KIỂM TRA
 
   return (
     <div className={collapsed ? "sidebar collapsed" : "sidebar"}>
@@ -30,14 +36,24 @@ const Sidebar = () => {
             <span className="menu-text">Quản lý hàng hóa</span>
           </NavLink>
         </li>
-        {/* CẬP NHẬT: Đổi icon thành FiPlusCircle */}
+
+        {/* === BƯỚC 3: CHỈ HIỂN THỊ NẾU LÀ OWNER === */}
+        {role === 'owner' && (
+            <li>
+              <NavLink to="/inventory-check">
+                <FiClipboard className="menu-icon" />
+                <span className="menu-text">Đối chiếu Tồn kho</span>
+              </NavLink>
+            </li>
+        )}
+        {/* ========================================= */}
+
         <li>
           <NavLink to="/new-import">
             <FiPlusCircle className="menu-icon" />
             <span className="menu-text">Tạo Phiếu Nhập</span>
           </NavLink>
         </li>
-        {/* CẬP NHẬT: Đổi icon thành FiMinusCircle */}
         <li>
           <NavLink to="/new-export">
             <FiMinusCircle className="menu-icon" />

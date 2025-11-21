@@ -20,7 +20,7 @@ import {
 import NewDataNotification from '../components/NewDataNotification';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { FiChevronDown, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiChevronLeft, FiDownload } from 'react-icons/fi';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
@@ -29,18 +29,12 @@ import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
-import companyLogo from '../assets/logo.png';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
-import { getInventoryHistory } from '../services/dashboardService'; // <-- Đảm bảo dòng này có
-import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines'; // <-- THÊM DÒNG NÀY
-import { FiDownload } from 'react-icons/fi'; // Thêm icon Download
-import { exportFullInventoryToExcel } from '../utils/excelExportUtils'; // Import hàm vừa tạo
+import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
 
 const PAGE_SIZE = 15;
 
-// src/pages/InventorySummaryPage.jsx
-
-// Hàm tô màu cho các lô hàng chi tiết (khi xổ xuống)
+// Hàm tô màu cho các lô hàng chi tiết
 const getLotItemColorClass = (expiryDate, subGroup) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
@@ -50,16 +44,12 @@ const getLotItemColorClass = (expiryDate, subGroup) => {
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // --- LOGIC MỚI ---
-    // Quy tắc 1: Cho nhóm BD BDB và BD DS
     if (SPECIAL_EXPIRY_SUBGROUPS.includes(subGroup)) {
         if (diffDays < 0) return 'lot-item-expired';
         if (diffDays <= 30) return 'lot-item-red';
         if (diffDays <= 60) return 'lot-item-orange';
         if (diffDays <= 90) return 'lot-item-yellow';
-    } 
-    // Quy tắc 2: Cho tất cả các nhóm hàng còn lại
-    else {
+    } else {
         if (diffDays < 0) return 'lot-item-expired';
         if (diffDays <= 70) return 'lot-item-red';
         if (diffDays <= 140) return 'lot-item-orange';
@@ -68,27 +58,14 @@ const getLotItemColorClass = (expiryDate, subGroup) => {
     return '';
 };
 
-
 const InventorySummaryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
-    // ==================================================================
-    // CẤU HÌNH: Ai được phép xuất file Excel?
-    // Muốn thêm quyền cho ai, bạn chỉ cần thêm tên role vào trong ngoặc vuông []
-    // Ví dụ muốn thêm admin: ['owner', 'admin']
-    // Ví dụ muốn cho tất cả: ['owner', 'admin', 'med', 'bio']
-    
-    const ALLOWED_EXPORT_ROLES = ['owner']; 
-    
-    // Biến này sẽ tự động kiểm tra xem user hiện tại có nằm trong danh sách trên không
-    const canExport = ALLOWED_EXPORT_ROLES.includes(userRole);
-    // ==================================================================
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRows, setExpandedRows] = useState({});
     const [lotDetails, setLotDetails] = useState({});
     const [loadingLots, setLoadingLots] = useState({});
-    const [sparklineRange, setSparklineRange] = useState(30); // <-- THÊM DÒNG NÀY (Mặc định là 30 ngày)
     
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
@@ -101,28 +78,34 @@ const InventorySummaryPage = ({ pageTitle }) => {
     });
     
     const [hasNewData, setHasNewData] = useState(false);
-    const lastSeenTimestampRef = useRef(null);
+    
+    // Đổi ref này để theo dõi thay đổi của products
+    // Lưu ý: Chúng ta dùng snapshot listener trực tiếp, nên ref này có thể không cần thiết 
+    // nếu logic refresh dựa trên snapshot metadata. 
+    // Tuy nhiên, để giữ logic cũ hoạt động, ta sẽ giữ lại.
+    const lastSeenSnapshotRef = useRef(null); 
 
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
     const subGroupRef = useRef(null);
-    const [historyData, setHistoryData] = useState({}); // <-- THÊM LẠI DÒNG NÀY
-    const [loadingHistory, setLoadingHistory] = useState({}); // <-- THÊM LẠI DÒNG NÀY
-    const [isSparklineDropdownOpen, setIsSparklineDropdownOpen] = useState(false);
+    
+    const [isExporting, setIsExporting] = useState(false);
 
+    // --- TỐI ƯU HÓA 1: Query trực tiếp từ 'products' ---
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            const baseCollectionRef = collection(db, "product_summaries");
+            // THAY ĐỔI QUAN TRỌNG: Đọc từ 'products'
+            const baseCollectionRef = collection(db, "products");
             let queryConstraints = [];
 
-            // Áp dụng bộ lọc vai trò trước
+            // 1. Lọc theo Role
             if (userRole === 'med') {
                 queryConstraints.push(where("team", "==", "MED"));
             } else if (userRole === 'bio') {
                 queryConstraints.push(where("team", "==", "BIO"));
             }
 
-            // Áp dụng bộ lọc do người dùng chọn
+            // 2. Lọc theo UI
             if (filters.team !== 'all') {
                 queryConstraints.push(where("team", "==", filters.team));
             }
@@ -130,23 +113,25 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(where("subGroup", "==", filters.subGroup));
             }
 
-            // Áp dụng bộ lọc HSD và sắp xếp
+            // 3. Lọc theo Date & Sắp xếp
+            // Lưu ý: Trường nearestExpiryDate giờ đã có trong products nhờ script đồng bộ
             if (filters.dateStatus === 'expired') {
                 queryConstraints.push(where("nearestExpiryDate", "<", Timestamp.now()));
                 queryConstraints.push(orderBy("nearestExpiryDate", "desc"));
                 queryConstraints.push(orderBy(documentId(), "asc"));
             } else if (filters.dateStatus === 'near_expiry') {
                 const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + 210); // Ngưỡng cao nhất
+                futureDate.setDate(futureDate.getDate() + 210);
                 queryConstraints.push(where("nearestExpiryDate", ">=", Timestamp.now()));
                 queryConstraints.push(where("nearestExpiryDate", "<=", Timestamp.fromDate(futureDate)));
                 queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
                 queryConstraints.push(orderBy(documentId(), "asc"));
             } else {
+                // Mặc định sắp xếp theo ID (Mã hàng)
                 queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
-            // Phân trang
+            // 4. Phân trang
             if (direction === 'next' && cursor) {
                 queryConstraints.push(startAfter(cursor));
             } else if (direction === 'first') {
@@ -164,7 +149,15 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 return;
             }
             
-            const summaryDocs = mainSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Lấy dữ liệu trực tiếp, không cần map thêm
+            const summaryDocs = mainSnapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data(),
+                // Đảm bảo có giá trị mặc định nếu dữ liệu cũ chưa chuẩn
+                totalRemaining: doc.data().totalRemaining ?? 0,
+                nearestExpiryDate: doc.data().nearestExpiryDate ?? null
+            }));
+            
             setSummaries(summaryDocs);
 
             setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
@@ -173,7 +166,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu tổng hợp: ", error);
             if (error.message.includes('requires an index')) {
-                toast.error("Lỗi truy vấn, bạn cần tạo Index trong Firestore. Hãy kiểm tra Console (F12) để xem link tạo tự động.");
+                toast.error("Lỗi truy vấn. Vui lòng kiểm tra Console để tạo Index.");
             } else {
                 toast.error("Không thể tải dữ liệu.");
             }
@@ -182,60 +175,76 @@ const InventorySummaryPage = ({ pageTitle }) => {
         }
     }, [filters, userRole]);
 
+    // --- TỐI ƯU HÓA 2: Tìm kiếm gọn nhẹ hơn ---
     const performSearch = useCallback(async (term) => {
         if (!term) return;
         setLoading(true);
         try {
-            let baseSearchRef = collection(db, "products");
-            let searchConstraints = [];
-
-            if (userRole === 'med') {
-               searchConstraints.push(where("team", "==", "MED"));
-            } else if (userRole === 'bio') {
-                searchConstraints.push(where("team", "==", "BIO"));
-            }
-
             const upperTerm = term.toUpperCase();
-            const productSearchQuery = query(baseSearchRef, ...searchConstraints, where(documentId(), ">=", upperTerm), where(documentId(), "<=", upperTerm + '\uf8ff'));
-            const lotSearchQuery = query(collection(db, "inventory_lots"), where("lotNumber", "==", term));
- 
-            const [productSnap, lotSnap] = await Promise.all([ getDocs(productSearchQuery), getDocs(lotSearchQuery) ]);
-            
-            const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
-            const allowedTeams = userRole === 'med' ? ['MED'] : (userRole === 'bio' ? ['BIO'] : null);
-            for (const lotDoc of lotSnap.docs) {
-                const productId = lotDoc.data().productId;
-                if (allowedTeams) {
-                    const productRef = doc(db, "products", productId);
-                    const productDoc = await getDoc(productRef);
-                    if (productDoc.exists() && allowedTeams.includes(productDoc.data().team)) {
-                        foundProductIds.add(productId);
-                    }
-                } else {
-                    foundProductIds.add(productId);
-                }
+            let foundProductIds = new Set();
+
+            // Cách 1: Tìm theo ID (Mã hàng) trong products
+            // Lưu ý: Firestore không hỗ trợ tìm 'contains' (chứa), chỉ có 'startsWith'
+            const productsRef = collection(db, "products");
+            const idQuery = query(
+                productsRef, 
+                where(documentId(), ">=", upperTerm), 
+                where(documentId(), "<=", upperTerm + '\uf8ff'),
+                limit(30)
+            );
+            const idSnapshot = await getDocs(idQuery);
+            idSnapshot.forEach(doc => foundProductIds.add(doc.id));
+
+            // Cách 2: Tìm theo Số lô trong inventory_lots -> suy ra Mã hàng
+            // Chỉ tìm nếu Cách 1 trả về ít kết quả để tối ưu
+            if (foundProductIds.size < 5) {
+                const lotsRef = collection(db, "inventory_lots");
+                const lotQuery = query(lotsRef, where("lotNumber", "==", term), limit(20));
+                const lotSnapshot = await getDocs(lotQuery);
+                lotSnapshot.forEach(doc => foundProductIds.add(doc.data().productId));
             }
-          
+
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
             } else {
-                const ids = Array.from(foundProductIds).slice(0, 30);
-                const finalProductsQuery = query( collection(db, "products"), where(documentId(), 'in', ids));
-                const finalProductsSnap = await getDocs(finalProductsQuery);
-                const finalProducts = finalProductsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                const summariesQuery = query(collection(db, "product_summaries"), where(documentId(), 'in', ids));
-                const summariesSnapshot = await getDocs(summariesQuery);
-                const summariesMap = new Map(summariesSnapshot.docs.map(doc => [doc.id, doc.data()]));
+                // Lọc lại theo Role và Team (Client-side filtering cho đơn giản vì số lượng ít)
+                let ids = Array.from(foundProductIds);
                 
-                const mergedData = finalProducts.map(product => {
-                    const summaryData = summariesMap.get(product.id);
-                    return { ...product, totalRemaining: summaryData?.totalRemaining ?? 0, nearestExpiryDate: summaryData?.nearestExpiryDate ?? null };
-                });
-                setSummaries(mergedData);
-                setIsLastPage(true);
+                // Fetch chi tiết các sản phẩm tìm được
+                // Firestore 'in' query giới hạn 30 items
+                const chunks = [];
+                while (ids.length > 0) {
+                    chunks.push(ids.splice(0, 30));
+                }
+
+                let finalResults = [];
+                for (const chunkIds of chunks) {
+                    const q = query(collection(db, "products"), where(documentId(), 'in', chunkIds));
+                    const snap = await getDocs(q);
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        // Kiểm tra quyền xem user có được thấy sản phẩm này không
+                        const isAllowed = 
+                            (userRole === 'owner' || userRole === 'admin') ||
+                            (userRole === 'med' && data.team === 'MED') ||
+                            (userRole === 'bio' && data.team === 'BIO');
+                        
+                        if (isAllowed) {
+                            finalResults.push({ 
+                                id: doc.id, 
+                                ...data,
+                                totalRemaining: data.totalRemaining ?? 0,
+                                nearestExpiryDate: data.nearestExpiryDate ?? null
+                            });
+                        }
+                    });
+                }
+                
+                setSummaries(finalResults);
+                setIsLastPage(true); // Tìm kiếm thì không phân trang tiếp
             }
+
         } catch (error) {
             console.error("Lỗi khi tìm kiếm:", error);
         } finally {
@@ -256,42 +265,42 @@ const InventorySummaryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, filters, fetchData, performSearch]);
     
+    // --- TỐI ƯU HÓA 3: Realtime Listener trên 'product_summaries' hoặc 'products' ---
+    // Để tránh tốn kém, ta vẫn lắng nghe 'product_summaries' vì nó chỉ thay đổi khi tồn kho đổi.
+    // (Cloud Function vẫn update summary song song với products)
+    // Biến cờ để kiểm tra xem có phải lần load đầu tiên không
+    const isFirstRun = useRef(true);
+
     useEffect(() => {
         const q = query(collection(db, "product_summaries"), orderBy("lastUpdatedAt", "desc"), limit(1));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) return;
-            const newestDocData = snapshot.docs[0].data();
-            const newestTimestamp = newestDocData.lastUpdatedAt;
-            if (!newestTimestamp) return;
-            if (lastSeenTimestampRef.current === null) {
-                lastSeenTimestampRef.current = newestTimestamp;
+            // 1. Nếu là lần chạy đầu tiên (vừa vào trang), ta bỏ qua không thông báo
+            if (isFirstRun.current) {
+                isFirstRun.current = false;
                 return;
             }
-            if (lastSeenTimestampRef.current && newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis()) {
-                 if (!snapshot.metadata.hasPendingWrites) {
-                    setHasNewData(true);
-                    lastSeenTimestampRef.current = newestTimestamp;
-                 }
+
+            if (snapshot.empty) return;
+            
+            // 2. Từ lần thứ 2 trở đi, nếu có thay đổi mới báo
+            if (!snapshot.metadata.hasPendingWrites) {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added" || change.type === "modified") {
+                         setHasNewData(true);
+                    }
+                });
             }
         }, (error) => {
             console.error("Lỗi khi lắng nghe real-time:", error);
         });
-        return () => {
-          unsubscribe();
-          lastSeenTimestampRef.current = null;
-        };
+        return () => unsubscribe();
     }, []);
 
     const subGroups = useMemo(() => {
-    if (userRole === 'med') {
-        return SUBGROUPS_BY_TEAM.MED;
-    }
-    if (userRole === 'bio') {
-        return SUBGROUPS_BY_TEAM.BIO;
-    }
-    // Dành cho admin/owner
-    return ALL_SUBGROUPS;
-}, [userRole]);
+        if (userRole === 'med') return SUBGROUPS_BY_TEAM.MED;
+        if (userRole === 'bio') return SUBGROUPS_BY_TEAM.BIO;
+        return ALL_SUBGROUPS;
+    }, [userRole]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -321,108 +330,91 @@ const InventorySummaryPage = ({ pageTitle }) => {
     };
     
     const toggleRow = async (productId) => {
-    const isCurrentlyExpanded = !!expandedRows[productId];
-    if (isCurrentlyExpanded) {
-        setExpandedRows(prev => ({ ...prev, [productId]: false }));
-        return;
-    }
-
-    setLoadingLots(prev => ({ ...prev, [productId]: true }));
-    try {
-        // 1. Lấy tất cả các bản ghi lô hàng còn tồn kho của sản phẩm
-        const lotsQuery = query(
-            collection(db, "inventory_lots"),
-            where("productId", "==", productId),
-            where("quantityRemaining", ">", 0)
-        );
-        const lotsSnapshot = await getDocs(lotsQuery);
-        const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // 2. Bắt đầu gộp các lô có cùng số lô
-        const lotAggregator = new Map();
-        for (const lot of allLots) {
-            const lotKey = lot.lotNumber || '(Không có)'; // Dùng key chung cho các lô không có số
-
-            if (lotAggregator.has(lotKey)) {
-                const existingLot = lotAggregator.get(lotKey);
-                // Cộng dồn số lượng tồn
-                existingLot.quantityRemaining += lot.quantityRemaining;
-                // Luôn giữ lại HSD ngắn nhất cho nhóm
-                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
-                    existingLot.expiryDate = lot.expiryDate;
-                }
-            } else {
-                // Thêm mới nếu chưa có trong Map, tạo một bản sao để tránh thay đổi dữ liệu gốc
-                lotAggregator.set(lotKey, { ...lot });
-            }
+        const isCurrentlyExpanded = !!expandedRows[productId];
+        if (isCurrentlyExpanded) {
+            setExpandedRows(prev => ({ ...prev, [productId]: false }));
+            return;
         }
-        const aggregatedLots = Array.from(lotAggregator.values());
 
-        // 3. Sắp xếp danh sách đã gộp (SỬA LỖI CRASH TẠI ĐÂY)
-        aggregatedLots.sort((a, b) => {
-            // Hàm phụ để lấy giá trị thời gian an toàn
-            const getTime = (dateObj) => {
-                if (!dateObj) return Infinity; // Không có HSD thì đẩy xuống cuối
-                if (typeof dateObj.toDate === 'function') return dateObj.toDate().getTime(); // Là Firestore Timestamp
-                if (dateObj instanceof Date) return dateObj.getTime(); // Là JS Date
-                return Infinity; // Các trường hợp khác (VD: chuỗi) coi như không có HSD để tránh lỗi
-            };
+        setLoadingLots(prev => ({ ...prev, [productId]: true }));
+        try {
+            const lotsQuery = query(
+                collection(db, "inventory_lots"),
+                where("productId", "==", productId),
+                where("quantityRemaining", ">", 0)
+            );
+            const lotsSnapshot = await getDocs(lotsQuery);
+            const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            const dateA = getTime(a.expiryDate);
-            const dateB = getTime(b.expiryDate);
-
-            // Quy tắc 1: HSD gần nhất lên trước
-            if (dateA !== dateB) {
-                return dateA - dateB;
+            const lotAggregator = new Map();
+            for (const lot of allLots) {
+                const lotKey = lot.lotNumber || '(Không có)';
+                if (lotAggregator.has(lotKey)) {
+                    const existingLot = lotAggregator.get(lotKey);
+                    existingLot.quantityRemaining += lot.quantityRemaining;
+                    if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                        existingLot.expiryDate = lot.expiryDate;
+                    }
+                } else {
+                    lotAggregator.set(lotKey, { ...lot });
+                }
             }
+            const aggregatedLots = Array.from(lotAggregator.values());
 
-            // Quy tắc 2: Nếu HSD bằng nhau, số lượng ít hơn lên trước
-            return a.quantityRemaining - b.quantityRemaining;
-        });
+            // Logic sắp xếp an toàn (Đã sửa từ trước)
+            aggregatedLots.sort((a, b) => {
+                const getTime = (dateObj) => {
+                    if (!dateObj) return Infinity;
+                    if (typeof dateObj.toDate === 'function') return dateObj.toDate().getTime();
+                    if (dateObj instanceof Date) return dateObj.getTime();
+                    return Infinity;
+                };
+                const dateA = getTime(a.expiryDate);
+                const dateB = getTime(b.expiryDate);
+                if (dateA !== dateB) return dateA - dateB;
+                return a.quantityRemaining - b.quantityRemaining;
+            });
 
-        // 4. Cập nhật state với danh sách đã được xử lý
-        setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots }));
-
-    } catch (error) {
-        console.error("Lỗi khi tải chi tiết lô:", error);
-        toast.error("Không thể tải chi tiết các lô hàng.");
-    } finally {
-        setLoadingLots(prev => ({ ...prev, [productId]: false }));
-    }
-    setExpandedRows(prev => ({ ...prev, [productId]: true }));
-};
+            setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots }));
+        } catch (error) {
+            console.error("Lỗi khi tải chi tiết lô:", error);
+            toast.error("Không thể tải chi tiết các lô hàng.");
+        } finally {
+            setLoadingLots(prev => ({ ...prev, [productId]: false }));
+        }
+        setExpandedRows(prev => ({ ...prev, [productId]: true }));
+    };
 
     const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
     const handlePrevPage = () => { fetchData('first'); };
 
-    // src/pages/InventorySummaryPage.jsx
+    const filteredSummaries = useMemo(() => {
+        if (filters.dateStatus !== 'near_expiry') {
+            return summaries;
+        }
+        return summaries.filter(product => {
+            const colorClass = getRowColorByExpiry(product.nearestExpiryDate, product.subGroup);
+            return colorClass.includes('near-expiry') || colorClass.includes('expired');
+        });
+    }, [summaries, filters.dateStatus]);
 
-const filteredSummaries = useMemo(() => {
-    if (filters.dateStatus !== 'near_expiry') {
-        return summaries;
-    }
-    return summaries.filter(product => {
-        const colorClass = getRowColorByExpiry(product.nearestExpiryDate, product.subGroup);
-        return colorClass.includes('near-expiry') || colorClass.includes('expired');
-    });
-}, [summaries, filters.dateStatus]);
+    const handleExportExcel = async () => {
+        if (userRole !== 'owner') return;
+        setIsExporting(true);
+        toast.info("Đang tạo file Excel toàn bộ tồn kho...");
 
-const [isExporting, setIsExporting] = useState(false);
-
-const handleExportExcel = async () => {
-    if (!canExport) return;
-    setIsExporting(true);
-    toast.info("Đang tạo file Excel toàn bộ tồn kho...");
-
-    try {
-        await exportFullInventoryToExcel();
-        toast.success("Xuất file Excel thành công!");
-    } catch (error) {
-        toast.error("Có lỗi xảy ra khi xuất file.");
-    } finally {
-        setIsExporting(false);
-    }
-};
+        try {
+            await exportFullInventoryToExcel();
+            toast.success("Xuất file Excel thành công!");
+        } catch (error) {
+            toast.error("Có lỗi xảy ra khi xuất file.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+    
+    const ALLOWED_EXPORT_ROLES = ['owner']; 
+    const canExport = ALLOWED_EXPORT_ROLES.includes(userRole);
 
     return (
         <div className="printable-inventory-area">
@@ -473,31 +465,30 @@ const handleExportExcel = async () => {
                         className="search-input"
                     />
                 </div>
-                {/* === THÊM NÚT TẢI EXCEL TẠI ĐÂY === */}
-    {canExport && (
-        <button 
-            onClick={handleExportExcel} 
-            className="btn-success" // Bạn có thể dùng btn-primary hoặc tạo class mới
-            disabled={isExporting}
-            style={{ 
-                marginLeft: '10px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '5px',
-                backgroundColor: '#28a745', // Màu xanh lá cho Excel
-                color: 'white',
-                border: 'none',
-                padding: '10px 15px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontWeight: '500'
-            }}
-        >
-            <FiDownload /> 
-            {isExporting ? 'Đang xuất...' : 'Xuất Excel (Full)'}
-        </button>
-    )}
-    {/* =================================== */}
+
+                {canExport && (
+                    <button 
+                        onClick={handleExportExcel} 
+                        className="btn-success"
+                        disabled={isExporting}
+                        style={{ 
+                            marginLeft: '10px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '5px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 15px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                        }}
+                    >
+                        <FiDownload /> 
+                        {isExporting ? 'Đang xuất...' : 'Xuất Excel (Full)'}
+                    </button>
+                )}
             </div>
 
             {loading ? <Spinner /> : (
@@ -510,22 +501,6 @@ const handleExportExcel = async () => {
                                     <th>Mã hàng</th>
                                     <th>Tên hàng</th>
                                     <th>HSD Gần Nhất</th>
-                                    <th className="sparkline-header-cell">
-                <div className="dropdown-filter">
-                    <button onClick={() => setIsSparklineDropdownOpen(prev => !prev)}>
-                        Biến động ({sparklineRange} ngày)
-                        <FiChevronDown style={{ marginLeft: '5px' }} />
-                    </button>
-                    {isSparklineDropdownOpen && (
-                        <div className="dropdown-content">
-                            <button onClick={() => { setSparklineRange(7); setIsSparklineDropdownOpen(false); }}>7 ngày</button>
-                            <button onClick={() => { setSparklineRange(30); setIsSparklineDropdownOpen(false); }}>30 ngày</button>
-                            <button onClick={() => { setSparklineRange(90); setIsSparklineDropdownOpen(false); }}>90 ngày</button>
-                            <button onClick={() => { setSparklineRange(365); setIsSparklineDropdownOpen(false); }}>1 năm</button>
-                        </div>
-                    )}
-                </div>
-            </th>
                                     <th>Tổng Tồn</th>
                                     <th>ĐVT</th>
                                     <th>Quy cách</th>
@@ -547,18 +522,6 @@ const handleExportExcel = async () => {
                                             <td data-label="Mã hàng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
                                             <td data-label="Tên hàng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
                                             <td data-label="HSD Gần Nhất">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(Không có)'}</td>
-                                            <td data-label="Biến động">
-                    {product.inventoryHistory && product.inventoryHistory.length > 0 ? (
-        <Sparklines data={product.inventoryHistory.slice(-sparklineRange)} width={120} height={25} margin={5}>
-            {/* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^         */}
-            {/* SỬA LOGIC LẤY DỮ LIỆU Ở ĐÂY                   */}
-            <SparklinesLine color="#007bff" style={{ strokeWidth: 2 }} />
-            <SparklinesSpots style={{ fill: "#007bff" }} />
-        </Sparklines>
-    ) : (
-        <span style={{ fontSize: '12px', color: '#888' }}>Chưa có dữ liệu</span>
-    )}
-</td>
                                             <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
                                             <td data-label="Quy cách">{product.packaging}</td>

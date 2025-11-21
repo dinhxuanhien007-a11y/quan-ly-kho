@@ -1,0 +1,5846 @@
+[
+  {
+    "_id": "0PwhjlYscILylKeAOu7e",
+    "supplierId": "R-ANHKHOI",
+    "supplierName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KỸ THUẬT ANH KHÔI",
+    "items": [
+      {
+        "id": 1761994686717,
+        "productId": "448316",
+        "productName": "Phoenix YEAST ID",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5182844",
+        "quantity": 25,
+        "expiryDate": "27/06/2026"
+      }
+    ],
+    "importDate": "01/11/2025",
+    "description": "",
+    "productIds": [
+      "448316"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762220764,
+      "_nanoseconds": 143000000
+    }
+  },
+  {
+    "_id": "0SqAYIJmD2NbDdPJD4sq",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "importDate": "03/10/2025",
+    "description": "shipment 7051831574, 7051831575, 7051831578, 7051831579",
+    "productIds": [
+      "441385",
+      "448007",
+      "448614",
+      "448851",
+      "449023",
+      "260002",
+      "261181",
+      "349202",
+      "441370",
+      "441772",
+      "442840",
+      "442946",
+      "659912",
+      "246001",
+      "246007",
+      "260685",
+      "441387",
+      "440774",
+      "443255",
+      "443859",
+      "644254"
+    ],
+    "createdAt": {
+      "_seconds": 1759471183,
+      "_nanoseconds": 488000000
+    },
+    "items": [
+      {
+        "productId": "441385",
+        "productName": "BD BACTEC FX-Top",
+        "lotNumber": "T20694",
+        "expiryDate": "",
+        "quantity": 1,
+        "unit": "Cái",
+        "packaging": "",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "Spare Part"
+      },
+      {
+        "productId": "448007",
+        "productName": "Phoenix NID",
+        "lotNumber": "5189195",
+        "expiryDate": "01/07/2026",
+        "quantity": 725,
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "notes": "",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "448614",
+        "productName": "Phoenix PMIC/ID-95\n(Thẻ định danh và kháng sinh đồ gram dương)",
+        "lotNumber": "5154985",
+        "expiryDate": "26/05/2026",
+        "quantity": 975,
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "notes": "",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "448851",
+        "productName": "Phoenix SMIC/ID-2",
+        "lotNumber": "5162902",
+        "expiryDate": "12/06/2026",
+        "quantity": 175,
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "notes": "",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "449023",
+        "productName": "Phoenix NMIC/ID-500",
+        "lotNumber": "5196446",
+        "expiryDate": "07/07/2026",
+        "quantity": 1725,
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "notes": "",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "260002",
+        "productName": "BD GasPakTM EZ \nSmall Incubation \nContainer",
+        "lotNumber": "7452333010",
+        "expiryDate": "",
+        "quantity": 6,
+        "unit": "Bộ",
+        "packaging": "1 Cái/ Bộ",
+        "notes": "NSX: 26/02/2025",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "261181",
+        "productName": "Dropper Oxidase",
+        "lotNumber": "B04H063M",
+        "expiryDate": "31/12/2026",
+        "quantity": 2,
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "15 → 30°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "349202",
+        "productName": "FACS Lysing Solution 10X 100ML IVD",
+        "lotNumber": "5025193",
+        "expiryDate": "31/03/2027",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "100 mL / Lọ",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "441370",
+        "productName": "BACTEC Digital Thermometer",
+        "lotNumber": "4182276",
+        "expiryDate": "",
+        "quantity": 2,
+        "unit": "Hộp",
+        "packaging": "",
+        "notes": "NSX: 01/07/2024",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "Spare Part"
+      },
+      {
+        "productId": "441772",
+        "productName": "BD MAX GBS",
+        "lotNumber": "5029165",
+        "expiryDate": "10/10/2026",
+        "quantity": 18,
+        "unit": "Hộp",
+        "packaging": "24 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "441772",
+        "productName": "BD MAX GBS",
+        "lotNumber": "5056401",
+        "expiryDate": "05/12/2026",
+        "quantity": 2,
+        "unit": "Hộp",
+        "packaging": "24 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "442840",
+        "productName": "Onclarity HPV Liquid Based Cytology Specimen (LBC) Diluent Tubes",
+        "lotNumber": "5209734",
+        "expiryDate": "28/02/2027",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "400 Ống/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 33°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "442946",
+        "productName": "Onclarity HPV Assay Reagent Pack",
+        "lotNumber": "5216761",
+        "expiryDate": "31/12/2026",
+        "quantity": 9,
+        "unit": "Hộp",
+        "packaging": "192 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 33°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "659912",
+        "productName": "BD OneFlow PCST",
+        "lotNumber": "5167626",
+        "expiryDate": "31/03/2027",
+        "quantity": 4,
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "659912",
+        "productName": "BD OneFlow PCST",
+        "lotNumber": "5167629",
+        "expiryDate": "31/01/2027",
+        "quantity": 7,
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "246001",
+        "productName": "Phoenix ID Broth",
+        "lotNumber": "5176703",
+        "expiryDate": "24/06/2026",
+        "quantity": 55,
+        "unit": "Hộp",
+        "packaging": "4.5 mL/ Lọ, \n100 Lọ/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "246007",
+        "productName": "Phoenix AST-S Broth",
+        "lotNumber": "5155266",
+        "expiryDate": "10/12/2025",
+        "quantity": 200,
+        "unit": "Lọ",
+        "packaging": "8 mL/ Lọ,\n 100 Lọ/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "260685",
+        "productName": "Gaspak EZ Campy System",
+        "lotNumber": "5176697",
+        "expiryDate": "01/06/2026",
+        "quantity": 2,
+        "unit": "Hộp",
+        "packaging": "20 Gói/ Hộp",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "BIO"
+      },
+      {
+        "productId": "441387",
+        "productName": "KIT COUNTERWEIGHT BFX",
+        "lotNumber": null,
+        "expiryDate": "",
+        "quantity": 2,
+        "unit": "Hộp",
+        "packaging": "",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "Spare Part"
+      },
+      {
+        "productId": "440774",
+        "productName": "Bo cảm biến máy Mgit 960",
+        "lotNumber": null,
+        "expiryDate": "",
+        "quantity": 1,
+        "unit": "Cái",
+        "packaging": "",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "Spare Part"
+      },
+      {
+        "productId": "443255",
+        "productName": "SET OF 8 1ML O RING HAM VPRLT SPARE",
+        "lotNumber": null,
+        "expiryDate": "",
+        "quantity": 1,
+        "unit": "Gói",
+        "packaging": "",
+        "notes": "Khay carton",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "Spare Part"
+      },
+      {
+        "productId": "443859",
+        "productName": "KIT TOOLS FIELD PHX50",
+        "lotNumber": null,
+        "expiryDate": "",
+        "quantity": 1,
+        "unit": "Cái",
+        "packaging": "",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "Spare Part"
+      },
+      {
+        "productId": "644254",
+        "productName": "Manifold máy Canto/Canto II",
+        "lotNumber": null,
+        "expiryDate": "",
+        "quantity": 1,
+        "unit": "Bộ",
+        "packaging": "",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "Spare Part"
+      }
+    ],
+    "status": "completed"
+  },
+  {
+    "_id": "1BWxL6t5XLIj7rJ4ZfYg",
+    "supplierId": "NCC-THIENAN",
+    "supplierName": "CÔNG TY CỔ PHẦN ĐẦU TƯ THIẾT BỊ Y TẾ THIÊN ÂN",
+    "items": [
+      {
+        "id": 1761104588307,
+        "productId": "364606",
+        "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4045062",
+        "quantity": 100,
+        "expiryDate": "28/02/2026"
+      }
+    ],
+    "importDate": "22/10/2025",
+    "description": "thu hồi hàng cận date về kho",
+    "productIds": [
+      "364606"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761122940,
+      "_nanoseconds": 408000000
+    }
+  },
+  {
+    "_id": "23szYwmXI9S79RJNbfqO",
+    "supplierId": "NCC-HMCL",
+    "supplierName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA HOÀN MỸ CỬU LONG",
+    "items": [
+      {
+        "id": 1762316232641,
+        "productId": "8803-03",
+        "productName": "Gel rửa tay diệt khuẩn Purell ADX 1200ml",
+        "unit": "Chai",
+        "packaging": "3 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "521203",
+        "quantity": 15,
+        "expiryDate": "28/02/2027"
+      },
+      {
+        "id": 1762316415188,
+        "productId": "8703-04",
+        "productName": "Gel rửa tay diệt khuẩn PURELL ADX 700ml",
+        "unit": "Chai",
+        "packaging": "4 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "533851",
+        "quantity": 28,
+        "expiryDate": "30/06/2027"
+      }
+    ],
+    "importDate": "05/11/2025",
+    "description": "nhập lại do đổi lot date khác cho BV",
+    "productIds": [
+      "8803-03",
+      "8703-04"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762316432,
+      "_nanoseconds": 591000000
+    }
+  },
+  {
+    "_id": "2h0lz6OhFaMkyIdcjxzX",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "items": [
+      {
+        "id": 1761736369190,
+        "productId": "340991",
+        "productName": "BD Stem Cell Control Kit: 2 x 2mL (1-CD34+Low, 1-CD34+High)",
+        "unit": "Hộp",
+        "packaging": "15 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BC1225",
+        "quantity": 1,
+        "expiryDate": "26/02/2026"
+      },
+      {
+        "id": 1763525707082,
+        "productId": "349700",
+        "productName": "BD™ Multi-Check Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1225N",
+        "quantity": 4,
+        "expiryDate": "26/02/2026"
+      },
+      {
+        "id": 1763525767562,
+        "productId": "349703",
+        "productName": "BD™ Multi-Check CD4 Low Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1225L",
+        "quantity": 4,
+        "expiryDate": "26/02/2026"
+      }
+    ],
+    "importDate": "29/10/2025",
+    "description": "",
+    "productIds": [
+      "340991",
+      "349700",
+      "349703"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763525863,
+      "_nanoseconds": 698000000
+    }
+  },
+  {
+    "_id": "3SEV6utexvaIQEtXkmgt",
+    "description": "SH-2831719A, SH-2831212A",
+    "items": [
+      {
+        "id": 1758647407791,
+        "productName": "BD™ Multi-Check Control",
+        "notes": "",
+        "lotNumber": "BM1025N",
+        "productId": "349700",
+        "quantity": 6,
+        "expiryDate": "17/12/2025",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "manufacturer": "Becton Dickinson",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productName": "BD™ Multi-Check CD4 Low Control",
+        "team": "BIO",
+        "packaging": "2.5 mL/ Hộp",
+        "unit": "Hộp",
+        "productId": "349703",
+        "id": 1758696241238,
+        "expiryDate": "17/12/2025",
+        "storageTemp": "2 → 8°C",
+        "manufacturer": "Becton Dickinson",
+        "quantity": 5,
+        "notes": "",
+        "lotNumber": "BM1025L"
+      },
+      {
+        "productName": "BD Stem Cell Control Kit: 2 x 2mL (1-CD34+Low, 1-CD34+High)",
+        "storageTemp": "2 → 8°C",
+        "id": 1758696293951,
+        "productId": "340991",
+        "manufacturer": "Becton Dickinson",
+        "quantity": 2,
+        "team": "BIO",
+        "packaging": "15 Test/ Hộp",
+        "lotNumber": "BC1025",
+        "expiryDate": "17/12/2025",
+        "notes": "",
+        "unit": "Hộp"
+      }
+    ],
+    "status": "completed",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "supplierId": "BD",
+    "importDate": "23/09/2025",
+    "createdAt": {
+      "_seconds": 1758696319,
+      "_nanoseconds": 441000000
+    },
+    "productIds": [
+      "349700",
+      "349703",
+      "340991"
+    ]
+  },
+  {
+    "_id": "3ScGbx7H79ww8wvxVC10",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "items": [
+      {
+        "id": 1761749391169,
+        "productId": "245122",
+        "productName": "BBL MGIT Mycobacteria Growth Indicator Tubes (7 mL)",
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5009307",
+        "quantity": 3,
+        "expiryDate": "08/07/2026"
+      },
+      {
+        "id": 1761749488233,
+        "productId": "245122",
+        "productName": "BBL MGIT Mycobacteria Growth Indicator Tubes (7 mL)",
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5009308",
+        "quantity": 27,
+        "expiryDate": "08/07/2026"
+      },
+      {
+        "id": 1761749543978,
+        "productId": "442017",
+        "productName": "BACTEC Mycosis IC/F Culture Vials (Plastic)",
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5218169",
+        "quantity": 650,
+        "expiryDate": "11/11/2026"
+      },
+      {
+        "id": 1761749580833,
+        "productId": "442021",
+        "productName": "BACTEC Lytic/10 Anaerobic/F Culture Vials",
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5182374",
+        "quantity": 2200,
+        "expiryDate": "07/04/2026"
+      },
+      {
+        "id": 1761749635402,
+        "productId": "364415",
+        "productName": "Xylanh lấy máu động mạch 1ml có chế độ tự động hút máu (có kim cỡ 25G)",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5085847",
+        "quantity": 3700,
+        "expiryDate": "31/03/2027"
+      },
+      {
+        "id": 1761749677250,
+        "productId": "50-7050",
+        "productName": "PleurX Pleural Catheter Mini Kit",
+        "unit": "Cái",
+        "packaging": "10 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "0001596508",
+        "quantity": 30,
+        "expiryDate": "31/08/2029"
+      },
+      {
+        "id": 1761749747280,
+        "productId": "367281",
+        "productName": "Vacutainer Safety-Lok Blood Collection Set (21G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "25F0821",
+        "quantity": 5000,
+        "expiryDate": "31/05/2028"
+      },
+      {
+        "id": 1761749814393,
+        "productId": "367283",
+        "productName": "Vacutainer Safety-Lok Blood Collection Set (23G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "25H1911",
+        "quantity": 13800,
+        "expiryDate": "31/07/2028"
+      },
+      {
+        "id": 1761749870186,
+        "productId": "364356",
+        "productName": "Bơm tiêm khí máu động mạch - BD Drihep A-line Syringe 1ml SYR ABG ALINE 1(.6) S/T CE",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5175579",
+        "quantity": 100,
+        "expiryDate": "30/06/2027"
+      },
+      {
+        "id": 1761749920905,
+        "productId": "365963",
+        "productName": "Ống nghiệm Serum 0,5ml",
+        "unit": "Ống",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5133520",
+        "quantity": 200,
+        "expiryDate": "31/10/2026"
+      },
+      {
+        "id": 1761749946073,
+        "productId": "365965",
+        "productName": "Ống nghiệm Lithium Heparin 0,5ml",
+        "unit": "Ống",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "513412N",
+        "quantity": 800,
+        "expiryDate": "31/10/2026"
+      },
+      {
+        "id": 1761749988033,
+        "productId": "365974",
+        "productName": "Microtainer Tubes with K2E (K2EDTA)",
+        "unit": "Ống",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5175043",
+        "quantity": 1000,
+        "expiryDate": "30/11/2026"
+      },
+      {
+        "id": 1761750024625,
+        "productId": "367587",
+        "productName": "BD Vacutainer Sodium Fluoride: 3mg. Na2 EDTA: 6mg Blood Collection Tubes",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5076290",
+        "quantity": 1000,
+        "expiryDate": "31/07/2026"
+      },
+      {
+        "id": 1761750098194,
+        "productId": "367812",
+        "productName": "Ống nghiệm chân không BD Vacutainer® serum 4ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5142742",
+        "quantity": 18000,
+        "expiryDate": "31/08/2026"
+      },
+      {
+        "id": 1761750156241,
+        "productId": "367884",
+        "productName": "Ống nghiệm chân không Lithium Heparin 4ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5076144",
+        "quantity": 20000,
+        "expiryDate": "31/07/2026"
+      },
+      {
+        "id": 1761750204896,
+        "productId": "368101",
+        "productName": "Lancet lấy máu quikheel",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5099877",
+        "quantity": 200,
+        "expiryDate": "31/03/2030"
+      },
+      {
+        "id": 1761750252714,
+        "productId": "301747",
+        "productName": "Kim lấy máu đốc trong cỡ 22G",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5219385",
+        "quantity": 59000,
+        "expiryDate": "31/07/2027"
+      },
+      {
+        "id": 1761750279921,
+        "productId": "364606",
+        "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5076250",
+        "quantity": 4000,
+        "expiryDate": "31/03/2027"
+      },
+      {
+        "id": 1761750333489,
+        "productId": "367896",
+        "productName": "Ống nghiệm chân không Serum 10ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5086987",
+        "quantity": 33000,
+        "expiryDate": "31/03/2027"
+      },
+      {
+        "id": 1761750427778,
+        "productId": "367896",
+        "productName": "Ống nghiệm chân không Serum 10ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5119792",
+        "quantity": 5000,
+        "expiryDate": "30/04/2027"
+      },
+      {
+        "id": 1761750485480,
+        "productId": "442794",
+        "productName": "Bactec Plastic Myco/F Lytic Medium",
+        "unit": "Chai",
+        "packaging": "50 Chai/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5190548",
+        "quantity": 650,
+        "expiryDate": "11/05/2026"
+      },
+      {
+        "id": 1761750557249,
+        "productId": "20019E7DS",
+        "productName": "Dây nối chữ Y 24 cm",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "TA250038",
+        "quantity": 800,
+        "expiryDate": "27/01/2029"
+      },
+      {
+        "id": 1761750604506,
+        "productId": "20038E7DS",
+        "productName": "SmartSite 3 dây",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "TA250055",
+        "quantity": 200,
+        "expiryDate": "27/01/2029"
+      },
+      {
+        "id": 1761750646352,
+        "productId": "383641",
+        "productName": "BD NEXIVA 24G",
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5130467",
+        "quantity": 480,
+        "expiryDate": "30/04/2028"
+      },
+      {
+        "id": 1761750672448,
+        "productId": "383647",
+        "productName": "BD NEXIVA 20G (1.25 IN)",
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5126864",
+        "quantity": 240,
+        "expiryDate": "30/04/2028"
+      }
+    ],
+    "importDate": "29/10/2025",
+    "description": "shipment số 7051835729 và 7051835780\n",
+    "productIds": [
+      "245122",
+      "442017",
+      "442021",
+      "364415",
+      "50-7050",
+      "367281",
+      "367283",
+      "364356",
+      "365963",
+      "365965",
+      "365974",
+      "367587",
+      "367812",
+      "367884",
+      "368101",
+      "301747",
+      "364606",
+      "367896",
+      "442794",
+      "20019E7DS",
+      "20038E7DS",
+      "383641",
+      "383647"
+    ],
+    "createdAt": {
+      "_seconds": 1761750713,
+      "_nanoseconds": 559000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "3vE6dgKg7rgSd5Xipeb3",
+    "importDate": "29/09/2025",
+    "description": "điều chỉnh kho",
+    "productIds": [
+      "349700"
+    ],
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "supplierId": "NCC-PT BIOMED",
+    "status": "completed",
+    "items": [
+      {
+        "notes": "",
+        "unit": "Hộp",
+        "productId": "349700",
+        "manufacturer": "Becton Dickinson",
+        "packaging": "2.5 mL/ Hộp",
+        "id": 1759117211027,
+        "expiryDate": "02/09/2025",
+        "quantity": 1,
+        "storageTemp": "2 → 8°C",
+        "productName": "BD™ Multi-Check Control",
+        "lotNumber": "BM0825N",
+        "team": "BIO"
+      }
+    ],
+    "createdAt": {
+      "_seconds": 1759117407,
+      "_nanoseconds": 726000000
+    }
+  },
+  {
+    "_id": "4ckWSF9s1aXUjyYzOrik",
+    "supplierId": "NCC-DUNGNTM",
+    "supplierName": "Nguyễn Thị Mỹ Dung",
+    "items": [
+      {
+        "id": 1759735704825,
+        "productId": "70003411",
+        "productName": "GYGAZYME X-tra 5L",
+        "unit": "Can",
+        "packaging": "5 Lít/ Can",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Schulke",
+        "notes": "",
+        "lotNumber": "1613605",
+        "quantity": 1,
+        "expiryDate": "31/01/2026"
+      }
+    ],
+    "importDate": "06/10/2025",
+    "description": "BV ĐK Kiên Giang trả hàng ký gửi",
+    "productIds": [
+      "70003411"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759762226,
+      "_nanoseconds": 802000000
+    }
+  },
+  {
+    "_id": "5sKBPTCQml7Cp4PsyUHt",
+    "supplierId": "B-DKSH",
+    "supplierName": "CÔNG TY TNHH DKSH VIỆT NAM",
+    "items": [
+      {
+        "id": 1761750713907,
+        "productId": "320566",
+        "productName": "BD Ultra-Fine PRO Pen Needles 0.23mm (32G) x 4mm",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4282250",
+        "quantity": 200,
+        "expiryDate": "30/09/2029"
+      },
+      {
+        "id": 1761792344961,
+        "productId": "320566",
+        "productName": "BD Ultra-Fine PRO Pen Needles 0.23mm (32G) x 4mm",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4317040",
+        "quantity": 49800,
+        "expiryDate": "30/11/2029"
+      }
+    ],
+    "importDate": "29/10/2025",
+    "description": "hóa đơn số 196181",
+    "productIds": [
+      "320566"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761792386,
+      "_nanoseconds": 278000000
+    }
+  },
+  {
+    "_id": "6Lv4pqcRcp6qb4Qoqdic",
+    "supplierId": "B-MEGA",
+    "supplierName": "CÔNG TY TNHH MEGA LIFESCIENCES (VIỆT NAM)",
+    "items": [
+      {
+        "id": 1761792386647,
+        "productId": "20039E7DS",
+        "productName": "SmartSite Extension Set One Needle Free Valve",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "TA240450",
+        "quantity": 1000,
+        "expiryDate": "27/09/2028"
+      }
+    ],
+    "importDate": "30/10/2025",
+    "description": "hóa đơn số 4487 và 4463",
+    "productIds": [
+      "20039E7DS"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761994686,
+      "_nanoseconds": 387000000
+    }
+  },
+  {
+    "_id": "6nsDFy4GrHuYBxo3a8GQ",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "items": [
+      {
+        "id": 1761199365289,
+        "productId": "442017",
+        "productName": "BACTEC Mycosis IC/F Culture Vials (Plastic)",
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5218169",
+        "quantity": 500,
+        "expiryDate": "11/11/2026"
+      }
+    ],
+    "importDate": "23/10/2025",
+    "description": "shipment số 7051834713",
+    "productIds": [
+      "442017"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761217780,
+      "_nanoseconds": 475000000
+    }
+  },
+  {
+    "_id": "70WALtFrPy1E4HiemQU5",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "items": [
+      {
+        "id": 1760945837967,
+        "productId": "340991",
+        "productName": "BD Stem Cell Control Kit: 2 x 2mL (1-CD34+Low, 1-CD34+High)",
+        "unit": "Hộp",
+        "packaging": "15 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BC1125",
+        "quantity": 2,
+        "expiryDate": "16/01/2026"
+      },
+      {
+        "id": 1761042382316,
+        "productId": "349700",
+        "productName": "BD™ Multi-Check Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1125N",
+        "quantity": 6,
+        "expiryDate": "16/01/2026"
+      },
+      {
+        "id": 1761042545043,
+        "productId": "349703",
+        "productName": "BD™ Multi-Check CD4 Low Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1125L",
+        "quantity": 5,
+        "expiryDate": "16/01/2026"
+      }
+    ],
+    "importDate": "20/10/2025",
+    "description": "",
+    "productIds": [
+      "340991",
+      "349700",
+      "349703"
+    ],
+    "createdAt": {
+      "_seconds": 1761042729,
+      "_nanoseconds": 376000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "7ey0G1hRevDHTDicVX7x",
+    "supplierId": "NCC-PT BIOMED",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "id": 1759801804374,
+        "productId": "364356",
+        "productName": "Bơm tiêm khí máu động mạch - BD Drihep A-line Syringe 1ml SYR ABG ALINE 1(.6) S/T CE",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4323176",
+        "quantity": 10,
+        "expiryDate": "31/10/2026"
+      },
+      {
+        "id": 1759818025036,
+        "productId": "367884",
+        "productName": "Ống nghiệm chân không Lithium Heparin 4ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4288202",
+        "quantity": 100,
+        "expiryDate": "28/02/2026"
+      }
+    ],
+    "importDate": "07/10/2025",
+    "description": "nhập lại hàng ký gửi BV trả về",
+    "productIds": [
+      "364356",
+      "367884"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759818089,
+      "_nanoseconds": 912000000
+    }
+  },
+  {
+    "_id": "883Jqh40Y0eX0zUcQVbg",
+    "description": "",
+    "importDate": "23/09/2025",
+    "supplierName": "Schülke & Mayr (Asia) Pte. Ltd.",
+    "items": [
+      {
+        "team": "MED",
+        "quantity": 128,
+        "productId": "70003408",
+        "id": 1758589194446,
+        "manufacturer": "Schulke",
+        "productName": "GIGAZYME 5L",
+        "notes": "",
+        "lotNumber": "1620150",
+        "storageTemp": "Nhiệt độ phòng",
+        "packaging": "5 Lít/ Can",
+        "expiryDate": "31/01/2028",
+        "unit": "Can"
+      }
+    ],
+    "supplierId": "SCHUELKE",
+    "createdAt": {
+      "_seconds": 1758595537,
+      "_nanoseconds": 642000000
+    },
+    "status": "completed",
+    "productIds": [
+      "70003408"
+    ]
+  },
+  {
+    "_id": "8f7XoOsx4auUrfsidTVU",
+    "supplierName": "BỆNH VIỆN TRUYỀN MÁU HUYẾT HỌC",
+    "status": "completed",
+    "description": "",
+    "importDate": "29/09/2025",
+    "supplierId": "NCC-TRUYENMAUHH",
+    "productIds": [
+      "231706"
+    ],
+    "items": [
+      {
+        "storageTemp": "2 → 8°C",
+        "lotNumber": "4036662",
+        "id": 1759118290107,
+        "team": "BIO",
+        "unit": "Ống",
+        "productId": "231706",
+        "manufacturer": "Becton Dickinson",
+        "quantity": 5,
+        "productName": "Disc Levofloxacin Lvx-5 10 Ea",
+        "expiryDate": "04/02/2026",
+        "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+        "notes": ""
+      }
+    ],
+    "createdAt": {
+      "_seconds": 1759137990,
+      "_nanoseconds": 878000000
+    }
+  },
+  {
+    "_id": "9V69nJzLAwCIlsgkoytE",
+    "supplierId": "NCC-MINHPV",
+    "supplierName": "Phạm Văn Minh",
+    "items": [
+      {
+        "id": 1759464780132,
+        "productId": "360211",
+        "productName": "Kim đốc đục",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4275402",
+        "quantity": 1000,
+        "expiryDate": "30/09/2029"
+      }
+    ],
+    "importDate": "03/10/2025",
+    "description": "",
+    "productIds": [
+      "360211"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759468875,
+      "_nanoseconds": 234000000
+    }
+  },
+  {
+    "_id": "AZEZtda8YL70IR9nFC0H",
+    "description": "",
+    "supplierName": "PHARMADESIGN CO., LTD.",
+    "items": [
+      {
+        "quantity": 1512,
+        "lotNumber": "B2257.4",
+        "productId": "DL2945",
+        "team": "MED",
+        "expiryDate": "13/08/2028",
+        "id": 1759139969236,
+        "unit": "Hộp",
+        "notes": "",
+        "manufacturer": "DentaLife",
+        "productName": "Clinicare Ultra Disinfectant 220 Towelettes",
+        "storageTemp": "Nhiệt độ phòng",
+        "packaging": "12 Hộp/ Thùng"
+      },
+      {
+        "quantity": 300,
+        "productName": "Clinicare Alcohol Free Disinfectant Trigger Spray",
+        "lotNumber": "B2256.2",
+        "packaging": "12 Chai/ Thùng",
+        "id": 1759333671090,
+        "productId": "DL2303",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "unit": "Chai",
+        "manufacturer": "DentaLife",
+        "expiryDate": "14/08/2028",
+        "team": "MED"
+      },
+      {
+        "productName": "Clinicare Alcohol Free Disinfectant 5L",
+        "team": "MED",
+        "productId": "DL2301",
+        "manufacturer": "DentaLife",
+        "expiryDate": "13/08/2028",
+        "lotNumber": "B2254.2",
+        "packaging": "5 Lít/ Can,\n4 Can/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "quantity": 34,
+        "id": 1759333709445,
+        "unit": "Can",
+        "notes": ""
+      },
+      {
+        "expiryDate": "14/08/2028",
+        "team": "MED",
+        "notes": "",
+        "unit": "Can",
+        "productId": "DL2301",
+        "manufacturer": "DentaLife",
+        "lotNumber": "B2256.1",
+        "id": 1759333739497,
+        "productName": "Clinicare Alcohol Free Disinfectant 5L",
+        "packaging": "5 Lít/ Can,\n4 Can/ Thùng",
+        "quantity": 26,
+        "storageTemp": "Nhiệt độ phòng"
+      }
+    ],
+    "importDate": "29/09/2025",
+    "status": "completed",
+    "supplierId": "DENTALIFE",
+    "productIds": [
+      "DL2945",
+      "DL2303",
+      "DL2301"
+    ],
+    "createdAt": {
+      "_seconds": 1759333869,
+      "_nanoseconds": 514000000
+    }
+  },
+  {
+    "_id": "DUOWx3YUXlY6h9LvKYAH",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "description": "điều chỉnh sau kiểm kê ngày 24/09/2025",
+    "items": [
+      {
+        "expiryDate": "31/10/2025",
+        "id": 1758710917318,
+        "team": "BIO",
+        "storageTemp": "2 → 8°C",
+        "quantity": 1,
+        "packaging": "100 Test/ Lọ",
+        "productName": "CD5 APC L17F12 CE",
+        "notes": "",
+        "productId": "345783",
+        "unit": "Lọ",
+        "lotNumber": "4064035",
+        "manufacturer": "Becton Dickinson"
+      },
+      {
+        "storageTemp": "2 → 8°C",
+        "manufacturer": "Becton Dickinson",
+        "productId": "349703",
+        "quantity": 1,
+        "packaging": "2.5 mL/ Hộp",
+        "notes": "",
+        "unit": "Hộp",
+        "team": "BIO",
+        "productName": "BD™ Multi-Check CD4 Low Control",
+        "lotNumber": "BM0925L",
+        "id": 1758717349846,
+        "expiryDate": "02/10/2025"
+      },
+      {
+        "notes": "",
+        "expiryDate": "02/10/2025",
+        "manufacturer": "Becton Dickinson",
+        "unit": "Hộp",
+        "productName": "BD™ Multi-Check Control",
+        "quantity": 1,
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "productId": "349700",
+        "id": 1758717377690,
+        "team": "BIO",
+        "lotNumber": "BM0925N"
+      }
+    ],
+    "importDate": "24/09/2025",
+    "productIds": [
+      "345783",
+      "349703",
+      "349700"
+    ],
+    "supplierId": "PT BIOMED",
+    "createdAt": {
+      "_seconds": 1758717498,
+      "_nanoseconds": 704000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "DsKZyUzch79X5SLlKqV1",
+    "supplierId": "B-ICU",
+    "supplierName": "ICU Medical, Inc.,",
+    "items": [
+      {
+        "id": 1759818090433,
+        "productId": "4041E",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Line Draw, Dry Heparin, 1CC",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "6086264",
+        "quantity": 2000,
+        "expiryDate": "31/12/2027"
+      },
+      {
+        "id": 1759846230144,
+        "productId": "4619PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (25G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "6110212",
+        "quantity": 2000,
+        "expiryDate": "31/03/2028"
+      },
+      {
+        "id": 1759846285192,
+        "productId": "4629PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "4448060",
+        "quantity": 6400,
+        "expiryDate": "31/08/2026"
+      },
+      {
+        "id": 1759846319056,
+        "productId": "4629PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "4448058",
+        "quantity": 1600,
+        "expiryDate": "31/08/2026"
+      }
+    ],
+    "importDate": "07/10/2025",
+    "description": "",
+    "productIds": [
+      "4041E",
+      "4619PG",
+      "4629PG"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759846354,
+      "_nanoseconds": 87000000
+    }
+  },
+  {
+    "_id": "EYGlZDEgQKVTmijr9VwB",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "items": [
+      {
+        "id": 1759226280264,
+        "productId": "245123",
+        "productName": "BACTEC MGIT 960 SIRE Kit",
+        "unit": "Hộp",
+        "packaging": "40 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5188005",
+        "quantity": 1,
+        "expiryDate": "07/11/2026"
+      },
+      {
+        "id": 1759463316719,
+        "productId": "246004",
+        "productName": "Phoenix AST Indicator Solution",
+        "unit": "Lọ",
+        "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5143212",
+        "quantity": 50,
+        "expiryDate": "05/06/2026"
+      },
+      {
+        "id": 1759463654958,
+        "productId": "246009",
+        "productName": "Phoenix AST-S Indicator Solution",
+        "unit": "Lọ",
+        "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5171676",
+        "quantity": 10,
+        "expiryDate": "07/04/2026"
+      },
+      {
+        "id": 1759464112842,
+        "productId": "220909",
+        "productName": "BBL Prepared Culture Media (BBL Lowenstein-Jensen Medium)",
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5119989",
+        "quantity": 9,
+        "expiryDate": "25/10/2026"
+      },
+      {
+        "id": 1759464260667,
+        "productId": "245124",
+        "productName": "BACTEC MGIT 960 Supplement Kit",
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5128025",
+        "quantity": 38,
+        "expiryDate": "07/11/2026"
+      },
+      {
+        "id": 1759464353969,
+        "productId": "231278",
+        "productName": "BD BBL™ Sensi-Disc Colistin - 10 µg",
+        "unit": "Ống",
+        "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4282613",
+        "quantity": 20,
+        "expiryDate": "07/10/2028"
+      },
+      {
+        "id": 1759464511884,
+        "productId": "231649",
+        "productName": "Disc Ticarcillin/Clavulanic Tim-85 10 Ea",
+        "unit": "Ống",
+        "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5120186",
+        "quantity": 10,
+        "expiryDate": "30/10/2026"
+      },
+      {
+        "id": 1759464548561,
+        "productId": "335775",
+        "productName": "FACS 7-Color Setup Beads 25 Test",
+        "unit": "Test",
+        "packaging": "25 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "85619",
+        "quantity": 25,
+        "expiryDate": "31/01/2026"
+      },
+      {
+        "id": 1759464618094,
+        "productId": "339217",
+        "productName": "CD117 (104D2)PE-\nCyTM7",
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5213816",
+        "quantity": 3,
+        "expiryDate": "31/07/2026"
+      },
+      {
+        "id": 1759464656643,
+        "productId": "340183",
+        "productName": "HLA-B27 Kit Tests IVD",
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5211809",
+        "quantity": 1,
+        "expiryDate": "30/04/2026"
+      },
+      {
+        "id": 1759464689553,
+        "productId": "656046",
+        "productName": "CS&T IVD Beads 50 Test",
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5196284",
+        "quantity": 1,
+        "expiryDate": "30/04/2027"
+      },
+      {
+        "id": 1759464723230,
+        "productId": "660228",
+        "productName": "BD OneFlow ALOT",
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5132421",
+        "quantity": 8,
+        "expiryDate": "28/02/2027"
+      }
+    ],
+    "importDate": "30/09/2025",
+    "description": "shipment 7051831572, 7051831576",
+    "productIds": [
+      "245123",
+      "246004",
+      "246009",
+      "220909",
+      "245124",
+      "231278",
+      "231649",
+      "335775",
+      "339217",
+      "340183",
+      "656046",
+      "660228"
+    ],
+    "createdAt": {
+      "_seconds": 1759464778,
+      "_nanoseconds": 538000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "FF4r0n6JRiLEMKMv6Qx0",
+    "supplierId": "B-ELITE",
+    "supplierName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ ELITE",
+    "items": [
+      {
+        "id": 1760280652740,
+        "productId": "8803-03",
+        "productName": "Gel rửa tay diệt khuẩn Purell ADX 1200ml",
+        "unit": "Chai",
+        "packaging": "3 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "521203",
+        "quantity": 37,
+        "expiryDate": "28/02/2027"
+      },
+      {
+        "id": 1760606619225,
+        "productId": "5476-04",
+        "productName": "Gel rửa tay diệt khuẩn PURELL TFX 1200ml",
+        "unit": "Chai",
+        "packaging": "4 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "547744",
+        "quantity": 40,
+        "expiryDate": "31/10/2027"
+      }
+    ],
+    "importDate": "10/10/2025",
+    "description": "",
+    "productIds": [
+      "8803-03",
+      "5476-04"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760606675,
+      "_nanoseconds": 947000000
+    }
+  },
+  {
+    "_id": "GaJSRuaG1vsKn2coEkfi",
+    "supplierId": "B-TECHNIMEX",
+    "supplierName": "CÔNG TY CỔ PHẦN XUẤT NHẬP KHẨU KỸ THUẬT - TECHNIMEX",
+    "items": [
+      {
+        "id": 1762402312597,
+        "productId": "E6005-5G",
+        "productName": "Hóa chất Ethionamide",
+        "unit": "Lọ",
+        "packaging": "5G/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Sigma",
+        "notes": "",
+        "lotNumber": "BCCL3634",
+        "quantity": 1,
+        "expiryDate": ""
+      }
+    ],
+    "importDate": "06/11/2025",
+    "description": "",
+    "productIds": [
+      "E6005-5G"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762406341,
+      "_nanoseconds": 514000000
+    }
+  },
+  {
+    "_id": "H9t4KMngDL9mIqDQdaYH",
+    "status": "completed",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "manufacturer": "Becton Dickinson",
+        "productId": "365974",
+        "unit": "Ống",
+        "team": "MED",
+        "quantity": 50,
+        "lotNumber": "5087222",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "id": 1759117409621,
+        "expiryDate": "30/09/2026",
+        "productName": "Microtainer Tubes with K2E (K2EDTA)",
+        "storageTemp": "Nhiệt độ phòng",
+        "notes": ""
+      }
+    ],
+    "productIds": [
+      "365974"
+    ],
+    "importDate": "29/09/2025",
+    "supplierId": "NCC-PT BIOMED",
+    "description": "điều chỉnh kho",
+    "createdAt": {
+      "_seconds": 1759118288,
+      "_nanoseconds": 9000000
+    }
+  },
+  {
+    "_id": "HhNDL7pg78tCy5x2nyzm",
+    "supplierId": "B-ELITE",
+    "supplierName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ ELITE",
+    "items": [
+      {
+        "id": 1763371036126,
+        "productId": "5476-04",
+        "productName": "Gel rửa tay diệt khuẩn PURELL TFX 1200ml",
+        "unit": "Chai",
+        "packaging": "4 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "547744",
+        "quantity": 50,
+        "expiryDate": "31/10/2027"
+      }
+    ],
+    "importDate": "17/11/2025",
+    "description": "",
+    "productIds": [
+      "5476-04"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763371736,
+      "_nanoseconds": 282000000
+    }
+  },
+  {
+    "_id": "HkYUV8SoLINvhDn8ZJns",
+    "supplierId": "NCC-HUNGVUONG",
+    "supplierName": "BỆNH VIỆN HÙNG VƯƠNG",
+    "items": [
+      {
+        "id": 1761217781079,
+        "productId": "320566",
+        "productName": "BD Ultra-Fine PRO Pen Needles 0.23mm (32G) x 4mm",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4254160",
+        "quantity": 100,
+        "expiryDate": "30/09/2029"
+      }
+    ],
+    "importDate": "23/10/2025",
+    "description": "BV trả hàng ký gửi",
+    "productIds": [
+      "320566"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761293698,
+      "_nanoseconds": 631000000
+    }
+  },
+  {
+    "_id": "IXkwWsPFBxjjBgQL9vpT",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "description": "shipment 7051831008, 7051831009",
+    "productIds": [
+      "442020",
+      "442021",
+      "245122",
+      "340345",
+      "364415",
+      "367812",
+      "367841",
+      "364606",
+      "366430",
+      "360211",
+      "363080",
+      "367587",
+      "4406",
+      "442023",
+      "20019E7DS",
+      "20039E7DS",
+      "364356",
+      "2000E7D",
+      "362761",
+      "365963",
+      "365965",
+      "365974",
+      "367203",
+      "367283",
+      "368872",
+      "441992",
+      "342003",
+      "368101",
+      "383642",
+      "383647",
+      "301747",
+      "367281",
+      "367285",
+      "383641"
+    ],
+    "createdAt": {
+      "_seconds": 1759483694,
+      "_nanoseconds": 248000000
+    },
+    "items": [
+      {
+        "productId": "442020",
+        "productName": "BACTEC Peds Plus/F Culture Vials",
+        "lotNumber": "5190546",
+        "expiryDate": "13/04/2026",
+        "quantity": 9250,
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "442020",
+        "productName": "BACTEC Peds Plus/F Culture Vials",
+        "lotNumber": "5162328",
+        "expiryDate": "16/03/2026",
+        "quantity": 700,
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "442021",
+        "productName": "BACTEC Lytic/10 Anaerobic/F Culture Vials",
+        "lotNumber": "5182374",
+        "expiryDate": "07/04/2026",
+        "quantity": 2100,
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "245122",
+        "productName": "BBL MGIT Mycobacteria Growth Indicator Tubes (7 mL)",
+        "lotNumber": "4325255",
+        "expiryDate": "20/05/2026",
+        "quantity": 46,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "245122",
+        "productName": "BBL MGIT Mycobacteria Growth Indicator Tubes (7 mL)",
+        "lotNumber": "4340628",
+        "expiryDate": "03/06/2026",
+        "quantity": 4,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "245122",
+        "productName": "BBL MGIT Mycobacteria Growth Indicator Tubes (7 mL)",
+        "lotNumber": "4340631",
+        "expiryDate": "03/06/2026",
+        "quantity": 12,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340345",
+        "productName": "BD FACS Clean Solution 5L",
+        "lotNumber": "2505509818",
+        "expiryDate": "24/08/2026",
+        "quantity": 10,
+        "unit": "Thùng",
+        "packaging": "5 Lít/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 30°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "364415",
+        "productName": "Xylanh lấy máu động mạch 1ml có chế độ tự động hút máu (có kim cỡ 25G)",
+        "lotNumber": "5085847",
+        "expiryDate": "31/03/2027",
+        "quantity": 3400,
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367812",
+        "productName": "Ống nghiệm chân không BD Vacutainer® serum 4ml",
+        "lotNumber": "5121536",
+        "expiryDate": "31/08/2026",
+        "quantity": 10000,
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367841",
+        "productName": "Ống nghiệm chân không BD Vacutainer® EDTA 2ml",
+        "lotNumber": "5015977",
+        "expiryDate": "30/04/2026",
+        "quantity": 31000,
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367841",
+        "productName": "Ống nghiệm chân không BD Vacutainer® EDTA 2ml",
+        "lotNumber": "5101357",
+        "expiryDate": "31/07/2026",
+        "quantity": 39000,
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "364606",
+        "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+        "lotNumber": "4102215",
+        "expiryDate": "30/04/2026",
+        "quantity": 10000,
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "364606",
+        "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+        "lotNumber": "4137020",
+        "expiryDate": "31/05/2026",
+        "quantity": 20000,
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "364606",
+        "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+        "lotNumber": "5076250",
+        "expiryDate": "31/03/2027",
+        "quantity": 4000,
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "366430",
+        "productName": "Vacutainer® Venous Blood Collection Tube Plain 10 mL Conventional Closure Glass Tube",
+        "lotNumber": "5048277",
+        "expiryDate": "28/02/2027",
+        "quantity": 1000,
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "366430",
+        "productName": "Vacutainer® Venous Blood Collection Tube Plain 10 mL Conventional Closure Glass Tube",
+        "lotNumber": "5197526",
+        "expiryDate": "31/07/2027",
+        "quantity": 1000,
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "360211",
+        "productName": "Kim đốc đục",
+        "lotNumber": "5084002",
+        "expiryDate": "31/03/2030",
+        "quantity": 52000,
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "363080",
+        "productName": "Ống nghiệm chân không chống đông Citrate 3,2% 1,8ml",
+        "lotNumber": "5197504",
+        "expiryDate": "31/01/2026",
+        "quantity": 16000,
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367587",
+        "productName": "BD Vacutainer Sodium Fluoride: 3mg. Na2 EDTA: 6mg Blood Collection Tubes",
+        "lotNumber": "5076290",
+        "expiryDate": "31/07/2026",
+        "quantity": 4000,
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "4406",
+        "productName": "SURGICAL CLIPPER BLADE-GENERAL USE",
+        "lotNumber": "0625",
+        "expiryDate": "01/06/2030",
+        "quantity": 3000,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "442023",
+        "productName": "BACTEC Plus Aerobic/F Culture Vials\n(Chai cấy máu hiếu khí người lớn)",
+        "lotNumber": "5169207",
+        "expiryDate": "23/03/2026",
+        "quantity": 6350,
+        "unit": "Chai",
+        "packaging": "30 mL/ Chai,\n 50 Chai/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "20019E7DS",
+        "productName": "Dây nối chữ Y 24 cm",
+        "lotNumber": "TA250038",
+        "expiryDate": "27/01/2029",
+        "quantity": 3600,
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "20039E7DS",
+        "productName": "SmartSite Extension Set One Needle Free Valve",
+        "lotNumber": "TA250072",
+        "expiryDate": "27/02/2029",
+        "quantity": 500,
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "364356",
+        "productName": "Bơm tiêm khí máu động mạch - BD Drihep A-line Syringe 1ml SYR ABG ALINE 1(.6) S/T CE",
+        "lotNumber": "5169174",
+        "expiryDate": "31/05/2027",
+        "quantity": 5500,
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "2000E7D",
+        "productName": "SMART SITE NEEDLE-FREE VALVE",
+        "lotNumber": "1031570",
+        "expiryDate": "31/01/2028",
+        "quantity": 5500,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "2000E7D",
+        "productName": "SMART SITE NEEDLE-FREE VALVE",
+        "lotNumber": "1031718",
+        "expiryDate": "31/01/2028",
+        "quantity": 8400,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "2000E7D",
+        "productName": "SMART SITE NEEDLE-FREE VALVE",
+        "lotNumber": "1031716",
+        "expiryDate": "31/01/2028",
+        "quantity": 1100,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "362761",
+        "productName": "TUBE CPTCIT GC 16x125 8.0 MLBL BL/BLK",
+        "lotNumber": "5170612",
+        "expiryDate": "30/06/2026",
+        "quantity": 240,
+        "unit": "Ống",
+        "packaging": "60 Ống/ Hộp",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "365963",
+        "productName": "Ống nghiệm Serum 0,5ml",
+        "lotNumber": "5133520",
+        "expiryDate": "31/10/2026",
+        "quantity": 400,
+        "unit": "Ống",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "365965",
+        "productName": "Ống nghiệm Lithium Heparin 0,5ml",
+        "lotNumber": "510107N",
+        "expiryDate": "30/09/2026",
+        "quantity": 800,
+        "unit": "Ống",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "365974",
+        "productName": "Microtainer Tubes with K2E (K2EDTA)",
+        "lotNumber": "5133532",
+        "expiryDate": "31/10/2026",
+        "quantity": 1000,
+        "unit": "Ống",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367203",
+        "productName": "Vacutainer Brand STRETCH Latex Free Tourniquet",
+        "lotNumber": "5F001",
+        "expiryDate": "",
+        "quantity": 3000,
+        "unit": "Sợi",
+        "packaging": "25 Sợi/ Hộp,\n500 Sợi/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367283",
+        "productName": "Vacutainer Safety-Lok Blood Collection Set (23G)",
+        "lotNumber": "25F07B1",
+        "expiryDate": "31/05/2028",
+        "quantity": 14400,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "368872",
+        "productName": "Vacutainer Pronto Quick Release Needle Holder",
+        "lotNumber": "25F11",
+        "expiryDate": "",
+        "quantity": 2900,
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "441992",
+        "productName": "Tube Fox Extraction PCR",
+        "lotNumber": "5150088",
+        "expiryDate": "30/11/2026",
+        "quantity": 4,
+        "unit": "Hộp",
+        "packaging": "384 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 33°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "342003",
+        "productName": "BD FACSFlow Sheath Fluid 20L",
+        "lotNumber": "2508409814",
+        "expiryDate": "25/03/2028",
+        "quantity": 13,
+        "unit": "Thùng",
+        "packaging": "20L/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 30°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "368101",
+        "productName": "Lancet lấy máu quikheel",
+        "lotNumber": "5059146",
+        "expiryDate": "28/02/2030",
+        "quantity": 400,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "383642",
+        "productName": "BD NEXIVA 22G",
+        "lotNumber": "5093794",
+        "expiryDate": "31/03/2028",
+        "quantity": 2160,
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "383647",
+        "productName": "BD NEXIVA 20G (1.25 IN)",
+        "lotNumber": "5126864",
+        "expiryDate": "30/04/2028",
+        "quantity": 1040,
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "301747",
+        "productName": "Kim lấy máu đốc trong cỡ 22G",
+        "lotNumber": "5219385",
+        "expiryDate": "31/07/2027",
+        "quantity": 180000,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367281",
+        "productName": "Vacutainer Safety-Lok Blood Collection Set (21G)",
+        "lotNumber": "25E1621",
+        "expiryDate": "30/04/2028",
+        "quantity": 10000,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367283",
+        "productName": "Vacutainer Safety-Lok Blood Collection Set (23G)",
+        "lotNumber": "25F07B1",
+        "expiryDate": "31/05/2028",
+        "quantity": 5600,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367285",
+        "productName": "Vacutainer Safety-Lok Blood Collection Set (25G)",
+        "lotNumber": "25G1211",
+        "expiryDate": "30/06/2028",
+        "quantity": 2800,
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "383641",
+        "productName": "BD NEXIVA 24G",
+        "lotNumber": "5164346",
+        "expiryDate": "31/05/2028",
+        "quantity": 800,
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      }
+    ],
+    "importDate": "10/10/2025",
+    "status": "completed"
+  },
+  {
+    "_id": "ImjInsrEaTFbzuqhbshd",
+    "supplierId": "NCC-CNTAMANH",
+    "supplierName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TÂM ANH TP. HỒ CHÍ MINH",
+    "items": [
+      {
+        "id": 1759734279550,
+        "productId": "320566",
+        "productName": "BD Ultra-Fine PRO Pen Needles 0.23mm (32G) x 4mm",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4254160",
+        "quantity": 10000,
+        "expiryDate": "30/09/2029"
+      }
+    ],
+    "importDate": "06/10/2025",
+    "description": "bệnh viện trả lại hàng do báo bị trùng đơn",
+    "productIds": [
+      "320566"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759734382,
+      "_nanoseconds": 446000000
+    }
+  },
+  {
+    "_id": "J2HWaeUKaWAJ1MeL8dlz",
+    "description": "nhập điều chỉnh kho",
+    "importDate": "26/09/2025",
+    "supplierId": "NCC-PT BIOMED",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "id": 1758860758571,
+        "lotNumber": "BM0825L",
+        "manufacturer": "Becton Dickinson",
+        "packaging": "2.5 mL/ Hộp",
+        "expiryDate": "02/09/2025",
+        "productName": "BD™ Multi-Check CD4 Low Control",
+        "quantity": 1,
+        "notes": "",
+        "team": "BIO",
+        "unit": "Hộp",
+        "productId": "349703",
+        "storageTemp": "2 → 8°C"
+      }
+    ],
+    "status": "completed",
+    "productIds": [
+      "349703"
+    ],
+    "createdAt": {
+      "_seconds": 1759117209,
+      "_nanoseconds": 169000000
+    }
+  },
+  {
+    "_id": "JClGKipASXdEVT4ftXF1",
+    "importDate": "29/09/2025",
+    "items": [
+      {
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Line Draw, Dry Heparin, 1CC",
+        "lotNumber": "6086264",
+        "expiryDate": "31/12/2027",
+        "id": 1759137992752,
+        "unit": "Cái",
+        "quantity": 800,
+        "productId": "4041E",
+        "storageTemp": "Nhiệt độ phòng",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": ""
+      },
+      {
+        "unit": "Cái",
+        "team": "MED",
+        "productId": "4041E",
+        "manufacturer": "Smiths Medical",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Line Draw, Dry Heparin, 1CC",
+        "notes": "",
+        "lotNumber": "6086265",
+        "id": 1759139561603,
+        "storageTemp": "Nhiệt độ phòng",
+        "quantity": 3200,
+        "expiryDate": "31/12/2027"
+      },
+      {
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "unit": "Cái",
+        "notes": "",
+        "quantity": 3400,
+        "id": 1759139608443,
+        "team": "MED",
+        "expiryDate": "31/08/2026",
+        "lotNumber": "4448058",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+        "productId": "4629PG",
+        "manufacturer": "Smiths Medical"
+      },
+      {
+        "unit": "Cái",
+        "notes": "",
+        "quantity": 4200,
+        "manufacturer": "Smiths Medical",
+        "lotNumber": "4448060",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+        "expiryDate": "31/08/2026",
+        "id": 1759139640970,
+        "productId": "4629PG",
+        "team": "MED",
+        "storageTemp": "Nhiệt độ phòng"
+      }
+    ],
+    "supplierId": "B-ICU",
+    "supplierName": "ICU Medical, Inc.,",
+    "description": "TRIP number: 19842432",
+    "productIds": [
+      "4041E",
+      "4629PG"
+    ],
+    "createdAt": {
+      "_seconds": 1759139966,
+      "_nanoseconds": 995000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "JMvc6BH4oeUAhhs985oY",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "items": [
+      {
+        "id": 1759495519287,
+        "productId": "212354",
+        "productName": "BBL™ Viatamin K₁ - Hemin Solution",
+        "unit": "Hộp",
+        "packaging": "10 mL/ Lọ,\n10 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5211217",
+        "quantity": 3,
+        "expiryDate": "30/01/2026"
+      },
+      {
+        "id": 1759496400545,
+        "productId": "658331",
+        "productName": "CD24 APC-H7 (ML5) RUO",
+        "unit": "Hộp",
+        "packaging": "100 Test/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5079315",
+        "quantity": 1,
+        "expiryDate": "31/03/2026"
+      },
+      {
+        "id": 1759496485079,
+        "productId": "560619",
+        "productName": "BD Pharmingen™ APC Mouse Anti-Human CD196 (CCR6)",
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5093319",
+        "quantity": 2,
+        "expiryDate": "29/02/2028"
+      },
+      {
+        "id": 1759496496324,
+        "productId": "555513",
+        "productName": "BD Pharmingen™ Purified NA/LE Mouse Anti-Human CD56 (NCAM-1)",
+        "unit": "Lọ",
+        "packaging": "0.5 mg/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5136083",
+        "quantity": 1,
+        "expiryDate": "28/02/2030"
+      },
+      {
+        "id": 1759496504958,
+        "productId": "555492",
+        "productName": "BD Pharmingen™ FITC Mouse Anti-Human CD45RO",
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4316621",
+        "quantity": 1,
+        "expiryDate": "31/05/2030"
+      },
+      {
+        "id": 1759496511995,
+        "productId": "555403",
+        "productName": "BD Pharmingen™ Purified NA/LE Mouse Anti-Human CD16",
+        "unit": "Lọ",
+        "packaging": "0.5 mg/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4269799",
+        "quantity": 1,
+        "expiryDate": "31/07/2029"
+      },
+      {
+        "id": 1759496518393,
+        "productId": "550633",
+        "productName": "BD Pharmingen™ PE Mouse Anti-Human CD183",
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4064583",
+        "quantity": 2,
+        "expiryDate": "31/10/2029"
+      }
+    ],
+    "importDate": "03/10/2025",
+    "description": "",
+    "productIds": [
+      "212354",
+      "658331",
+      "560619",
+      "555513",
+      "555492",
+      "555403",
+      "550633"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759498270,
+      "_nanoseconds": 355000000
+    }
+  },
+  {
+    "_id": "K1zLElaJgZ1Qmhi1QlyX",
+    "description": "hóa đơn số 176682",
+    "items": [
+      {
+        "quantity": 50000,
+        "id": 1759210614676,
+        "productId": "320566",
+        "unit": "Cái",
+        "storageTemp": "Nhiệt độ phòng",
+        "notes": "",
+        "productName": "BD Ultra-Fine PRO Pen Needles 0.23mm (32G) x 4mm",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "expiryDate": "30/09/2029",
+        "lotNumber": "4254160",
+        "packaging": "100 Cái/ Hộp,\n1200 Cái/ Thùng"
+      }
+    ],
+    "importDate": "30/09/2025",
+    "status": "completed",
+    "productIds": [
+      "320566"
+    ],
+    "supplierName": "CÔNG TY TNHH DKSH VIỆT NAM",
+    "supplierId": "B-DKSH",
+    "createdAt": {
+      "_seconds": 1759226099,
+      "_nanoseconds": 146000000
+    }
+  },
+  {
+    "_id": "KKx4Z77F1ClqAcvhhPYo",
+    "supplierId": "NCC-PT BIOMED",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "id": 1759483699427,
+        "productId": "367812",
+        "productName": "Ống nghiệm chân không BD Vacutainer® serum 4ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5042703",
+        "quantity": 100,
+        "expiryDate": "31/05/2026"
+      },
+      {
+        "id": 1759495221655,
+        "productId": "363080",
+        "productName": "Ống nghiệm chân không chống đông Citrate 3,2% 1,8ml",
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5101306",
+        "quantity": 100,
+        "expiryDate": "31/10/2025"
+      },
+      {
+        "id": 1759495250491,
+        "productId": "368872",
+        "productName": "Vacutainer Pronto Quick Release Needle Holder",
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "24L27",
+        "quantity": 20,
+        "expiryDate": ""
+      },
+      {
+        "id": 1759495283537,
+        "productId": "301747",
+        "productName": "Kim lấy máu đốc trong cỡ 22G",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5088613",
+        "quantity": 50,
+        "expiryDate": "31/03/2027"
+      }
+    ],
+    "importDate": "03/10/2025",
+    "description": "nhập lại hàng ký gửi các bệnh viện trả về",
+    "productIds": [
+      "367812",
+      "363080",
+      "368872",
+      "301747"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759495511,
+      "_nanoseconds": 829000000
+    }
+  },
+  {
+    "_id": "Kyr8UdNV4USNhRGdciLE",
+    "supplierId": "NCC-175",
+    "supplierName": "BỆNH VIỆN QUÂN Y 175",
+    "items": [
+      {
+        "id": 1762750118454,
+        "productId": "448851",
+        "productName": "Phoenix SMIC/ID-2",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5162902",
+        "quantity": 25,
+        "expiryDate": "12/06/2026"
+      },
+      {
+        "id": 1762752852630,
+        "productId": "246007",
+        "productName": "Phoenix AST-S Broth",
+        "unit": "Lọ",
+        "packaging": "8 mL/ Lọ,\n 100 Lọ/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5155266",
+        "quantity": 10,
+        "expiryDate": "10/12/2025"
+      }
+    ],
+    "importDate": "10/11/2025",
+    "description": "BV trả hàng ký gửi",
+    "productIds": [
+      "448851",
+      "246007"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762752879,
+      "_nanoseconds": 770000000
+    }
+  },
+  {
+    "_id": "MPPkXng56mGzQ1PcrEtx",
+    "supplierId": "R-HDG",
+    "supplierName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "items": [
+      {
+        "id": 1763438986040,
+        "productId": "342003",
+        "productName": "BD FACSFlow Sheath Fluid 20L",
+        "unit": "Thùng",
+        "packaging": "20L/ Thùng",
+        "storageTemp": "2 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "2508409811",
+        "quantity": 1,
+        "expiryDate": "25/03/2028"
+      },
+      {
+        "id": 1763539436420,
+        "productId": "340345",
+        "productName": "BD FACS Clean Solution 5L",
+        "unit": "Thùng",
+        "packaging": "5 Lít/ Thùng",
+        "storageTemp": "2 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "2505909824",
+        "quantity": 1,
+        "expiryDate": "28/08/2026"
+      },
+      {
+        "id": 1763539499197,
+        "productId": "334224",
+        "productName": "FACS Shutdown Solution",
+        "unit": "Thùng",
+        "packaging": "5L/ Thùng",
+        "storageTemp": "2 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "2505509820",
+        "quantity": 1,
+        "expiryDate": "24/02/2027"
+      }
+    ],
+    "importDate": "18/11/2025",
+    "description": "hàng mượn",
+    "productIds": [
+      "342003",
+      "340345",
+      "334224"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763539527,
+      "_nanoseconds": 805000000
+    }
+  },
+  {
+    "_id": "MU3Ods4Ozn4seLdLQyFu",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "description": "shipment 7051831590",
+    "importDate": "01/10/2025",
+    "supplierId": "BD",
+    "productIds": [
+      "245159",
+      "212519",
+      "491457"
+    ],
+    "items": [
+      {
+        "expiryDate": "07/05/2026",
+        "manufacturer": "Becton Dickinson",
+        "team": "BIO",
+        "quantity": 114,
+        "notes": "",
+        "storageTemp": "2 → 35°C",
+        "productName": "MGIT TBc Identification Test",
+        "productId": "245159",
+        "id": 1759399687164,
+        "packaging": "25 Test/ Hộp",
+        "unit": "Hộp",
+        "lotNumber": "25104038"
+      },
+      {
+        "productName": "MGIT TBc Identification Test",
+        "manufacturer": "Becton Dickinson",
+        "productId": "245159",
+        "unit": "Hộp",
+        "quantity": 4,
+        "id": 1759400486830,
+        "team": "BIO",
+        "packaging": "25 Test/ Hộp",
+        "lotNumber": "25177004",
+        "storageTemp": "2 → 35°C",
+        "notes": "",
+        "expiryDate": "29/06/2026"
+      },
+      {
+        "storageTemp": "15 → 30°C",
+        "team": "BIO",
+        "quantity": 20,
+        "expiryDate": "30/06/2026",
+        "lotNumber": "5210521",
+        "productName": "BD BBL™ TB Fluorescent Stain Kit M",
+        "packaging": "250 mL/ Lọ,\n3 Lọ/ Hộp",
+        "manufacturer": "Becton Dickinson",
+        "productId": "212519",
+        "unit": "Hộp",
+        "notes": "",
+        "id": 1759400529621
+      },
+      {
+        "productName": "Bottle Alcohol Blend Rinse 1700ml CE M",
+        "unit": "Chai",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "lotNumber": "5051142",
+        "productId": "491457",
+        "packaging": "1700 mL/ Chai",
+        "quantity": 6,
+        "storageTemp": "15 → 30°C",
+        "id": 1759400563810,
+        "notes": "",
+        "expiryDate": "11/02/2028"
+      }
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759400627,
+      "_nanoseconds": 954000000
+    }
+  },
+  {
+    "_id": "ORb09wfvlTXovHAhXrSL",
+    "supplierId": "NCC-PT BIOMED",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "id": 1761190602354,
+        "productId": "306574",
+        "productName": "Bơm nước muối 5ml",
+        "unit": "Cái",
+        "packaging": "30 Cái/ Hộp,\n480 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4311146",
+        "quantity": 180,
+        "expiryDate": "31/10/2027"
+      },
+      {
+        "id": 1761198396318,
+        "productId": "320566",
+        "productName": "BD Ultra-Fine PRO Pen Needles 0.23mm (32G) x 4mm",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4254160",
+        "quantity": 400,
+        "expiryDate": "30/09/2029"
+      },
+      {
+        "id": 1761198431293,
+        "productId": "360213",
+        "productName": "BD Vacutainer®",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4242301",
+        "quantity": 1000,
+        "expiryDate": "31/08/2029"
+      }
+    ],
+    "importDate": "23/10/2025",
+    "description": "nhập điều chỉnh cho khớp tồn kho thực tế sau kiểm kê tháng 10/2025",
+    "productIds": [
+      "306574",
+      "320566",
+      "360213"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761198487,
+      "_nanoseconds": 374000000
+    }
+  },
+  {
+    "_id": "PcNtduZZEgZl7F2DKFOV",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "description": "shipment số 7051835786 và 7051835788\n",
+    "productIds": [
+      "246004",
+      "332786",
+      "554656",
+      "555786",
+      "220909",
+      "245124",
+      "245116",
+      "332773",
+      "332776",
+      "332778",
+      "333138",
+      "333143",
+      "333144",
+      "333145",
+      "333151",
+      "337899",
+      "340183",
+      "340499",
+      "340909",
+      "341027",
+      "341113",
+      "344563",
+      "345789",
+      "345800",
+      "345810",
+      "347222",
+      "348815",
+      "550617",
+      "655873",
+      "662413",
+      "340334"
+    ],
+    "createdAt": {
+      "_seconds": 1761749390,
+      "_nanoseconds": 904000000
+    },
+    "importDate": "30/10/2025",
+    "items": [
+      {
+        "productId": "246004",
+        "productName": "Phoenix AST Indicator Solution",
+        "lotNumber": "5171547",
+        "expiryDate": "23/06/2026",
+        "quantity": 10,
+        "unit": "Lọ",
+        "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "246004",
+        "productName": "Phoenix AST Indicator Solution",
+        "lotNumber": "5171637",
+        "expiryDate": "02/07/2026",
+        "quantity": 40,
+        "unit": "Lọ",
+        "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "332786",
+        "productName": "FMC-7 FITC CE",
+        "lotNumber": "5234657",
+        "expiryDate": "28/02/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "554656",
+        "productName": "Stain Buffer FBS 500mL",
+        "lotNumber": "4341914",
+        "expiryDate": "31/03/2027",
+        "quantity": 1,
+        "unit": "Chai",
+        "packaging": "500 mL/ Chai",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "555786",
+        "productName": "Hu IgG FITC G18-145 100 Test",
+        "lotNumber": "4310072",
+        "expiryDate": "31/12/2029",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "220909",
+        "productName": "BBL Prepared Culture Media (BBL Lowenstein-Jensen Medium)",
+        "lotNumber": "5149246",
+        "expiryDate": "22/11/2026",
+        "quantity": 16,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "220909",
+        "productName": "BBL Prepared Culture Media (BBL Lowenstein-Jensen Medium)",
+        "lotNumber": "5119989",
+        "expiryDate": "25/10/2026",
+        "quantity": 15,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "220909",
+        "productName": "BBL Prepared Culture Media (BBL Lowenstein-Jensen Medium)",
+        "lotNumber": "5149251",
+        "expiryDate": "22/11/2026",
+        "quantity": 4,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "245124",
+        "productName": "BACTEC MGIT 960 Supplement Kit",
+        "lotNumber": "5157162",
+        "expiryDate": "07/12/2026",
+        "quantity": 25,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "245124",
+        "productName": "BACTEC MGIT 960 Supplement Kit",
+        "lotNumber": "5164001",
+        "expiryDate": "09/12/2026",
+        "quantity": 26,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "220909",
+        "productName": "BBL Prepared Culture Media (BBL Lowenstein-Jensen Medium)",
+        "lotNumber": "5127737",
+        "expiryDate": "01/11/2026",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "245116",
+        "productName": "BBL MGIT OADC",
+        "lotNumber": "5198697",
+        "expiryDate": "15/01/2027",
+        "quantity": 4,
+        "unit": "Hộp",
+        "packaging": "15 mL/ Lọ, \n6 Lọ/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "332773",
+        "productName": "CD7 (M-T701) FITC",
+        "lotNumber": "5158173",
+        "expiryDate": "31/08/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "332776",
+        "productName": "CD10 PE HI10A CE",
+        "lotNumber": "5094780",
+        "expiryDate": "30/06/2026",
+        "quantity": 3,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "332778",
+        "productName": "CD15 FITC CE",
+        "lotNumber": "5198286",
+        "expiryDate": "31/12/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "333138",
+        "productName": "Anti-MPO (5B8) FITC",
+        "lotNumber": "5198197",
+        "expiryDate": "30/09/2026",
+        "quantity": 2,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "333143",
+        "productName": "Cd11B (D12) APC CE",
+        "lotNumber": "5056927",
+        "expiryDate": "30/09/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "333144",
+        "productName": "CD11c APC CE",
+        "lotNumber": "4218726",
+        "expiryDate": "31/05/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "333145",
+        "productName": "CD22 APC CE",
+        "lotNumber": "5094784",
+        "expiryDate": "31/03/2027",
+        "quantity": 2,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "333151",
+        "productName": "CD71 FITC LO1.1 CE",
+        "lotNumber": "5219713",
+        "expiryDate": "31/07/2027",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "337899",
+        "productName": "CD22 PE CE",
+        "lotNumber": "5228341",
+        "expiryDate": "31/05/2027",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340183",
+        "productName": "HLA-B27 Kit Tests IVD",
+        "lotNumber": "5211809",
+        "expiryDate": "30/04/2026",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340499",
+        "productName": "Multitest CD3/CD8/CD45/CD4 50\nTests IVD",
+        "lotNumber": "19714",
+        "expiryDate": "30/04/2027",
+        "quantity": 6,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340499",
+        "productName": "Multitest CD3/CD8/CD45/CD4 50\nTests IVD",
+        "lotNumber": "54494",
+        "expiryDate": "30/04/2027",
+        "quantity": 33,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340499",
+        "productName": "Multitest CD3/CD8/CD45/CD4 50\nTests IVD",
+        "lotNumber": "84771",
+        "expiryDate": "31/12/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340499",
+        "productName": "Multitest CD3/CD8/CD45/CD4 50\nTests IVD",
+        "lotNumber": "92377",
+        "expiryDate": "31/12/2026",
+        "quantity": 3,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340909",
+        "productName": "CD38 (HB-7) FITC",
+        "lotNumber": "5248744",
+        "expiryDate": "30/11/2026",
+        "quantity": 2,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "341027",
+        "productName": "CD56 (NCAM 16.2) APC",
+        "lotNumber": "5039234",
+        "expiryDate": "31/10/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "341113",
+        "productName": "CD 19 PE-Cy7 CE",
+        "lotNumber": "5204987",
+        "expiryDate": "31/05/2026",
+        "quantity": 5,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "344563",
+        "productName": "Stem Cell Enumeration Kit 50 Test",
+        "lotNumber": "5104394",
+        "expiryDate": "31/12/2026",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "345789",
+        "productName": "CD19 PE SJ25C1 CE",
+        "lotNumber": "5228354",
+        "expiryDate": "31/03/2027",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "345800",
+        "productName": "CD33 APC P67.6 CE",
+        "lotNumber": "5163141",
+        "expiryDate": "31/05/2027",
+        "quantity": 3,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "345810",
+        "productName": "CD56 PE MY31 CE",
+        "lotNumber": "5198192",
+        "expiryDate": "30/06/2027",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "347222",
+        "productName": "CD34 PerCP-Cy5.5 50 Test",
+        "lotNumber": "5246221",
+        "expiryDate": "30/11/2026",
+        "quantity": 3,
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "348815",
+        "productName": "CD45 APC-Cy7 CE",
+        "lotNumber": "5204999",
+        "expiryDate": "30/06/2026",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "550617",
+        "productName": "Ms IgG1Kpa ItCl PE MOPC-31C 100ug",
+        "lotNumber": "4274580",
+        "expiryDate": "31/07/2030",
+        "quantity": 1,
+        "unit": "Lọ",
+        "packaging": "0.1 mg/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "655873",
+        "productName": "CD45 V500-C CE",
+        "lotNumber": "5192370",
+        "expiryDate": "30/06/2026",
+        "quantity": 9,
+        "unit": "Lọ",
+        "packaging": "100 Test/ Lọ",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "662413",
+        "productName": "BD™ CS&T IVD Beads",
+        "lotNumber": "5202568",
+        "expiryDate": "31/05/2027",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340334",
+        "productName": "Trucount Absolute Counting Tubes US IVD",
+        "lotNumber": "5204915",
+        "expiryDate": "30/06/2027",
+        "quantity": 52,
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "340334",
+        "productName": "Trucount Absolute Counting Tubes US IVD",
+        "lotNumber": "5133770",
+        "expiryDate": "31/03/2027",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      }
+    ],
+    "status": "completed"
+  },
+  {
+    "_id": "RcewlQ2D9E5xpusAZ2bX",
+    "supplierId": "B-MEGA",
+    "supplierName": "CÔNG TY TNHH MEGA LIFESCIENCES (VIỆT NAM)",
+    "items": [
+      {
+        "id": 1760606677615,
+        "productId": "391891",
+        "productName": "Venflon I 22GA 0.8mm x 25mm Global",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n500 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4101895",
+        "quantity": 1000,
+        "expiryDate": "31/03/2029"
+      }
+    ],
+    "importDate": "16/10/2025",
+    "description": "hóa đơn số 4409",
+    "productIds": [
+      "391891"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760674789,
+      "_nanoseconds": 474000000
+    }
+  },
+  {
+    "_id": "SQD2E184FGc9Rj2dRMLT",
+    "supplierId": "B-KHVIETANH",
+    "supplierName": "CÔNG TY TNHH THIẾT BỊ KHOA HỌC VIỆT ANH",
+    "items": [
+      {
+        "id": 1762489745609,
+        "productId": "352054",
+        "productName": "Falcon 5mL, đáy tròn, Polystyrene Cap",
+        "unit": "Ống",
+        "packaging": "125 Ống/ Túi,\n1000 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "BIO",
+        "manufacturer": "Corning",
+        "notes": "",
+        "lotNumber": "20525601",
+        "quantity": 2000,
+        "expiryDate": "23/07/2030"
+      }
+    ],
+    "importDate": "07/11/2025",
+    "description": "",
+    "productIds": [
+      "352054"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762749136,
+      "_nanoseconds": 228000000
+    }
+  },
+  {
+    "_id": "WRFS5fYcMnoRKrCDJIjJ",
+    "supplierId": "B-DKSH",
+    "supplierName": "CÔNG TY TNHH DKSH VIỆT NAM",
+    "items": [
+      {
+        "id": 1760928739450,
+        "productId": "326674",
+        "productName": "BD Ultra- Fine Insulin Sringes 6MM (1mL)",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "1242493",
+        "quantity": 2300,
+        "expiryDate": "30/11/2026"
+      },
+      {
+        "id": 1760945705641,
+        "productId": "326674",
+        "productName": "BD Ultra- Fine Insulin Sringes 6MM (1mL)",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5042011",
+        "quantity": 37700,
+        "expiryDate": "31/03/2030"
+      }
+    ],
+    "importDate": "20/10/2025",
+    "description": "hóa đơn số 188546",
+    "productIds": [
+      "326674"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760945837,
+      "_nanoseconds": 134000000
+    }
+  },
+  {
+    "_id": "WgrzjMlmwMpF8SoVI28l",
+    "description": "",
+    "supplierName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ ELITE",
+    "productIds": [
+      "8803-03",
+      "8703-04"
+    ],
+    "importDate": "24/09/2025",
+    "supplierId": "B-ELITE",
+    "status": "completed",
+    "items": [
+      {
+        "productName": "Gel rửa tay diệt khuẩn Purell ADX 1200ml",
+        "quantity": 24,
+        "team": "MED",
+        "notes": "",
+        "productId": "8803-03",
+        "unit": "Chai",
+        "lotNumber": "521203",
+        "packaging": "3 Chai/ Thùng",
+        "manufacturer": "Purell",
+        "storageTemp": "Nhiệt độ phòng",
+        "id": 1758732635060,
+        "expiryDate": "28/02/2027"
+      },
+      {
+        "lotNumber": "533851",
+        "productId": "8703-04",
+        "productName": "Gel rửa tay diệt khuẩn PURELL ADX 700ml",
+        "expiryDate": "30/06/2027",
+        "packaging": "4 Chai/ Thùng",
+        "notes": "",
+        "id": 1758860720921,
+        "quantity": 40,
+        "unit": "Chai",
+        "manufacturer": "Purell",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      }
+    ],
+    "createdAt": {
+      "_seconds": 1758860757,
+      "_nanoseconds": 899000000
+    }
+  },
+  {
+    "_id": "XWj2PlktyDBeOV8q9sz5",
+    "supplierId": "R-HDG",
+    "supplierName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "items": [
+      {
+        "id": 1762749135795,
+        "productId": "659913",
+        "productName": "BD OneFlow PCD",
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4282767",
+        "quantity": 2,
+        "expiryDate": "31/07/2026"
+      }
+    ],
+    "importDate": "10/11/2025",
+    "description": "",
+    "productIds": [
+      "659913"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762750118,
+      "_nanoseconds": 867000000
+    }
+  },
+  {
+    "_id": "Xv14XbqATozdWMK9VD3w",
+    "supplierId": "NCC-175",
+    "supplierName": "BỆNH VIỆN QUÂN Y 175",
+    "items": [
+      {
+        "id": 1763361918171,
+        "productId": "70003408",
+        "productName": "GIGAZYME 5L",
+        "unit": "Can",
+        "packaging": "5 Lít/ Can",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Schulke",
+        "notes": "",
+        "lotNumber": "1620150",
+        "quantity": 10,
+        "expiryDate": "31/01/2028"
+      }
+    ],
+    "importDate": "17/11/2025",
+    "description": "đổi hàng với BV",
+    "productIds": [
+      "70003408"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763371035,
+      "_nanoseconds": 199000000
+    }
+  },
+  {
+    "_id": "abTvQ22mQundhNWUT5uN",
+    "supplierId": "NCC-PASTEUR",
+    "supplierName": "VIỆN PASTEUR THÀNH PHỐ HỒ CHÍ MINH",
+    "items": [
+      {
+        "id": 1762317462580,
+        "productId": "349700",
+        "productName": "BD™ Multi-Check Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1125N",
+        "quantity": 1,
+        "expiryDate": "16/01/2026"
+      },
+      {
+        "id": 1762402295269,
+        "productId": "349703",
+        "productName": "BD™ Multi-Check CD4 Low Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1125L",
+        "quantity": 1,
+        "expiryDate": "16/01/2026"
+      }
+    ],
+    "importDate": "05/11/2025",
+    "description": "viện trả hàng ký gửi",
+    "productIds": [
+      "349700",
+      "349703"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762402311,
+      "_nanoseconds": 668000000
+    }
+  },
+  {
+    "_id": "bXvHTa26LPLxNmGi44fG",
+    "supplierId": "R-VINMEC",
+    "supplierName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC",
+    "items": [
+      {
+        "id": 1763090951178,
+        "productId": "2000E7D",
+        "productName": "SMART SITE NEEDLE-FREE VALVE",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "1031570",
+        "quantity": 5,
+        "expiryDate": "31/01/2028"
+      },
+      {
+        "id": 1763361899133,
+        "productId": "383642",
+        "productName": "BD NEXIVA 22G",
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5093794",
+        "quantity": 2,
+        "expiryDate": "31/03/2028"
+      }
+    ],
+    "importDate": "14/11/2025",
+    "description": "BV trả hàng ký gửi",
+    "productIds": [
+      "2000E7D",
+      "383642"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763361917,
+      "_nanoseconds": 504000000
+    }
+  },
+  {
+    "_id": "dNOE3782sizdWmZSdpwS",
+    "items": [
+      {
+        "productName": "SURGICAL CLIPPER BLADE-GENERAL USE",
+        "unit": "Cái",
+        "manufacturer": "Becton Dickinson",
+        "expiryDate": "01/07/2029",
+        "packaging": "50 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "team": "MED",
+        "productId": "4406",
+        "quantity": 100,
+        "id": 1758717500634,
+        "notes": "",
+        "lotNumber": "0724",
+        "storageTemp": "Nhiệt độ phòng"
+      },
+      {
+        "unit": "Cái",
+        "manufacturer": "Becton Dickinson",
+        "quantity": 20,
+        "id": 1758731193278,
+        "expiryDate": "30/09/2026",
+        "notes": "",
+        "team": "MED",
+        "productName": "Chạc ba dịch truyền Connecta không dây",
+        "lotNumber": "3275147",
+        "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+        "productId": "394600",
+        "storageTemp": "Nhiệt độ phòng"
+      },
+      {
+        "team": "MED",
+        "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+        "notes": "",
+        "id": 1758731243433,
+        "unit": "Ống",
+        "productId": "364606",
+        "storageTemp": "Nhiệt độ phòng",
+        "manufacturer": "Becton Dickinson",
+        "lotNumber": "4102215",
+        "expiryDate": "30/04/2026",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "quantity": 100
+      }
+    ],
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "importDate": "24/09/2025",
+    "productIds": [
+      "4406",
+      "394600",
+      "364606"
+    ],
+    "description": "điều chỉnh sau kiểm kê ngày 24/09/2025",
+    "supplierId": "PT BIOMED",
+    "createdAt": {
+      "_seconds": 1758732630,
+      "_nanoseconds": 128000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "dZtdLfh9g9tfSkvFRSmV",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "items": [
+      {
+        "id": 1761727703990,
+        "productId": "246001",
+        "productName": "Phoenix ID Broth",
+        "unit": "Hộp",
+        "packaging": "4.5 mL/ Lọ, \n100 Lọ/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5176703",
+        "quantity": 23,
+        "expiryDate": "24/06/2026"
+      },
+      {
+        "id": 1761744694319,
+        "productId": "246001",
+        "productName": "Phoenix ID Broth",
+        "unit": "Hộp",
+        "packaging": "4.5 mL/ Lọ, \n100 Lọ/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5189219",
+        "quantity": 50,
+        "expiryDate": "25/06/2026"
+      },
+      {
+        "id": 1761744731637,
+        "productId": "246003",
+        "productName": "Phoenix AST Broth",
+        "unit": "Hộp",
+        "packaging": "8 mL/ Lọ, \n100 Lọ/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5163653",
+        "quantity": 73,
+        "expiryDate": "03/06/2026"
+      },
+      {
+        "id": 1761744769798,
+        "productId": "246007",
+        "productName": "Phoenix AST-S Broth",
+        "unit": "Lọ",
+        "packaging": "8 mL/ Lọ,\n 100 Lọ/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5181467",
+        "quantity": 200,
+        "expiryDate": "08/01/2026"
+      },
+      {
+        "id": 1761744810142,
+        "productId": "260685",
+        "productName": "Gaspak EZ Campy System",
+        "unit": "Hộp",
+        "packaging": "20 Gói/ Hộp",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5176697",
+        "quantity": 1,
+        "expiryDate": "01/06/2026"
+      },
+      {
+        "id": 1761744826701,
+        "productId": "260685",
+        "productName": "Gaspak EZ Campy System",
+        "unit": "Hộp",
+        "packaging": "20 Gói/ Hộp",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5210596",
+        "quantity": 1,
+        "expiryDate": "01/07/2026"
+      },
+      {
+        "id": 1761744866590,
+        "productId": "334224",
+        "productName": "FACS Shutdown Solution",
+        "unit": "Thùng",
+        "packaging": "5L/ Thùng",
+        "storageTemp": "2 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "2505509820",
+        "quantity": 9,
+        "expiryDate": "24/02/2027"
+      },
+      {
+        "id": 1761744888477,
+        "productId": "443850",
+        "productName": "TIER MICRO BOARD KIT PHX500 SPARE\nBộ  tier máy Phoenix M50",
+        "unit": "Bộ",
+        "packaging": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": null,
+        "quantity": 1,
+        "expiryDate": ""
+      },
+      {
+        "id": 1761745797333,
+        "productId": "CYT-INF-D",
+        "productName": "Infinicyt with Dongle+5DB",
+        "unit": "Cái",
+        "packaging": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": null,
+        "quantity": 1,
+        "expiryDate": ""
+      },
+      {
+        "id": 1761745978822,
+        "productId": "448007",
+        "productName": "Phoenix NID",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5197529",
+        "quantity": 3125,
+        "expiryDate": "03/07/2026"
+      },
+      {
+        "id": 1761746019221,
+        "productId": "448008",
+        "productName": "Phoenix PID",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5192138",
+        "quantity": 875,
+        "expiryDate": "03/07/2026"
+      },
+      {
+        "id": 1761746047004,
+        "productId": "449023",
+        "productName": "Phoenix NMIC/ID-500",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5211501",
+        "quantity": 900,
+        "expiryDate": "25/07/2026"
+      },
+      {
+        "id": 1761746083612,
+        "productId": "449027",
+        "productName": "Phoenix NMIC/ID-504",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5211401",
+        "quantity": 1525,
+        "expiryDate": "21/07/2026"
+      },
+      {
+        "id": 1761746383732,
+        "productId": "448614",
+        "productName": "Phoenix PMIC/ID-95\n(Thẻ định danh và kháng sinh đồ gram dương)",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5246561",
+        "quantity": 325,
+        "expiryDate": "27/08/2026"
+      },
+      {
+        "id": 1761746456004,
+        "productId": "349202",
+        "productName": "FACS Lysing Solution 10X 100ML IVD",
+        "unit": "Hộp",
+        "packaging": "100 mL / Lọ",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5025193",
+        "quantity": 13,
+        "expiryDate": "31/03/2027"
+      },
+      {
+        "id": 1761746492445,
+        "productId": "441772",
+        "productName": "BD MAX GBS",
+        "unit": "Hộp",
+        "packaging": "24 Test/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5056401",
+        "quantity": 17,
+        "expiryDate": "05/12/2026"
+      },
+      {
+        "id": 1761746509188,
+        "productId": "448420",
+        "productName": "Phoenix PMIC-84\n(Thẻ kháng sinh đồ vi khuẩn gram dương)",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5246587",
+        "quantity": 625,
+        "expiryDate": "29/08/2026"
+      },
+      {
+        "id": 1761746606349,
+        "productId": "491332",
+        "productName": "Density Reagent",
+        "unit": "Chai",
+        "packaging": "480 mL/ Chai",
+        "storageTemp": "15 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5231307",
+        "quantity": 1,
+        "expiryDate": "29/07/2027"
+      },
+      {
+        "id": 1761746651587,
+        "productId": "641778",
+        "productName": "BD IntraSure Kit CE-IVD",
+        "unit": "Hộp",
+        "packaging": "50 Test/ Hộp",
+        "storageTemp": "20 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4214891",
+        "quantity": 10,
+        "expiryDate": "31/07/2026"
+      },
+      {
+        "id": 1761746699884,
+        "productId": "659913",
+        "productName": "BD OneFlow PCD",
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5251430",
+        "quantity": 1,
+        "expiryDate": "31/08/2027"
+      }
+    ],
+    "importDate": "29/10/2025",
+    "description": "shipment số 7051835787 và 7051835789",
+    "productIds": [
+      "246001",
+      "246003",
+      "246007",
+      "260685",
+      "334224",
+      "443850",
+      "CYT-INF-D",
+      "448007",
+      "448008",
+      "449023",
+      "449027",
+      "448614",
+      "349202",
+      "441772",
+      "448420",
+      "491332",
+      "641778",
+      "659913"
+    ],
+    "createdAt": {
+      "_seconds": 1761746750,
+      "_nanoseconds": 803000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "e6rADnWIMv69wbNvZ8G1",
+    "supplierId": "NCC-TGGEN",
+    "supplierName": "CÔNG TY TNHH THẾ GIỚI GEN",
+    "items": [
+      {
+        "id": 1760515408528,
+        "productId": "364606",
+        "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4102215",
+        "quantity": 500,
+        "expiryDate": "30/04/2026"
+      }
+    ],
+    "importDate": "15/10/2025",
+    "description": "thu hồi hàng date ngắn về kho",
+    "productIds": [
+      "364606"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760928738,
+      "_nanoseconds": 808000000
+    }
+  },
+  {
+    "_id": "fZHAfgkhejyzr7gG7mRV",
+    "supplierId": "NCC-175",
+    "supplierName": "BỆNH VIỆN QUÂN Y 175",
+    "items": [
+      {
+        "id": 1762845566542,
+        "productId": "340410",
+        "productName": "CD56 FITC NCAM16.2 50 Test RUO/GMP",
+        "unit": "Lọ",
+        "packaging": "50 Test/ Lọ",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4232589",
+        "quantity": 1,
+        "expiryDate": "30/11/2025"
+      }
+    ],
+    "importDate": "11/11/2025",
+    "description": "BV trả hàng do sai date với hóa đơn",
+    "productIds": [
+      "340410"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762851106,
+      "_nanoseconds": 954000000
+    }
+  },
+  {
+    "_id": "fzqR5to5SLODkniipeep",
+    "supplierId": "R-ANHKHOI",
+    "productIds": [
+      "491457",
+      "660228",
+      "245123",
+      "246009"
+    ],
+    "items": [
+      {
+        "notes": "",
+        "unit": "Chai",
+        "packaging": "1700 mL/ Chai",
+        "quantity": 1,
+        "lotNumber": "5051142",
+        "id": 1759226105136,
+        "productId": "491457",
+        "productName": "Bottle Alcohol Blend Rinse 1700ml CE M",
+        "team": "BIO",
+        "storageTemp": "15 → 30°C",
+        "manufacturer": "Becton Dickinson",
+        "expiryDate": "11/02/2028"
+      },
+      {
+        "productId": "660228",
+        "quantity": 1,
+        "unit": "Hộp",
+        "lotNumber": "5132421",
+        "team": "BIO",
+        "expiryDate": "28/02/2027",
+        "notes": "",
+        "productName": "BD OneFlow ALOT",
+        "id": 1759226161616,
+        "storageTemp": "2 → 27°C",
+        "manufacturer": "Becton Dickinson",
+        "packaging": "10 Test/ Hộp"
+      },
+      {
+        "lotNumber": "5188005",
+        "packaging": "40 Test/ Hộp",
+        "team": "BIO",
+        "id": 1759226210969,
+        "storageTemp": "2 → 8°C",
+        "productId": "245123",
+        "productName": "BACTEC MGIT 960 SIRE Kit",
+        "unit": "Hộp",
+        "expiryDate": "07/11/2026",
+        "quantity": 1,
+        "notes": "",
+        "manufacturer": "Becton Dickinson"
+      },
+      {
+        "notes": "",
+        "productId": "246009",
+        "lotNumber": "5171676",
+        "quantity": 3,
+        "manufacturer": "Becton Dickinson",
+        "unit": "Lọ",
+        "expiryDate": "07/04/2026",
+        "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+        "id": 1759226242520,
+        "productName": "Phoenix AST-S Indicator Solution",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO"
+      }
+    ],
+    "status": "completed",
+    "importDate": "30/09/2025",
+    "supplierName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KỸ THUẬT ANH KHÔI",
+    "description": "Anh Khôi trả hàng mượn",
+    "createdAt": {
+      "_seconds": 1759226274,
+      "_nanoseconds": 247000000
+    }
+  },
+  {
+    "_id": "gHfsuWFw6aPpOV82L1yl",
+    "supplierId": "R-HDG",
+    "supplierName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "items": [
+      {
+        "id": 1761042732220,
+        "productId": "215348",
+        "productName": "Kanamycin Sulfate",
+        "unit": "Lọ",
+        "packaging": "6 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5079727",
+        "quantity": 1,
+        "expiryDate": "24/03/2026"
+      },
+      {
+        "id": 1761104479137,
+        "productId": "215350",
+        "productName": "Amikacin",
+        "unit": "Lọ",
+        "packaging": "6 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5030855",
+        "quantity": 1,
+        "expiryDate": "27/01/2026"
+      },
+      {
+        "id": 1761104503370,
+        "productId": "215351",
+        "productName": "Capreomycin Sulfate",
+        "unit": "Lọ",
+        "packaging": "6 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5112258",
+        "quantity": 1,
+        "expiryDate": "21/04/2026"
+      },
+      {
+        "id": 1761104522249,
+        "productId": "245116",
+        "productName": "BBL MGIT OADC",
+        "unit": "Hộp",
+        "packaging": "15 mL/ Lọ, \n6 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4311568",
+        "quantity": 1,
+        "expiryDate": "07/05/2026"
+      }
+    ],
+    "importDate": "21/10/2025",
+    "description": "",
+    "productIds": [
+      "215348",
+      "215350",
+      "215351",
+      "245116"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761104587,
+      "_nanoseconds": 645000000
+    }
+  },
+  {
+    "_id": "gZ2cieqaacVvgnLJLzYm",
+    "supplierId": "R-HDG",
+    "supplierName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "items": [
+      {
+        "id": 1761293699086,
+        "productId": "449027",
+        "productName": "Phoenix NMIC/ID-504",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "\n",
+        "lotNumber": "5196464",
+        "quantity": 225,
+        "expiryDate": "07/07/2026"
+      },
+      {
+        "id": 1761295674245,
+        "productId": "448614",
+        "productName": "Phoenix PMIC/ID-95\n(Thẻ định danh và kháng sinh đồ gram dương)",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5154985",
+        "quantity": 175,
+        "expiryDate": "26/05/2026"
+      },
+      {
+        "id": 1761295705549,
+        "productId": "441772",
+        "productName": "BD MAX GBS",
+        "unit": "Hộp",
+        "packaging": "24 Test/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5029165",
+        "quantity": 2,
+        "expiryDate": "10/10/2026"
+      },
+      {
+        "id": 1761295724013,
+        "productId": "367812",
+        "productName": "Ống nghiệm chân không BD Vacutainer® serum 4ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5121536",
+        "quantity": 2000,
+        "expiryDate": "31/08/2026"
+      },
+      {
+        "id": 1761295745189,
+        "productId": "367884",
+        "productName": "Ống nghiệm chân không Lithium Heparin 4ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5048332",
+        "quantity": 10000,
+        "expiryDate": "30/06/2026"
+      },
+      {
+        "id": 1761295785413,
+        "productId": "442946",
+        "productName": "Onclarity HPV Assay Reagent Pack",
+        "unit": "Hộp",
+        "packaging": "192 Test/ Hộp",
+        "storageTemp": "2 → 33°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5216761",
+        "quantity": 5,
+        "expiryDate": "31/12/2026"
+      },
+      {
+        "id": 1761295806837,
+        "productId": "442841",
+        "productName": "Viper PCR Extraction Reagent Trough with Piercing Tool",
+        "unit": "Máng",
+        "packaging": "12 Máng/ Thùng",
+        "storageTemp": "2 → 33°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5188379",
+        "quantity": 24,
+        "expiryDate": "31/12/2026"
+      },
+      {
+        "id": 1761295826621,
+        "productId": "442840",
+        "productName": "Onclarity HPV Liquid Based Cytology Specimen (LBC) Diluent Tubes",
+        "unit": "Hộp",
+        "packaging": "400 Ống/ Hộp",
+        "storageTemp": "2 → 33°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5209735",
+        "quantity": 3,
+        "expiryDate": "28/02/2027"
+      }
+    ],
+    "importDate": "24/10/2025",
+    "description": "HDG trả hàng mượn",
+    "productIds": [
+      "449027",
+      "448614",
+      "441772",
+      "367812",
+      "367884",
+      "442946",
+      "442841",
+      "442840"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761295946,
+      "_nanoseconds": 728000000
+    }
+  },
+  {
+    "_id": "gZ4VNCERRKh8Bo6HN0mt",
+    "supplierId": "R-HDG",
+    "supplierName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "items": [
+      {
+        "id": 1762406342545,
+        "productId": "491456",
+        "productName": "Totalys SlidePrep Consumables Kit",
+        "unit": "Thùng",
+        "packaging": "480 Cái/ Thùng",
+        "storageTemp": "15 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5199918",
+        "quantity": 1,
+        "expiryDate": "25/06/2027"
+      },
+      {
+        "id": 1762424364120,
+        "productId": "491456",
+        "productName": "Totalys SlidePrep Consumables Kit",
+        "unit": "Thùng",
+        "packaging": "480 Cái/ Thùng",
+        "storageTemp": "15 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5204873",
+        "quantity": 1,
+        "expiryDate": "03/06/2027"
+      }
+    ],
+    "importDate": "06/11/2025",
+    "description": "mượn hàng để giao cho Từ Dũ (sẽ thu hồi đổi date sau)",
+    "productIds": [
+      "491456"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762424407,
+      "_nanoseconds": 987000000
+    }
+  },
+  {
+    "_id": "h0QpGUUYcNBcym3Ko4Os",
+    "supplierId": "NCC-NHIETDOI",
+    "supplierName": "BỆNH VIỆN BỆNH NHIỆT ĐỚI",
+    "items": [
+      {
+        "id": 1759846354900,
+        "productId": "442020",
+        "productName": "BACTEC Peds Plus/F Culture Vials",
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5057447",
+        "quantity": 50,
+        "expiryDate": "01/12/2025"
+      }
+    ],
+    "importDate": "07/10/2025",
+    "description": "",
+    "productIds": [
+      "442020"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760018554,
+      "_nanoseconds": 178000000
+    }
+  },
+  {
+    "_id": "hLlkFqSHax1gyzbYb13d",
+    "supplierId": "R-DHYD",
+    "supplierName": "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
+    "items": [
+      {
+        "id": 1762265825229,
+        "productId": "442017",
+        "productName": "BACTEC Mycosis IC/F Culture Vials (Plastic)",
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5218169",
+        "quantity": 100,
+        "expiryDate": "11/11/2026"
+      }
+    ],
+    "importDate": "04/11/2025",
+    "description": "mượn hàng của ĐHYD để giao cho Chợ Rẫy",
+    "productIds": [
+      "442017"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762267118,
+      "_nanoseconds": 76000000
+    }
+  },
+  {
+    "_id": "hNfHfvwl6djdUKfX5g0I",
+    "supplierId": "NCC-DIAG",
+    "supplierName": "CÔNG TY TNHH LAB GROUP INTERNATIONAL VIỆT NAM",
+    "items": [
+      {
+        "id": 1760435375508,
+        "productId": "368872",
+        "productName": "Vacutainer Pronto Quick Release Needle Holder",
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "25F11",
+        "quantity": 600,
+        "expiryDate": ""
+      }
+    ],
+    "importDate": "14/10/2025",
+    "description": "thu hồi hàng về từ DIAG",
+    "productIds": [
+      "368872"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760515407,
+      "_nanoseconds": 974000000
+    }
+  },
+  {
+    "_id": "hR4IZbS28sL0LfiPEqGh",
+    "supplierId": "B-ELITE",
+    "supplierName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ ELITE",
+    "items": [
+      {
+        "id": 1761295947265,
+        "productId": "8703-04",
+        "productName": "Gel rửa tay diệt khuẩn PURELL ADX 700ml",
+        "unit": "Chai",
+        "packaging": "4 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "533851",
+        "quantity": 52,
+        "expiryDate": "30/06/2027"
+      }
+    ],
+    "importDate": "24/10/2025",
+    "description": "hóa đơn số 20469",
+    "productIds": [
+      "8703-04"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761548285,
+      "_nanoseconds": 934000000
+    }
+  },
+  {
+    "_id": "iRL6yxl2synskVhvD90b",
+    "supplierId": "NCC-175",
+    "supplierName": "BỆNH VIỆN QUÂN Y 175",
+    "items": [
+      {
+        "id": 1763023473575,
+        "productId": "246003",
+        "productName": "Phoenix AST Broth",
+        "unit": "Hộp",
+        "packaging": "8 mL/ Lọ, \n100 Lọ/ Hộp",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5154898",
+        "quantity": 0.5,
+        "expiryDate": "27/05/2026"
+      }
+    ],
+    "importDate": "13/11/2025",
+    "description": "BV trả hàng ký gửi",
+    "productIds": [
+      "246003"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763090949,
+      "_nanoseconds": 323000000
+    }
+  },
+  {
+    "_id": "jWxa1mxlAnS91Rpx5bHs",
+    "supplierId": "R-LICIENCES",
+    "supplierName": "CÔNG TY TNHH PHÁT TRIỂN KHOA HỌC SỰ SỐNG",
+    "items": [
+      {
+        "id": 1762487417795,
+        "productId": "17544202",
+        "productName": "FILCOLL PAQUE PREMIUM",
+        "unit": "Chai",
+        "packaging": "100 mL/ Chai",
+        "storageTemp": "4 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Cytiva",
+        "notes": "",
+        "lotNumber": "10371272",
+        "quantity": 5,
+        "expiryDate": "30/09/2028"
+      },
+      {
+        "id": 1762489701235,
+        "productId": "442021",
+        "productName": "BACTEC Lytic/10 Anaerobic/F Culture Vials",
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5182374",
+        "quantity": 100,
+        "expiryDate": "07/04/2026"
+      }
+    ],
+    "importDate": "07/11/2025",
+    "description": "",
+    "productIds": [
+      "17544202",
+      "442021"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762489745,
+      "_nanoseconds": 458000000
+    }
+  },
+  {
+    "_id": "jt4eOUcZgGLYSvZfbCOc",
+    "supplierId": "NCC-MINHPV",
+    "supplierName": "Phạm Văn Minh",
+    "items": [
+      {
+        "id": 1762316433263,
+        "productId": "360211",
+        "productName": "Kim đốc đục",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4275402",
+        "quantity": 3600,
+        "expiryDate": "30/09/2029"
+      }
+    ],
+    "importDate": "05/11/2025",
+    "description": "điều chuyển vào từ Hà Nội",
+    "productIds": [
+      "360211"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762317461,
+      "_nanoseconds": 855000000
+    }
+  },
+  {
+    "_id": "l86SydXSyvfCJI4X6czI",
+    "supplierId": "B-ICU",
+    "supplierName": "ICU Medical, Inc.,",
+    "items": [
+      {
+        "id": 1762752879376,
+        "productId": "4619PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (25G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "6118410",
+        "quantity": 600,
+        "expiryDate": "30/04/2028"
+      },
+      {
+        "id": 1762827366938,
+        "productId": "4619PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (25G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "6118409",
+        "quantity": 400,
+        "expiryDate": "30/04/2028"
+      },
+      {
+        "id": 1762827432273,
+        "productId": "4629PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "6118428",
+        "quantity": 26000,
+        "expiryDate": "31/03/2028"
+      },
+      {
+        "id": 1762827653649,
+        "productId": "4629PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "6124563",
+        "quantity": 6400,
+        "expiryDate": "30/04/2028"
+      },
+      {
+        "id": 1762827726049,
+        "productId": "4629PG",
+        "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "",
+        "lotNumber": "6118431",
+        "quantity": 14400,
+        "expiryDate": "31/03/2028"
+      }
+    ],
+    "importDate": "10/11/2025",
+    "description": "trip number 19913957",
+    "productIds": [
+      "4619PG",
+      "4629PG"
+    ],
+    "createdAt": {
+      "_seconds": 1762827912,
+      "_nanoseconds": 194000000
+    },
+    "status": "completed"
+  },
+  {
+    "_id": "ltJeGlzbLGZjro7YmAaG",
+    "supplierId": "B-ICU",
+    "supplierName": "ICU Medical, Inc.,",
+    "importDate": "27/10/2025",
+    "description": "nhập hàng chăn ủ ấm vào cho khớp Misa",
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761558991,
+      "_nanoseconds": 388000000
+    },
+    "items": [
+      {
+        "unit": "Cái",
+        "team": "MED",
+        "quantity": 29,
+        "expiryDate": "24/11/2025",
+        "manufacturer": "Smiths Medical",
+        "productId": "L-70NI",
+        "notes": "NSX: 24/11/2021",
+        "productName": "HOTLINE® Fluid Warming Set",
+        "id": 1761548286714,
+        "lotNumber": "4215891",
+        "storageTemp": "Nhiệt độ phòng",
+        "packaging": "30 Cái/ Thùng"
+      },
+      {
+        "quantity": 1,
+        "lotNumber": "004442",
+        "packaging": "1 Cái/ Thùng",
+        "productName": "Level 1® Convective Warmer",
+        "id": 1761557173939,
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "notes": "NSX: 07/12/2018",
+        "unit": "Cái",
+        "expiryDate": "",
+        "productId": "L1-CW-220V",
+        "manufacturer": "Smiths Medical"
+      },
+      {
+        "lotNumber": "22020913",
+        "team": "MED",
+        "packaging": "1 Cái/ Thùng",
+        "expiryDate": "",
+        "unit": "Cái",
+        "manufacturer": "Smiths Medical",
+        "storageTemp": "Nhiệt độ phòng",
+        "notes": "NSX: 15/12/2021",
+        "productId": "HL-90-INT-230",
+        "id": 1761557401514,
+        "quantity": 1,
+        "productName": "HOTLINE® Fluid Warmer"
+      },
+      {
+        "unit": "Cái",
+        "notes": "NSX: 01/04/2019",
+        "packaging": "1 Cái/ Thùng",
+        "expiryDate": "",
+        "id": 1761557994570,
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "productId": "L1-SHELF",
+        "quantity": 1,
+        "lotNumber": "190003",
+        "productName": "Level 1® Convective Warmer Shelf",
+        "manufacturer": "Smiths Medical"
+      },
+      {
+        "unit": "Cái",
+        "productName": "Level 1® Convective Warmer Hose",
+        "team": "MED",
+        "notes": "NSX: 21/08/2021",
+        "quantity": 1,
+        "manufacturer": "Smiths Medical",
+        "packaging": "1 Cái/ Thùng",
+        "productId": "L1-HOSE",
+        "id": 1761558098746,
+        "lotNumber": "210001",
+        "expiryDate": "",
+        "storageTemp": "Nhiệt độ phòng"
+      },
+      {
+        "notes": "NSX: 01/07/2019",
+        "manufacturer": "Smiths Medical",
+        "lotNumber": "190004",
+        "storageTemp": "Nhiệt độ phòng",
+        "packaging": "1 Cái/ Thùng",
+        "unit": "Cái",
+        "team": "MED",
+        "productId": "L1-CART",
+        "expiryDate": "",
+        "id": 1761558261881,
+        "quantity": 1,
+        "productName": "Level 1® Convective Cart"
+      },
+      {
+        "packaging": "1 Cái/ Thùng",
+        "quantity": 1,
+        "manufacturer": "Smiths Medical",
+        "productName": "HOTLINE® Fluid Warmer",
+        "productId": "HL-90-INT-230",
+        "unit": "Cái",
+        "lotNumber": "22020906",
+        "id": 1761558556945,
+        "notes": "NSX: 15/12/2021",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "expiryDate": ""
+      },
+      {
+        "manufacturer": "Smiths Medical",
+        "packaging": "1 Cái/ Thùng",
+        "unit": "Cái",
+        "storageTemp": "Nhiệt độ phòng",
+        "productId": "L1-CLAMP",
+        "id": 1761558605753,
+        "productName": "Level 1® Convective Warmer IV Pole Clamp",
+        "quantity": 1,
+        "lotNumber": "200001",
+        "notes": "NSX: 09/01/2020",
+        "team": "MED",
+        "expiryDate": ""
+      }
+    ],
+    "productIds": [
+      "L-70NI",
+      "L1-CW-220V",
+      "HL-90-INT-230",
+      "L1-SHELF",
+      "L1-HOSE",
+      "L1-CART",
+      "L1-CLAMP"
+    ]
+  },
+  {
+    "_id": "mPd3vZKVnwdNnVr1GX6z",
+    "supplierId": "R-LICIENCES",
+    "supplierName": "CÔNG TY TNHH PHÁT TRIỂN KHOA HỌC SỰ SỐNG",
+    "items": [
+      {
+        "id": 1759734382303,
+        "productId": "334224",
+        "productName": "FACS Shutdown Solution",
+        "unit": "Thùng",
+        "packaging": "5L/ Thùng",
+        "storageTemp": "2 → 30°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "2505509820",
+        "quantity": 2,
+        "expiryDate": "24/02/2027"
+      },
+      {
+        "id": 1759735653176,
+        "productId": "442023",
+        "productName": "BACTEC Plus Aerobic/F Culture Vials\n(Chai cấy máu hiếu khí người lớn)",
+        "unit": "Chai",
+        "packaging": "30 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5162179",
+        "quantity": 50,
+        "expiryDate": "18/03/2026"
+      }
+    ],
+    "importDate": "06/10/2025",
+    "description": "KHSS trả hàng đã mượn",
+    "productIds": [
+      "334224",
+      "442023"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1759735704,
+      "_nanoseconds": 930000000
+    }
+  },
+  {
+    "_id": "mxG1Il4iaTpWOxONdmhB",
+    "supplierId": "B-MEGA",
+    "supplierName": "CÔNG TY TNHH MEGA LIFESCIENCES (VIỆT NAM)",
+    "items": [
+      {
+        "id": 1762424409522,
+        "productId": "394600",
+        "productName": "Chạc ba dịch truyền Connecta không dây",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4179161",
+        "quantity": 1000,
+        "expiryDate": "31/03/2027"
+      }
+    ],
+    "importDate": "06/11/2025",
+    "description": "",
+    "productIds": [
+      "394600"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762487417,
+      "_nanoseconds": 713000000
+    }
+  },
+  {
+    "_id": "nN7GaoDdCFTZAF5VakRF",
+    "supplierId": "R-ANHKHOI",
+    "supplierName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KỸ THUẬT ANH KHÔI",
+    "items": [
+      {
+        "id": 1761663326448,
+        "productId": "443831",
+        "productName": "SERVO MOTOR ASSEMBLY PHX50 SPARE",
+        "unit": "Cái",
+        "packaging": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": null,
+        "quantity": 1,
+        "expiryDate": ""
+      }
+    ],
+    "importDate": "28/10/2025",
+    "description": "Anh Khôi trả hàng đã mượn",
+    "productIds": [
+      "443831"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761727702,
+      "_nanoseconds": 831000000
+    }
+  },
+  {
+    "_id": "oc5S7ruuyKz8KCEo6K2j",
+    "supplierId": "NCC-PT BIOMED",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "id": 1761558992431,
+        "productId": "L1-CW-220V",
+        "productName": "Level 1® Convective Warmer",
+        "unit": "Cái",
+        "packaging": "1 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Smiths Medical",
+        "notes": "NSX: 07/12/2018\n",
+        "lotNumber": "004432",
+        "quantity": 1,
+        "expiryDate": ""
+      }
+    ],
+    "importDate": "27/10/2025",
+    "description": "nhập hàng máy chăn ủ ấm từ Hà Nội chuyển vào",
+    "productIds": [
+      "L1-CW-220V"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761644408,
+      "_nanoseconds": 555000000
+    }
+  },
+  {
+    "_id": "oooPnFJ2hO1pD8JgLj2u",
+    "supplierId": "BD",
+    "supplierName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "description": "shipment no 7051836922 và 7051836923",
+    "productIds": [
+      "260678",
+      "367841",
+      "367884",
+      "363080",
+      "365974",
+      "368872",
+      "442023"
+    ],
+    "createdAt": {
+      "_seconds": 1762918083,
+      "_nanoseconds": 16000000
+    },
+    "importDate": "17/11/2025",
+    "items": [
+      {
+        "productId": "260678",
+        "productName": "GasPak EZ Anaerobe Container System Sachets",
+        "lotNumber": "5085061",
+        "expiryDate": "01/05/2026",
+        "quantity": 1,
+        "unit": "Hộp",
+        "packaging": "20 Gói/ Hộp",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      },
+      {
+        "productId": "367841",
+        "productName": "Ống nghiệm chân không BD Vacutainer® EDTA 2ml",
+        "lotNumber": "5101356",
+        "expiryDate": "31/07/2026",
+        "quantity": 80000,
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "367884",
+        "productName": "Ống nghiệm chân không Lithium Heparin 4ml",
+        "lotNumber": "5076144",
+        "expiryDate": "31/07/2026",
+        "quantity": 76000,
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "363080",
+        "productName": "Ống nghiệm chân không chống đông Citrate 3,2% 1,8ml",
+        "lotNumber": "5260114",
+        "expiryDate": "31/03/2026",
+        "quantity": 11000,
+        "unit": "Ống",
+        "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "365974",
+        "productName": "Microtainer Tubes with K2E (K2EDTA)",
+        "lotNumber": "5167306",
+        "expiryDate": "30/11/2026",
+        "quantity": 1600,
+        "unit": "Ống",
+        "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "368872",
+        "productName": "Vacutainer Pronto Quick Release Needle Holder",
+        "lotNumber": "25G11",
+        "expiryDate": "",
+        "quantity": 700,
+        "unit": "Cái",
+        "packaging": "20 Cái/ Hộp,\n100 Cái/ Thùng",
+        "notes": "",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED"
+      },
+      {
+        "productId": "442023",
+        "productName": "BACTEC Plus Aerobic/F Culture Vials\n(Chai cấy máu hiếu khí người lớn)",
+        "lotNumber": "5198480",
+        "expiryDate": "06/05/2026",
+        "quantity": 6650,
+        "unit": "Chai",
+        "packaging": "30 mL/ Chai,\n 50 Chai/ Thùng",
+        "notes": "",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO"
+      }
+    ],
+    "status": "completed"
+  },
+  {
+    "_id": "osIw4eam7nQGIQlRkFhi",
+    "supplierId": "R-HDG",
+    "supplierName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "items": [
+      {
+        "id": 1763437257034,
+        "productId": "659913",
+        "productName": "BD OneFlow PCD",
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4282767",
+        "quantity": 2,
+        "expiryDate": "31/07/2026"
+      },
+      {
+        "id": 1763438930548,
+        "productId": "659913",
+        "productName": "BD OneFlow PCD",
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5251430",
+        "quantity": 2,
+        "expiryDate": "31/08/2027"
+      },
+      {
+        "id": 1763438952443,
+        "productId": "660228",
+        "productName": "BD OneFlow ALOT",
+        "unit": "Hộp",
+        "packaging": "10 Test/ Hộp",
+        "storageTemp": "2 → 27°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4192479",
+        "quantity": 1,
+        "expiryDate": "30/09/2026"
+      }
+    ],
+    "importDate": "18/11/2025",
+    "description": "hàng mượn từ HDG",
+    "productIds": [
+      "659913",
+      "660228"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763438985,
+      "_nanoseconds": 18000000
+    }
+  },
+  {
+    "_id": "pbhVsYEGz3ZpG7OeGBFc",
+    "supplierId": "B-ELITE",
+    "supplierName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ ELITE",
+    "items": [
+      {
+        "id": 1763371737242,
+        "productId": "8803-03",
+        "productName": "Gel rửa tay diệt khuẩn Purell ADX 1200ml",
+        "unit": "Chai",
+        "packaging": "3 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "510463",
+        "quantity": 100,
+        "expiryDate": "31/07/2026"
+      }
+    ],
+    "importDate": "17/11/2025",
+    "description": "Eilte tặng để giao tặng cho ĐHYD",
+    "productIds": [
+      "8803-03"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763437256,
+      "_nanoseconds": 28000000
+    }
+  },
+  {
+    "_id": "uIVZCAZtUasOMBPbpWgs",
+    "supplierId": "NCC-TUDU",
+    "supplierName": "BỆNH VIỆN TỪ DŨ",
+    "items": [
+      {
+        "id": 1760025555992,
+        "productId": "364415",
+        "productName": "Xylanh lấy máu động mạch 1ml có chế độ tự động hút máu (có kim cỡ 25G)",
+        "unit": "Cái",
+        "packaging": "100 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5057830",
+        "quantity": 500,
+        "expiryDate": "28/02/2027"
+      }
+    ],
+    "importDate": "06/10/2025",
+    "description": "thu hồi đổi date cho BV",
+    "productIds": [
+      "364415"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760097778,
+      "_nanoseconds": 255000000
+    }
+  },
+  {
+    "_id": "uTTzTaJNDsXRtmbUXVTi",
+    "supplierId": "NCC-BVQT",
+    "supplierName": "CÔNG TY CỔ PHẦN BỆNH VIỆN QUỐC TẾ",
+    "items": [
+      {
+        "id": 1760018555058,
+        "productId": "5514E",
+        "productName": "SURGICAL CLIPPER CHARGER",
+        "unit": "Cái",
+        "packaging": "1 Cái/ Hộp",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "0623",
+        "quantity": 1,
+        "expiryDate": "N/A"
+      }
+    ],
+    "importDate": "09/10/2025",
+    "description": "BV trả lại hàng ký gửi",
+    "productIds": [
+      "5514E"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1760435375,
+      "_nanoseconds": 194000000
+    }
+  },
+  {
+    "_id": "vXwvD86r7LekD7tQN3nQ",
+    "supplierId": "NCC-PT BIOMED",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "id": 1761198770344,
+        "productId": "448008",
+        "productName": "Phoenix PID",
+        "unit": "Thẻ",
+        "packaging": "25 Thẻ/ Thùng",
+        "storageTemp": "15 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5192138",
+        "quantity": 525,
+        "expiryDate": "03/07/2026"
+      }
+    ],
+    "importDate": "23/10/2025",
+    "description": "nhập điều chỉnh cho khớp tồn kho thực tế sau kiểm kê tháng 10/2025",
+    "productIds": [
+      "448008"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761199364,
+      "_nanoseconds": 973000000
+    }
+  },
+  {
+    "_id": "vcztx66Us8VIe7VSZkFl",
+    "supplierId": "NCC-PASTEUR",
+    "supplierName": "VIỆN PASTEUR THÀNH PHỐ HỒ CHÍ MINH",
+    "items": [
+      {
+        "id": 1762918083914,
+        "productId": "349700",
+        "productName": "BD™ Multi-Check Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1125N",
+        "quantity": 2,
+        "expiryDate": "16/01/2026"
+      },
+      {
+        "id": 1762935972339,
+        "productId": "349703",
+        "productName": "BD™ Multi-Check CD4 Low Control",
+        "unit": "Hộp",
+        "packaging": "2.5 mL/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "BM1125L",
+        "quantity": 2,
+        "expiryDate": "16/01/2026"
+      }
+    ],
+    "importDate": "12/11/2025",
+    "description": "thu hồi",
+    "productIds": [
+      "349700",
+      "349703"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762935981,
+      "_nanoseconds": 716000000
+    }
+  },
+  {
+    "_id": "vomc9xDc1ogNiu4QLmao",
+    "supplierId": "NCC-CUMIN",
+    "supplierName": "CÔNG TY TNHH SẢN XUẤT VÀ THƯƠNG MẠI CUMIN",
+    "items": [
+      {
+        "id": 1762827912309,
+        "productId": "DL2945",
+        "productName": "Clinicare Ultra Disinfectant 220 Towelettes",
+        "unit": "Hộp",
+        "packaging": "12 Hộp/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "DentaLife",
+        "notes": "",
+        "lotNumber": "B2257.4",
+        "quantity": 108,
+        "expiryDate": "13/08/2028"
+      }
+    ],
+    "importDate": "11/11/2025",
+    "description": "trả hàng do đặt nhầm số lượng",
+    "productIds": [
+      "DL2945"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762845566,
+      "_nanoseconds": 208000000
+    }
+  },
+  {
+    "_id": "wFG4mZFrPvh5QfvZ1Gk7",
+    "supplierId": "NCC-VIENTIM",
+    "supplierName": "Viện Tim Thành Phố Hồ Chí Minh",
+    "items": [
+      {
+        "id": 1762935982909,
+        "productId": "442017",
+        "productName": "BACTEC Mycosis IC/F Culture Vials (Plastic)",
+        "unit": "Chai",
+        "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+        "storageTemp": "2 → 25°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5073160",
+        "quantity": 50,
+        "expiryDate": "16/06/2026"
+      }
+    ],
+    "importDate": "12/11/2025",
+    "description": "trả hàng ký gửi (442023 quy đổi thành 442017)",
+    "productIds": [
+      "442017"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1763023472,
+      "_nanoseconds": 948000000
+    }
+  },
+  {
+    "_id": "wPC6SLJVAPlEqh0YgJUM",
+    "supplierId": "NCC-PT BIOMED",
+    "supplierName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "items": [
+      {
+        "id": 1761122941604,
+        "productId": "556577",
+        "productName": "Hu Perforin FITC Set dG9 100 Test",
+        "unit": "Hộp",
+        "packaging": "100 Test/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "3338486",
+        "quantity": 3,
+        "expiryDate": "30/09/2026"
+      }
+    ],
+    "importDate": "22/10/2025",
+    "description": "nhập lại cho đúng mã hàng",
+    "productIds": [
+      "556577"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761190602,
+      "_nanoseconds": 271000000
+    }
+  },
+  {
+    "_id": "wurSI0FZxeUoAGycb2F7",
+    "supplierId": "NCC-PHCNQ8",
+    "supplierName": "BỆNH VIỆN PHỤC HỒI CHỨC NĂNG - ĐIỀU TRỊ BỆNH NGHỀ NGHIỆP",
+    "items": [
+      {
+        "id": 1761644409212,
+        "productId": "246004",
+        "productName": "Phoenix AST Indicator Solution",
+        "unit": "Lọ",
+        "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+        "storageTemp": "2 → 8°C",
+        "team": "BIO",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "5083065",
+        "quantity": 4,
+        "expiryDate": "31/03/2026"
+      }
+    ],
+    "importDate": "28/10/2025",
+    "description": "hàng thu hồi về từ BV",
+    "productIds": [
+      "246004"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761663325,
+      "_nanoseconds": 558000000
+    }
+  },
+  {
+    "_id": "yAnsXSTPPrtpjUwlRKEQ",
+    "supplierId": "B-ELITE",
+    "supplierName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ ELITE",
+    "items": [
+      {
+        "id": 1762220765093,
+        "productId": "5476-04",
+        "productName": "Gel rửa tay diệt khuẩn PURELL TFX 1200ml",
+        "unit": "Chai",
+        "packaging": "4 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "547744",
+        "quantity": 40,
+        "expiryDate": "31/10/2027"
+      },
+      {
+        "id": 1762316192443,
+        "productId": "8703-04",
+        "productName": "Gel rửa tay diệt khuẩn PURELL ADX 700ml",
+        "unit": "Chai",
+        "packaging": "4 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "533851",
+        "quantity": 40,
+        "expiryDate": "30/06/2027"
+      },
+      {
+        "id": 1762316209763,
+        "productId": "8803-03",
+        "productName": "Gel rửa tay diệt khuẩn Purell ADX 1200ml",
+        "unit": "Chai",
+        "packaging": "3 Chai/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Purell",
+        "notes": "",
+        "lotNumber": "510463",
+        "quantity": 15,
+        "expiryDate": "31/07/2026"
+      }
+    ],
+    "importDate": "04/11/2025",
+    "description": "hóa đơn số 21006",
+    "productIds": [
+      "5476-04",
+      "8703-04",
+      "8803-03"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1762316231,
+      "_nanoseconds": 968000000
+    }
+  },
+  {
+    "_id": "zT7L81HPTsrCBbPxVMPL",
+    "supplierId": "NCC-MYAN",
+    "supplierName": "CÔNG TY TNHH MỸ ÂN",
+    "items": [
+      {
+        "id": 1761198487658,
+        "productId": "367896",
+        "productName": "Ống nghiệm chân không Serum 10ml",
+        "unit": "Ống",
+        "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4274577",
+        "quantity": 1000,
+        "expiryDate": "30/09/2026"
+      },
+      {
+        "id": 1761198598589,
+        "productId": "367281",
+        "productName": "Vacutainer Safety-Lok Blood Collection Set (21G)",
+        "unit": "Cái",
+        "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "25E1621",
+        "quantity": 1000,
+        "expiryDate": "30/04/2028"
+      },
+      {
+        "id": 1761198723973,
+        "productId": "364815",
+        "productName": "HOLDER ONE USE NONSTACKABLE",
+        "unit": "Cái",
+        "packaging": "250 Cái/ Túi,\n1000 Cái/ Thùng",
+        "storageTemp": "Nhiệt độ phòng",
+        "team": "MED",
+        "manufacturer": "Becton Dickinson",
+        "notes": "",
+        "lotNumber": "4022740",
+        "quantity": 2500,
+        "expiryDate": "N/A"
+      }
+    ],
+    "importDate": "23/10/2025",
+    "description": "nhập lại hàng do Mỹ Ân chỉ lấy 50% đơn hàng",
+    "productIds": [
+      "367896",
+      "367281",
+      "364815"
+    ],
+    "status": "completed",
+    "createdAt": {
+      "_seconds": 1761198770,
+      "_nanoseconds": 72000000
+    }
+  }
+]

@@ -8,12 +8,14 @@ import { toast } from 'react-toastify';
 import { 
     FiGrid, FiArchive, FiFilePlus, FiFileMinus, FiClipboard, 
     FiFileText, FiShare2, FiCheckSquare, FiUsers, FiUpload, 
-    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook
+    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
+import { useAuth } from '../context/UserContext';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const { role } = useAuth();
 
     const handleLogout = async () => {
         try {

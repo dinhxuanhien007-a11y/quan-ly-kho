@@ -187,7 +187,7 @@ import { addProduct } from '../services/productService';
 
 const productAndLotSchema = z.object({
   productName: z.string().min(1, { message: "TÃªn hÃ ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
-  lotNumber: z.string().min(1, { message: "Sá»‘ lÃ´ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
+  lotNumber: z.string(), // <-- Chá»‰ cáº§n nhÆ° tháº¿ nÃ y
   unit: z.string().min(1, { message: "ÄÆ¡n vá»‹ tÃ­nh khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng." }),
   team: z.string().min(1, { message: "Báº¡n pháº£i chá»n má»™t team." }),
   subGroup: z.string().min(1, { message: "Báº¡n pháº£i chá»n má»™t nhÃ³m hÃ ng." }),
@@ -925,6 +925,7 @@ import { FiGrid } from 'react-icons/fi';
 import SalesAnalyticsPage from '../pages/SalesAnalyticsPage';
 import ProductLedgerPage from '../pages/ProductLedgerPage';
 import { usePresence } from '../hooks/usePresence';
+import InventoryCheckPage from '../pages/InventoryCheckPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -983,6 +984,7 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/sales-analytics" element={<SalesAnalyticsPage />} />
           <Route path="/product-ledger" element={<ProductLedgerPage />} />
+          <Route path="/inventory-check" element={<InventoryCheckPage />} />
         </Routes>
       </main>
 
@@ -4174,7 +4176,7 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { FiSearch, FiAlertCircle } from 'react-icons/fi';
 import Spinner from './Spinner';
 import styles from './QuickStockLookup.module.css';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 
 const QuickStockLookup = () => {
@@ -4349,17 +4351,23 @@ const QuickStockLookup = () => {
             </div>
 
             <div className={styles.lotList}>
-              <h4>Tá»“n kho theo lÃ´:</h4>
-              {productData.lots.length > 0 ? (
-                productData.lots.map(lot => (
-                  <div key={lot.id} className={styles.lotItem}>
-                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</span></div>
-                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</span></div>
-                    <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
-                    {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
-                  </div>
-                ))
-              ) : (
+  <h4>Tá»“n kho theo lÃ´:</h4>
+  {productData.lots.length > 0 ? (
+    productData.lots.map(lot => {
+      // 2. TÃ­nh toÃ¡n class mÃ u sáº¯c dá»±a trÃªn HSD vÃ  NhÃ³m hÃ ng
+      const colorClass = getRowColorByExpiry(lot.expiryDate, productData.generalInfo.subGroup);
+      
+      return (
+        // 3. ThÃªm styles[colorClass] vÃ o className
+        <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
+          <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</span></div>
+          <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</span></div>
+          <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
+          {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
+        </div>
+      );
+    })
+  ) : (
                 <div className={styles.noResults}>
                   <p>KhÃ´ng cÃ³ lÃ´ hÃ ng nÃ o cÃ²n tá»“n kho.</p>
                 </div>
@@ -4511,6 +4519,43 @@ export default QuickStockLookup;
     font-size: 24px;
 }
 
+/* --- THÃŠM Má»šI: MÃ u sáº¯c cáº£nh bÃ¡o HSD --- */
+
+/* 1. Háº¿t háº¡n (MÃ u Ä‘en/xÃ¡m Ä‘áº­m, chá»¯ tráº¯ng) */
+.expired-black {
+    background-color: #343a40 !important;
+    color: white !important;
+    border-color: #212529;
+}
+.expired-black strong, 
+.expired-black span {
+    color: white !important;
+}
+
+/* 2. Cáº­n date Ä‘á» (< 30 hoáº·c 70 ngÃ y) */
+.near-expiry-red {
+    background-color: #f8d7da !important;
+    border-color: #f5c6cb;
+}
+.near-expiry-red strong { color: #721c24 !important; }
+.near-expiry-red span { color: #721c24 !important; }
+
+/* 3. Cáº­n date cam (< 60 hoáº·c 140 ngÃ y) */
+.near-expiry-orange {
+    background-color: #ffe8cc !important;
+    border-color: #ffd8b8;
+}
+.near-expiry-orange strong { color: #856404 !important; }
+.near-expiry-orange span { color: #856404 !important; }
+
+/* 4. Cáº­n date vÃ ng (< 90 hoáº·c 210 ngÃ y) */
+.near-expiry-yellow {
+    background-color: #fff3cd !important;
+    border-color: #ffeeba;
+}
+.near-expiry-yellow strong { color: #856404 !important; }
+.near-expiry-yellow span { color: #856404 !important; }
+
 
 
 --- FILE: D:\quan-ly-kho\src\components\RecentActivityList.jsx ---
@@ -4558,13 +4603,19 @@ export default RecentActivityList;
 // src/components/Sidebar.jsx
 
 import React, { useState } from 'react';
-// Cáº¬P NHáº¬T: Thay Ä‘á»•i bá»™ icon cho phÃ¹ há»£p
-import { FiHome, FiArchive, FiPlusCircle, FiMinusCircle, FiFileText, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
+import { 
+  FiHome, FiArchive, FiPlusCircle, FiMinusCircle, 
+  FiFileText, FiChevronsLeft, FiChevronsRight, FiClipboard 
+} from 'react-icons/fi'; // <-- ÄÃ£ thÃªm FiClipboard
 import { NavLink } from 'react-router-dom';
 import '../styles/AdminLayout.css';
+import { useAuth } from '../context/UserContext'; // <-- BÆ¯á»šC 1: Import useAuth
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const { role } = useAuth(); // <-- BÆ¯á»šC 2: Láº¥y role hiá»‡n táº¡i
+
+  console.log("DEBUG ROLE:", role); // <--- THÃŠM DÃ’NG NÃ€Y Äá»‚ KIá»‚M TRA
 
   return (
     <div className={collapsed ? "sidebar collapsed" : "sidebar"}>
@@ -4587,14 +4638,24 @@ const Sidebar = () => {
             <span className="menu-text">Quáº£n lÃ½ hÃ ng hÃ³a</span>
           </NavLink>
         </li>
-        {/* Cáº¬P NHáº¬T: Äá»•i icon thÃ nh FiPlusCircle */}
+
+        {/* === BÆ¯á»šC 3: CHá»ˆ HIá»‚N THá»Š Náº¾U LÃ€ OWNER === */}
+        {role === 'owner' && (
+            <li>
+              <NavLink to="/inventory-check">
+                <FiClipboard className="menu-icon" />
+                <span className="menu-text">Äá»‘i chiáº¿u Tá»“n kho</span>
+              </NavLink>
+            </li>
+        )}
+        {/* ========================================= */}
+
         <li>
           <NavLink to="/new-import">
             <FiPlusCircle className="menu-icon" />
             <span className="menu-text">Táº¡o Phiáº¿u Nháº­p</span>
           </NavLink>
         </li>
-        {/* Cáº¬P NHáº¬T: Äá»•i icon thÃ nh FiMinusCircle */}
         <li>
           <NavLink to="/new-export">
             <FiMinusCircle className="menu-icon" />
@@ -4619,7 +4680,6 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-
 
 
 
@@ -6646,45 +6706,14 @@ const handleDeleteSlip = async (slipToDelete) => {
     }
 };
 
-  const handleSaveSlipChanges = async (updatedSlip) => {
+  const handleSaveSlipChanges = (updatedSlip) => {
     try {
-        const batch = writeBatch(db); // DÃ¹ng Batch Writes
-        const slipDocRef = doc(db, "export_tickets", updatedSlip.id);
-        
-        // 1. Cáº¬P NHáº¬T TRÆ¯á»œNG quantityAllocated TRONG INVENTORY_LOTS
-        for (const item of updatedSlip.items) {
-            // LÃ´ hÃ ng trong phiáº¿u chá»‰nh sá»­a cáº§n Ä‘Æ°á»£c Ä‘áº·t giá»¯
-            const lotRef = doc(db, 'inventory_lots', item.lotId);
-            const lotSnap = await getDoc(lotRef);
-            
-            if (lotSnap.exists()) {
-                const currentAllocated = lotSnap.data().quantityAllocated || 0;
-                // Äáº·t giá»¯ sá»‘ lÆ°á»£ng má»›i/Ä‘Ã£ chá»‰nh sá»­a
-                const newAllocated = currentAllocated + item.quantityToExport; 
-                
-                batch.update(lotRef, { 
-                    quantityAllocated: newAllocated 
-                });
-            }
-        }
-
-        // 2. Cáº­p nháº­t phiáº¿u xuáº¥t
-        batch.update(slipDocRef, { 
-            items: updatedSlip.items,
-            customer: updatedSlip.customer,
-            description: updatedSlip.description,
-            exportDate: updatedSlip.exportDate
-        });
-        
-        await batch.commit(); // Ghi táº¥t cáº£ má»™t láº§n
-
-        setIsEditModalOpen(false);
-        reset();
-        toast.success('Cáº­p nháº­t phiáº¿u xuáº¥t thÃ nh cÃ´ng vÃ  Ä‘áº·t giá»¯ tá»“n kho!');
-
+        setIsEditModalOpen(false); // ÄÃ³ng modal
+        reset(); // Táº£i láº¡i danh sÃ¡ch
+        // ThÃ´ng bÃ¡o Ä‘Ã£ Ä‘Æ°á»£c modal hiá»ƒn thá»‹, khÃ´ng cáº§n toast á»Ÿ Ä‘Ã¢y ná»¯a.
     } catch (error) {
-        console.error("Lá»—i khi cáº­p nháº­t phiáº¿u xuáº¥t: ", error);
-        toast.error('ÄÃ£ xáº£y ra lá»—i khi cáº­p nháº­t.');
+        console.error("Lá»—i sau khi lÆ°u phiáº¿u xuáº¥t: ", error);
+        toast.error('ÄÃ£ xáº£y ra lá»—i khi lÃ m má»›i danh sÃ¡ch.');
     }
 };
 
@@ -7125,7 +7154,7 @@ const handleConfirmImport = async (slipToConfirm) => {
                 packaging: item.packaging,
                 storageTemp: item.storageTemp,
                 team: item.team || '', 
-                manufacturer: item.manufacturer || '',
+                manufacturer: productDetails.manufacturer || '', // <-- Sá»­a á»Ÿ Ä‘Ã¢y, láº¥y tá»« productDetails
                 // === THÃŠM subGroup VÃ€O ÄÃ‚Y ===
                 subGroup: subGroupValue,
                 // ==============================
@@ -7441,6 +7470,340 @@ export default ImportListPage;
 
 
 
+--- FILE: D:\quan-ly-kho\src\pages\InventoryCheckPage.jsx ---
+
+
+import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import Spinner from '../components/Spinner';
+import { formatNumber } from '../utils/numberUtils';
+import { FiUploadCloud, FiAlertTriangle, FiCheckCircle, FiXOctagon } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+
+const InventoryCheckPage = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [fileName, setFileName] = useState('');
+    const [reportData, setReportData] = useState(null);
+    const [activeTab, setActiveTab] = useState('diff'); // 'diff', 'missing_sys', 'missing_excel'
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setFileName(file.name);
+        setIsLoading(true);
+
+        try {
+            // 1. Äá»c Excel
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data);
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            // 2. TÃ¬m vá»‹ trÃ­ cÃ¡c cá»™t quan trá»ng
+            let headerIndex = -1, colCode = -1, colLot = -1, colQty = -1, colName = -1, colUnit = -1;
+
+            for (let i = 0; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                const rowStr = row.map(cell => String(cell).toLowerCase());
+                
+                // TÃ¬m index cá»§a cÃ¡c cá»™t dá»±a trÃªn tá»« khÃ³a
+                const cCode = rowStr.findIndex(s => s.includes('mÃ£ hÃ ng') || s.includes('mÃ£ sáº£n pháº©m'));
+                const cLot = rowStr.findIndex(s => s.includes('sá»‘ lÃ´') || s.includes('lÃ´'));
+                const cQty = rowStr.findIndex(s => s.includes('tá»“n cuá»‘i') || s.includes('sá»‘ lÆ°á»£ng'));
+                const cName = rowStr.findIndex(s => s.includes('tÃªn hÃ ng'));
+                const cUnit = rowStr.findIndex(s => s.includes('Ä‘vt') || s.includes('Ä‘Æ¡n vá»‹'));
+
+                if (cCode !== -1 && cQty !== -1) {
+                    headerIndex = i;
+                    colCode = cCode;
+                    colLot = cLot; // CÃ³ thá»ƒ -1 náº¿u file excel khÃ´ng cÃ³ cá»™t lÃ´
+                    colQty = cQty;
+                    colName = cName;
+                    colUnit = cUnit;
+                    break;
+                }
+            }
+
+            if (headerIndex === -1) {
+                toast.error("KhÃ´ng tÃ¬m tháº¥y dÃ²ng tiÃªu Ä‘á» (MÃ£ hÃ ng, Sá»‘ lÆ°á»£ng...) trong file Excel.");
+                setIsLoading(false);
+                return;
+            }
+
+            // 3. Tá»•ng há»£p dá»¯ liá»‡u Excel (Key = MÃ£ hÃ ng + Sá»‘ lÃ´)
+            // Map: "CODE_LOT" -> { ...data }
+            const excelMap = new Map();
+
+            for (let i = headerIndex + 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                const rawCode = row[colCode];
+                if (!rawCode || String(rawCode).toLowerCase().includes('tá»•ng')) continue;
+
+                const code = String(rawCode).trim().toUpperCase();
+                // Náº¿u khÃ´ng tÃ¬m tháº¥y cá»™t lÃ´, hoáº·c Ã´ lÃ´ trá»‘ng -> GÃ¡n lÃ  'NO_LOT'
+                let lot = (colLot !== -1 && row[colLot]) ? String(row[colLot]).trim() : 'NO_LOT';
+                // Chuáº©n hÃ³a lÃ´: bá» khoáº£ng tráº¯ng thá»«a
+                lot = lot.replace(/\s+/g, ''); 
+
+                const uniqueKey = `${code}_${lot}`;
+
+                let qty = 0;
+                if (row[colQty]) {
+                    qty = Number(String(row[colQty]).replace(/,/g, '')) || 0;
+                }
+                
+                const name = colName !== -1 ? row[colName] : '';
+                const unit = colUnit !== -1 ? row[colUnit] : '';
+
+                if (excelMap.has(uniqueKey)) {
+                    excelMap.get(uniqueKey).quantity += qty;
+                } else {
+                    excelMap.set(uniqueKey, { 
+                        key: uniqueKey, 
+                        productId: code, 
+                        lotNumber: lot === 'NO_LOT' ? '' : lot, 
+                        productName: name, 
+                        unit: unit,
+                        quantity: qty 
+                    });
+                }
+            }
+
+            // 4. Táº£i dá»¯ liá»‡u Há»‡ thá»‘ng (Inventory Lots)
+            // Chá»‰ láº¥y cÃ¡c lÃ´ cÃ³ tá»“n > 0
+            const lotsQuery = query(collection(db, 'inventory_lots'), where('quantityRemaining', '>', 0));
+            const lotsSnap = await getDocs(lotsQuery);
+            
+            const systemMap = new Map();
+
+            lotsSnap.forEach(doc => {
+                const data = doc.data();
+                const code = data.productId;
+                let lot = data.lotNumber ? String(data.lotNumber).trim().replace(/\s+/g, '') : 'NO_LOT';
+                
+                const uniqueKey = `${code}_${lot}`;
+
+                if (systemMap.has(uniqueKey)) {
+                    systemMap.get(uniqueKey).quantity += data.quantityRemaining;
+                } else {
+                    systemMap.set(uniqueKey, {
+                        key: uniqueKey,
+                        productId: code,
+                        lotNumber: data.lotNumber || '',
+                        productName: data.productName,
+                        unit: data.unit,
+                        quantity: data.quantityRemaining
+                    });
+                }
+            });
+
+            // 5. So sÃ¡nh chi tiáº¿t
+            const diffItems = [];
+            const missingInSys = [];
+            // const missingInExcel = []; // (Logic gá»™p vÃ o diffItems náº¿u System > 0)
+
+            // Duyá»‡t Excel so vá»›i System
+            excelMap.forEach((excelItem, key) => {
+                const sysItem = systemMap.get(key);
+                const sysQty = sysItem ? sysItem.quantity : 0;
+                const excelQty = excelItem.quantity;
+
+                if (sysQty !== excelQty) {
+                    const diff = sysQty - excelQty;
+                    const itemData = {
+                        productId: excelItem.productId,
+                        productName: excelItem.productName,
+                        lotNumber: excelItem.lotNumber,
+                        unit: excelItem.unit,
+                        sysQty: sysQty,
+                        excelQty: excelQty,
+                        diff: diff,
+                        type: sysItem ? 'diff' : 'missing_sys' // Náº¿u sysItem ko cÃ³ nghÄ©a lÃ  System = 0
+                    };
+
+                    if (!sysItem) {
+                        // CÃ³ trong Excel, System = 0 (hoáº·c khÃ´ng cÃ³ lÃ´ nÃ y)
+                        missingInSys.push(itemData);
+                    } else {
+                        // CÃ³ cáº£ 2 nhÆ°ng lá»‡ch sá»‘ lÆ°á»£ng
+                        diffItems.push(itemData);
+                    }
+                }
+                // ÄÃ¡nh dáº¥u lÃ  Ä‘Ã£ kiá»ƒm tra
+                if (sysItem) systemMap.delete(key); 
+            });
+
+            // Nhá»¯ng gÃ¬ cÃ²n láº¡i trong systemMap lÃ  cÃ³ trong System nhÆ°ng Excel khÃ´ng cÃ³ (Excel = 0)
+            systemMap.forEach((sysItem) => {
+                diffItems.push({
+                    productId: sysItem.productId,
+                    productName: sysItem.productName,
+                    lotNumber: sysItem.lotNumber,
+                    unit: sysItem.unit,
+                    sysQty: sysItem.quantity,
+                    excelQty: 0,
+                    diff: sysItem.quantity, // DÆ°Æ¡ng (System thá»«a)
+                    type: 'missing_excel'
+                });
+            });
+
+            // Sáº¯p xáº¿p láº¡i cho Ä‘áº¹p
+            diffItems.sort((a, b) => a.productId.localeCompare(b.productId));
+            missingInSys.sort((a, b) => a.productId.localeCompare(b.productId));
+
+            setReportData({ diffItems, missingInSys });
+            
+            if (diffItems.length === 0 && missingInSys.length === 0) {
+                toast.success("Tuyá»‡t vá»i! Tá»“n kho khá»›p 100% theo tá»«ng lÃ´.");
+            } else {
+                toast.warning("PhÃ¡t hiá»‡n chÃªnh lá»‡ch tá»“n kho!");
+            }
+
+        } catch (error) {
+            console.error("Lá»—i:", error);
+            toast.error("Lá»—i khi xá»­ lÃ½ file. Vui lÃ²ng kiá»ƒm tra Ä‘á»‹nh dáº¡ng Excel.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Helper render tráº¡ng thÃ¡i
+    const renderDiffStatus = (item) => {
+        if (item.diff > 0) {
+            return <span className="badge" style={{backgroundColor: '#ffeeba', color: '#856404'}}>
+                Há»‡ thá»‘ng DÆ¯ {formatNumber(Math.abs(item.diff))} {item.unit}
+            </span>;
+        } else {
+            return <span className="badge" style={{backgroundColor: '#f8d7da', color: '#721c24'}}>
+                Há»‡ thá»‘ng THIáº¾U {formatNumber(Math.abs(item.diff))} {item.unit}
+            </span>;
+        }
+    };
+
+    return (
+        <div>
+            <div className="page-header">
+                <h1>Äá»‘i chiáº¿u Tá»“n kho (Theo LÃ´)</h1>
+            </div>
+
+            <div className="form-section" style={{ textAlign: 'center', padding: '40px', border: '2px dashed #ccc', borderRadius: '10px' }}>
+                <input type="file" id="excel-upload" hidden accept=".xlsx, .xls, .csv" onChange={handleFileUpload} />
+                <label htmlFor="excel-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <FiUploadCloud size={50} color="#007bff" />
+                    <span style={{ marginTop: '10px', fontSize: '18px', fontWeight: 'bold' }}>
+                        {fileName || "Chá»n file Excel Tá»“n kho Chi tiáº¿t"}
+                    </span>
+                    <span style={{ color: '#666', fontSize: '14px' }}>
+                        File cáº§n cÃ³ cÃ¡c cá»™t: <strong>MÃ£ hÃ ng, Sá»‘ lÃ´, Tá»“n cuá»‘i ká»³ (hoáº·c Sá»‘ lÆ°á»£ng)</strong>
+                    </span>
+                </label>
+            </div>
+
+            {isLoading && <Spinner />}
+
+            {reportData && !isLoading && (
+                <div style={{ marginTop: '30px' }}>
+                    <div className="tabs" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                        <button 
+                            className={`btn-secondary ${activeTab === 'diff' ? 'btn-primary' : ''}`}
+                            onClick={() => setActiveTab('diff')}
+                            style={activeTab === 'diff' ? {backgroundColor: '#dc3545', color: 'white', border: 'none'} : {}}
+                        >
+                            Lá»‡ch Sá»‘ LÆ°á»£ng ({reportData.diffItems.length})
+                        </button>
+                        <button 
+                            className={`btn-secondary ${activeTab === 'missing_sys' ? 'btn-primary' : ''}`}
+                            onClick={() => setActiveTab('missing_sys')}
+                            style={activeTab === 'missing_sys' ? {backgroundColor: '#ffc107', color: 'black', border: 'none'} : {}}
+                        >
+                            CÃ³ trong Excel - Há»‡ thá»‘ng = 0 ({reportData.missingInSys.length})
+                        </button>
+                    </div>
+
+                    {activeTab === 'diff' && (
+                        <div className="table-responsive-wrapper">
+                            <h3>Danh sÃ¡ch lá»‡ch sá»‘ lÆ°á»£ng (So khá»›p MÃ£ + LÃ´)</h3>
+                            <table className="products-table">
+                                <thead>
+                                    <tr>
+                                        <th>MÃ£ hÃ ng</th>
+                                        <th>TÃªn hÃ ng</th>
+                                        <th>Sá»‘ lÃ´</th>
+                                        <th>Tá»“n Há»‡ thá»‘ng</th>
+                                        <th>Tá»“n Excel</th>
+                                        <th>ChÃªnh lá»‡ch</th>
+                                        <th>Tráº¡ng thÃ¡i</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {reportData.diffItems.map((item, index) => (
+                                        <tr key={index}>
+                                            <td><strong>{item.productId}</strong></td>
+                                            <td>{item.productName}</td>
+                                            <td><strong style={{color: '#007bff'}}>{item.lotNumber || '(KhÃ´ng cÃ³)'}</strong></td>
+                                            <td>{formatNumber(item.sysQty)}</td>
+                                            <td>{formatNumber(item.excelQty)}</td>
+                                            <td style={{ color: item.diff > 0 ? 'orange' : 'red', fontWeight: 'bold' }}>
+                                                {item.diff > 0 ? `+${formatNumber(item.diff)}` : formatNumber(item.diff)}
+                                            </td>
+                                            <td>{renderDiffStatus(item)}</td>
+                                        </tr>
+                                    ))}
+                                    {reportData.diffItems.length === 0 && (
+                                        <tr><td colSpan="7" style={{textAlign: 'center'}}>Tuyá»‡t vá»i! KhÃ´ng cÃ³ lÃ´ nÃ o bá»‹ lá»‡ch sá»‘ lÆ°á»£ng.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {activeTab === 'missing_sys' && (
+                        <div className="table-responsive-wrapper">
+                            <h3>LÃ´ hÃ ng cÃ³ trong Excel nhÆ°ng Há»‡ thá»‘ng bÃ¡o = 0 (hoáº·c khÃ´ng cÃ³)</h3>
+                            <table className="products-table">
+                                <thead>
+                                    <tr>
+                                        <th>MÃ£ hÃ ng</th>
+                                        <th>TÃªn hÃ ng</th>
+                                        <th>Sá»‘ lÃ´</th>
+                                        <th>Tá»“n Excel</th>
+                                        <th>Káº¿t luáº­n</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {reportData.missingInSys.map((item, index) => (
+                                        <tr key={index}>
+                                            <td><strong>{item.productId}</strong></td>
+                                            <td>{item.productName}</td>
+                                            <td><strong>{item.lotNumber}</strong></td>
+                                            <td>{formatNumber(item.excelQty)}</td>
+                                            <td>
+                                                <span className="badge" style={{backgroundColor: '#f8d7da', color: '#721c24'}}>
+                                                    Há»‡ thá»‘ng THIáº¾U {formatNumber(item.excelQty)} {item.unit}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {reportData.missingInSys.length === 0 && (
+                                        <tr><td colSpan="5" style={{textAlign: 'center'}}>Dá»¯ liá»‡u khá»›p hoÃ n toÃ n.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default InventoryCheckPage;
+
+
+
 --- FILE: D:\quan-ly-kho\src\pages\InventoryPage.jsx ---
 
 
@@ -7680,7 +8043,7 @@ import {
 import NewDataNotification from '../components/NewDataNotification';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { FiChevronDown, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiChevronLeft, FiDownload } from 'react-icons/fi';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
@@ -7689,14 +8052,12 @@ import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
-import companyLogo from '../assets/logo.png';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
+import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
 
 const PAGE_SIZE = 15;
 
-// src/pages/InventorySummaryPage.jsx
-
-// HÃ m tÃ´ mÃ u cho cÃ¡c lÃ´ hÃ ng chi tiáº¿t (khi xá»• xuá»‘ng)
+// HÃ m tÃ´ mÃ u cho cÃ¡c lÃ´ hÃ ng chi tiáº¿t
 const getLotItemColorClass = (expiryDate, subGroup) => {
     if (!expiryDate || !expiryDate.toDate) return '';
     const today = new Date();
@@ -7706,16 +8067,12 @@ const getLotItemColorClass = (expiryDate, subGroup) => {
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // --- LOGIC Má»šI ---
-    // Quy táº¯c 1: Cho nhÃ³m BD BDB vÃ  BD DS
     if (SPECIAL_EXPIRY_SUBGROUPS.includes(subGroup)) {
         if (diffDays < 0) return 'lot-item-expired';
         if (diffDays <= 30) return 'lot-item-red';
         if (diffDays <= 60) return 'lot-item-orange';
         if (diffDays <= 90) return 'lot-item-yellow';
-    } 
-    // Quy táº¯c 2: Cho táº¥t cáº£ cÃ¡c nhÃ³m hÃ ng cÃ²n láº¡i
-    else {
+    } else {
         if (diffDays < 0) return 'lot-item-expired';
         if (diffDays <= 70) return 'lot-item-red';
         if (diffDays <= 140) return 'lot-item-orange';
@@ -7723,7 +8080,6 @@ const getLotItemColorClass = (expiryDate, subGroup) => {
     }
     return '';
 };
-
 
 const InventorySummaryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
@@ -7745,25 +8101,34 @@ const InventorySummaryPage = ({ pageTitle }) => {
     });
     
     const [hasNewData, setHasNewData] = useState(false);
-    const lastSeenTimestampRef = useRef(null);
+    
+    // Äá»•i ref nÃ y Ä‘á»ƒ theo dÃµi thay Ä‘á»•i cá»§a products
+    // LÆ°u Ã½: ChÃºng ta dÃ¹ng snapshot listener trá»±c tiáº¿p, nÃªn ref nÃ y cÃ³ thá»ƒ khÃ´ng cáº§n thiáº¿t 
+    // náº¿u logic refresh dá»±a trÃªn snapshot metadata. 
+    // Tuy nhiÃªn, Ä‘á»ƒ giá»¯ logic cÅ© hoáº¡t Ä‘á»™ng, ta sáº½ giá»¯ láº¡i.
+    const lastSeenSnapshotRef = useRef(null); 
 
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
     const subGroupRef = useRef(null);
+    
+    const [isExporting, setIsExporting] = useState(false);
 
+    // --- Tá»I Æ¯U HÃ“A 1: Query trá»±c tiáº¿p tá»« 'products' ---
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            const baseCollectionRef = collection(db, "product_summaries");
+            // THAY Äá»”I QUAN TRá»ŒNG: Äá»c tá»« 'products'
+            const baseCollectionRef = collection(db, "products");
             let queryConstraints = [];
 
-            // Ãp dá»¥ng bá»™ lá»c vai trÃ² trÆ°á»›c
+            // 1. Lá»c theo Role
             if (userRole === 'med') {
                 queryConstraints.push(where("team", "==", "MED"));
             } else if (userRole === 'bio') {
                 queryConstraints.push(where("team", "==", "BIO"));
             }
 
-            // Ãp dá»¥ng bá»™ lá»c do ngÆ°á»i dÃ¹ng chá»n
+            // 2. Lá»c theo UI
             if (filters.team !== 'all') {
                 queryConstraints.push(where("team", "==", filters.team));
             }
@@ -7771,23 +8136,25 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(where("subGroup", "==", filters.subGroup));
             }
 
-            // Ãp dá»¥ng bá»™ lá»c HSD vÃ  sáº¯p xáº¿p
+            // 3. Lá»c theo Date & Sáº¯p xáº¿p
+            // LÆ°u Ã½: TrÆ°á»ng nearestExpiryDate giá» Ä‘Ã£ cÃ³ trong products nhá» script Ä‘á»“ng bá»™
             if (filters.dateStatus === 'expired') {
                 queryConstraints.push(where("nearestExpiryDate", "<", Timestamp.now()));
                 queryConstraints.push(orderBy("nearestExpiryDate", "desc"));
                 queryConstraints.push(orderBy(documentId(), "asc"));
             } else if (filters.dateStatus === 'near_expiry') {
                 const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + 210); // NgÆ°á»¡ng cao nháº¥t
+                futureDate.setDate(futureDate.getDate() + 210);
                 queryConstraints.push(where("nearestExpiryDate", ">=", Timestamp.now()));
                 queryConstraints.push(where("nearestExpiryDate", "<=", Timestamp.fromDate(futureDate)));
                 queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
                 queryConstraints.push(orderBy(documentId(), "asc"));
             } else {
+                // Máº·c Ä‘á»‹nh sáº¯p xáº¿p theo ID (MÃ£ hÃ ng)
                 queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
-            // PhÃ¢n trang
+            // 4. PhÃ¢n trang
             if (direction === 'next' && cursor) {
                 queryConstraints.push(startAfter(cursor));
             } else if (direction === 'first') {
@@ -7805,7 +8172,15 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 return;
             }
             
-            const summaryDocs = mainSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Láº¥y dá»¯ liá»‡u trá»±c tiáº¿p, khÃ´ng cáº§n map thÃªm
+            const summaryDocs = mainSnapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data(),
+                // Äáº£m báº£o cÃ³ giÃ¡ trá»‹ máº·c Ä‘á»‹nh náº¿u dá»¯ liá»‡u cÅ© chÆ°a chuáº©n
+                totalRemaining: doc.data().totalRemaining ?? 0,
+                nearestExpiryDate: doc.data().nearestExpiryDate ?? null
+            }));
+            
             setSummaries(summaryDocs);
 
             setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
@@ -7814,7 +8189,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
         } catch (error) {
             console.error("Lá»—i khi táº£i dá»¯ liá»‡u tá»•ng há»£p: ", error);
             if (error.message.includes('requires an index')) {
-                toast.error("Lá»—i truy váº¥n, báº¡n cáº§n táº¡o Index trong Firestore. HÃ£y kiá»ƒm tra Console (F12) Ä‘á»ƒ xem link táº¡o tá»± Ä‘á»™ng.");
+                toast.error("Lá»—i truy váº¥n. Vui lÃ²ng kiá»ƒm tra Console Ä‘á»ƒ táº¡o Index.");
             } else {
                 toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u.");
             }
@@ -7823,60 +8198,76 @@ const InventorySummaryPage = ({ pageTitle }) => {
         }
     }, [filters, userRole]);
 
+    // --- Tá»I Æ¯U HÃ“A 2: TÃ¬m kiáº¿m gá»n nháº¹ hÆ¡n ---
     const performSearch = useCallback(async (term) => {
         if (!term) return;
         setLoading(true);
         try {
-            let baseSearchRef = collection(db, "products");
-            let searchConstraints = [];
-
-            if (userRole === 'med') {
-               searchConstraints.push(where("team", "==", "MED"));
-            } else if (userRole === 'bio') {
-                searchConstraints.push(where("team", "==", "BIO"));
-            }
-
             const upperTerm = term.toUpperCase();
-            const productSearchQuery = query(baseSearchRef, ...searchConstraints, where(documentId(), ">=", upperTerm), where(documentId(), "<=", upperTerm + '\uf8ff'));
-            const lotSearchQuery = query(collection(db, "inventory_lots"), where("lotNumber", "==", term));
- 
-            const [productSnap, lotSnap] = await Promise.all([ getDocs(productSearchQuery), getDocs(lotSearchQuery) ]);
-            
-            const foundProductIds = new Set(productSnap.docs.map(doc => doc.id));
-            const allowedTeams = userRole === 'med' ? ['MED'] : (userRole === 'bio' ? ['BIO'] : null);
-            for (const lotDoc of lotSnap.docs) {
-                const productId = lotDoc.data().productId;
-                if (allowedTeams) {
-                    const productRef = doc(db, "products", productId);
-                    const productDoc = await getDoc(productRef);
-                    if (productDoc.exists() && allowedTeams.includes(productDoc.data().team)) {
-                        foundProductIds.add(productId);
-                    }
-                } else {
-                    foundProductIds.add(productId);
-                }
+            let foundProductIds = new Set();
+
+            // CÃ¡ch 1: TÃ¬m theo ID (MÃ£ hÃ ng) trong products
+            // LÆ°u Ã½: Firestore khÃ´ng há»— trá»£ tÃ¬m 'contains' (chá»©a), chá»‰ cÃ³ 'startsWith'
+            const productsRef = collection(db, "products");
+            const idQuery = query(
+                productsRef, 
+                where(documentId(), ">=", upperTerm), 
+                where(documentId(), "<=", upperTerm + '\uf8ff'),
+                limit(30)
+            );
+            const idSnapshot = await getDocs(idQuery);
+            idSnapshot.forEach(doc => foundProductIds.add(doc.id));
+
+            // CÃ¡ch 2: TÃ¬m theo Sá»‘ lÃ´ trong inventory_lots -> suy ra MÃ£ hÃ ng
+            // Chá»‰ tÃ¬m náº¿u CÃ¡ch 1 tráº£ vá» Ã­t káº¿t quáº£ Ä‘á»ƒ tá»‘i Æ°u
+            if (foundProductIds.size < 5) {
+                const lotsRef = collection(db, "inventory_lots");
+                const lotQuery = query(lotsRef, where("lotNumber", "==", term), limit(20));
+                const lotSnapshot = await getDocs(lotQuery);
+                lotSnapshot.forEach(doc => foundProductIds.add(doc.data().productId));
             }
-          
+
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
             } else {
-                const ids = Array.from(foundProductIds).slice(0, 30);
-                const finalProductsQuery = query( collection(db, "products"), where(documentId(), 'in', ids));
-                const finalProductsSnap = await getDocs(finalProductsQuery);
-                const finalProducts = finalProductsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                const summariesQuery = query(collection(db, "product_summaries"), where(documentId(), 'in', ids));
-                const summariesSnapshot = await getDocs(summariesQuery);
-                const summariesMap = new Map(summariesSnapshot.docs.map(doc => [doc.id, doc.data()]));
+                // Lá»c láº¡i theo Role vÃ  Team (Client-side filtering cho Ä‘Æ¡n giáº£n vÃ¬ sá»‘ lÆ°á»£ng Ã­t)
+                let ids = Array.from(foundProductIds);
                 
-                const mergedData = finalProducts.map(product => {
-                    const summaryData = summariesMap.get(product.id);
-                    return { ...product, totalRemaining: summaryData?.totalRemaining ?? 0, nearestExpiryDate: summaryData?.nearestExpiryDate ?? null };
-                });
-                setSummaries(mergedData);
-                setIsLastPage(true);
+                // Fetch chi tiáº¿t cÃ¡c sáº£n pháº©m tÃ¬m Ä‘Æ°á»£c
+                // Firestore 'in' query giá»›i háº¡n 30 items
+                const chunks = [];
+                while (ids.length > 0) {
+                    chunks.push(ids.splice(0, 30));
+                }
+
+                let finalResults = [];
+                for (const chunkIds of chunks) {
+                    const q = query(collection(db, "products"), where(documentId(), 'in', chunkIds));
+                    const snap = await getDocs(q);
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        // Kiá»ƒm tra quyá»n xem user cÃ³ Ä‘Æ°á»£c tháº¥y sáº£n pháº©m nÃ y khÃ´ng
+                        const isAllowed = 
+                            (userRole === 'owner' || userRole === 'admin') ||
+                            (userRole === 'med' && data.team === 'MED') ||
+                            (userRole === 'bio' && data.team === 'BIO');
+                        
+                        if (isAllowed) {
+                            finalResults.push({ 
+                                id: doc.id, 
+                                ...data,
+                                totalRemaining: data.totalRemaining ?? 0,
+                                nearestExpiryDate: data.nearestExpiryDate ?? null
+                            });
+                        }
+                    });
+                }
+                
+                setSummaries(finalResults);
+                setIsLastPage(true); // TÃ¬m kiáº¿m thÃ¬ khÃ´ng phÃ¢n trang tiáº¿p
             }
+
         } catch (error) {
             console.error("Lá»—i khi tÃ¬m kiáº¿m:", error);
         } finally {
@@ -7897,42 +8288,42 @@ const InventorySummaryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, filters, fetchData, performSearch]);
     
+    // --- Tá»I Æ¯U HÃ“A 3: Realtime Listener trÃªn 'product_summaries' hoáº·c 'products' ---
+    // Äá»ƒ trÃ¡nh tá»‘n kÃ©m, ta váº«n láº¯ng nghe 'product_summaries' vÃ¬ nÃ³ chá»‰ thay Ä‘á»•i khi tá»“n kho Ä‘á»•i.
+    // (Cloud Function váº«n update summary song song vá»›i products)
+    // Biáº¿n cá» Ä‘á»ƒ kiá»ƒm tra xem cÃ³ pháº£i láº§n load Ä‘áº§u tiÃªn khÃ´ng
+    const isFirstRun = useRef(true);
+
     useEffect(() => {
         const q = query(collection(db, "product_summaries"), orderBy("lastUpdatedAt", "desc"), limit(1));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) return;
-            const newestDocData = snapshot.docs[0].data();
-            const newestTimestamp = newestDocData.lastUpdatedAt;
-            if (!newestTimestamp) return;
-            if (lastSeenTimestampRef.current === null) {
-                lastSeenTimestampRef.current = newestTimestamp;
+            // 1. Náº¿u lÃ  láº§n cháº¡y Ä‘áº§u tiÃªn (vá»«a vÃ o trang), ta bá» qua khÃ´ng thÃ´ng bÃ¡o
+            if (isFirstRun.current) {
+                isFirstRun.current = false;
                 return;
             }
-            if (lastSeenTimestampRef.current && newestTimestamp.toMillis() > lastSeenTimestampRef.current.toMillis()) {
-                 if (!snapshot.metadata.hasPendingWrites) {
-                    setHasNewData(true);
-                    lastSeenTimestampRef.current = newestTimestamp;
-                 }
+
+            if (snapshot.empty) return;
+            
+            // 2. Tá»« láº§n thá»© 2 trá»Ÿ Ä‘i, náº¿u cÃ³ thay Ä‘á»•i má»›i bÃ¡o
+            if (!snapshot.metadata.hasPendingWrites) {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added" || change.type === "modified") {
+                         setHasNewData(true);
+                    }
+                });
             }
         }, (error) => {
             console.error("Lá»—i khi láº¯ng nghe real-time:", error);
         });
-        return () => {
-          unsubscribe();
-          lastSeenTimestampRef.current = null;
-        };
+        return () => unsubscribe();
     }, []);
 
     const subGroups = useMemo(() => {
-    if (userRole === 'med') {
-        return SUBGROUPS_BY_TEAM.MED;
-    }
-    if (userRole === 'bio') {
-        return SUBGROUPS_BY_TEAM.BIO;
-    }
-    // DÃ nh cho admin/owner
-    return ALL_SUBGROUPS;
-}, [userRole]);
+        if (userRole === 'med') return SUBGROUPS_BY_TEAM.MED;
+        if (userRole === 'bio') return SUBGROUPS_BY_TEAM.BIO;
+        return ALL_SUBGROUPS;
+    }, [userRole]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -7962,83 +8353,91 @@ const InventorySummaryPage = ({ pageTitle }) => {
     };
     
     const toggleRow = async (productId) => {
-    const isCurrentlyExpanded = !!expandedRows[productId];
-    if (isCurrentlyExpanded) {
-        setExpandedRows(prev => ({ ...prev, [productId]: false }));
-        return;
-    }
-
-    setLoadingLots(prev => ({ ...prev, [productId]: true }));
-    try {
-        // 1. Láº¥y táº¥t cáº£ cÃ¡c báº£n ghi lÃ´ hÃ ng cÃ²n tá»“n kho cá»§a sáº£n pháº©m
-        const lotsQuery = query(
-            collection(db, "inventory_lots"),
-            where("productId", "==", productId),
-            where("quantityRemaining", ">", 0)
-        );
-        const lotsSnapshot = await getDocs(lotsQuery);
-        const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // 2. Báº¯t Ä‘áº§u gá»™p cÃ¡c lÃ´ cÃ³ cÃ¹ng sá»‘ lÃ´
-        const lotAggregator = new Map();
-        for (const lot of allLots) {
-            const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)'; // DÃ¹ng key chung cho cÃ¡c lÃ´ khÃ´ng cÃ³ sá»‘
-
-            if (lotAggregator.has(lotKey)) {
-                const existingLot = lotAggregator.get(lotKey);
-                // Cá»™ng dá»“n sá»‘ lÆ°á»£ng tá»“n
-                existingLot.quantityRemaining += lot.quantityRemaining;
-                // LuÃ´n giá»¯ láº¡i HSD ngáº¯n nháº¥t cho nhÃ³m
-                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
-                    existingLot.expiryDate = lot.expiryDate;
-                }
-            } else {
-                // ThÃªm má»›i náº¿u chÆ°a cÃ³ trong Map, táº¡o má»™t báº£n sao Ä‘á»ƒ trÃ¡nh thay Ä‘á»•i dá»¯ liá»‡u gá»‘c
-                lotAggregator.set(lotKey, { ...lot });
-            }
+        const isCurrentlyExpanded = !!expandedRows[productId];
+        if (isCurrentlyExpanded) {
+            setExpandedRows(prev => ({ ...prev, [productId]: false }));
+            return;
         }
-        const aggregatedLots = Array.from(lotAggregator.values());
 
-        // 3. Sáº¯p xáº¿p danh sÃ¡ch Ä‘Ã£ gá»™p theo quy táº¯c báº¡n yÃªu cáº§u
-        aggregatedLots.sort((a, b) => {
-            const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
-            const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+        setLoadingLots(prev => ({ ...prev, [productId]: true }));
+        try {
+            const lotsQuery = query(
+                collection(db, "inventory_lots"),
+                where("productId", "==", productId),
+                where("quantityRemaining", ">", 0)
+            );
+            const lotsSnapshot = await getDocs(lotsQuery);
+            const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            // Quy táº¯c 1: HSD gáº§n nháº¥t lÃªn trÆ°á»›c
-            if (dateA !== dateB) {
-                return dateA - dateB;
+            const lotAggregator = new Map();
+            for (const lot of allLots) {
+                const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)';
+                if (lotAggregator.has(lotKey)) {
+                    const existingLot = lotAggregator.get(lotKey);
+                    existingLot.quantityRemaining += lot.quantityRemaining;
+                    if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                        existingLot.expiryDate = lot.expiryDate;
+                    }
+                } else {
+                    lotAggregator.set(lotKey, { ...lot });
+                }
             }
+            const aggregatedLots = Array.from(lotAggregator.values());
 
-            // Quy táº¯c 2: Náº¿u HSD báº±ng nhau, sá»‘ lÆ°á»£ng Ã­t hÆ¡n lÃªn trÆ°á»›c
-            return a.quantityRemaining - b.quantityRemaining;
-        });
+            // Logic sáº¯p xáº¿p an toÃ n (ÄÃ£ sá»­a tá»« trÆ°á»›c)
+            aggregatedLots.sort((a, b) => {
+                const getTime = (dateObj) => {
+                    if (!dateObj) return Infinity;
+                    if (typeof dateObj.toDate === 'function') return dateObj.toDate().getTime();
+                    if (dateObj instanceof Date) return dateObj.getTime();
+                    return Infinity;
+                };
+                const dateA = getTime(a.expiryDate);
+                const dateB = getTime(b.expiryDate);
+                if (dateA !== dateB) return dateA - dateB;
+                return a.quantityRemaining - b.quantityRemaining;
+            });
 
-        // 4. Cáº­p nháº­t state vá»›i danh sÃ¡ch Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½
-        setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots }));
-
-    } catch (error) {
-        console.error("Lá»—i khi táº£i chi tiáº¿t lÃ´:", error);
-        toast.error("KhÃ´ng thá»ƒ táº£i chi tiáº¿t cÃ¡c lÃ´ hÃ ng.");
-    } finally {
-        setLoadingLots(prev => ({ ...prev, [productId]: false }));
-    }
-    setExpandedRows(prev => ({ ...prev, [productId]: true }));
-};
+            setLotDetails(prev => ({ ...prev, [productId]: aggregatedLots }));
+        } catch (error) {
+            console.error("Lá»—i khi táº£i chi tiáº¿t lÃ´:", error);
+            toast.error("KhÃ´ng thá»ƒ táº£i chi tiáº¿t cÃ¡c lÃ´ hÃ ng.");
+        } finally {
+            setLoadingLots(prev => ({ ...prev, [productId]: false }));
+        }
+        setExpandedRows(prev => ({ ...prev, [productId]: true }));
+    };
 
     const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
     const handlePrevPage = () => { fetchData('first'); };
 
-    // src/pages/InventorySummaryPage.jsx
+    const filteredSummaries = useMemo(() => {
+        if (filters.dateStatus !== 'near_expiry') {
+            return summaries;
+        }
+        return summaries.filter(product => {
+            const colorClass = getRowColorByExpiry(product.nearestExpiryDate, product.subGroup);
+            return colorClass.includes('near-expiry') || colorClass.includes('expired');
+        });
+    }, [summaries, filters.dateStatus]);
 
-const filteredSummaries = useMemo(() => {
-    if (filters.dateStatus !== 'near_expiry') {
-        return summaries;
-    }
-    return summaries.filter(product => {
-        const colorClass = getRowColorByExpiry(product.nearestExpiryDate, product.subGroup);
-        return colorClass.includes('near-expiry') || colorClass.includes('expired');
-    });
-}, [summaries, filters.dateStatus]);
+    const handleExportExcel = async () => {
+        if (userRole !== 'owner') return;
+        setIsExporting(true);
+        toast.info("Äang táº¡o file Excel toÃ n bá»™ tá»“n kho...");
+
+        try {
+            await exportFullInventoryToExcel();
+            toast.success("Xuáº¥t file Excel thÃ nh cÃ´ng!");
+        } catch (error) {
+            toast.error("CÃ³ lá»—i xáº£y ra khi xuáº¥t file.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+    
+    const ALLOWED_EXPORT_ROLES = ['owner']; 
+    const canExport = ALLOWED_EXPORT_ROLES.includes(userRole);
 
     return (
         <div className="printable-inventory-area">
@@ -8089,6 +8488,30 @@ const filteredSummaries = useMemo(() => {
                         className="search-input"
                     />
                 </div>
+
+                {canExport && (
+                    <button 
+                        onClick={handleExportExcel} 
+                        className="btn-success"
+                        disabled={isExporting}
+                        style={{ 
+                            marginLeft: '10px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '5px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 15px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                        }}
+                    >
+                        <FiDownload /> 
+                        {isExporting ? 'Äang xuáº¥t...' : 'Xuáº¥t Excel (Full)'}
+                    </button>
+                )}
             </div>
 
             {loading ? <Spinner /> : (
@@ -8508,7 +8931,7 @@ import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import { FiSearch, FiAlertCircle, FiMic } from 'react-icons/fi';
 import styles from '../styles/MobileInventoryPage.module.css';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import companyLogo from '../assets/logo.png';
 import { toast } from 'react-toastify';
@@ -8727,17 +9150,23 @@ if (uniqueLots.length > 0) {
                         </div>
                     </div>
                     <div className={styles.lotListCard}>
-                        <h3>Tá»“n kho theo lÃ´</h3>
-                        {productData.lots.length > 0 ? (
-                            productData.lots.map(lot => (
-                                <div key={lot.id} className={styles.lotItem}>
-                                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber}</span></div>
-                                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
-                                    <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
-                                    {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
-                                </div>
-                            ))
-                        ) : (
+    <h3>Tá»“n kho theo lÃ´</h3>
+    {productData.lots.length > 0 ? (
+        productData.lots.map(lot => {
+            // 2. TÃ­nh toÃ¡n mÃ u sáº¯c
+            const colorClass = getRowColorByExpiry(lot.expiryDate, productData.generalInfo.subGroup);
+
+            return (
+                // 3. Ãp dá»¥ng class mÃ u vÃ o tháº» div
+                <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
+                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber}</span></div>
+                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                    <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
+                    {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
+                </div>
+            );
+        })
+    ) : (
                             <p className={styles.emptyMessage}>KhÃ´ng cÃ³ lÃ´ hÃ ng nÃ o cÃ²n tá»“n kho.</p>
                         )}
                     </div>
@@ -8766,7 +9195,7 @@ import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore'; // THÃŠM writeBatch
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, writeBatch, increment } from 'firebase/firestore'; // Thay FieldValue báº±ng increment
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
@@ -9041,7 +9470,26 @@ const handleLotSelection = (index, selectedLotId) => {
 
 Â  Â  Â  Â  Â  Â  if (!selectedAggregatedLot || quantityToDistribute <= 0) continue;
 
-Â  Â  Â  Â  Â  Â  const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => (a.expiryDate?.toDate() || 0) - (b.expiryDate?.toDate() || 0));
+Â  Â  Â  Â  Â  Â  // === Báº®T Äáº¦U Sá»¬A Lá»–I Sáº®P Xáº¾P ===
+const originalLotsSorted = selectedAggregatedLot.originalLots.sort((a, b) => {
+    // Kiá»ƒm tra an toÃ n xem expiryDate cÃ³ tá»“n táº¡i VÃ€ cÃ³ hÃ m .toDate() khÃ´ng
+    const dateA = (a.expiryDate && typeof a.expiryDate.toDate === 'function') 
+        ? a.expiryDate.toDate().getTime() // Láº¥y mili-giÃ¢y
+        : Infinity; // Náº¿u khÃ´ng cÃ³ HSD, Ä‘áº©y xuá»‘ng cuá»‘i cÃ¹ng
+
+    const dateB = (b.expiryDate && typeof b.expiryDate.toDate === 'function')
+        ? b.expiryDate.toDate().getTime() // Láº¥y mili-giÃ¢y
+        : Infinity; // Náº¿u khÃ´ng cÃ³ HSD, Ä‘áº©y xuá»‘ng cuá»‘i cÃ¹ng
+
+    // Náº¿u cáº£ hai Ä‘á»u khÃ´ng cÃ³ HSD, giá»¯ nguyÃªn thá»© tá»±
+    if (dateA === Infinity && dateB === Infinity) {
+        return 0;
+    }
+
+    // Sáº¯p xáº¿p HSD sá»›m nháº¥t (sá»‘ nhá» nháº¥t) lÃªn Ä‘áº§u
+    return dateA - dateB;
+});
+// === Káº¾T THÃšC Sá»¬A Lá»–I Sáº®P Xáº¾P ===
 
 Â  Â  Â  Â  Â  Â  for (const originalLot of originalLotsSorted) {
 Â  Â  Â  Â  Â  Â  Â  Â  if (quantityToDistribute <= 0) break;
@@ -9085,43 +9533,41 @@ const handleLotSelection = (index, selectedLotId) => {
 Â  Â  Â  Â  };
 Â  Â  };
 Â  Â  
-Â  Â  const handleSaveDraft = async () => {
-Â  Â  Â  Â  const slipData = getValidSlipData();
-Â  Â  Â  Â  if (!slipData) return;
-Â  Â  Â  Â  setIsProcessing(true);
-Â  Â  Â  Â  
-Â  Â  Â  Â  try {
-            const batch = writeBatch(db); // DÃ¹ng Batch Writes
-Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  // 1. Äáº·t giá»¯ cÃ¡c lÃ´ hÃ ng (Soft Lock)
+Â  Â  // src/pages/NewExportPage.jsx
+
+const handleSaveDraft = async () => {
+    const slipData = getValidSlipData();
+    if (!slipData) return;
+    setIsProcessing(true);
+    
+    try {
+        const batch = writeBatch(db); // DÃ¹ng Batch Writes
+        
+        // 1. Äáº·t giá»¯ cÃ¡c lÃ´ hÃ ng (Soft Lock) - ÄÃƒ Sá»¬A Lá»–I RACE CONDITION
             for (const item of slipData.items) {
                 const lotRef = doc(db, 'inventory_lots', item.lotId);
-                const lotSnap = await getDoc(lotRef); 
-                if (lotSnap.exists()) {
-                    const currentAllocated = lotSnap.data().quantityAllocated || 0;
-                    const newAllocated = currentAllocated + item.quantityToExport;
-
-                    batch.update(lotRef, { 
-                        quantityAllocated: newAllocated // TÄƒng lÆ°á»£ng Ä‘áº·t giá»¯
-                    });
-                }
+                
+                // YÃªu cáº§u Firestore tá»± cá»™ng dá»“n giÃ¡ trá»‹ trÃªn server
+                batch.update(lotRef, { 
+                    quantityAllocated: increment(item.quantityToExport) // <-- Chá»‰ dÃ¹ng increment()
+                });
             }
 
-Â  Â  Â  Â  Â  Â  // 2. LÆ°u phiáº¿u xuáº¥t nhÃ¡p
-            const slipRef = doc(collection(db, 'export_tickets'));
-            batch.set(slipRef, { ...slipData, status: 'pending' });
+        // 2. LÆ°u phiáº¿u xuáº¥t nhÃ¡p
+        const slipRef = doc(collection(db, 'export_tickets'));
+        batch.set(slipRef, { ...slipData, status: 'pending' });
 
-            await batch.commit(); // Ghi táº¥t cáº£ má»™t láº§n
+        await batch.commit(); // Ghi táº¥t cáº£ má»™t láº§n
 
-Â  Â  Â  Â  Â  Â  toast.success('LÆ°u nhÃ¡p phiáº¿u xuáº¥t thÃ nh cÃ´ng vÃ  Ä‘áº·t giá»¯ tá»“n kho!');
-Â  Â  Â  Â  Â  Â  resetSlip();
-Â  Â  Â  Â  } catch (error) {
-Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi lÆ°u nhÃ¡p phiáº¿u xuáº¥t: ", error);
-Â  Â  Â  Â  Â  Â  toast.error('ÄÃ£ xáº£y ra lá»—i khi lÆ°u nhÃ¡p.');
-Â  Â  Â  Â  } finally {
-Â  Â  Â  Â  Â  Â  setIsProcessing(false);
-Â  Â  Â  Â  }
-Â  Â  };
+        toast.success('LÆ°u nhÃ¡p phiáº¿u xuáº¥t thÃ nh cÃ´ng vÃ  Ä‘áº·t giá»¯ tá»“n kho!');
+        resetSlip();
+    } catch (error) {
+        console.error("Lá»—i khi lÆ°u nhÃ¡p phiáº¿u xuáº¥t: ", error);
+        toast.error('ÄÃ£ xáº£y ra lá»—i khi lÆ°u nhÃ¡p.');
+    } finally {
+        setIsProcessing(false);
+    }
+};
 
 Â  Â  const handleDirectExport = async () => {
 Â  Â  Â  Â  const slipData = getValidSlipData();
@@ -9741,15 +10187,35 @@ const NewImportPage = () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
 
+        console.log("Data AFTER getValidSlipData:", slipData);
+
         setConfirmModal({ isOpen: false });
         setIsSaving(true);
         try {
+            // === Báº®T Äáº¦U THAY Äá»”I: Truy váº¥n láº¡i thÃ´ng tin sáº£n pháº©m ===
+         const productIdsInSlip = [...new Set(slipData.items.map(item => item.productId))];
+         const productPromises = productIdsInSlip.map(productId => getDoc(doc(db, 'products', productId.trim().toUpperCase()))); // Chuáº©n hÃ³a ID á»Ÿ Ä‘Ã¢y
+         const productSnapshots = await Promise.all(productPromises);
+
+         const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+             if (docSn.exists()) {
+                 // DÃ¹ng ID Ä‘Ã£ chuáº©n hÃ³a lÃ m key
+                 acc[docSn.id] = docSn.data();
+             }
+             return acc;
+         }, {});
+         console.log("Product Details Map (Direct Import):", productDetailsMap);
+         // === Káº¾T THÃšC THAY Äá»”I ===
             for (const item of slipData.items) {
                 const expiryDateObj = parseDateString(item.expiryDate);
                 const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
                 
                 
-                console.log("Item from store for direct import:", item); // Xem item cÃ³ subGroup khÃ´ng
+                // === THAY Äá»”I: Láº¥y subGroup tá»« productDetailsMap ===
+             const productDetails = productDetailsMap[item.productId.trim().toUpperCase()] || {}; // Láº¥y thÃ´ng tin Ä‘Ã£ truy váº¥n
+             const subGroupValue = productDetails.subGroup || ''; // Láº¥y subGroup
+             console.log(`[Direct Import] Processing item: ${item.productId}, Found SubGroup: ${subGroupValue}`);
+             // === Káº¾T THÃšC THAY Äá»”I ===
                 const newLotData = {
                     importDate: Timestamp.now(),
                     productId: item.productId,
@@ -9761,13 +10227,14 @@ const NewImportPage = () => {
                     storageTemp: item.storageTemp,
                     team: item.team,
                     manufacturer: item.manufacturer,
-                    subGroup: item.subGroup || '',
+                    subGroup: subGroupValue,
                     quantityImported: Number(item.quantity),
                     quantityRemaining: Number(item.quantity),
                     notes: item.notes,
                     supplierName: slipData.supplierName,
                 };
                 console.log("Data to save to inventory_lots (direct):", newLotData); // Xem dá»¯ liá»‡u cuá»‘i cÃ¹ng
+                console.log("[After Assignment] Data to save:", newLotData); // Log Ä‘á»‘i tÆ°á»£ng hoÃ n chá»‰nh
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
             
@@ -9859,7 +10326,7 @@ const NewImportPage = () => {
             </div>
 
             <h2>Chi tiáº¿t hÃ ng hÃ³a</h2>
-            <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 0.5fr' }}>
+            <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 1fr 0.5fr' }}>
                 <div className="grid-header">MÃ£ hÃ ng (*)</div>
                 <div className="grid-header">TÃªn hÃ ng</div>
                 <div className="grid-header">Sá»‘ lÃ´</div>
@@ -9869,6 +10336,7 @@ const NewImportPage = () => {
                 <div className="grid-header">Sá»‘ lÆ°á»£ng (*)</div>
                 <div className="grid-header">Ghi chÃº</div>
                 <div className="grid-header">Team</div>
+                <div className="grid-header">NhÃ³m HÃ ng</div>
                 <div className="grid-header">XÃ³a</div>
 
                 {items.map((item, index) => (
@@ -9964,6 +10432,18 @@ const NewImportPage = () => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
+                        {/* ===== CHÃˆN KHá»I NÃ€Y VÃ€O ÄÃ‚Y ===== */}
+<div className="grid-cell"> {/* NhÃ³m HÃ ng */}
+    <input
+        type="text"
+        value={item.subGroup || ''}
+        onChange={e => updateItem(index, 'subGroup', e.target.value)}
+        // readOnly // Bá» comment náº¿u khÃ´ng cho sá»­a
+        title={item.subGroup ? `NhÃ³m hÃ ng: ${item.subGroup}` : "NhÃ³m hÃ ng sáº½ tá»± Ä‘iá»n"}
+        style={{ backgroundColor: item.subGroup ? '#f0f0f0' : '#fff' }}
+    />
+</div>
+{/* ===== Káº¾T THÃšC KHá»I CHÃˆN ===== */}
                         <div className="grid-cell">
                             <button 
                                 type="button" 
@@ -11884,7 +12364,7 @@ import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { formatDate, parseDateString } from '../utils/dateUtils';
+import { formatDate, parseDateString, getRowColorByExpiry } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
@@ -12395,8 +12875,12 @@ const StocktakeSessionPage = () => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â {items.map((item) => (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tr key={item.id}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productId}</td>
+    <tr 
+        key={item.id}
+        // --- THÃŠM DÃ’NG NÃ€Y: TÃ­nh toÃ¡n vÃ  Ã¡p dá»¥ng class mÃ u sáº¯c dá»±a trÃªn HSD ---
+        className={getRowColorByExpiry(item.expiryDate, item.subGroup)} 
+    >
+        <td>{item.productId}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productName}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.lotNumber || '(KhÃ´ng cÃ³)'}</td>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.expiryDate ? formatDate(item.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
@@ -13200,6 +13684,42 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
     };
 };
 
+/**
+ * HÃ m láº¥y lá»‹ch sá»­ tá»“n kho Ä‘á»ƒ váº½ biá»ƒu Ä‘á»“ Sparklines (Biáº¿n Ä‘á»™ng)
+ * @param {string} productId - ID cá»§a sáº£n pháº©m
+ * @param {number} days - Sá»‘ ngÃ y muá»‘n láº¥y dá»¯ liá»‡u (máº·c Ä‘á»‹nh 30)
+ * @returns {Promise<number[]>} - Máº£ng cÃ¡c con sá»‘ tá»“n kho
+ */
+export const getInventoryHistory = async (productId, days = 30) => {
+    try {
+        // 1. Äá»‹nh nghÄ©a Collection lÆ°u lá»‹ch sá»­ (Giáº£ sá»­ báº¡n cÃ³ collection nÃ y)
+        // Náº¿u chÆ°a cÃ³ logic lÆ°u lá»‹ch sá»­ hÃ ng ngÃ y, hÃ m nÃ y sáº½ tráº£ vá» máº£ng rá»—ng Ä‘á»ƒ khÃ´ng bá»‹ lá»—i web.
+        const historyRef = collection(db, "inventory_snapshots"); 
+        
+        const q = query(
+            historyRef,
+            where("productId", "==", productId),
+            orderBy("date", "asc"), // Sáº¯p xáº¿p ngÃ y tÄƒng dáº§n
+            limit(days)
+        );
+
+        const querySnapshot = await getDocs(q);
+        
+        // 2. Láº¥y ra máº£ng sá»‘ lÆ°á»£ng tá»“n (VÃ­ dá»¥: [100, 98, 95, 102...])
+        const data = querySnapshot.docs.map(doc => doc.data().totalQuantity || 0);
+        
+        // Náº¿u khÃ´ng cÃ³ dá»¯ liá»‡u (do chÆ°a setup job lÆ°u snapshot), tráº£ vá» máº£ng rá»—ng
+        if (!data || data.length === 0) {
+             return []; 
+        }
+
+        return data;
+    } catch (error) {
+        console.warn(`KhÃ´ng thá»ƒ láº¥y lá»‹ch sá»­ cho SP ${productId} (cÃ³ thá»ƒ do chÆ°a táº¡o collection 'inventory_snapshots'):`, error);
+        return []; // Tráº£ vá» máº£ng rá»—ng Ä‘á»ƒ web váº«n cháº¡y bÃ¬nh thÆ°á»ng
+    }
+};
+
 
 
 
@@ -13887,7 +14407,6 @@ const useImportSlipStore = create(
                         team: productData.team || '',
                         manufacturer: productData.manufacturer || '',
                         conversionFactor: productData.conversionFactor || 1,
-                        subGroup: productData.subGroup || '',
                         subGroup: subGroupValue,
                         productNotFound: false,
                     });
@@ -16214,7 +16733,35 @@ tbody tr.selected-row td {
     font-size: 24px;
 }
 
+/* --- THÃŠM Má»šI: MÃ u sáº¯c cáº£nh bÃ¡o HSD (Copy y nguyÃªn tá»« QuickStockLookup) --- */
 
+.expired-black {
+    background-color: #343a40 !important;
+    color: white !important;
+    border-left: 5px solid #000 !important; /* ThÃªm viá»n trÃ¡i Ä‘áº­m cho mobile dá»… nhÃ¬n */
+}
+.expired-black strong, 
+.expired-black span {
+    color: white !important;
+}
+
+.near-expiry-red {
+    background-color: #f8d7da !important;
+    border-left: 5px solid #dc3545 !important;
+}
+.near-expiry-red strong, .near-expiry-red span { color: #721c24 !important; }
+
+.near-expiry-orange {
+    background-color: #ffe8cc !important;
+    border-left: 5px solid #fd7e14 !important;
+}
+.near-expiry-orange strong, .near-expiry-orange span { color: #856404 !important; }
+
+.near-expiry-yellow {
+    background-color: #fff3cd !important;
+    border-left: 5px solid #ffc107 !important;
+}
+.near-expiry-yellow strong, .near-expiry-yellow span { color: #856404 !important; }
 
 
 
@@ -16734,6 +17281,192 @@ describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
 
 
 
+--- FILE: D:\quan-ly-kho\src\utils\excelExportUtils.js ---
+
+
+// src/utils/excelExportUtils.js
+import ExcelJS from 'exceljs';
+import { collection, getDocs, query, orderBy, documentId, where } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import { formatDate, getRowColorByExpiry } from './dateUtils';
+
+export const exportFullInventoryToExcel = async () => {
+  // 1. Khá»Ÿi táº¡o Workbook
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('TonKhoChiTiet');
+
+  // 2. Äá»‹nh nghÄ©a cá»™t
+  worksheet.columns = [
+    { header: 'MÃ£ hÃ ng', key: 'productId', width: 20 },
+    { header: 'TÃªn hÃ ng', key: 'productName', width: 40 },
+    { header: 'Sá»‘ lÃ´', key: 'lotNumber', width: 18 },
+    { header: 'Háº¡n sá»­ dá»¥ng', key: 'expiryDate', width: 15 },
+    { header: 'Sá»‘ lÆ°á»£ng', key: 'quantity', width: 15, style: { numFmt: '#,##0' } },
+    { header: 'ÄVT', key: 'unit', width: 10 },
+    { header: 'Quy cÃ¡ch', key: 'packaging', width: 25 },
+    { header: 'Nhiá»‡t Ä‘á»™ BQ', key: 'storageTemp', width: 20 },
+    { header: 'HÃ£ng sáº£n xuáº¥t', key: 'manufacturer', width: 25 },
+    { header: 'NhÃ³m hÃ ng', key: 'subGroup', width: 15 },
+    { header: 'Team', key: 'team', width: 10 },
+  ];
+
+  // Táº¡o bá»™ lá»c cho dÃ²ng tiÃªu Ä‘á»
+  worksheet.autoFilter = 'A1:K1';
+
+  // Äá»‹nh dáº¡ng Header
+  const headerRow = worksheet.getRow(1);
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF007BFF' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+
+  try {
+    // 3. Táº£i dá»¯ liá»‡u
+    const productsRef = collection(db, 'products');
+    const productsQuery = query(productsRef, orderBy(documentId()));
+    
+    const lotsRef = collection(db, 'inventory_lots');
+    const lotsQuery = query(lotsRef, where('quantityRemaining', '>', 0));
+
+    const [productsSnap, lotsSnap] = await Promise.all([
+      getDocs(productsQuery),
+      getDocs(lotsQuery)
+    ]);
+
+    // 4. GOM NHÃ“M VÃ€ Cá»˜NG Dá»’N Sá» LÆ¯á»¢NG (LOGIC Má»šI)
+    // Map: productId -> Map: lotKey -> LotData (Ä‘Ã£ cá»™ng dá»“n)
+    const productLotsMap = new Map();
+
+    lotsSnap.forEach(doc => {
+        const lot = doc.data();
+        const productId = lot.productId;
+        // Táº¡o key duy nháº¥t cho lÃ´: MÃ£ hÃ ng + Sá»‘ lÃ´ + HSD (Ä‘á»ƒ trÃ¡nh gá»™p nháº§m cÃ¡c lÃ´ trÃ¹ng sá»‘ nhÆ°ng khÃ¡c date)
+        // Náº¿u khÃ´ng cÃ³ sá»‘ lÃ´, dÃ¹ng 'NO_LOT'. Náº¿u khÃ´ng cÃ³ date, dÃ¹ng 'NO_DATE'
+        const lotNumber = lot.lotNumber ? lot.lotNumber.trim() : 'NO_LOT';
+        const expiryTime = lot.expiryDate ? lot.expiryDate.toMillis() : 'NO_DATE';
+        const uniqueLotKey = `${lotNumber}_${expiryTime}`;
+
+        if (!productLotsMap.has(productId)) {
+            productLotsMap.set(productId, new Map());
+        }
+
+        const lotsOfProduct = productLotsMap.get(productId);
+
+        if (lotsOfProduct.has(uniqueLotKey)) {
+            // Náº¿u Ä‘Ã£ cÃ³ lÃ´ nÃ y, cá»™ng dá»“n sá»‘ lÆ°á»£ng tá»“n
+            const existingLot = lotsOfProduct.get(uniqueLotKey);
+            existingLot.quantityRemaining += lot.quantityRemaining;
+        } else {
+            // Náº¿u chÆ°a cÃ³, thÃªm má»›i (sao chÃ©p dá»¯ liá»‡u Ä‘á»ƒ khÃ´ng áº£nh hÆ°á»Ÿng gá»‘c)
+            lotsOfProduct.set(uniqueLotKey, { ...lot });
+        }
+    });
+
+    // 5. Duyá»‡t qua tá»«ng sáº£n pháº©m vÃ  xuáº¥t dÃ²ng
+    productsSnap.forEach(doc => {
+      const product = doc.data();
+      const productId = doc.id;
+      
+      // Láº¥y danh sÃ¡ch cÃ¡c lÃ´ Ä‘Ã£ gá»™p cá»§a sáº£n pháº©m nÃ y
+      const aggregatedLotsMap = productLotsMap.get(productId);
+      
+      if (aggregatedLotsMap && aggregatedLotsMap.size > 0) {
+          // Chuyá»ƒn Map thÃ nh máº£ng Ä‘á»ƒ sáº¯p xáº¿p
+          const sortedLots = Array.from(aggregatedLotsMap.values()).sort((a, b) => {
+               // Sáº¯p xáº¿p FEFO (HSD gáº§n nháº¥t lÃªn trÆ°á»›c)
+               const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+               const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+               return dateA - dateB;
+          });
+
+          // Xuáº¥t tá»«ng lÃ´ (Ä‘Ã£ cá»™ng dá»“n)
+          sortedLots.forEach(lot => {
+              addRowToSheet(worksheet, product, productId, lot);
+          });
+      } else {
+          // Sáº£n pháº©m háº¿t hÃ ng
+          addRowToSheet(worksheet, product, productId, null);
+      }
+    });
+
+    // 6. Xuáº¥t file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `TonKhoChiTiet_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
+
+    return true;
+  } catch (error) {
+    console.error("Lá»—i xuáº¥t Excel:", error);
+    throw error;
+  }
+};
+
+// --- HÃ m phá»¥ trá»£ Ä‘á»ƒ thÃªm dÃ²ng vÃ  Ä‘á»‹nh dáº¡ng ---
+const addRowToSheet = (worksheet, product, productId, lot) => {
+    const expiryDateObj = lot?.expiryDate ? lot.expiryDate : null;
+    const quantity = lot ? lot.quantityRemaining : 0;
+    const lotNumber = lot ? (lot.lotNumber || '') : '';
+    
+    const colorClass = getRowColorByExpiry(expiryDateObj, product.subGroup);
+    
+    let rowBackgroundColor = null;
+    let fontColor = 'FF000000';
+
+    if (quantity > 0) { 
+        if (colorClass.includes('expired-black')) {
+            rowBackgroundColor = 'FF212529'; 
+            fontColor = 'FFFFFFFF';          
+        } else if (colorClass.includes('near-expiry-red')) {
+            rowBackgroundColor = 'FFF8D7DA'; 
+        } else if (colorClass.includes('near-expiry-orange')) {
+            rowBackgroundColor = 'FFFFE8CC'; 
+        } else if (colorClass.includes('near-expiry-yellow')) {
+            rowBackgroundColor = 'FFFFF3CD'; 
+        }
+    }
+
+    const rowData = {
+      productId: productId,
+      productName: product.productName,
+      lotNumber: lotNumber,                 
+      expiryDate: expiryDateObj ? formatDate(expiryDateObj) : '', 
+      quantity: quantity,                   
+      unit: product.unit,
+      packaging: product.packaging,
+      storageTemp: product.storageTemp,
+      manufacturer: product.manufacturer,
+      subGroup: product.subGroup,
+      team: product.team
+    };
+
+    const newRow = worksheet.addRow(rowData);
+
+    newRow.eachCell({ includeEmpty: true }, (cell) => {
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      
+      let alignHoriz = 'center'; 
+      if (cell._address.startsWith('B')) alignHoriz = 'left'; 
+      cell.alignment = { vertical: 'middle', horizontal: alignHoriz, wrapText: true };
+
+      let isBold = false;
+      if (cell._address.startsWith('A') || cell._address.startsWith('E')) isBold = true;
+      cell.font = { bold: isBold, color: { argb: fontColor } };
+
+      if (rowBackgroundColor) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBackgroundColor } };
+      }
+    });
+};
+
+
+
 --- FILE: D:\quan-ly-kho\src\utils\numberUtils.js ---
 
 
@@ -17032,20 +17765,21 @@ export const exportStocktakeToPDF = async (session, items) => {
     doc.text(`Ghi chÃº phiÃªn: ${session.notes || 'KhÃ´ng cÃ³'}`, 14, 31);
 
     // --- Sá»¬A Lá»–I: Bá» cá»™t STT khá»i tiÃªu Ä‘á» ---
-    const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Nhiá»‡t Ä‘á»™ BQ', 'Tá»“n kho HT', 'Tá»“n kho TT', 'Ghi chÃº']];
+    const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Nhiá»‡t Ä‘á»™ BQ', 'Tá»“n kho HT', 'Tá»“n kho TT', 'NhÃ³m HÃ ng', 'Ghi chÃº']]; // <-- ThÃªm "NhÃ³m HÃ ng" vÃ o Ä‘Ã¢y
     
     // --- Sá»¬A Lá»–I: Bá» cá»™t STT khá»i ná»™i dung ---
     const body = items.map(item => [
         item.productId,
         item.productName,
-        item.lotNumber,
+        item.lotNumber || '(KhÃ´ng cÃ³)', // ThÃªm fallback
         item.expiryDate ? formatDate(item.expiryDate.toDate()) : 'N/A',
         item.unit,
         item.packaging,
         item.storageTemp || 'N/A',
-        formatNumber(item.systemQty || item.expectedQuantity),
-        '', 
-        ''
+        formatNumber(item.systemQty || 0), // ThÃªm fallback
+        item.countedQty !== null && item.countedQty !== undefined ? formatNumber(item.countedQty) : '', // Chá»‰ hiá»ƒn thá»‹ náº¿u Ä‘Ã£ Ä‘áº¿m
+        item.subGroup || '', // <-- ThÃªm subGroup vÃ o Ä‘Ã¢y
+        item.notes || '' // <-- Di chuyá»ƒn Ghi chÃº ra cuá»‘i
     ]);
 
     autoTable(doc, {
@@ -17059,21 +17793,26 @@ export const exportStocktakeToPDF = async (session, items) => {
         // --- Sá»¬A Lá»–I: Cáº­p nháº­t láº¡i chá»‰ sá»‘ cÃ¡c cá»™t ---
         columnStyles: {
             0: { cellWidth: 27 },  // MÃ£ hÃ ng
-            1: { cellWidth: 71, halign: 'left' }, // TÃªn sáº£n pháº©m
-            2: { cellWidth: 27 },  // Sá»‘ lÃ´
-            3: { cellWidth: 27 },  // HSD
-            4: { cellWidth: 16 },  // ÄVT
-            5: { cellWidth: 31 },  // Quy cÃ¡ch
-            6: { cellWidth: 21 },  // Nhiá»‡t Ä‘á»™ BQ
-            7: { cellWidth: 21, halign: 'center' }, // Tá»“n kho HT
-            8: { cellWidth: 21 },  // Tá»“n kho TT
-            9: { cellWidth: 'auto', halign: 'left' }, // Ghi chÃº
+            1: { cellWidth: 60, halign: 'left' }, // TÃªn sáº£n pháº©m
+            2: { cellWidth: 25 },  // Sá»‘ lÃ´
+            3: { cellWidth: 25 },  // HSD
+            4: { cellWidth: 14 },  // ÄVT
+            5: { cellWidth: 30 },  // Quy cÃ¡ch
+            6: { cellWidth: 20 },  // Nhiá»‡t Ä‘á»™ BQ
+            7: { cellWidth: 18 }, // Tá»“n kho HT
+            8: { cellWidth: 18 }, // Tá»“n kho TT
+            9: { cellWidth: 21 }, // NhÃ³m HÃ ng <-- ThÃªm style cho cá»™t má»›i
+            10: { cellWidth: 'auto', halign: 'left' }, // Ghi chÃº <-- Cáº­p nháº­t index
         },
         didParseCell: function (data) {
-            // Cáº­p nháº­t láº¡i chá»‰ sá»‘ cá»™t cáº§n in Ä‘áº­m
+            // Cáº­p nháº­t láº¡i chá»‰ sá»‘ cá»™t cáº§n in Ä‘áº­m (Tá»“n HT lÃ  cá»™t 8, index 7)
             if (data.section === 'body' && data.column.index === 7) {
                 data.cell.styles.fontStyle = 'bold';
             }
+            // In Ä‘áº­m cá»™t Tá»“n TT (cá»™t 9, index 8) náº¿u nÃ³ cÃ³ giÃ¡ trá»‹
+             if (data.section === 'body' && data.column.index === 8 && data.cell.raw !== '') {
+                 data.cell.styles.fontStyle = 'bold';
+             }
         }
     });
 
