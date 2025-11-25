@@ -1,4 +1,52 @@
-﻿--- FILE: D:\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
+﻿--- FILE: D:\quan-ly-kho\src\components\AccessDenied.jsx ---
+
+
+import React from 'react';
+import { useAuth } from '../context/UserContext';
+
+const AccessDenied = () => {
+  const { logout } = useAuth();
+
+  return (
+    <div style={{ 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      backgroundColor: '#f8f9fa',
+      textAlign: 'center',
+      padding: '20px'
+    }}>
+      <h1 style={{ color: '#dc3545', fontSize: '3rem', marginBottom: '10px' }}>â›”</h1>
+      <h2 style={{ color: '#333' }}>Truy cáº­p bá»‹ tá»« chá»‘i</h2>
+      <p style={{ color: '#666', maxWidth: '500px', marginBottom: '30px' }}>
+        TÃ i khoáº£n Gmail nÃ y chÆ°a Ä‘Æ°á»£c cáº¥p quyá»n truy cáº­p vÃ o há»‡ thá»‘ng Kho PT Biomed.
+        <br />Vui lÃ²ng liÃªn há»‡ Quáº£n trá»‹ viÃªn (Owner) Ä‘á»ƒ Ä‘Æ°á»£c thÃªm vÃ o danh sÃ¡ch.
+      </p>
+      <button 
+        onClick={logout} 
+        style={{
+          padding: '10px 20px',
+          backgroundColor: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }}
+      >
+        ÄÄƒng xuáº¥t
+      </button>
+    </div>
+  );
+};
+
+export default AccessDenied;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
 
 
 // src/components/AddAllowedUserModal.jsx
@@ -925,7 +973,6 @@ import { FiGrid } from 'react-icons/fi';
 import SalesAnalyticsPage from '../pages/SalesAnalyticsPage';
 import ProductLedgerPage from '../pages/ProductLedgerPage';
 import { usePresence } from '../hooks/usePresence';
-import InventoryCheckPage from '../pages/InventoryCheckPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -984,7 +1031,6 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/sales-analytics" element={<SalesAnalyticsPage />} />
           <Route path="/product-ledger" element={<ProductLedgerPage />} />
-          <Route path="/inventory-check" element={<InventoryCheckPage />} />
         </Routes>
       </main>
 
@@ -3730,12 +3776,14 @@ import { toast } from 'react-toastify';
 import { 
     FiGrid, FiArchive, FiFilePlus, FiFileMinus, FiClipboard, 
     FiFileText, FiShare2, FiCheckSquare, FiUsers, FiUpload, 
-    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook
+    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
+import { useAuth } from '../context/UserContext';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const { role } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -7467,340 +7515,6 @@ return (
 
 export default ImportListPage;
 
-
-
-
---- FILE: D:\quan-ly-kho\src\pages\InventoryCheckPage.jsx ---
-
-
-import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import Spinner from '../components/Spinner';
-import { formatNumber } from '../utils/numberUtils';
-import { FiUploadCloud, FiAlertTriangle, FiCheckCircle, FiXOctagon } from 'react-icons/fi';
-import { toast } from 'react-toastify';
-
-const InventoryCheckPage = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [fileName, setFileName] = useState('');
-    const [reportData, setReportData] = useState(null);
-    const [activeTab, setActiveTab] = useState('diff'); // 'diff', 'missing_sys', 'missing_excel'
-
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setFileName(file.name);
-        setIsLoading(true);
-
-        try {
-            // 1. Äá»c Excel
-            const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data);
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-            // 2. TÃ¬m vá»‹ trÃ­ cÃ¡c cá»™t quan trá»ng
-            let headerIndex = -1, colCode = -1, colLot = -1, colQty = -1, colName = -1, colUnit = -1;
-
-            for (let i = 0; i < jsonData.length; i++) {
-                const row = jsonData[i];
-                const rowStr = row.map(cell => String(cell).toLowerCase());
-                
-                // TÃ¬m index cá»§a cÃ¡c cá»™t dá»±a trÃªn tá»« khÃ³a
-                const cCode = rowStr.findIndex(s => s.includes('mÃ£ hÃ ng') || s.includes('mÃ£ sáº£n pháº©m'));
-                const cLot = rowStr.findIndex(s => s.includes('sá»‘ lÃ´') || s.includes('lÃ´'));
-                const cQty = rowStr.findIndex(s => s.includes('tá»“n cuá»‘i') || s.includes('sá»‘ lÆ°á»£ng'));
-                const cName = rowStr.findIndex(s => s.includes('tÃªn hÃ ng'));
-                const cUnit = rowStr.findIndex(s => s.includes('Ä‘vt') || s.includes('Ä‘Æ¡n vá»‹'));
-
-                if (cCode !== -1 && cQty !== -1) {
-                    headerIndex = i;
-                    colCode = cCode;
-                    colLot = cLot; // CÃ³ thá»ƒ -1 náº¿u file excel khÃ´ng cÃ³ cá»™t lÃ´
-                    colQty = cQty;
-                    colName = cName;
-                    colUnit = cUnit;
-                    break;
-                }
-            }
-
-            if (headerIndex === -1) {
-                toast.error("KhÃ´ng tÃ¬m tháº¥y dÃ²ng tiÃªu Ä‘á» (MÃ£ hÃ ng, Sá»‘ lÆ°á»£ng...) trong file Excel.");
-                setIsLoading(false);
-                return;
-            }
-
-            // 3. Tá»•ng há»£p dá»¯ liá»‡u Excel (Key = MÃ£ hÃ ng + Sá»‘ lÃ´)
-            // Map: "CODE_LOT" -> { ...data }
-            const excelMap = new Map();
-
-            for (let i = headerIndex + 1; i < jsonData.length; i++) {
-                const row = jsonData[i];
-                const rawCode = row[colCode];
-                if (!rawCode || String(rawCode).toLowerCase().includes('tá»•ng')) continue;
-
-                const code = String(rawCode).trim().toUpperCase();
-                // Náº¿u khÃ´ng tÃ¬m tháº¥y cá»™t lÃ´, hoáº·c Ã´ lÃ´ trá»‘ng -> GÃ¡n lÃ  'NO_LOT'
-                let lot = (colLot !== -1 && row[colLot]) ? String(row[colLot]).trim() : 'NO_LOT';
-                // Chuáº©n hÃ³a lÃ´: bá» khoáº£ng tráº¯ng thá»«a
-                lot = lot.replace(/\s+/g, ''); 
-
-                const uniqueKey = `${code}_${lot}`;
-
-                let qty = 0;
-                if (row[colQty]) {
-                    qty = Number(String(row[colQty]).replace(/,/g, '')) || 0;
-                }
-                
-                const name = colName !== -1 ? row[colName] : '';
-                const unit = colUnit !== -1 ? row[colUnit] : '';
-
-                if (excelMap.has(uniqueKey)) {
-                    excelMap.get(uniqueKey).quantity += qty;
-                } else {
-                    excelMap.set(uniqueKey, { 
-                        key: uniqueKey, 
-                        productId: code, 
-                        lotNumber: lot === 'NO_LOT' ? '' : lot, 
-                        productName: name, 
-                        unit: unit,
-                        quantity: qty 
-                    });
-                }
-            }
-
-            // 4. Táº£i dá»¯ liá»‡u Há»‡ thá»‘ng (Inventory Lots)
-            // Chá»‰ láº¥y cÃ¡c lÃ´ cÃ³ tá»“n > 0
-            const lotsQuery = query(collection(db, 'inventory_lots'), where('quantityRemaining', '>', 0));
-            const lotsSnap = await getDocs(lotsQuery);
-            
-            const systemMap = new Map();
-
-            lotsSnap.forEach(doc => {
-                const data = doc.data();
-                const code = data.productId;
-                let lot = data.lotNumber ? String(data.lotNumber).trim().replace(/\s+/g, '') : 'NO_LOT';
-                
-                const uniqueKey = `${code}_${lot}`;
-
-                if (systemMap.has(uniqueKey)) {
-                    systemMap.get(uniqueKey).quantity += data.quantityRemaining;
-                } else {
-                    systemMap.set(uniqueKey, {
-                        key: uniqueKey,
-                        productId: code,
-                        lotNumber: data.lotNumber || '',
-                        productName: data.productName,
-                        unit: data.unit,
-                        quantity: data.quantityRemaining
-                    });
-                }
-            });
-
-            // 5. So sÃ¡nh chi tiáº¿t
-            const diffItems = [];
-            const missingInSys = [];
-            // const missingInExcel = []; // (Logic gá»™p vÃ o diffItems náº¿u System > 0)
-
-            // Duyá»‡t Excel so vá»›i System
-            excelMap.forEach((excelItem, key) => {
-                const sysItem = systemMap.get(key);
-                const sysQty = sysItem ? sysItem.quantity : 0;
-                const excelQty = excelItem.quantity;
-
-                if (sysQty !== excelQty) {
-                    const diff = sysQty - excelQty;
-                    const itemData = {
-                        productId: excelItem.productId,
-                        productName: excelItem.productName,
-                        lotNumber: excelItem.lotNumber,
-                        unit: excelItem.unit,
-                        sysQty: sysQty,
-                        excelQty: excelQty,
-                        diff: diff,
-                        type: sysItem ? 'diff' : 'missing_sys' // Náº¿u sysItem ko cÃ³ nghÄ©a lÃ  System = 0
-                    };
-
-                    if (!sysItem) {
-                        // CÃ³ trong Excel, System = 0 (hoáº·c khÃ´ng cÃ³ lÃ´ nÃ y)
-                        missingInSys.push(itemData);
-                    } else {
-                        // CÃ³ cáº£ 2 nhÆ°ng lá»‡ch sá»‘ lÆ°á»£ng
-                        diffItems.push(itemData);
-                    }
-                }
-                // ÄÃ¡nh dáº¥u lÃ  Ä‘Ã£ kiá»ƒm tra
-                if (sysItem) systemMap.delete(key); 
-            });
-
-            // Nhá»¯ng gÃ¬ cÃ²n láº¡i trong systemMap lÃ  cÃ³ trong System nhÆ°ng Excel khÃ´ng cÃ³ (Excel = 0)
-            systemMap.forEach((sysItem) => {
-                diffItems.push({
-                    productId: sysItem.productId,
-                    productName: sysItem.productName,
-                    lotNumber: sysItem.lotNumber,
-                    unit: sysItem.unit,
-                    sysQty: sysItem.quantity,
-                    excelQty: 0,
-                    diff: sysItem.quantity, // DÆ°Æ¡ng (System thá»«a)
-                    type: 'missing_excel'
-                });
-            });
-
-            // Sáº¯p xáº¿p láº¡i cho Ä‘áº¹p
-            diffItems.sort((a, b) => a.productId.localeCompare(b.productId));
-            missingInSys.sort((a, b) => a.productId.localeCompare(b.productId));
-
-            setReportData({ diffItems, missingInSys });
-            
-            if (diffItems.length === 0 && missingInSys.length === 0) {
-                toast.success("Tuyá»‡t vá»i! Tá»“n kho khá»›p 100% theo tá»«ng lÃ´.");
-            } else {
-                toast.warning("PhÃ¡t hiá»‡n chÃªnh lá»‡ch tá»“n kho!");
-            }
-
-        } catch (error) {
-            console.error("Lá»—i:", error);
-            toast.error("Lá»—i khi xá»­ lÃ½ file. Vui lÃ²ng kiá»ƒm tra Ä‘á»‹nh dáº¡ng Excel.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Helper render tráº¡ng thÃ¡i
-    const renderDiffStatus = (item) => {
-        if (item.diff > 0) {
-            return <span className="badge" style={{backgroundColor: '#ffeeba', color: '#856404'}}>
-                Há»‡ thá»‘ng DÆ¯ {formatNumber(Math.abs(item.diff))} {item.unit}
-            </span>;
-        } else {
-            return <span className="badge" style={{backgroundColor: '#f8d7da', color: '#721c24'}}>
-                Há»‡ thá»‘ng THIáº¾U {formatNumber(Math.abs(item.diff))} {item.unit}
-            </span>;
-        }
-    };
-
-    return (
-        <div>
-            <div className="page-header">
-                <h1>Äá»‘i chiáº¿u Tá»“n kho (Theo LÃ´)</h1>
-            </div>
-
-            <div className="form-section" style={{ textAlign: 'center', padding: '40px', border: '2px dashed #ccc', borderRadius: '10px' }}>
-                <input type="file" id="excel-upload" hidden accept=".xlsx, .xls, .csv" onChange={handleFileUpload} />
-                <label htmlFor="excel-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <FiUploadCloud size={50} color="#007bff" />
-                    <span style={{ marginTop: '10px', fontSize: '18px', fontWeight: 'bold' }}>
-                        {fileName || "Chá»n file Excel Tá»“n kho Chi tiáº¿t"}
-                    </span>
-                    <span style={{ color: '#666', fontSize: '14px' }}>
-                        File cáº§n cÃ³ cÃ¡c cá»™t: <strong>MÃ£ hÃ ng, Sá»‘ lÃ´, Tá»“n cuá»‘i ká»³ (hoáº·c Sá»‘ lÆ°á»£ng)</strong>
-                    </span>
-                </label>
-            </div>
-
-            {isLoading && <Spinner />}
-
-            {reportData && !isLoading && (
-                <div style={{ marginTop: '30px' }}>
-                    <div className="tabs" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                        <button 
-                            className={`btn-secondary ${activeTab === 'diff' ? 'btn-primary' : ''}`}
-                            onClick={() => setActiveTab('diff')}
-                            style={activeTab === 'diff' ? {backgroundColor: '#dc3545', color: 'white', border: 'none'} : {}}
-                        >
-                            Lá»‡ch Sá»‘ LÆ°á»£ng ({reportData.diffItems.length})
-                        </button>
-                        <button 
-                            className={`btn-secondary ${activeTab === 'missing_sys' ? 'btn-primary' : ''}`}
-                            onClick={() => setActiveTab('missing_sys')}
-                            style={activeTab === 'missing_sys' ? {backgroundColor: '#ffc107', color: 'black', border: 'none'} : {}}
-                        >
-                            CÃ³ trong Excel - Há»‡ thá»‘ng = 0 ({reportData.missingInSys.length})
-                        </button>
-                    </div>
-
-                    {activeTab === 'diff' && (
-                        <div className="table-responsive-wrapper">
-                            <h3>Danh sÃ¡ch lá»‡ch sá»‘ lÆ°á»£ng (So khá»›p MÃ£ + LÃ´)</h3>
-                            <table className="products-table">
-                                <thead>
-                                    <tr>
-                                        <th>MÃ£ hÃ ng</th>
-                                        <th>TÃªn hÃ ng</th>
-                                        <th>Sá»‘ lÃ´</th>
-                                        <th>Tá»“n Há»‡ thá»‘ng</th>
-                                        <th>Tá»“n Excel</th>
-                                        <th>ChÃªnh lá»‡ch</th>
-                                        <th>Tráº¡ng thÃ¡i</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reportData.diffItems.map((item, index) => (
-                                        <tr key={index}>
-                                            <td><strong>{item.productId}</strong></td>
-                                            <td>{item.productName}</td>
-                                            <td><strong style={{color: '#007bff'}}>{item.lotNumber || '(KhÃ´ng cÃ³)'}</strong></td>
-                                            <td>{formatNumber(item.sysQty)}</td>
-                                            <td>{formatNumber(item.excelQty)}</td>
-                                            <td style={{ color: item.diff > 0 ? 'orange' : 'red', fontWeight: 'bold' }}>
-                                                {item.diff > 0 ? `+${formatNumber(item.diff)}` : formatNumber(item.diff)}
-                                            </td>
-                                            <td>{renderDiffStatus(item)}</td>
-                                        </tr>
-                                    ))}
-                                    {reportData.diffItems.length === 0 && (
-                                        <tr><td colSpan="7" style={{textAlign: 'center'}}>Tuyá»‡t vá»i! KhÃ´ng cÃ³ lÃ´ nÃ o bá»‹ lá»‡ch sá»‘ lÆ°á»£ng.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    {activeTab === 'missing_sys' && (
-                        <div className="table-responsive-wrapper">
-                            <h3>LÃ´ hÃ ng cÃ³ trong Excel nhÆ°ng Há»‡ thá»‘ng bÃ¡o = 0 (hoáº·c khÃ´ng cÃ³)</h3>
-                            <table className="products-table">
-                                <thead>
-                                    <tr>
-                                        <th>MÃ£ hÃ ng</th>
-                                        <th>TÃªn hÃ ng</th>
-                                        <th>Sá»‘ lÃ´</th>
-                                        <th>Tá»“n Excel</th>
-                                        <th>Káº¿t luáº­n</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reportData.missingInSys.map((item, index) => (
-                                        <tr key={index}>
-                                            <td><strong>{item.productId}</strong></td>
-                                            <td>{item.productName}</td>
-                                            <td><strong>{item.lotNumber}</strong></td>
-                                            <td>{formatNumber(item.excelQty)}</td>
-                                            <td>
-                                                <span className="badge" style={{backgroundColor: '#f8d7da', color: '#721c24'}}>
-                                                    Há»‡ thá»‘ng THIáº¾U {formatNumber(item.excelQty)} {item.unit}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {reportData.missingInSys.length === 0 && (
-                                        <tr><td colSpan="5" style={{textAlign: 'center'}}>Dá»¯ liá»‡u khá»›p hoÃ n toÃ n.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-};
-
-export default InventoryCheckPage;
 
 
 
@@ -17997,17 +17711,19 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import AccessDenied from './components/AccessDenied'; // <-- Import trang má»›i táº¡o
 
 // Import login styles Ä‘á»ƒ dÃ¹ng cho wrapper
 import loginStyles from './components/LoginPage.module.css';
 
 const AppRoutes = () => {
-  const { user, role, loading } = useAuth(); // Sá»­a userRole thÃ nh role cho nháº¥t quÃ¡n
+  const { user, role, loading } = useAuth();
 
   if (loading) {
-    return null;
+    return <div className="loading-screen">Äang táº£i...</div>; // Hoáº·c component Spinner cá»§a báº¡n
   }
 
+  // 1. ChÆ°a Ä‘Äƒng nháº­p -> Hiá»‡n trang Login
   if (!user) {
     return (
       <div className={loginStyles.loginPageWrapper}>
@@ -18016,14 +17732,19 @@ const AppRoutes = () => {
     );
   }
 
-  // Logic Ä‘iá»u hÆ°á»›ng sau khi Ä‘Ã£ Ä‘Äƒng nháº­p
+  // 2. ÄÃ£ Ä‘Äƒng nháº­p nhÆ°ng KHÃ”NG CÃ“ QUYá»€N (role rá»—ng hoáº·c null) -> Hiá»‡n trang Tá»« chá»‘i
+  if (!role) {
+    return <AccessDenied />;
+  }
+
+  // 3. CÃ³ quyá»n -> PhÃ¢n luá»“ng
   return (
     <Routes>
       {role === 'owner' ? (
-        // Náº¿u lÃ  owner, cho phÃ©p truy cáº­p táº¥t cáº£ cÃ¡c trang quáº£n trá»‹
+        // Náº¿u lÃ  owner -> AdminLayout
         <Route path="/*" element={<AdminLayout />} />
       ) : (
-        // Náº¿u lÃ  cÃ¡c vai trÃ² khÃ¡c, chá»‰ cho phÃ©p truy cáº­p ViewerLayout
+        // Náº¿u lÃ  cÃ¡c role há»£p lá»‡ khÃ¡c (med, bio, admin...) -> ViewerLayout
         <Route path="/*" element={<ViewerLayout />} />
       )}
     </Routes>

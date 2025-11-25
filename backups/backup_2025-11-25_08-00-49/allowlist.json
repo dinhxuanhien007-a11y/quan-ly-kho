@@ -1,0 +1,263 @@
+[
+  {
+    "_id": "18150068anhnguyen@gmail.com",
+    "email": "18150068anhnguyen@gmail.com",
+    "role": "bio",
+    "addedAt": {
+      "_seconds": 1760291920,
+      "_nanoseconds": 784000000
+    }
+  },
+  {
+    "_id": "anhnguyencgtg@gmail.com",
+    "email": "anhnguyencgtg@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758511059,
+      "_nanoseconds": 259000000
+    }
+  },
+  {
+    "_id": "authanhluan.ocl@gmail.com",
+    "email": "authanhluan.ocl@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1760291751,
+      "_nanoseconds": 878000000
+    }
+  },
+  {
+    "_id": "datdo18041993@gmail.com",
+    "email": "datdo18041993@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758589269,
+      "_nanoseconds": 206000000
+    }
+  },
+  {
+    "_id": "dinhkhang1531997@gmail.com",
+    "email": "dinhkhang1531997@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758592062,
+      "_nanoseconds": 168000000
+    }
+  },
+  {
+    "_id": "dinhxuanhien007@gmail.com",
+    "email": "dinhxuanhien007@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758341424,
+      "_nanoseconds": 53000000
+    }
+  },
+  {
+    "_id": "dinhxuanhien07@gmail.com",
+    "email": "dinhxuanhien07@gmail.com",
+    "addedAt": {
+      "_seconds": 1758341716,
+      "_nanoseconds": 933000000
+    },
+    "role": "owner"
+  },
+  {
+    "_id": "dinhxuanhien09@gmail.com",
+    "email": "dinhxuanhien09@gmail.com",
+    "role": "med",
+    "addedAt": {
+      "_seconds": 1758435635,
+      "_nanoseconds": 469000000
+    }
+  },
+  {
+    "_id": "dothnam1994@gmail.com",
+    "email": "dothnam1994@gmail.com",
+    "role": "bio",
+    "addedAt": {
+      "_seconds": 1760291932,
+      "_nanoseconds": 657000000
+    }
+  },
+  {
+    "_id": "dungcao10@gmail.com",
+    "email": "dungcao10@gmail.com",
+    "role": "bio",
+    "addedAt": {
+      "_seconds": 1760291944,
+      "_nanoseconds": 421000000
+    }
+  },
+  {
+    "_id": "hiendxt@gmail.com",
+    "email": "hiendxt@gmail.com",
+    "role": "bio",
+    "addedAt": {
+      "_seconds": 1758435801,
+      "_nanoseconds": 346000000
+    }
+  },
+  {
+    "_id": "hoangminh6297@gmail.com",
+    "email": "hoangminh6297@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1760291771,
+      "_nanoseconds": 281000000
+    }
+  },
+  {
+    "_id": "huyle.tldl@gmail.com",
+    "email": "huyle.tldl@gmail.com",
+    "role": "bio",
+    "addedAt": {
+      "_seconds": 1760291956,
+      "_nanoseconds": 866000000
+    }
+  },
+  {
+    "_id": "linh.dang0607@gmail.com",
+    "email": "linh.dang0607@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758511087,
+      "_nanoseconds": 629000000
+    }
+  },
+  {
+    "_id": "ngocbichdoan1110@gmail.com",
+    "email": "ngocbichdoan1110@gmail.com",
+    "role": "med",
+    "addedAt": {
+      "_seconds": 1760291844,
+      "_nanoseconds": 593000000
+    }
+  },
+  {
+    "_id": "ngochan99813@gmail.com",
+    "email": "ngochan99813@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1760291812,
+      "_nanoseconds": 650000000
+    }
+  },
+  {
+    "_id": "nguyendung270797@gmail.com",
+    "email": "nguyendung270797@gmail.com",
+    "role": "med",
+    "addedAt": {
+      "_seconds": 1760291855,
+      "_nanoseconds": 813000000
+    }
+  },
+  {
+    "_id": "nguyenhuunhatban@gmail.com",
+    "email": "nguyenhuunhatban@gmail.com",
+    "role": "med",
+    "addedAt": {
+      "_seconds": 1760291867,
+      "_nanoseconds": 397000000
+    }
+  },
+  {
+    "_id": "ntm.ptnh@gmail.com",
+    "email": "ntm.ptnh@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1760291826,
+      "_nanoseconds": 982000000
+    }
+  },
+  {
+    "_id": "phuongminh645991@gmail.com",
+    "email": "phuongminh645991@gmail.com",
+    "role": "med",
+    "addedAt": {
+      "_seconds": 1760291879,
+      "_nanoseconds": 865000000
+    }
+  },
+  {
+    "_id": "ptbiomed@gmail.com",
+    "email": "ptbiomed@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1763954125,
+      "_nanoseconds": 298000000
+    }
+  },
+  {
+    "_id": "thanhngan1204@gmail.com",
+    "email": "thanhngan1204@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758511107,
+      "_nanoseconds": 541000000
+    }
+  },
+  {
+    "_id": "thhanh210@gmail.com",
+    "email": "thhanh210@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758594975,
+      "_nanoseconds": 199000000
+    }
+  },
+  {
+    "_id": "trantiendat.medical@gmail.com",
+    "email": "trantiendat.medical@gmail.com",
+    "role": "med",
+    "addedAt": {
+      "_seconds": 1760291892,
+      "_nanoseconds": 317000000
+    }
+  },
+  {
+    "_id": "uyenpham.cv@gmail.com",
+    "email": "uyenpham.cv@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1758511139,
+      "_nanoseconds": 490000000
+    }
+  },
+  {
+    "_id": "vancongnguyen93@gmail.com",
+    "email": "vancongnguyen93@gmail.com",
+    "role": "bio",
+    "addedAt": {
+      "_seconds": 1760291968,
+      "_nanoseconds": 220000000
+    }
+  },
+  {
+    "_id": "vietpk1997@gmail.com",
+    "email": "vietpk1997@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1760291785,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "_id": "vinguyen12101998@gmail.com",
+    "email": "vinguyen12101998@gmail.com",
+    "role": "med",
+    "addedAt": {
+      "_seconds": 1760291903,
+      "_nanoseconds": 66000000
+    }
+  },
+  {
+    "_id": "visinhxetnghiem@gmail.com",
+    "email": "visinhxetnghiem@gmail.com",
+    "role": "admin",
+    "addedAt": {
+      "_seconds": 1760291799,
+      "_nanoseconds": 668000000
+    }
+  }
+]

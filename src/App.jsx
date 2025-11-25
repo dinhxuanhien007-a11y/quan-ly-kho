@@ -11,17 +11,19 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import AccessDenied from './components/AccessDenied'; // <-- Import trang mới tạo
 
 // Import login styles để dùng cho wrapper
 import loginStyles from './components/LoginPage.module.css';
 
 const AppRoutes = () => {
-  const { user, role, loading } = useAuth(); // Sửa userRole thành role cho nhất quán
+  const { user, role, loading } = useAuth();
 
   if (loading) {
-    return null;
+    return <div className="loading-screen">Đang tải...</div>; // Hoặc component Spinner của bạn
   }
 
+  // 1. Chưa đăng nhập -> Hiện trang Login
   if (!user) {
     return (
       <div className={loginStyles.loginPageWrapper}>
@@ -30,14 +32,19 @@ const AppRoutes = () => {
     );
   }
 
-  // Logic điều hướng sau khi đã đăng nhập
+  // 2. Đã đăng nhập nhưng KHÔNG CÓ QUYỀN (role rỗng hoặc null) -> Hiện trang Từ chối
+  if (!role) {
+    return <AccessDenied />;
+  }
+
+  // 3. Có quyền -> Phân luồng
   return (
     <Routes>
       {role === 'owner' ? (
-        // Nếu là owner, cho phép truy cập tất cả các trang quản trị
+        // Nếu là owner -> AdminLayout
         <Route path="/*" element={<AdminLayout />} />
       ) : (
-        // Nếu là các vai trò khác, chỉ cho phép truy cập ViewerLayout
+        // Nếu là các role hợp lệ khác (med, bio, admin...) -> ViewerLayout
         <Route path="/*" element={<ViewerLayout />} />
       )}
     </Routes>
