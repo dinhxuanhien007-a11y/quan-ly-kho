@@ -67,15 +67,28 @@ const LotTracePage = () => {
 
       exportsSnapshot.forEach((doc) => {
         const ticket = doc.data();
-        const exportedItem = ticket.items.find((item) => item.lotNumber === lotNumber.trim());
-        if (exportedItem) {
+        
+        // --- SỬA ĐỔI TẠI ĐÂY: Thay vì .find(), ta dùng .filter() và .reduce() để cộng tổng ---
+        
+        // 1. Tìm TẤT CẢ các item trong phiếu này trùng với số lô đang tìm
+        const matchingItems = ticket.items.filter((item) => item.lotNumber === lotNumber.trim());
+        
+        // 2. Nếu có ít nhất 1 item trùng khớp
+        if (matchingItems.length > 0) {
+          // 3. Cộng dồn số lượng của tất cả các item đó lại
+          const totalQuantityForLot = matchingItems.reduce((sum, item) => {
+             const qty = Number(item.quantityToExport || item.quantityExported || 0);
+             return sum + qty;
+          }, 0);
+
           history.push({
             ticketId: doc.id,
             exportDate: ticket.createdAt,
             customer: ticket.customer,
-            quantityExported: exportedItem.quantityToExport || exportedItem.quantityExported || 0,
+            quantityExported: totalQuantityForLot, // Sử dụng tổng đã cộng dồn
           });
         }
+        // --- KẾT THÚC SỬA ĐỔI ---
       });
       setExportHistory(history);
       

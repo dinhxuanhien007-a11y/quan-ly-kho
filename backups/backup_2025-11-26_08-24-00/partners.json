@@ -1,0 +1,8417 @@
+[
+  {
+    "_id": "ANHNH-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 780000000
+    },
+    "partnerName": "Nguyễn Huy Ánh",
+    "searchKeywords": [
+      "nguyen",
+      "huy",
+      "anh"
+    ],
+    "partnerNameNormalized": "nguyen huy anh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "B-BDSVUMINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 781000000
+    },
+    "partnerName": "CÔNG TY TNHH QUẢN LÝ BĐS VŨ MINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "quan",
+      "ly",
+      "bds",
+      "vu",
+      "minh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh quan ly bds vu minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "B-DIAG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 781000000
+    },
+    "partnerName": "CÔNG TY TNHH LAB GROUP INTERNATIONAL VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "lab",
+      "group",
+      "international",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh lab group international viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "B-DIENNIEN",
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DIÊN NIÊN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dien",
+      "nien"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dien nien",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-DIEPHAI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH ĐẦU TƯ XÂY DỰNG DIỆP HẢI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "dau",
+      "tu",
+      "xay",
+      "dung",
+      "diep",
+      "hai"
+    ],
+    "partnerNameNormalized": "cong ty tnhh dau tu xay dung diep hai",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-DINHCAO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ ĐỈNH CAO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "dinh",
+      "cao"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te dinh cao",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-DKSH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH DKSH VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "dksh",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh dksh viet nam",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-DKSHHN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY TNHH DKSH VIỆT NAM TẠI HÀ NỘI",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "dksh",
+      "viet",
+      "nam",
+      "tai",
+      "ha",
+      "noi"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh dksh viet nam tai ha noi",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-DUCAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "Cty TNHH Trang Thiết Bị Y Tế Đức Ân",
+    "searchKeywords": [
+      "cty",
+      "tnhh",
+      "trang",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "duc",
+      "an"
+    ],
+    "partnerNameNormalized": "cty tnhh trang thiet bi y te duc an",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-ELITE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ ELITE",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "cong",
+      "nghe",
+      "elite"
+    ],
+    "partnerNameNormalized": "cong ty co phan cong nghe elite",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-HANOIMED",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 781000000
+    },
+    "partnerName": "CÔNG TY TNHH XÂY DỰNG, THƯƠNG MẠI VÀ DỊCH VỤ Y TẾ HÀ NỘI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "xay",
+      "dung,",
+      "thuong",
+      "mai",
+      "va",
+      "dich",
+      "vu",
+      "y",
+      "te",
+      "ha",
+      "noi"
+    ],
+    "partnerNameNormalized": "cong ty tnhh xay dung, thuong mai va dich vu y te ha noi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "B-ICU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "ICU Medical, Inc.,",
+    "searchKeywords": [
+      "icu",
+      "medical,",
+      "inc.,"
+    ],
+    "partnerNameNormalized": "icu medical, inc.,",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-INDOTRAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 781000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN TẬP ĐOÀN ITL",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "tap",
+      "doan",
+      "itl"
+    ],
+    "partnerNameNormalized": "cong ty co phan tap doan itl",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "B-INTRACVC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "INTRA SPECIAL CATHETERS GMBH",
+    "searchKeywords": [
+      "intra",
+      "special",
+      "catheters",
+      "gmbh"
+    ],
+    "partnerNameNormalized": "intra special catheters gmbh",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-KHOITAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KHỞI TÂM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "khoi",
+      "tam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu khoi tam",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-KHVIETANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ KHOA HỌC VIỆT ANH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "khoa",
+      "hoc",
+      "viet",
+      "anh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi khoa hoc viet anh",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-LABOTEC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerName": "CÔNG TY TNHH KHOA HỌC VÀ KỸ THUẬT LABOTEC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "khoa",
+      "hoc",
+      "va",
+      "ky",
+      "thuat",
+      "labotec"
+    ],
+    "partnerNameNormalized": "cong ty tnhh khoa hoc va ky thuat labotec",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-LANOANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ KHOA HỌC LAN OANH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "khoa",
+      "hoc",
+      "lan",
+      "oanh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi khoa hoc lan oanh",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-MEGA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerName": "CÔNG TY TNHH MEGA LIFESCIENCES (VIỆT NAM)",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "mega",
+      "lifesciences",
+      "(viet",
+      "nam)"
+    ],
+    "partnerNameNormalized": "cong ty tnhh mega lifesciences (viet nam)",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-NACEN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 781000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ THẺ NACENCOMM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "cong",
+      "nghe",
+      "the",
+      "nacencomm"
+    ],
+    "partnerNameNormalized": "cong ty co phan cong nghe the nacencomm",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "B-PHUONGDONG",
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ PHƯƠNG ĐÔNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "phuong",
+      "dong"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te phuong dong",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-PTMEDICAL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ KỸ THUẬT PHÚC TÍN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "va",
+      "dich",
+      "vu",
+      "ky",
+      "thuat",
+      "phuc",
+      "tin"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai va dich vu ky thuat phuc tin",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-QUOCVAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "CÔNG TY TNHH TM DV QUỐC VÂN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "tm",
+      "dv",
+      "quoc",
+      "van"
+    ],
+    "partnerNameNormalized": "cong ty tnhh tm dv quoc van",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "B-SISC",
+    "partnerName": "CÔNG TY CỔ PHẦN THIẾT BỊ SISC VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thiet",
+      "bi",
+      "sisc",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty co phan thiet bi sisc viet nam",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-TECHNIMEX",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN XUẤT NHẬP KHẨU KỸ THUẬT - TECHNIMEX",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "xuat",
+      "nhap",
+      "khau",
+      "ky",
+      "thuat",
+      "-",
+      "technimex"
+    ],
+    "partnerNameNormalized": "cong ty co phan xuat nhap khau ky thuat - technimex",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-VITECH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerName": "CÔNG TY TNHH PHÁT TRIỂN KHOA HỌC VITECH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "phat",
+      "trien",
+      "khoa",
+      "hoc",
+      "vitech"
+    ],
+    "partnerNameNormalized": "cong ty tnhh phat trien khoa hoc vitech",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "B-XUANPHAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "CÔNG TY TNHH MÔI TRƯỜNG THÀNH PHỐ XUÂN PHÁT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "moi",
+      "truong",
+      "thanh",
+      "pho",
+      "xuan",
+      "phat"
+    ],
+    "partnerNameNormalized": "cong ty tnhh moi truong thanh pho xuan phat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "BANNHN-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 781000000
+    },
+    "partnerName": "Nguyễn Hữu Nhật Ban",
+    "searchKeywords": [
+      "nguyen",
+      "huu",
+      "nhat",
+      "ban"
+    ],
+    "partnerNameNormalized": "nguyen huu nhat ban",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "BD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "BECTON DICKINSON HOLDINGS PTE.LTD.,",
+    "searchKeywords": [
+      "becton",
+      "dickinson",
+      "holdings",
+      "pte.ltd.,"
+    ],
+    "partnerNameNormalized": "becton dickinson holdings pte.ltd.,",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "BICHDTN-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 781000000
+    },
+    "partnerName": "Đoàn Thị Ngọc Bích",
+    "searchKeywords": [
+      "doan",
+      "thi",
+      "ngoc",
+      "bich"
+    ],
+    "partnerNameNormalized": "doan thi ngoc bich",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "CONGNV-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "Nguyễn Văn Công",
+    "searchKeywords": [
+      "nguyen",
+      "van",
+      "cong"
+    ],
+    "partnerNameNormalized": "nguyen van cong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "CUONGTQ-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "Trần Quốc Cường",
+    "searchKeywords": [
+      "tran",
+      "quoc",
+      "cuong"
+    ],
+    "partnerNameNormalized": "tran quoc cuong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "DATTT-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "Trần Tiến Đạt",
+    "searchKeywords": [
+      "tran",
+      "tien",
+      "dat"
+    ],
+    "partnerNameNormalized": "tran tien dat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "DENTALIFE",
+    "partnerName": "PHARMADESIGN CO., LTD.",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "pharmadesign co., ltd.",
+    "searchKeywords": [
+      "pharmadesign",
+      "co.,",
+      "ltd."
+    ],
+    "createdAt": {
+      "_seconds": 1759333530,
+      "_nanoseconds": 445000000
+    }
+  },
+  {
+    "_id": "DUNGNTM-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "Nguyễn Thị Mỹ Dung",
+    "searchKeywords": [
+      "nguyen",
+      "thi",
+      "my",
+      "dung"
+    ],
+    "partnerNameNormalized": "nguyen thi my dung",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "GHI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN THƯƠNG MẠI DỊCH VỤ VÀ ĐẦU TƯ GHI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "va",
+      "dau",
+      "tu",
+      "ghi"
+    ],
+    "partnerNameNormalized": "cong ty co phan thuong mai dich vu va dau tu ghi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "HUYNL-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "Ngô Lê Huy",
+    "searchKeywords": [
+      "ngo",
+      "le",
+      "huy"
+    ],
+    "partnerNameNormalized": "ngo le huy",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "KH-ANHKHOI",
+    "partnerType": "customer",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "ky",
+      "thuat",
+      "anh",
+      "khoi"
+    ],
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KỸ THUẬT ANH KHÔI",
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu ky thuat anh khoi",
+    "createdAt": {
+      "_seconds": 1758611467,
+      "_nanoseconds": 840000000
+    }
+  },
+  {
+    "_id": "KH-BAOANPHAT",
+    "partnerName": "CÔNG TY TNHH TM DV BẢO AN PHÁT",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh tm dv bao an phat",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "tm",
+      "dv",
+      "bao",
+      "an",
+      "phat"
+    ],
+    "createdAt": {
+      "_seconds": 1760520916,
+      "_nanoseconds": 886000000
+    }
+  },
+  {
+    "_id": "KH-BTD",
+    "partnerNameNormalized": "cong ty tnhh dp tbvtyt b.t.d",
+    "partnerType": "customer",
+    "partnerName": "CÔNG TY TNHH DP TBVTYT B.T.D",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "dp",
+      "tbvtyt",
+      "b.t.d"
+    ],
+    "createdAt": {
+      "_seconds": 1759120237,
+      "_nanoseconds": 987000000
+    }
+  },
+  {
+    "_id": "KH-DHYD",
+    "partnerName": "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
+    "partnerType": "customer",
+    "partnerNameNormalized": "benh vien dai hoc y duoc thanh pho ho chi minh",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "dai",
+      "hoc",
+      "y",
+      "duoc",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "createdAt": {
+      "_seconds": 1758640425,
+      "_nanoseconds": 433000000
+    }
+  },
+  {
+    "_id": "KH-DIENNIEN",
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DIÊN NIÊN",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh thuong mai dien nien",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dien",
+      "nien"
+    ],
+    "createdAt": {
+      "_seconds": 1763454904,
+      "_nanoseconds": 339000000
+    }
+  },
+  {
+    "_id": "KH-JOBFULL",
+    "partnerName": "CÔNG TY TNHH JOBFULL PARTNER",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh jobfull partner",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "jobfull",
+      "partner"
+    ],
+    "createdAt": {
+      "_seconds": 1762329817,
+      "_nanoseconds": 316000000
+    }
+  },
+  {
+    "_id": "KH-LEBAO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "le",
+      "bao"
+    ],
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh thuong mai le bao",
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI LÊ BẢO",
+    "createdAt": {
+      "_seconds": 1759115498,
+      "_nanoseconds": 246000000
+    }
+  },
+  {
+    "_id": "KH-LICIENCES",
+    "partnerName": "CÔNG TY TNHH PHÁT TRIỂN KHOA HỌC SỰ SỐNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "phat",
+      "trien",
+      "khoa",
+      "hoc",
+      "su",
+      "song"
+    ],
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh phat trien khoa hoc su song",
+    "createdAt": {
+      "_seconds": 1759140488,
+      "_nanoseconds": 310000000
+    }
+  },
+  {
+    "_id": "KH-LUUGIA",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te luu gia",
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ LƯU GIA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "luu",
+      "gia"
+    ],
+    "createdAt": {
+      "_seconds": 1758513257,
+      "_nanoseconds": 50000000
+    }
+  },
+  {
+    "_id": "KH-NAMSG",
+    "partnerName": "CÔNG TY CỔ PHẦN Y TẾ PHÚC THỊNH",
+    "partnerType": "customer",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "y",
+      "te",
+      "phuc",
+      "thinh"
+    ],
+    "partnerNameNormalized": "cong ty co phan y te phuc thinh",
+    "createdAt": {
+      "_seconds": 1759380756,
+      "_nanoseconds": 198000000
+    }
+  },
+  {
+    "_id": "KH-NGUYENTRAI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nguyen",
+      "trai"
+    ],
+    "partnerType": "customer",
+    "partnerNameNormalized": "benh vien nguyen trai",
+    "partnerName": "BỆNH VIỆN NGUYỄN TRÃI",
+    "createdAt": {
+      "_seconds": 1758519733,
+      "_nanoseconds": 421000000
+    }
+  },
+  {
+    "_id": "KH-NHATVIETHCM",
+    "partnerName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ Y TẾ NHẬT VIỆT - CHI NHÁNH THÀNH PHỐ HỒ CHÍ MINH",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty co phan cong nghe y te nhat viet - chi nhanh thanh pho ho chi minh",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "cong",
+      "nghe",
+      "y",
+      "te",
+      "nhat",
+      "viet",
+      "-",
+      "chi",
+      "nhanh",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "createdAt": {
+      "_seconds": 1759468991,
+      "_nanoseconds": 300000000
+    }
+  },
+  {
+    "_id": "LINHDTK-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "ĐẶNG THỊ KIỀU LINH",
+    "searchKeywords": [
+      "dang",
+      "thi",
+      "kieu",
+      "linh"
+    ],
+    "partnerNameNormalized": "dang thi kieu linh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "MINHPV-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "Phạm Văn Minh",
+    "searchKeywords": [
+      "pham",
+      "van",
+      "minh"
+    ],
+    "partnerNameNormalized": "pham van minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "NCC-175",
+    "partnerName": "BỆNH VIỆN QUÂN Y 175",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "benh vien quan y 175",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "quan",
+      "y",
+      "175"
+    ],
+    "createdAt": {
+      "_seconds": 1762752811,
+      "_nanoseconds": 359000000
+    }
+  },
+  {
+    "_id": "NCC-BVQT",
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN QUỐC TẾ",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "cong ty co phan benh vien quoc te",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "quoc",
+      "te"
+    ],
+    "createdAt": {
+      "_seconds": 1760435224,
+      "_nanoseconds": 17000000
+    }
+  },
+  {
+    "_id": "NCC-CNTAMANH",
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TÂM ANH TP. HỒ CHÍ MINH",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa tam anh tp. ho chi minh",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tam",
+      "anh",
+      "tp.",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "createdAt": {
+      "_seconds": 1759734339,
+      "_nanoseconds": 116000000
+    }
+  },
+  {
+    "_id": "NCC-CUMIN",
+    "partnerName": "CÔNG TY TNHH SẢN XUẤT VÀ THƯƠNG MẠI CUMIN",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "cong ty tnhh san xuat va thuong mai cumin",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "san",
+      "xuat",
+      "va",
+      "thuong",
+      "mai",
+      "cumin"
+    ],
+    "createdAt": {
+      "_seconds": 1762845496,
+      "_nanoseconds": 640000000
+    }
+  },
+  {
+    "_id": "NCC-DIAG",
+    "partnerName": "CÔNG TY TNHH LAB GROUP INTERNATIONAL VIỆT NAM",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "cong ty tnhh lab group international viet nam",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "lab",
+      "group",
+      "international",
+      "viet",
+      "nam"
+    ],
+    "createdAt": {
+      "_seconds": 1760511488,
+      "_nanoseconds": 485000000
+    }
+  },
+  {
+    "_id": "NCC-DUNGNTM",
+    "partnerName": "Nguyễn Thị Mỹ Dung",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "nguyen thi my dung",
+    "searchKeywords": [
+      "nguyen",
+      "thi",
+      "my",
+      "dung"
+    ],
+    "createdAt": {
+      "_seconds": 1759762158,
+      "_nanoseconds": 898000000
+    }
+  },
+  {
+    "_id": "NCC-HMCL",
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA HOÀN MỸ CỬU LONG",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa hoan my cuu long",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hoan",
+      "my",
+      "cuu",
+      "long"
+    ],
+    "createdAt": {
+      "_seconds": 1762316369,
+      "_nanoseconds": 515000000
+    }
+  },
+  {
+    "_id": "NCC-HUNGVUONG",
+    "partnerName": "BỆNH VIỆN HÙNG VƯƠNG",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "benh vien hung vuong",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "hung",
+      "vuong"
+    ],
+    "createdAt": {
+      "_seconds": 1761293662,
+      "_nanoseconds": 236000000
+    }
+  },
+  {
+    "_id": "NCC-MINHPV",
+    "partnerName": "Phạm Văn Minh",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "pham van minh",
+    "searchKeywords": [
+      "pham",
+      "van",
+      "minh"
+    ],
+    "createdAt": {
+      "_seconds": 1759468742,
+      "_nanoseconds": 529000000
+    }
+  },
+  {
+    "_id": "NCC-MYAN",
+    "partnerName": "CÔNG TY TNHH MỸ ÂN",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "cong ty tnhh my an",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "my",
+      "an"
+    ],
+    "createdAt": {
+      "_seconds": 1761198542,
+      "_nanoseconds": 156000000
+    }
+  },
+  {
+    "_id": "NCC-NHIETDOI",
+    "partnerName": "BỆNH VIỆN BỆNH NHIỆT ĐỚI",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "benh vien benh nhiet doi",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "benh",
+      "nhiet",
+      "doi"
+    ],
+    "createdAt": {
+      "_seconds": 1760018023,
+      "_nanoseconds": 962000000
+    }
+  },
+  {
+    "_id": "NCC-PASTEUR",
+    "partnerName": "VIỆN PASTEUR THÀNH PHỐ HỒ CHÍ MINH",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "vien pasteur thanh pho ho chi minh",
+    "searchKeywords": [
+      "vien",
+      "pasteur",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "createdAt": {
+      "_seconds": 1762401943,
+      "_nanoseconds": 754000000
+    }
+  },
+  {
+    "_id": "NCC-PHCNQ8",
+    "partnerName": "BỆNH VIỆN PHỤC HỒI CHỨC NĂNG - ĐIỀU TRỊ BỆNH NGHỀ NGHIỆP",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "benh vien phuc hoi chuc nang - dieu tri benh nghe nghiep",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "phuc",
+      "hoi",
+      "chuc",
+      "nang",
+      "-",
+      "dieu",
+      "tri",
+      "benh",
+      "nghe",
+      "nghiep"
+    ],
+    "createdAt": {
+      "_seconds": 1761663285,
+      "_nanoseconds": 472000000
+    }
+  },
+  {
+    "_id": "NCC-PT BIOMED",
+    "partnerType": "supplier",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "pt",
+      "biomed"
+    ],
+    "partnerNameNormalized": "cong ty co phan thiet bi y te pt biomed",
+    "partnerName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "createdAt": {
+      "_seconds": 1759117133,
+      "_nanoseconds": 679000000
+    }
+  },
+  {
+    "_id": "NCC-TGGEN",
+    "partnerName": "CÔNG TY TNHH THẾ GIỚI GEN",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "cong ty tnhh the gioi gen",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "the",
+      "gioi",
+      "gen"
+    ],
+    "createdAt": {
+      "_seconds": 1760928672,
+      "_nanoseconds": 599000000
+    }
+  },
+  {
+    "_id": "NCC-THIENAN",
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ THIẾT BỊ Y TẾ THIÊN ÂN",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "cong ty co phan dau tu thiet bi y te thien an",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "thien",
+      "an"
+    ],
+    "createdAt": {
+      "_seconds": 1761122757,
+      "_nanoseconds": 971000000
+    }
+  },
+  {
+    "_id": "NCC-TRUYENMAUHH",
+    "partnerType": "supplier",
+    "partnerName": "BỆNH VIỆN TRUYỀN MÁU HUYẾT HỌC",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "truyen",
+      "mau",
+      "huyet",
+      "hoc"
+    ],
+    "partnerNameNormalized": "benh vien truyen mau huyet hoc",
+    "createdAt": {
+      "_seconds": 1759137888,
+      "_nanoseconds": 931000000
+    }
+  },
+  {
+    "_id": "NCC-TUDU",
+    "partnerName": "BỆNH VIỆN TỪ DŨ",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "benh vien tu du",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "tu",
+      "du"
+    ],
+    "createdAt": {
+      "_seconds": 1760097710,
+      "_nanoseconds": 54000000
+    }
+  },
+  {
+    "_id": "NCC-VIENTIM",
+    "partnerName": "Viện Tim Thành Phố Hồ Chí Minh",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "vien tim thanh pho ho chi minh",
+    "searchKeywords": [
+      "vien",
+      "tim",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "createdAt": {
+      "_seconds": 1763023342,
+      "_nanoseconds": 220000000
+    }
+  },
+  {
+    "_id": "NCC-VINTT",
+    "partnerName": "Nguyễn Thị Tường Vi",
+    "partnerType": "supplier",
+    "partnerNameNormalized": "nguyen thi tuong vi",
+    "searchKeywords": [
+      "nguyen",
+      "thi",
+      "tuong",
+      "vi"
+    ],
+    "createdAt": {
+      "_seconds": 1759762186,
+      "_nanoseconds": 889000000
+    }
+  },
+  {
+    "_id": "PT BIOMED",
+    "partnerNameNormalized": "cong ty co phan thiet bi y te pt biomed",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "pt",
+      "biomed"
+    ],
+    "partnerType": "customer",
+    "partnerName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ PT BIOMED",
+    "createdAt": {
+      "_seconds": 1758797716,
+      "_nanoseconds": 544000000
+    }
+  },
+  {
+    "_id": "R-115",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "BỆNH VIỆN NHÂN DÂN 115",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nhan",
+      "dan",
+      "115"
+    ],
+    "partnerNameNormalized": "benh vien nhan dan 115",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-175",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "BỆNH VIỆN QUÂN Y 175",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "quan",
+      "y",
+      "175"
+    ],
+    "partnerNameNormalized": "benh vien quan y 175",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-199",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "BỆNH VIỆN 199 - BỘ CÔNG AN",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "199",
+      "-",
+      "bo",
+      "cong",
+      "an"
+    ],
+    "partnerNameNormalized": "benh vien 199 - bo cong an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-2212",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "BỆNH VIỆN 22-12",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "22-12"
+    ],
+    "partnerNameNormalized": "benh vien 22-12",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-30-4",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "BỆNH VIỆN 30-4",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "30-4"
+    ],
+    "partnerNameNormalized": "benh vien 30-4",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ALPHA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "CÔNG TY TRÁCH NHIỆM HỮU HẠN TRUNG SƠN ALPHA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "trach",
+      "nhiem",
+      "huu",
+      "han",
+      "trung",
+      "son",
+      "alpha"
+    ],
+    "partnerNameNormalized": "cong ty trach nhiem huu han trung son alpha",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ANBINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "BỆNH VIỆN AN BÌNH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "an",
+      "binh"
+    ],
+    "partnerNameNormalized": "benh vien an binh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ANHKHOI",
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KỸ THUẬT ANH KHÔI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "ky",
+      "thuat",
+      "anh",
+      "khoi"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu ky thuat anh khoi",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-ANHTHU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ THIẾT BỊ Y TẾ BẢO ANH THƯ",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "bao",
+      "anh",
+      "thu"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu thiet bi y te bao anh thu",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ANIMALS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "ANIMALS ASIA FOUNDATION",
+    "searchKeywords": [
+      "animals",
+      "asia",
+      "foundation"
+    ],
+    "partnerNameNormalized": "animals asia foundation",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ANKHANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 782000000
+    },
+    "partnerName": "HỘ KINH DOANH CỬA HÀNG DỤNG CỤ Y KHOA AN KHANG",
+    "searchKeywords": [
+      "ho",
+      "kinh",
+      "doanh",
+      "cua",
+      "hang",
+      "dung",
+      "cu",
+      "y",
+      "khoa",
+      "an",
+      "khang"
+    ],
+    "partnerNameNormalized": "ho kinh doanh cua hang dung cu y khoa an khang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ANPHA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI KỸ THUẬT AN PHA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "ky",
+      "thuat",
+      "an",
+      "pha"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai ky thuat an pha",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ANSINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TƯ NHÂN AN SINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tu",
+      "nhan",
+      "an",
+      "sinh"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa tu nhan an sinh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-AT",
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ AT",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te at",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "at"
+    ],
+    "createdAt": {
+      "_seconds": 1763436717,
+      "_nanoseconds": 352000000
+    }
+  },
+  {
+    "_id": "R-AZAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY TNHH GIẢI PHÁP THƯƠNG MẠI ĐIỆN TỬ AZAT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "giai",
+      "phap",
+      "thuong",
+      "mai",
+      "dien",
+      "tu",
+      "azat"
+    ],
+    "partnerNameNormalized": "cong ty tnhh giai phap thuong mai dien tu azat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BACGIANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA TỈNH BẮC GIANG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tinh",
+      "bac",
+      "giang"
+    ],
+    "partnerNameNormalized": "benh vien da khoa tinh bac giang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BACHTHU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI BÁCH THƯ",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "bach",
+      "thu"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai bach thu",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BAOLONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI KỸ THUẬT BẢO LONG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "ky",
+      "thuat",
+      "bao",
+      "long"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai ky thuat bao long",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BAOTRAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN THƯƠNG MẠI VÀ DỊCH VỤ Y TẾ BẢO TRẦN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thuong",
+      "mai",
+      "va",
+      "dich",
+      "vu",
+      "y",
+      "te",
+      "bao",
+      "tran"
+    ],
+    "partnerNameNormalized": "cong ty co phan thuong mai va dich vu y te bao tran",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "VPĐD BECTON DICKINSON ASIA LIMITED TẠI TP.HCM",
+    "searchKeywords": [
+      "vpdd",
+      "becton",
+      "dickinson",
+      "asia",
+      "limited",
+      "tai",
+      "tp.hcm"
+    ],
+    "partnerNameNormalized": "vpdd becton dickinson asia limited tai tp.hcm",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BECAMEX",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ BECAMEX",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "becamex"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa quoc te becamex",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BINHDAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN BÌNH DÂN",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "binh",
+      "dan"
+    ],
+    "partnerNameNormalized": "benh vien binh dan",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BINHTHANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA BÌNH THẠNH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "binh",
+      "thanh"
+    ],
+    "partnerNameNormalized": "benh vien da khoa binh thanh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BIOMAX",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY TNHH KHOA HỌC BIOMAX",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "khoa",
+      "hoc",
+      "biomax"
+    ],
+    "partnerNameNormalized": "cong ty tnhh khoa hoc biomax",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BIOMEDICINE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "Center for molecular Biomedicine",
+    "searchKeywords": [
+      "center",
+      "for",
+      "molecular",
+      "biomedicine"
+    ],
+    "partnerNameNormalized": "center for molecular biomedicine",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BONA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN XUẤT KHẨU BONA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "xuat",
+      "khau",
+      "bona"
+    ],
+    "partnerNameNormalized": "cong ty co phan xuat khau bona",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BSDAO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "Phòng Khám Bác Sĩ Đào",
+    "searchKeywords": [
+      "phong",
+      "kham",
+      "bac",
+      "si",
+      "dao"
+    ],
+    "partnerNameNormalized": "phong kham bac si dao",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BTD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY TNHH DP TBVTYT B.T.D",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "dp",
+      "tbvtyt",
+      "b.t.d"
+    ],
+    "partnerNameNormalized": "cong ty tnhh dp tbvtyt b.t.d",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BTDVHD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "TRUNG TÂM BẢO TỒN ĐỘNG VẬT HOANG DÃ TẠI VIỆT NAM",
+    "searchKeywords": [
+      "trung",
+      "tam",
+      "bao",
+      "ton",
+      "dong",
+      "vat",
+      "hoang",
+      "da",
+      "tai",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "trung tam bao ton dong vat hoang da tai viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BUUDIEN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA BƯU ĐIỆN",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "buu",
+      "dien"
+    ],
+    "partnerNameNormalized": "benh vien da khoa buu dien",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BVBARIA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN BÀ RỊA",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "ba",
+      "ria"
+    ],
+    "partnerNameNormalized": "benh vien ba ria",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BVPHAMNGOCTHACH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN PHẠM NGỌC THẠCH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "pham",
+      "ngoc",
+      "thach"
+    ],
+    "partnerNameNormalized": "benh vien pham ngoc thach",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BVQTE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN QUỐC TẾ",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "quoc",
+      "te"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien quoc te",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BVTANPHU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN QUẬN TÂN PHÚ",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "quan",
+      "tan",
+      "phu"
+    ],
+    "partnerNameNormalized": "benh vien quan tan phu",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-BVTHUDUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA THỦ ĐỨC",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "thu",
+      "duc"
+    ],
+    "partnerNameNormalized": "benh vien da khoa thu duc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CAUVONG",
+    "partnerNameNormalized": "cong ty tnhh ky thuat thuong mai cau vong",
+    "partnerType": "customer",
+    "partnerName": "CÔNG TY TNHH KỸ THUẬT THƯƠNG MẠI CẦU VỒNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "ky",
+      "thuat",
+      "thuong",
+      "mai",
+      "cau",
+      "vong"
+    ],
+    "createdAt": {
+      "_seconds": 1758801396,
+      "_nanoseconds": 130000000
+    }
+  },
+  {
+    "_id": "R-CHORAY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN CHỢ RẪY",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "cho",
+      "ray"
+    ],
+    "partnerNameNormalized": "benh vien cho ray",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CNDKSG-NT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CHI NHÁNH BỆNH VIỆN ĐA KHOA SÀI GÒN-NHA TRANG-CÔNG TY CỔ PHẦN BỆNH VIỆN MẮT SÀI GÒN-NHA TRANG",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "sai",
+      "gon-nha",
+      "trang-cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "mat",
+      "sai",
+      "gon-nha",
+      "trang"
+    ],
+    "partnerNameNormalized": "chi nhanh benh vien da khoa sai gon-nha trang-cong ty co phan benh vien mat sai gon-nha trang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CNDKSH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "CÔNG TY TNHH KỸ THUẬT CÔNG NGHỆ DKSH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "ky",
+      "thuat",
+      "cong",
+      "nghe",
+      "dksh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh ky thuat cong nghe dksh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CNSISCT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 783000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA QUỐC TẾ S.I.S CẦN THƠ - CHI NHÁNH CÔNG TY CỔ PHẦN ĐẦU TƯ Y TẾ VIỆT CƯỜNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "s.i.s",
+      "can",
+      "tho",
+      "-",
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "y",
+      "te",
+      "viet",
+      "cuong"
+    ],
+    "partnerNameNormalized": "benh vien da khoa quoc te s.i.s can tho - chi nhanh cong ty co phan dau tu y te viet cuong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CNTAMANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TÂM ANH TP. HỒ CHÍ MINH",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tam",
+      "anh",
+      "tp.",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa tam anh tp. ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CODUPHA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH Y TẾ ALFRESA CODUPHA VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "y",
+      "te",
+      "alfresa",
+      "codupha",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh y te alfresa codupha viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-COLUMBIA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH COLUMBIA ASIA BÌNH DƯƠNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "columbia",
+      "asia",
+      "binh",
+      "duong"
+    ],
+    "partnerNameNormalized": "cong ty tnhh columbia asia binh duong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CRYOVINA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH NGÂN HÀNG MÔ CRYOVIVA VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "ngan",
+      "hang",
+      "mo",
+      "cryoviva",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh ngan hang mo cryoviva viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CTCHINHHINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "BỆNH VIỆN CHẤN THƯƠNG CHỈNH HÌNH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "chan",
+      "thuong",
+      "chinh",
+      "hinh"
+    ],
+    "partnerNameNormalized": "benh vien chan thuong chinh hinh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CUCHI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "BỆNH VIỆN HUYỆN CỦ CHI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "huyen",
+      "cu",
+      "chi"
+    ],
+    "partnerNameNormalized": "benh vien huyen cu chi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-CUMIN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH SẢN XUẤT VÀ THƯƠNG MẠI CUMIN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "san",
+      "xuat",
+      "va",
+      "thuong",
+      "mai",
+      "cumin"
+    ],
+    "partnerNameNormalized": "cong ty tnhh san xuat va thuong mai cumin",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DAKLAK",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN DƯỢC - VẬT TƯ Y TẾ ĐẮK LẮK",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "duoc",
+      "-",
+      "vat",
+      "tu",
+      "y",
+      "te",
+      "dak",
+      "lak"
+    ],
+    "partnerNameNormalized": "cong ty co phan duoc - vat tu y te dak lak",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DALIEU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "BỆNH VIỆN DA LIỄU",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "lieu"
+    ],
+    "partnerNameNormalized": "benh vien da lieu",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DANTHANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH SẢN PHẨM DỊCH VỤ CHẤT LƯỢNG CAO ĐAN THANH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "san",
+      "pham",
+      "dich",
+      "vu",
+      "chat",
+      "luong",
+      "cao",
+      "dan",
+      "thanh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh san pham dich vu chat luong cao dan thanh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DAOTAORHM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "VIỆN ĐÀO TẠO RĂNG HÀM MẶT",
+    "searchKeywords": [
+      "vien",
+      "dao",
+      "tao",
+      "rang",
+      "ham",
+      "mat"
+    ],
+    "partnerNameNormalized": "vien dao tao rang ham mat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DHYD",
+    "partnerName": "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "dai",
+      "hoc",
+      "y",
+      "duoc",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "benh vien dai hoc y duoc thanh pho ho chi minh",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-DHYDCS2",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerType": "customer",
+    "partnerName": "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH (CƠ SỞ 2)",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "dai",
+      "hoc",
+      "y",
+      "duoc",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh",
+      "(co",
+      "so",
+      "2)"
+    ],
+    "partnerNameNormalized": "benh vien dai hoc y duoc thanh pho ho chi minh (co so 2)"
+  },
+  {
+    "_id": "R-DHYDHUE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "BỆNH VIỆN TRƯỜNG ĐẠI HỌC Y DƯỢC HUẾ",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "truong",
+      "dai",
+      "hoc",
+      "y",
+      "duoc",
+      "hue"
+    ],
+    "partnerNameNormalized": "benh vien truong dai hoc y duoc hue",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DINHVIET",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ ĐỈNH VIỆT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "dinh",
+      "viet"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu dinh viet",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DITRUYENHCM",
+    "partnerName": "CÔNG TY CỔ PHẦN DI TRUYỀN CÔNG NGHỆ CAO VIỆT NAM",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty co phan di truyen cong nghe cao viet nam",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "di",
+      "truyen",
+      "cong",
+      "nghe",
+      "cao",
+      "viet",
+      "nam"
+    ],
+    "createdAt": {
+      "_seconds": 1762752582,
+      "_nanoseconds": 345000000
+    }
+  },
+  {
+    "_id": "R-DKCAMAU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN PHÂN BÓN DẦU KHÍ CÀ MAU - TRUNG TÂM NGHIÊN CỨU - PHÁT TRIỂN",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "phan",
+      "bon",
+      "dau",
+      "khi",
+      "ca",
+      "mau",
+      "-",
+      "trung",
+      "tam",
+      "nghien",
+      "cuu",
+      "-",
+      "phat",
+      "trien"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan phan bon dau khi ca mau - trung tam nghien cuu - phat trien",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DKDN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA ĐỒNG NAI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "dong",
+      "nai"
+    ],
+    "partnerNameNormalized": "benh vien da khoa dong nai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DKKVTHUDUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA KHU VỰC THỦ ĐỨC",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "khu",
+      "vuc",
+      "thu",
+      "duc"
+    ],
+    "partnerNameNormalized": "benh vien da khoa khu vuc thu duc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DKQTDNA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ DNA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "dna"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa quoc te dna",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DKTTANGIANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA TRUNG TÂM  AN GIANG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "trung",
+      "tam",
+      "an",
+      "giang"
+    ],
+    "partnerNameNormalized": "benh vien da khoa trung tam  an giang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DKVH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN ĐA KHOA VẠN HẠNH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "van",
+      "hanh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien da khoa van hanh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DKVIETDUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN Y KHOA VIỆT ĐỨC - BỆNH VIỆN ĐA KHOA VIỆT ĐỨC",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "y",
+      "khoa",
+      "viet",
+      "duc",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "viet",
+      "duc"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan y khoa viet duc - benh vien da khoa viet duc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DNA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN KỸ THUẬT THIẾT BỊ Y TẾ ĐÔNG NAM Á",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "ky",
+      "thuat",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "dong",
+      "nam",
+      "a"
+    ],
+    "partnerNameNormalized": "cong ty co phan ky thuat thiet bi y te dong nam a",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DNATESTINGS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH DI TRUYỀN DNA TESTINGS LAB",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "di",
+      "truyen",
+      "dna",
+      "testings",
+      "lab"
+    ],
+    "partnerNameNormalized": "cong ty tnhh di truyen dna testings lab",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DPVINHLONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN THƯƠNG MẠI DƯỢC PHẨM VĨNH LONG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thuong",
+      "mai",
+      "duoc",
+      "pham",
+      "vinh",
+      "long"
+    ],
+    "partnerNameNormalized": "cong ty co phan thuong mai duoc pham vinh long",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DRCHECK",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN PHÒNG KHÁM Y HỌC CHỨNG CỨ DOCTOR CHECK",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "phong",
+      "kham",
+      "y",
+      "hoc",
+      "chung",
+      "cu",
+      "doctor",
+      "check"
+    ],
+    "partnerNameNormalized": "cong ty co phan phong kham y hoc chung cu doctor check",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DTTOANCAU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH MÔI GIỚI VÀ GIẢI PHÁP ĐẦU TƯ TOÀN CẦU",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "moi",
+      "gioi",
+      "va",
+      "giai",
+      "phap",
+      "dau",
+      "tu",
+      "toan",
+      "cau"
+    ],
+    "partnerNameNormalized": "cong ty tnhh moi gioi va giai phap dau tu toan cau",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DUCBAO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH MỘT THÀNH VIÊN THƯƠNG MẠI VÀ DỊCH VỤ ĐỨC BẢO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "mot",
+      "thanh",
+      "vien",
+      "thuong",
+      "mai",
+      "va",
+      "dich",
+      "vu",
+      "duc",
+      "bao"
+    ],
+    "partnerNameNormalized": "cong ty tnhh mot thanh vien thuong mai va dich vu duc bao",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DYMMEDICALQ1",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TNHH DYM MEDICAL CENTER VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "dym",
+      "medical",
+      "center",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh dym medical center viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-DYMMEDICALQ7",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY TNHH DYM MEDICAL CENTER VIỆT NAM TẠI THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "dym",
+      "medical",
+      "center",
+      "viet",
+      "nam",
+      "tai",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh dym medical center viet nam tai thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-EMCAS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN EMCAS",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "emcas"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien emcas",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-FAMILYDN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN Y KHOA BÁC SỸ GIA ĐÌNH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "y",
+      "khoa",
+      "bac",
+      "sy",
+      "gia",
+      "dinh"
+    ],
+    "partnerNameNormalized": "cong ty co phan y khoa bac sy gia dinh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-FV",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 784000000
+    },
+    "partnerName": "CÔNG TY TRÁCH NHIỆM HỮU HẠN Y TẾ VIỄN ĐÔNG VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "trach",
+      "nhiem",
+      "huu",
+      "han",
+      "y",
+      "te",
+      "vien",
+      "dong",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty trach nhiem huu han y te vien dong viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-GALANT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN GREENBIZ - PHÒNG KHÁM ĐA KHOA GALANT",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "greenbiz",
+      "-",
+      "phong",
+      "kham",
+      "da",
+      "khoa",
+      "galant"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan greenbiz - phong kham da khoa galant",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-GENTISHCM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN DỊCH VỤ PHÂN TÍCH DI TRUYỀN -CHI NHÁNH PHÍA NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dich",
+      "vu",
+      "phan",
+      "tich",
+      "di",
+      "truyen",
+      "-chi",
+      "nhanh",
+      "phia",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty co phan dich vu phan tich di truyen -chi nhanh phia nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-GENTISHN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN DỊCH VỤ PHÂN TÍCH DI TRUYỀN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dich",
+      "vu",
+      "phan",
+      "tich",
+      "di",
+      "truyen"
+    ],
+    "partnerNameNormalized": "cong ty co phan dich vu phan tich di truyen",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-GIAAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN GIA AN 115",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "gia",
+      "an",
+      "115"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien gia an 115",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-GPGENE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN GIẢI PHÁP GENE",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "giai",
+      "phap",
+      "gene"
+    ],
+    "partnerNameNormalized": "cong ty co phan giai phap gene",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HAIPHONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CHI NHÁNH TỔNG CÔNG TY HÀNG KÊNH - CTCP - BỆNH VIỆN ĐA KHOA QUỐC TẾ HẢI PHÒNG",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "tong",
+      "cong",
+      "ty",
+      "hang",
+      "kenh",
+      "-",
+      "ctcp",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "hai",
+      "phong"
+    ],
+    "partnerNameNormalized": "chi nhanh tong cong ty hang kenh - ctcp - benh vien da khoa quoc te hai phong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HANHPHUCLAB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN TRUNG TÂM XÉT NGHIỆM CHẨN ĐOÁN Y KHOA HANHPHUCLAB",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "trung",
+      "tam",
+      "xet",
+      "nghiem",
+      "chan",
+      "doan",
+      "y",
+      "khoa",
+      "hanhphuclab"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan trung tam xet nghiem chan doan y khoa hanhphuclab",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HATINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA HÀ TĨNH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "ha",
+      "tinh"
+    ],
+    "partnerNameNormalized": "benh vien da khoa ha tinh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HDG",
+    "partnerName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "group",
+      "phat",
+      "trien",
+      "suc",
+      "khoe"
+    ],
+    "partnerNameNormalized": "cong ty co phan group phat trien suc khoe",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-HDGTD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN GROUP PHÁT TRIỂN SỨC KHỎE",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "group",
+      "phat",
+      "trien",
+      "suc",
+      "khoe"
+    ],
+    "partnerNameNormalized": "cong ty co phan group phat trien suc khoe",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HDN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ HDN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "hdn"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu hdn",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HIVINA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY TNHH HI VINA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "hi",
+      "vina"
+    ],
+    "partnerNameNormalized": "cong ty tnhh hi vina",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HMBD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN  BỆNH VIỆN HOÀN MỸ BÌNH DƯƠNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "hoan",
+      "my",
+      "binh",
+      "duong"
+    ],
+    "partnerNameNormalized": "cong ty co phan  benh vien hoan my binh duong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HMCL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA HOÀN MỸ CỬU LONG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hoan",
+      "my",
+      "cuu",
+      "long"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa hoan my cuu long",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HMDL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA HOÀN MỸ ĐÀ LẠT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hoan",
+      "my",
+      "da",
+      "lat"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa hoan my da lat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HMDN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN HOÀN MỸ ĐỒNG NAI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "hoan",
+      "my",
+      "dong",
+      "nai"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien hoan my dong nai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HMSG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA HOÀN MỸ SÀI GÒN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hoan",
+      "my",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa hoan my sai gon",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HMSG-TANBINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA HOÀN MỸ SÀI GÒN - PHÒNG KHÁM ĐA KHOA HOÀN MỸ TÂN BÌNH",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hoan",
+      "my",
+      "sai",
+      "gon",
+      "-",
+      "phong",
+      "kham",
+      "da",
+      "khoa",
+      "hoan",
+      "my",
+      "tan",
+      "binh"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa hoan my sai gon - phong kham da khoa hoan my tan binh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HMTD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ HOÀN MỸ THỦ ĐỨC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "hoan",
+      "my",
+      "thu",
+      "duc"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa quoc te hoan my thu duc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HOAIAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CỬA HÀNG DỤNG CỤ Y KHOA HOÀI AN",
+    "searchKeywords": [
+      "cua",
+      "hang",
+      "dung",
+      "cu",
+      "y",
+      "khoa",
+      "hoai",
+      "an"
+    ],
+    "partnerNameNormalized": "cua hang dung cu y khoa hoai an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HOANGGIA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI VÀ PHÂN PHỐI HOÀNG GIA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "va",
+      "phan",
+      "phoi",
+      "hoang",
+      "gia"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai va phan phoi hoang gia",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HOANGLONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KỸ THUẬT THIẾT BỊ Y TẾ HOÀNG LONG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "ky",
+      "thuat",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "hoang",
+      "long"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu ky thuat thiet bi y te hoang long",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HOANMYGOLD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "PHÒNG KHÁM ĐA KHOA THUỘC HOÀN MỸ GOLD PXL - CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA HOÀN MỸ SÀI GÒN",
+    "searchKeywords": [
+      "phong",
+      "kham",
+      "da",
+      "khoa",
+      "thuoc",
+      "hoan",
+      "my",
+      "gold",
+      "pxl",
+      "-",
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hoan",
+      "my",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "phong kham da khoa thuoc hoan my gold pxl - chi nhanh cong ty co phan benh vien da khoa hoan my sai gon",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HONGDUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN ĐA KHOA HỒNG ĐỨC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hong",
+      "duc"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien da khoa hong duc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HTT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ XÂY DỰNG HOÀNG TRUNG TÍN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "xay",
+      "dung",
+      "hoang",
+      "trung",
+      "tin"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu xay dung hoang trung tin",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HUMAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT HUMAN & TECHNOLOGY",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "san",
+      "xuat",
+      "human",
+      "&",
+      "technology"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu san xuat human & technology",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HUNGDUY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN Y TẾ HÙNG DUY - BỆNH VIỆN ĐA KHOA HỒNG HƯNG",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "y",
+      "te",
+      "hung",
+      "duy",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "hong",
+      "hung"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan y te hung duy - benh vien da khoa hong hung",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HUNGVUONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "BỆNH VIỆN HÙNG VƯƠNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "hung",
+      "vuong"
+    ],
+    "partnerNameNormalized": "benh vien hung vuong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-HUYHOANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CỬA HÀNG DỤNG CỤ Y KHOA HUY HOÀNG",
+    "searchKeywords": [
+      "cua",
+      "hang",
+      "dung",
+      "cu",
+      "y",
+      "khoa",
+      "huy",
+      "hoang"
+    ],
+    "partnerNameNormalized": "cua hang dung cu y khoa huy hoang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-IOMDICU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "TỔ CHỨC DI CƯ QUỐC TẾ",
+    "searchKeywords": [
+      "to",
+      "chuc",
+      "di",
+      "cu",
+      "quoc",
+      "te"
+    ],
+    "partnerNameNormalized": "to chuc di cu quoc te",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ISC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 785000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ PHÁT TRIỂN KHOA HỌC QUỐC TẾ ISC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "va",
+      "phat",
+      "trien",
+      "khoa",
+      "hoc",
+      "quoc",
+      "te",
+      "isc"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu va phat trien khoa hoc quoc te isc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ISOLABO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ISOLABO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "isolabo"
+    ],
+    "partnerNameNormalized": "cong ty co phan isolabo",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ITODONGNAI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN THUẬN MỸ ITO ĐỒNG NAI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "thuan",
+      "my",
+      "ito",
+      "dong",
+      "nai"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien thuan my ito dong nai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-KHKT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN VẬT TƯ THIẾT BỊ KHOA HỌC KỸ THUẬT VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "vat",
+      "tu",
+      "thiet",
+      "bi",
+      "khoa",
+      "hoc",
+      "ky",
+      "thuat",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty co phan vat tu thiet bi khoa hoc ky thuat viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-KHLE",
+    "partnerName": "Khách hàng lẻ không lấy hoá đơn",
+    "partnerNameNormalized": "khach hang le khong lay hoa don",
+    "partnerType": "customer",
+    "searchKeywords": [
+      "khach",
+      "hang",
+      "le",
+      "khong",
+      "lay",
+      "hoa",
+      "don"
+    ],
+    "createdAt": {
+      "_seconds": 1759077895,
+      "_nanoseconds": 527000000
+    }
+  },
+  {
+    "_id": "R-KHOITAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ KHỞI TÂM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "khoi",
+      "tam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu khoi tam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-KIENGIANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "Bệnh Viện Đa Khoa Kiên Giang",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "kien",
+      "giang"
+    ],
+    "partnerNameNormalized": "benh vien da khoa kien giang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-KIENTAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH DỊCH VỤ Y TẾ KIẾN TÂM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "dich",
+      "vu",
+      "y",
+      "te",
+      "kien",
+      "tam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh dich vu y te kien tam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-KIMDO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH DƯỢC KIM ĐÔ",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "duoc",
+      "kim",
+      "do"
+    ],
+    "partnerNameNormalized": "cong ty tnhh duoc kim do",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-KSBENHTAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "TRUNG TÂM KIỂM SOÁT BỆNH TẬT THÀNH PHỐ",
+    "searchKeywords": [
+      "trung",
+      "tam",
+      "kiem",
+      "soat",
+      "benh",
+      "tat",
+      "thanh",
+      "pho"
+    ],
+    "partnerNameNormalized": "trung tam kiem soat benh tat thanh pho",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-KTSHUD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN KỸ THUẬT VÀ SINH HỌC ỨNG DỤNG VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "ky",
+      "thuat",
+      "va",
+      "sinh",
+      "hoc",
+      "ung",
+      "dung",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty co phan ky thuat va sinh hoc ung dung viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LACVIET",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN TẬP ĐOÀN LẠC VIỆT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "tap",
+      "doan",
+      "lac",
+      "viet"
+    ],
+    "partnerNameNormalized": "cong ty co phan tap doan lac viet",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LACVIETPY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN LẠC VIỆT PHÚC YÊN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "lac",
+      "viet",
+      "phuc",
+      "yen"
+    ],
+    "partnerNameNormalized": "cong ty co phan lac viet phuc yen",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LAMHONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ LAM HỒNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "lam",
+      "hong"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te lam hong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LANTRO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH LANTRO (VIỆT NAM)",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "lantro",
+      "(viet",
+      "nam)"
+    ],
+    "partnerNameNormalized": "cong ty tnhh lantro (viet nam)",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LEBAOBD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI LÊ BẢO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "le",
+      "bao"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai le bao",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LEBAOHM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI LÊ BẢO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "le",
+      "bao"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai le bao",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LEVANTHINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "BỆNH VIỆN LÊ VĂN THỊNH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "le",
+      "van",
+      "thinh"
+    ],
+    "partnerNameNormalized": "benh vien le van thinh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LICIENCES",
+    "partnerName": "CÔNG TY TNHH PHÁT TRIỂN KHOA HỌC SỰ SỐNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "phat",
+      "trien",
+      "khoa",
+      "hoc",
+      "su",
+      "song"
+    ],
+    "partnerNameNormalized": "cong ty tnhh phat trien khoa hoc su song",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-LONGKHANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "BỆNH VIỆN ĐKKV LONG KHÁNH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "dkkv",
+      "long",
+      "khanh"
+    ],
+    "partnerNameNormalized": "benh vien dkkv long khanh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LUGIA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CỬA HÀNG DỤNG CỤ VÀ THIẾT BỊ Y TẾ LỮ GIA",
+    "searchKeywords": [
+      "cua",
+      "hang",
+      "dung",
+      "cu",
+      "va",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "lu",
+      "gia"
+    ],
+    "partnerNameNormalized": "cua hang dung cu va thiet bi y te lu gia",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-LUUGIA",
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ LƯU GIA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "luu",
+      "gia"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te luu gia",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-LUUTHANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ LƯU THÀNH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "luu",
+      "thanh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te luu thanh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MAIA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH Y TẾ QUỐC TẾ MAIA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "y",
+      "te",
+      "quoc",
+      "te",
+      "maia"
+    ],
+    "partnerNameNormalized": "cong ty tnhh y te quoc te maia",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MATTROI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "BỆNH VIỆN MẶT TRỜI - CHI NHÁNH CÔNG TY CỔ PHẦN PHÁT TRIỂN CÔNG NGHỆ Y HỌC VIỆT NAM - NHẬT BẢN",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "mat",
+      "troi",
+      "-",
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "phat",
+      "trien",
+      "cong",
+      "nghe",
+      "y",
+      "hoc",
+      "viet",
+      "nam",
+      "-",
+      "nhat",
+      "ban"
+    ],
+    "partnerNameNormalized": "benh vien mat troi - chi nhanh cong ty co phan phat trien cong nghe y hoc viet nam - nhat ban",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDICENT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ MEDICENT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "medicent"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te medicent",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDICHH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH Y TẾ HÒA HẢO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "y",
+      "te",
+      "hoa",
+      "hao"
+    ],
+    "partnerNameNormalized": "cong ty tnhh y te hoa hao",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDILAB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DVYT MEDILAB",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dvyt",
+      "medilab"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dvyt medilab",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDILABSG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH XÉT NGHIỆM Y KHOA MEDILAB SÀI GÒN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "xet",
+      "nghiem",
+      "y",
+      "khoa",
+      "medilab",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "cong ty tnhh xet nghiem y khoa medilab sai gon",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDIPLAZA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ MEDIPLAZA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "mediplaza"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te mediplaza",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDLAB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ Y TẾ MEDLAB",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "va",
+      "dich",
+      "vu",
+      "y",
+      "te",
+      "medlab"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai va dich vu y te medlab",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDLINKS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN TƯ VẤN MEDLINKS",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "tu",
+      "van",
+      "medlinks"
+    ],
+    "partnerNameNormalized": "cong ty co phan tu van medlinks",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEDLOTUS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH MED.LOTUS",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "med.lotus"
+    ],
+    "partnerNameNormalized": "cong ty tnhh med.lotus",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEKONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 786000000
+    },
+    "partnerName": "CÔNG TY TNHH MỘT THÀNH VIÊN BỆNH VIỆN PHỤ SẢN MÊKÔNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "mot",
+      "thanh",
+      "vien",
+      "benh",
+      "vien",
+      "phu",
+      "san",
+      "mekong"
+    ],
+    "partnerNameNormalized": "cong ty tnhh mot thanh vien benh vien phu san mekong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MEKOPHAR",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN HÓA - DƯỢC PHẨM MEKOPHAR",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "hoa",
+      "-",
+      "duoc",
+      "pham",
+      "mekophar"
+    ],
+    "partnerNameNormalized": "cong ty co phan hoa - duoc pham mekophar",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MINHANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN QUỐC TẾ MINH ANH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "quoc",
+      "te",
+      "minh",
+      "anh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien quoc te minh anh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MINHHOANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH TRANG THIẾT BỊ Y TẾ MINH HOÀNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "trang",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "minh",
+      "hoang"
+    ],
+    "partnerNameNormalized": "cong ty tnhh trang thiet bi y te minh hoang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MINHPV",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "PHẠM VĂN MINH",
+    "searchKeywords": [
+      "pham",
+      "van",
+      "minh"
+    ],
+    "partnerNameNormalized": "pham van minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MPBRVT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN DƯỢC- MỸ PHẨM VÀ THƯƠNG MẠI BÀ RỊA VŨNG TÀU",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "duoc-",
+      "my",
+      "pham",
+      "va",
+      "thuong",
+      "mai",
+      "ba",
+      "ria",
+      "vung",
+      "tau"
+    ],
+    "partnerNameNormalized": "cong ty co phan duoc- my pham va thuong mai ba ria vung tau",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MYAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH MỸ ÂN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "my",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty tnhh my an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MYDUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA MỸ ĐỨC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "my",
+      "duc"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa my duc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-MYDUCPN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN  BỆNH VIỆN MỸ ĐỨC PHÚ NHUẬN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "my",
+      "duc",
+      "phu",
+      "nhuan"
+    ],
+    "partnerNameNormalized": "cong ty co phan  benh vien my duc phu nhuan",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NAMCT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH MỘT THÀNH VIÊN BỆNH VIỆN ĐẠI HỌC NAM CẦN THƠ",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "mot",
+      "thanh",
+      "vien",
+      "benh",
+      "vien",
+      "dai",
+      "hoc",
+      "nam",
+      "can",
+      "tho"
+    ],
+    "partnerNameNormalized": "cong ty tnhh mot thanh vien benh vien dai hoc nam can tho",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NAMSG",
+    "partnerName": "CÔNG TY CỔ PHẦN Y TẾ PHÚC THỊNH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "y",
+      "te",
+      "phuc",
+      "thinh"
+    ],
+    "partnerNameNormalized": "cong ty co phan y te phuc thinh",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-NANOGEN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ SINH HỌC DƯỢC NANOGEN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "cong",
+      "nghe",
+      "sinh",
+      "hoc",
+      "duoc",
+      "nanogen"
+    ],
+    "partnerNameNormalized": "cong ty co phan cong nghe sinh hoc duoc nanogen",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NASAFE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ SINH HỌC NASAFE",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "cong",
+      "nghe",
+      "sinh",
+      "hoc",
+      "nasafe"
+    ],
+    "partnerNameNormalized": "cong ty co phan cong nghe sinh hoc nasafe",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NCPTYTE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN NGHIÊN CỨU VÀ PHÁT TRIỂN Y TẾ VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "nghien",
+      "cuu",
+      "va",
+      "phat",
+      "trien",
+      "y",
+      "te",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty co phan nghien cuu va phat trien y te viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NEXCALIBUR",
+    "partnerName": "CÔNG TY CỔ PHẦN NEXCALIBUR",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty co phan nexcalibur",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "nexcalibur"
+    ],
+    "createdAt": {
+      "_seconds": 1761997186,
+      "_nanoseconds": 556000000
+    }
+  },
+  {
+    "_id": "R-NGOCMINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN Y TẾ NGỌC MINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "y",
+      "te",
+      "ngoc",
+      "minh"
+    ],
+    "partnerNameNormalized": "cong ty co phan y te ngoc minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NGUYENKHANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH KHẢI NGUYÊN KHANG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "khai",
+      "nguyen",
+      "khang"
+    ],
+    "partnerNameNormalized": "cong ty tnhh khai nguyen khang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NGUYENTRAI",
+    "partnerName": "BỆNH VIỆN NGUYỄN TRÃI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nguyen",
+      "trai"
+    ],
+    "partnerNameNormalized": "benh vien nguyen trai",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-NHATLAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ NHẬT LAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "nhat",
+      "lam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu nhat lam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHATMINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI VÀ THIẾT BỊ  Y TẾ NHẬT MINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "va",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "nhat",
+      "minh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai va thiet bi  y te nhat minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHATTAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ NHẤT TÂM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "nhat",
+      "tam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te nhat tam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHIDONG1",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN NHI ĐỒNG 1",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nhi",
+      "dong",
+      "1"
+    ],
+    "partnerNameNormalized": "benh vien nhi dong 1",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHIDONG2",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN NHI ĐỒNG 2",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nhi",
+      "dong",
+      "2"
+    ],
+    "partnerNameNormalized": "benh vien nhi dong 2",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHIDONGNAI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN NHI ĐỒNG ĐỒNG NAI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nhi",
+      "dong",
+      "dong",
+      "nai"
+    ],
+    "partnerNameNormalized": "benh vien nhi dong dong nai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHIDONGTP",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN NHI ĐỒNG THÀNH PHỐ",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nhi",
+      "dong",
+      "thanh",
+      "pho"
+    ],
+    "partnerNameNormalized": "benh vien nhi dong thanh pho",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHIETDOI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN BỆNH NHIỆT ĐỚI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "benh",
+      "nhiet",
+      "doi"
+    ],
+    "partnerNameNormalized": "benh vien benh nhiet doi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHILONGAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN SẢN NHI LONG AN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "san",
+      "nhi",
+      "long",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien san nhi long an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHITW",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN NHI TRUNG ƯƠNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nhi",
+      "trung",
+      "uong"
+    ],
+    "partnerNameNormalized": "benh vien nhi trung uong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NHPTVN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "NGÂN HÀNG PHÁT TRIỂN VIỆT NAM-SỞ GIAO DỊCH II",
+    "searchKeywords": [
+      "ngan",
+      "hang",
+      "phat",
+      "trien",
+      "viet",
+      "nam-so",
+      "giao",
+      "dich",
+      "ii"
+    ],
+    "partnerNameNormalized": "ngan hang phat trien viet nam-so giao dich ii",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NOITIETTW",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN NỘI TIẾT TRUNG ƯƠNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "noi",
+      "tiet",
+      "trung",
+      "uong"
+    ],
+    "partnerNameNormalized": "benh vien noi tiet trung uong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NT115",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "NHÀ THUỐC BỆNH VIỆN NHÂN DÂN 115",
+    "searchKeywords": [
+      "nha",
+      "thuoc",
+      "benh",
+      "vien",
+      "nhan",
+      "dan",
+      "115"
+    ],
+    "partnerNameNormalized": "nha thuoc benh vien nhan dan 115",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTANBINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN AN BÌNH - NHÀ THUỐC",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "an",
+      "binh",
+      "-",
+      "nha",
+      "thuoc"
+    ],
+    "partnerNameNormalized": "benh vien an binh - nha thuoc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "CÔNG TY TNHH KỸ THUẬT THƯƠNG MẠI NTB",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "ky",
+      "thuat",
+      "thuong",
+      "mai",
+      "ntb"
+    ],
+    "partnerNameNormalized": "cong ty tnhh ky thuat thuong mai ntb",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTBINHDAN1",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "HỘ KINH DOANH NHÀ THUỐC BÌNH DÂN 1",
+    "searchKeywords": [
+      "ho",
+      "kinh",
+      "doanh",
+      "nha",
+      "thuoc",
+      "binh",
+      "dan",
+      "1"
+    ],
+    "partnerNameNormalized": "ho kinh doanh nha thuoc binh dan 1",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTBVE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "Nhà thuốc số 1 bệnh viện E",
+    "searchKeywords": [
+      "nha",
+      "thuoc",
+      "so",
+      "1",
+      "benh",
+      "vien",
+      "e"
+    ],
+    "partnerNameNormalized": "nha thuoc so 1 benh vien e",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTDHYD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "dai",
+      "hoc",
+      "y",
+      "duoc",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "benh vien dai hoc y duoc thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTDKSG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA SÀI GÒN - NHÀ THUỐC BỆNH VIỆN",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "sai",
+      "gon",
+      "-",
+      "nha",
+      "thuoc",
+      "benh",
+      "vien"
+    ],
+    "partnerNameNormalized": "benh vien da khoa sai gon - nha thuoc benh vien",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTGIADINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "BỆNH VIỆN NHÂN DÂN GIA ĐỊNH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nhan",
+      "dan",
+      "gia",
+      "dinh"
+    ],
+    "partnerNameNormalized": "benh vien nhan dan gia dinh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTGOVAP",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "NHÀ THUỐC BỆNH VIỆN GÒ VẤP",
+    "searchKeywords": [
+      "nha",
+      "thuoc",
+      "benh",
+      "vien",
+      "go",
+      "vap"
+    ],
+    "partnerNameNormalized": "nha thuoc benh vien go vap",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTNTPHUONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "NHÀ THUỐC BỆNH VIỆN NGUYỄN TRI PHƯƠNG",
+    "searchKeywords": [
+      "nha",
+      "thuoc",
+      "benh",
+      "vien",
+      "nguyen",
+      "tri",
+      "phuong"
+    ],
+    "partnerNameNormalized": "nha thuoc benh vien nguyen tri phuong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTNTRAI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 787000000
+    },
+    "partnerName": "NHÀ THUỐC BỆNH VIỆN NGUYỄN TRÃI",
+    "searchKeywords": [
+      "nha",
+      "thuoc",
+      "benh",
+      "vien",
+      "nguyen",
+      "trai"
+    ],
+    "partnerNameNormalized": "nha thuoc benh vien nguyen trai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTPHUONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN NGUYỄN TRI PHƯƠNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "nguyen",
+      "tri",
+      "phuong"
+    ],
+    "partnerNameNormalized": "benh vien nguyen tri phuong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTPHUONGCHAU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN QUỐC TẾ PHƯƠNG CHÂU",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "quoc",
+      "te",
+      "phuong",
+      "chau"
+    ],
+    "partnerNameNormalized": "benh vien quoc te phuong chau",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTQUAN10",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "TRUNG TÂM Y TẾ QUẬN 10",
+    "searchKeywords": [
+      "trung",
+      "tam",
+      "y",
+      "te",
+      "quan",
+      "10"
+    ],
+    "partnerNameNormalized": "trung tam y te quan 10",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTTANBINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "NHÀ THUỐC BỆNH VIỆN QUẬN TÂN BÌNH",
+    "searchKeywords": [
+      "nha",
+      "thuoc",
+      "benh",
+      "vien",
+      "quan",
+      "tan",
+      "binh"
+    ],
+    "partnerNameNormalized": "nha thuoc benh vien quan tan binh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NTTRUNGVUONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN TRƯNG VƯƠNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "trung",
+      "vuong"
+    ],
+    "partnerNameNormalized": "benh vien trung vuong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-NUTRIHOME",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN DINH DƯỠNG NUTRIHOME - CHI NHÁNH THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dinh",
+      "duong",
+      "nutrihome",
+      "-",
+      "chi",
+      "nhanh",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "cong ty co phan dinh duong nutrihome - chi nhanh thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-ONELAB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH ONELAB",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "onelab"
+    ],
+    "partnerNameNormalized": "cong ty tnhh onelab",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-OUCRU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "VPĐD TỔ CHỨC CENTRE FOR TROPICAL MEDICINE (OXFORD UNIVERSITY CLINICAL RESEARCH UNIT - VIETNAM)",
+    "searchKeywords": [
+      "vpdd",
+      "to",
+      "chuc",
+      "centre",
+      "for",
+      "tropical",
+      "medicine",
+      "(oxford",
+      "university",
+      "clinical",
+      "research",
+      "unit",
+      "-",
+      "vietnam)"
+    ],
+    "partnerNameNormalized": "vpdd to chuc centre for tropical medicine (oxford university clinical research unit - vietnam)",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PASTEUR",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "VIỆN PASTEUR THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "vien",
+      "pasteur",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "vien pasteur thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PATCO",
+    "partnerName": "CÔNG TY CỔ PHẦN PHÂN PHỐI VÀ ĐẦU TƯ PATCO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "phan",
+      "phoi",
+      "va",
+      "dau",
+      "tu",
+      "patco"
+    ],
+    "partnerNameNormalized": "cong ty co phan phan phoi va dau tu patco",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PCHIV-AIDS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "HỘI PHÒNG CHỐNG HIV/AIDS TP.HỒ CHÍ MINH",
+    "searchKeywords": [
+      "hoi",
+      "phong",
+      "chong",
+      "hiv/aids",
+      "tp.ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "hoi phong chong hiv/aids tp.ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PCT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN ĐẠI HỌC Y KHOA PHAN CHÂU TRINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "dai",
+      "hoc",
+      "y",
+      "khoa",
+      "phan",
+      "chau",
+      "trinh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien dai hoc y khoa phan chau trinh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHACOGEN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TRÁCH NHIỆM HỮU HẠN NHÀ MÁY PHACOGEN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "trach",
+      "nhiem",
+      "huu",
+      "han",
+      "nha",
+      "may",
+      "phacogen"
+    ],
+    "partnerNameNormalized": "cong ty trach nhiem huu han nha may phacogen",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHANANH",
+    "partnerName": "CÔNG TY TNHH SẢN XUẤT - THƯƠNG MẠI - TRANG THIẾT BỊ Y TẾ PHAN ANH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "san",
+      "xuat",
+      "-",
+      "thuong",
+      "mai",
+      "-",
+      "trang",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "phan",
+      "anh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh san xuat - thuong mai - trang thiet bi y te phan anh",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-PHCNQ8",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN PHỤC HỒI CHỨC NĂNG - ĐIỀU TRỊ BỆNH NGHỀ NGHIỆP",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "phuc",
+      "hoi",
+      "chuc",
+      "nang",
+      "-",
+      "dieu",
+      "tri",
+      "benh",
+      "nghe",
+      "nghiep"
+    ],
+    "partnerNameNormalized": "benh vien phuc hoi chuc nang - dieu tri benh nghe nghiep",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHOIDN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN PHỔI TỈNH ĐỒNG NAI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "phoi",
+      "tinh",
+      "dong",
+      "nai"
+    ],
+    "partnerNameNormalized": "benh vien phoi tinh dong nai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHUAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VÀ TRANG THIẾT BỊ Y TẾ PHÚ AN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "va",
+      "trang",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "phu",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu va trang thiet bi y te phu an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHUONGCHAUSD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN PHƯƠNG CHÂU SA ĐÉC",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "phuong",
+      "chau",
+      "sa",
+      "dec"
+    ],
+    "partnerNameNormalized": "benh vien phuong chau sa dec",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHUONGCHAUST",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN QUỐC TẾ PHƯƠNG CHÂU SÓC TRĂNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "quoc",
+      "te",
+      "phuong",
+      "chau",
+      "soc",
+      "trang"
+    ],
+    "partnerNameNormalized": "benh vien quoc te phuong chau soc trang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHUONGDONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "DỤNG CỤ Y KHOA PHƯƠNG ĐÔNG",
+    "searchKeywords": [
+      "dung",
+      "cu",
+      "y",
+      "khoa",
+      "phuong",
+      "dong"
+    ],
+    "partnerNameNormalized": "dung cu y khoa phuong dong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PHUONGNAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN PHƯƠNG NAM - BỆNH VIỆN ĐA KHOA PHƯƠNG NAM",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "phuong",
+      "nam",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "phuong",
+      "nam"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien phuong nam - benh vien da khoa phuong nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PKDKSG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "Chi nhánh Công ty TNHH Phòng Khám Đa Khoa Sài Gòn - Trung tâm khám bệnh số 2",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "phong",
+      "kham",
+      "da",
+      "khoa",
+      "sai",
+      "gon",
+      "-",
+      "trung",
+      "tam",
+      "kham",
+      "benh",
+      "so",
+      "2"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh phong kham da khoa sai gon - trung tam kham benh so 2",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PKGIADINH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN PHÒNG KHÁM GIA ĐÌNH THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "phong",
+      "kham",
+      "gia",
+      "dinh",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "cong ty co phan phong kham gia dinh thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PKQTMY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN PHÒNG KHÁM BỆNH VIỆN QUỐC TẾ MỸ",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "phong",
+      "kham",
+      "benh",
+      "vien",
+      "quoc",
+      "te",
+      "my"
+    ],
+    "partnerNameNormalized": "cong ty co phan phong kham benh vien quoc te my",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PKVIETNHAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN DỊCH VỤ Y TẾ VIỆT NHẬT - CHI NHÁNH HÀ NỘI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dich",
+      "vu",
+      "y",
+      "te",
+      "viet",
+      "nhat",
+      "-",
+      "chi",
+      "nhanh",
+      "ha",
+      "noi"
+    ],
+    "partnerNameNormalized": "cong ty co phan dich vu y te viet nhat - chi nhanh ha noi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PRIMASG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN TRUNG TÂM Y KHOA HOÀN MỸ GOLD KỲ ĐỒNG - BỆNH VIỆN MẮT PRIMA SÀI GÒN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "trung",
+      "tam",
+      "y",
+      "khoa",
+      "hoan",
+      "my",
+      "gold",
+      "ky",
+      "dong",
+      "-",
+      "benh",
+      "vien",
+      "mat",
+      "prima",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "cong ty co phan trung tam y khoa hoan my gold ky dong - benh vien mat prima sai gon",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PSTW",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN PHỤ SẢN TRUNG ƯƠNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "phu",
+      "san",
+      "trung",
+      "uong"
+    ],
+    "partnerNameNormalized": "benh vien phu san trung uong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-PTG",
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ PTG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "ptg"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu ptg",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-PTMEDICAL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI VÀ DỊCH VỤ KỸ THUẬT PHÚC TÍN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "va",
+      "dich",
+      "vu",
+      "ky",
+      "thuat",
+      "phuc",
+      "tin"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai va dich vu ky thuat phuc tin",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-QTCITY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN QUỐC TẾ CITY",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "quoc",
+      "te",
+      "city"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien quoc te city",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-QTHPHUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ HẠNH PHÚC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "hanh",
+      "phuc"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa quoc te hanh phuc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-QTMY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY TNHH THƯƠNG MẠI - DỊCH VỤ MỸ MỸ - BỆNH VIỆN QUỐC TẾ MỸ",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "-",
+      "dich",
+      "vu",
+      "my",
+      "my",
+      "-",
+      "benh",
+      "vien",
+      "quoc",
+      "te",
+      "my"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh thuong mai - dich vu my my - benh vien quoc te my",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-QTPS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN PHỤ SẢN QUỐC TẾ SÀI GÒN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "phu",
+      "san",
+      "quoc",
+      "te",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien phu san quoc te sai gon",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-QTSG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN ĐA KHOA QUỐC TẾ SÀI GÒN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien da khoa quoc te sai gon",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-QUESTLAB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH QUEST LABORATORIES VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "quest",
+      "laboratories",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh quest laboratories viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-QY121",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN QUÂN Y 121",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "quan",
+      "y",
+      "121"
+    ],
+    "partnerNameNormalized": "benh vien quan y 121",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-RHMTW",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN RĂNG HÀM MẶT TRUNG ƯƠNG TP.HỒ CHÍ MINH",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "rang",
+      "ham",
+      "mat",
+      "trung",
+      "uong",
+      "tp.ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "benh vien rang ham mat trung uong tp.ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SACOMBANK",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "NGÂN HÀNG THƯƠNG MẠI CỔ PHẦN SÀI GÒN THƯƠNG TÍN",
+    "searchKeywords": [
+      "ngan",
+      "hang",
+      "thuong",
+      "mai",
+      "co",
+      "phan",
+      "sai",
+      "gon",
+      "thuong",
+      "tin"
+    ],
+    "partnerNameNormalized": "ngan hang thuong mai co phan sai gon thuong tin",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SAINTPAUL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH NHA KHOA SAINT PAUL",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "nha",
+      "khoa",
+      "saint",
+      "paul"
+    ],
+    "partnerNameNormalized": "cong ty tnhh nha khoa saint paul",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SANNHIPY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "BỆNH VIỆN SẢN NHI TỈNH PHÚ YÊN",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "san",
+      "nhi",
+      "tinh",
+      "phu",
+      "yen"
+    ],
+    "partnerNameNormalized": "benh vien san nhi tinh phu yen",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SDPASTEUR",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY TNHH Y SINH DƯỢC PASTEUR",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "y",
+      "sinh",
+      "duoc",
+      "pasteur"
+    ],
+    "partnerNameNormalized": "cong ty tnhh y sinh duoc pasteur",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SGHC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 788000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN DỊCH VỤ ĐẦU TƯ SAIGON HEALTHCARE",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dich",
+      "vu",
+      "dau",
+      "tu",
+      "saigon",
+      "healthcare"
+    ],
+    "partnerNameNormalized": "cong ty co phan dich vu dau tu saigon healthcare",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SIAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN THẨM MỸ SIAM THAILAND",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "tham",
+      "my",
+      "siam",
+      "thailand"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien tham my siam thailand",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SISCSG",
+    "partnerName": "CÔNG TY CỔ PHẦN THIẾT BỊ SÀI GÒN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thiet",
+      "bi",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "cong ty co phan thiet bi sai gon",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-SKSONG AN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH DỊCH VỤ CHĂM SÓC SỨC KHỎE SONG AN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "dich",
+      "vu",
+      "cham",
+      "soc",
+      "suc",
+      "khoe",
+      "song",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty tnhh dich vu cham soc suc khoe song an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SKTD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY TNHH SỨC KHỎE TRỌN ĐỜI TẠI TP.HỒ CHÍ MINH",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "suc",
+      "khoe",
+      "tron",
+      "doi",
+      "tai",
+      "tp.ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh suc khoe tron doi tai tp.ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SOLUTIONS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH GENE SOLUTIONS LAB",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "gene",
+      "solutions",
+      "lab"
+    ],
+    "partnerNameNormalized": "cong ty tnhh gene solutions lab",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SONHUONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ SƠN HƯƠNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "son",
+      "huong"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te son huong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-SYDNEY",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH VIỆN ĐẠI HỌC SYDNEY VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "vien",
+      "dai",
+      "hoc",
+      "sydney",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh vien dai hoc sydney viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-T&P",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ PHÁT TRIỂN CÔNG NGHỆ T&P",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "phat",
+      "trien",
+      "cong",
+      "nghe",
+      "t&p"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu phat trien cong nghe t&p",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TAIMUIHONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "BỆNH VIỆN TAI MŨI HỌNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "tai",
+      "mui",
+      "hong"
+    ],
+    "partnerNameNormalized": "benh vien tai mui hong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TAMAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH VẬT TƯ THIẾT BỊ Y TẾ TÂM AN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "vat",
+      "tu",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "tam",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty tnhh vat tu thiet bi y te tam an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TAMANHHN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TÂM ANH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tam",
+      "anh"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa tam anh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TAMANHQ7",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "PHÒNG KHÁM ĐA KHOA TÂM ANH QUẬN 7 - CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TÂM ANH TP. HỒ CHÍ MINH",
+    "searchKeywords": [
+      "phong",
+      "kham",
+      "da",
+      "khoa",
+      "tam",
+      "anh",
+      "quan",
+      "7",
+      "-",
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tam",
+      "anh",
+      "tp.",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "phong kham da khoa tam anh quan 7 - chi nhanh cong ty co phan benh vien da khoa tam anh tp. ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TAMANHQ8",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TÂM ANH QUẬN 8",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tam",
+      "anh",
+      "quan",
+      "8"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa tam anh quan 8",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TAMDUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN TIM TÂM ĐỨC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "tim",
+      "tam",
+      "duc"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien tim tam duc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TAMTRI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH MỘT THÀNH VIÊN BỆNH VIỆN ĐA KHOA TÂM TRÍ ĐÀ NẴNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "mot",
+      "thanh",
+      "vien",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tam",
+      "tri",
+      "da",
+      "nang"
+    ],
+    "partnerNameNormalized": "cong ty tnhh mot thanh vien benh vien da khoa tam tri da nang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TANDA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "HỘ KINH DOANH CỬA HÀNG TRANG THIẾT BỊ NHA KHOA TẢN ĐÀ",
+    "searchKeywords": [
+      "ho",
+      "kinh",
+      "doanh",
+      "cua",
+      "hang",
+      "trang",
+      "thiet",
+      "bi",
+      "nha",
+      "khoa",
+      "tan",
+      "da"
+    ],
+    "partnerNameNormalized": "ho kinh doanh cua hang trang thiet bi nha khoa tan da",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TANDA1",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "HỘ KINH DOANH CỬA HÀNG TRANG THIẾT BỊ VẬT TƯ NHA KHOA TẢN ĐÀ",
+    "searchKeywords": [
+      "ho",
+      "kinh",
+      "doanh",
+      "cua",
+      "hang",
+      "trang",
+      "thiet",
+      "bi",
+      "vat",
+      "tu",
+      "nha",
+      "khoa",
+      "tan",
+      "da"
+    ],
+    "partnerNameNormalized": "ho kinh doanh cua hang trang thiet bi vat tu nha khoa tan da",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TANHUNG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA TÂN HƯNG - CHI NHÁNH CÔNG TY TNHH THỰC PHẨM TAM HỢP",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tan",
+      "hung",
+      "-",
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "thuc",
+      "pham",
+      "tam",
+      "hop"
+    ],
+    "partnerNameNormalized": "benh vien da khoa tan hung - chi nhanh cong ty tnhh thuc pham tam hop",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TBGVIETNHAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH VIỆN TẾ BÀO GỐC VIỆT NHẬT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "vien",
+      "te",
+      "bao",
+      "goc",
+      "viet",
+      "nhat"
+    ],
+    "partnerNameNormalized": "cong ty tnhh vien te bao goc viet nhat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TBYK115",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y KHOA 115",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "khoa",
+      "115"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y khoa 115",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TBYTANT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH VẬT TƯ THIẾT BỊ Y TẾ ANT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "vat",
+      "tu",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "ant"
+    ],
+    "partnerNameNormalized": "cong ty tnhh vat tu thiet bi y te ant",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TDDENT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH MTV TRANG THIẾT BỊ Y NHA KHOA TDDENT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "mtv",
+      "trang",
+      "thiet",
+      "bi",
+      "y",
+      "nha",
+      "khoa",
+      "tddent"
+    ],
+    "partnerNameNormalized": "cong ty tnhh mtv trang thiet bi y nha khoa tddent",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TEKCO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH TEKCO VIỆT NAM",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "tekco",
+      "viet",
+      "nam"
+    ],
+    "partnerNameNormalized": "cong ty tnhh tekco viet nam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TGGEN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH THẾ GIỚI GEN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "the",
+      "gioi",
+      "gen"
+    ],
+    "partnerNameNormalized": "cong ty tnhh the gioi gen",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THANGLONGLV",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN THĂNG LONG LẠC VIỆT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thang",
+      "long",
+      "lac",
+      "viet"
+    ],
+    "partnerNameNormalized": "cong ty co phan thang long lac viet",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THANHAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN THIẾT BỊ Y TẾ THÀNH AN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "thanh",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty co phan thiet bi y te thanh an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THANHHOA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN THIẾT BỊ VẬT TƯ Y TẾ THANH HÓA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thiet",
+      "bi",
+      "vat",
+      "tu",
+      "y",
+      "te",
+      "thanh",
+      "hoa"
+    ],
+    "partnerNameNormalized": "cong ty co phan thiet bi vat tu y te thanh hoa",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THIENAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ THIẾT BỊ Y TẾ THIÊN ÂN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "thien",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu thiet bi y te thien an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THIENANPHUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ - VẬT TƯ Y TẾ THIÊN AN PHÚC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "-",
+      "vat",
+      "tu",
+      "y",
+      "te",
+      "thien",
+      "an",
+      "phuc"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi - vat tu y te thien an phuc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THIENHANH",
+    "partnerName": "CÔNG TY TNHH BỆNH VIỆN ĐA KHOA THIỆN HẠNH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "thien",
+      "hanh"
+    ],
+    "partnerNameNormalized": "cong ty tnhh benh vien da khoa thien hanh",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-THIENTAM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "QUỸ THIỆN TÂM",
+    "searchKeywords": [
+      "quy",
+      "thien",
+      "tam"
+    ],
+    "partnerNameNormalized": "quy thien tam",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THIENTRI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ THIỆN TRÍ",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "thien",
+      "tri"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te thien tri",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THINHPHAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ NHA KHOA THỊNH PHÁT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "nha",
+      "khoa",
+      "thinh",
+      "phat"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi nha khoa thinh phat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THOIDAI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH XUẤT NHẬP KHẨU THƯƠNG MẠI THIÊN THỜI ĐẠI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "xuat",
+      "nhap",
+      "khau",
+      "thuong",
+      "mai",
+      "thien",
+      "thoi",
+      "dai"
+    ],
+    "partnerNameNormalized": "cong ty tnhh xuat nhap khau thuong mai thien thoi dai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THONGNHAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "BỆNH VIỆN THỐNG NHẤT",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "thong",
+      "nhat"
+    ],
+    "partnerNameNormalized": "benh vien thong nhat",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THONGNHATDN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA THỐNG NHẤT TỈNH ĐỒNG NAI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "thong",
+      "nhat",
+      "tinh",
+      "dong",
+      "nai"
+    ],
+    "partnerNameNormalized": "benh vien da khoa thong nhat tinh dong nai",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-THUANPHONG",
+    "partnerName": "CÔNG TY TNHH VIỄN THÔNG  SÁNG TẠO THUẬN PHONG",
+    "partnerType": "customer",
+    "partnerNameNormalized": "cong ty tnhh vien thong  sang tao thuan phong",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "vien",
+      "thong",
+      "sang",
+      "tao",
+      "thuan",
+      "phong"
+    ],
+    "createdAt": {
+      "_seconds": 1763953377,
+      "_nanoseconds": 697000000
+    }
+  },
+  {
+    "_id": "R-THUCUC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN Y KHOA & THẨM MỸ THU CÚC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "y",
+      "khoa",
+      "&",
+      "tham",
+      "my",
+      "thu",
+      "cuc"
+    ],
+    "partnerNameNormalized": "cong ty co phan y khoa & tham my thu cuc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TIMSGROUP",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN TIMS GROUP",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "tims",
+      "group"
+    ],
+    "partnerNameNormalized": "cong ty co phan tims group",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TINAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI TÍN AN GLOBAL",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "tin",
+      "an",
+      "global"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai tin an global",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TMHSG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN TAI MŨI HỌNG SÀI GÒN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "tai",
+      "mui",
+      "hong",
+      "sai",
+      "gon"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien tai mui hong sai gon",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TMPHUOCKHANG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY TNHH VẬT TƯ & THIẾT BỊ Y TẾ - THẨM MỸ PHƯỚC KHANG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "vat",
+      "tu",
+      "&",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "-",
+      "tham",
+      "my",
+      "phuoc",
+      "khang"
+    ],
+    "partnerNameNormalized": "cong ty tnhh vat tu & thiet bi y te - tham my phuoc khang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TOANCAU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN TRANG THIẾT BỊ Y TẾ TOÀN CẦU",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "trang",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "toan",
+      "cau"
+    ],
+    "partnerNameNormalized": "cong ty co phan trang thiet bi y te toan cau",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TRANGBOM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "TRUNG TÂM Y TẾ HUYỆN TRẢNG BOM",
+    "searchKeywords": [
+      "trung",
+      "tam",
+      "y",
+      "te",
+      "huyen",
+      "trang",
+      "bom"
+    ],
+    "partnerNameNormalized": "trung tam y te huyen trang bom",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TRIEUAN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA TƯ NHÂN TRIỀU AN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "tu",
+      "nhan",
+      "trieu",
+      "an"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa tu nhan trieu an",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TRUNGVUONG",
+    "partnerName": "BỆNH VIỆN TRƯNG VƯƠNG",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "trung",
+      "vuong"
+    ],
+    "partnerNameNormalized": "benh vien trung vuong",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-TRUONGDHYD",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 789000000
+    },
+    "partnerName": "ĐẠI HỌC Y DƯỢC THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "dai",
+      "hoc",
+      "y",
+      "duoc",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "dai hoc y duoc thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TRUONGPCT",
+    "partnerName": "TRƯỜNG ĐẠI HỌC PHAN CHÂU TRINH",
+    "searchKeywords": [
+      "truong",
+      "dai",
+      "hoc",
+      "phan",
+      "chau",
+      "trinh"
+    ],
+    "partnerNameNormalized": "truong dai hoc phan chau trinh",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-TRUONGPNT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "TRƯỜNG ĐẠI HỌC Y KHOA PHẠM NGỌC THẠCH",
+    "searchKeywords": [
+      "truong",
+      "dai",
+      "hoc",
+      "y",
+      "khoa",
+      "pham",
+      "ngoc",
+      "thach"
+    ],
+    "partnerNameNormalized": "truong dai hoc y khoa pham ngoc thach",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TRUONGSON",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN HÀ NỘI TRƯỜNG SƠN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "ha",
+      "noi",
+      "truong",
+      "son"
+    ],
+    "partnerNameNormalized": "cong ty co phan ha noi truong son",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TRUYENMAUHH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "BỆNH VIỆN TRUYỀN MÁU HUYẾT HỌC",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "truyen",
+      "mau",
+      "huyet",
+      "hoc"
+    ],
+    "partnerNameNormalized": "benh vien truyen mau huyet hoc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TSSE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN THIẾT BỊ - VẬT TƯ KHOA HỌC KỸ THUẬT VÀ DU LỊCH TRUNG SƠN T.S.S.E",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "thiet",
+      "bi",
+      "-",
+      "vat",
+      "tu",
+      "khoa",
+      "hoc",
+      "ky",
+      "thuat",
+      "va",
+      "du",
+      "lich",
+      "trung",
+      "son",
+      "t.s.s.e"
+    ],
+    "partnerNameNormalized": "cong ty co phan thiet bi - vat tu khoa hoc ky thuat va du lich trung son t.s.s.e",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TTCC115",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "TRUNG TÂM CẤP CỨU 115 THÀNH PHỐ HỒ CHÍ MINH",
+    "searchKeywords": [
+      "trung",
+      "tam",
+      "cap",
+      "cuu",
+      "115",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "trung tam cap cuu 115 thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TTDT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "TRUNG TÂM ĐÀO TẠO NHÂN LỰC Y TẾ THEO NHU CẦU XÃ HỘI",
+    "searchKeywords": [
+      "trung",
+      "tam",
+      "dao",
+      "tao",
+      "nhan",
+      "luc",
+      "y",
+      "te",
+      "theo",
+      "nhu",
+      "cau",
+      "xa",
+      "hoi"
+    ],
+    "partnerNameNormalized": "trung tam dao tao nhan luc y te theo nhu cau xa hoi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TTXNBMT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CÔNG TY TNHH TRUNG TÂM XÉT NGHIỆM VÀ CHẨN ĐOÁN Y KHOA BUÔN MA THUỘT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "trung",
+      "tam",
+      "xet",
+      "nghiem",
+      "va",
+      "chan",
+      "doan",
+      "y",
+      "khoa",
+      "buon",
+      "ma",
+      "thuot"
+    ],
+    "partnerNameNormalized": "cong ty tnhh trung tam xet nghiem va chan doan y khoa buon ma thuot",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TTYTCANGIO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "Trung Tâm Y tế Huyện Cần Giờ",
+    "searchKeywords": [
+      "trung",
+      "tam",
+      "y",
+      "te",
+      "huyen",
+      "can",
+      "gio"
+    ],
+    "partnerNameNormalized": "trung tam y te huyen can gio",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TUDU",
+    "partnerName": "BỆNH VIỆN TỪ DŨ",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "tu",
+      "du"
+    ],
+    "partnerNameNormalized": "benh vien tu du",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-TWCANTHO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "BỆNH VIỆN ĐA KHOA TRUNG ƯƠNG CẦN THƠ",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "trung",
+      "uong",
+      "can",
+      "tho"
+    ],
+    "partnerNameNormalized": "benh vien da khoa trung uong can tho",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-UNGBUOU",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "Bệnh Viện Ung Bướu",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "ung",
+      "buou"
+    ],
+    "partnerNameNormalized": "benh vien ung buou",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VANHANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY TNHH THƯƠNG MẠI BÁCH THƯ - TRUNG TÂM Y KHOA VẠN HẠNH",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "bach",
+      "thu",
+      "-",
+      "trung",
+      "tam",
+      "y",
+      "khoa",
+      "van",
+      "hanh"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh thuong mai bach thu - trung tam y khoa van hanh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VANHANHCT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY TNHH THƯƠNG MẠI BÁCH THƯ- TRUNG TÂM Y KHOA VẠN HẠNH CẦN THƠ",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "bach",
+      "thu-",
+      "trung",
+      "tam",
+      "y",
+      "khoa",
+      "van",
+      "hanh",
+      "can",
+      "tho"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh thuong mai bach thu- trung tam y khoa van hanh can tho",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VANHANHLX",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY TNHH THƯƠNG MẠI BÁCH THƯ - TRUNG TÂM Y KHOA VẠN HẠNH SÀI GÒN- LONG XUYÊN",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "bach",
+      "thu",
+      "-",
+      "trung",
+      "tam",
+      "y",
+      "khoa",
+      "van",
+      "hanh",
+      "sai",
+      "gon-",
+      "long",
+      "xuyen"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty tnhh thuong mai bach thu - trung tam y khoa van hanh sai gon- long xuyen",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VAPPSO",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CÔNG TY TNHH VAPPSO",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "vappso"
+    ],
+    "partnerNameNormalized": "cong ty tnhh vappso",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VFAMI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CÔNG TY TRÁCH NHIỆM HỮU HẠN V FAMI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "trach",
+      "nhiem",
+      "huu",
+      "han",
+      "v",
+      "fami"
+    ],
+    "partnerNameNormalized": "cong ty trach nhiem huu han v fami",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VHB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 790000000
+    },
+    "partnerName": "CÔNG TY TNHH SỨC KHOẺ VÀ SẮC ĐẸP VIỆT",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "suc",
+      "khoe",
+      "va",
+      "sac",
+      "dep",
+      "viet"
+    ],
+    "partnerNameNormalized": "cong ty tnhh suc khoe va sac dep viet",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VIENTBG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 791000000
+    },
+    "partnerName": "VIỆN TẾ BÀO GỐC",
+    "searchKeywords": [
+      "vien",
+      "te",
+      "bao",
+      "goc"
+    ],
+    "partnerNameNormalized": "vien te bao goc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VIENTIM",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 791000000
+    },
+    "partnerName": "Viện Tim Thành Phố Hồ Chí Minh",
+    "searchKeywords": [
+      "vien",
+      "tim",
+      "thanh",
+      "pho",
+      "ho",
+      "chi",
+      "minh"
+    ],
+    "partnerNameNormalized": "vien tim thanh pho ho chi minh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VIETDUC",
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ VIỆT ĐỨC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "viet",
+      "duc"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te viet duc",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-VIETHONG",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 791000000
+    },
+    "partnerName": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ VIỆT HỒNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "viet",
+      "hong"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thuong mai dich vu viet hong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VIETNHA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 791000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ VIỆT NHA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "viet",
+      "nha"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te viet nha",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINBIOCARE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 791000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ SINH HỌC VINBIOCARE",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "cong",
+      "nghe",
+      "sinh",
+      "hoc",
+      "vinbiocare"
+    ],
+    "partnerNameNormalized": "cong ty co phan cong nghe sinh hoc vinbiocare",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMEC",
+    "partnerName": "CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec"
+    ],
+    "partnerNameNormalized": "cong ty co phan benh vien da khoa quoc te vinmec",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-VINMECCT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC - BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC CẦN THƠ",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "can",
+      "tho"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa quoc te vinmec - benh vien da khoa quoc te vinmec can tho",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECCTP",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC - BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC CENTRAL PARK",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "central",
+      "park"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa quoc te vinmec - benh vien da khoa quoc te vinmec central park",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECDN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC - BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC ĐÀ NẴNG",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "da",
+      "nang"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa quoc te vinmec - benh vien da khoa quoc te vinmec da nang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECHL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "Chi nhánh Công ty CP Bệnh viện đa khoa quốc tế Vinmec - Bệnh viện đa khoa quốc tế Vinmec Hạ Long",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "cp",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "ha",
+      "long"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty cp benh vien da khoa quoc te vinmec - benh vien da khoa quoc te vinmec ha long",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECHN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "Chi nhánh Công ty CP Bệnh viện đa khoa quốc tế Vinmec - Bệnh viện đa khoa quốc tế Vinmec Times City",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "cp",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "times",
+      "city"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty cp benh vien da khoa quoc te vinmec - benh vien da khoa quoc te vinmec times city",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECHP",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC - BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC HẢI PHÒNG",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "hai",
+      "phong"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa quoc te vinmec - benh vien da khoa quoc te vinmec hai phong",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECNT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CN CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC - BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC NHA TRANG",
+    "searchKeywords": [
+      "cn",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "-",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "nha",
+      "trang"
+    ],
+    "partnerNameNormalized": "cn cong ty co phan benh vien da khoa quoc te vinmec - benh vien da khoa quoc te vinmec nha trang",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECPQ",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CN tại tỉnh Kiên Giang - Công ty CP Bệnh viện Đa Khoa Quốc Tế Vinmec",
+    "searchKeywords": [
+      "cn",
+      "tai",
+      "tinh",
+      "kien",
+      "giang",
+      "-",
+      "cong",
+      "ty",
+      "cp",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec"
+    ],
+    "partnerNameNormalized": "cn tai tinh kien giang - cong ty cp benh vien da khoa quoc te vinmec",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VINMECSMART",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC – BỆNH VIỆN ĐA KHOA QUỐC TẾ VINMEC SMART CITY",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "–",
+      "benh",
+      "vien",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "vinmec",
+      "smart",
+      "city"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan benh vien da khoa quoc te vinmec – benh vien da khoa quoc te vinmec smart city",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VITAMED",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH THIẾT BỊ Y TẾ VÀ DỊCH VỤ THẨM MỸ VITAMED",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "va",
+      "dich",
+      "vu",
+      "tham",
+      "my",
+      "vitamed"
+    ],
+    "partnerNameNormalized": "cong ty tnhh thiet bi y te va dich vu tham my vitamed",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VNLAB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH MTV VN LAB SOLUTIONS",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "mtv",
+      "vn",
+      "lab",
+      "solutions"
+    ],
+    "partnerNameNormalized": "cong ty tnhh mtv vn lab solutions",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VNNB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN PHÁT TRIỂN CÔNG NGHỆ Y HỌC VIỆT NAM - NHẬT BẢN",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "phat",
+      "trien",
+      "cong",
+      "nghe",
+      "y",
+      "hoc",
+      "viet",
+      "nam",
+      "-",
+      "nhat",
+      "ban"
+    ],
+    "partnerNameNormalized": "cong ty co phan phat trien cong nghe y hoc viet nam - nhat ban",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-VUANH",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TRÁCH NHIỆM HỮU HẠN DƯỢC PHẨM VŨ ANH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "trach",
+      "nhiem",
+      "huu",
+      "han",
+      "duoc",
+      "pham",
+      "vu",
+      "anh"
+    ],
+    "partnerNameNormalized": "cong ty trach nhiem huu han duoc pham vu anh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-WOOLCOCK",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "WOOLCOCK INSTITUTE OF MEDICAL RESEARCH",
+    "searchKeywords": [
+      "woolcock",
+      "institute",
+      "of",
+      "medical",
+      "research"
+    ],
+    "partnerNameNormalized": "woolcock institute of medical research",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-XUYENA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ BỆNH VIỆN XUYÊN Á",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "benh",
+      "vien",
+      "xuyen",
+      "a"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu benh vien xuyen a",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-XUYENALA",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ BỆNH VIỆN XUYÊN Á - CHI NHÁNH ĐỨC HÒA",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "benh",
+      "vien",
+      "xuyen",
+      "a",
+      "-",
+      "chi",
+      "nhanh",
+      "duc",
+      "hoa"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu benh vien xuyen a - chi nhanh duc hoa",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-XUYENATN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ BỆNH VIỆN XUYÊN Á - CHI NHÁNH TÂY NINH",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "benh",
+      "vien",
+      "xuyen",
+      "a",
+      "-",
+      "chi",
+      "nhanh",
+      "tay",
+      "ninh"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu benh vien xuyen a - chi nhanh tay ninh",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-XUYENAVL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ BỆNH VIỆN XUYÊN Á - CHI NHÁNH VĨNH LONG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "benh",
+      "vien",
+      "xuyen",
+      "a",
+      "-",
+      "chi",
+      "nhanh",
+      "vinh",
+      "long"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu benh vien xuyen a - chi nhanh vinh long",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YDCTSL",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "BỆNH VIỆN Y DƯỢC CỔ TRUYỀN TỈNH SƠN LA",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "y",
+      "duoc",
+      "co",
+      "truyen",
+      "tinh",
+      "son",
+      "la"
+    ],
+    "partnerNameNormalized": "benh vien y duoc co truyen tinh son la",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YDDANTOC",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "VIỆN Y DƯỢC HỌC DÂN TỘC",
+    "searchKeywords": [
+      "vien",
+      "y",
+      "duoc",
+      "hoc",
+      "dan",
+      "toc"
+    ],
+    "partnerNameNormalized": "vien y duoc hoc dan toc",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YERSIN",
+    "partnerName": "CHI NHÁNH CÔNG TY CỔ PHẦN ĐẦU TƯ 3H - PHÒNG KHÁM ĐA KHOA QUỐC TẾ YERSIN",
+    "searchKeywords": [
+      "chi",
+      "nhanh",
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "3h",
+      "-",
+      "phong",
+      "kham",
+      "da",
+      "khoa",
+      "quoc",
+      "te",
+      "yersin"
+    ],
+    "partnerNameNormalized": "chi nhanh cong ty co phan dau tu 3h - phong kham da khoa quoc te yersin",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "R-YHANOI",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "BỆNH VIỆN ĐẠI HỌC Y HÀ NỘI",
+    "searchKeywords": [
+      "benh",
+      "vien",
+      "dai",
+      "hoc",
+      "y",
+      "ha",
+      "noi"
+    ],
+    "partnerNameNormalized": "benh vien dai hoc y ha noi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YKHOAILAB",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH  THƯƠNG MẠI DỊCH VỤ Y KHOA ILAB",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "thuong",
+      "mai",
+      "dich",
+      "vu",
+      "y",
+      "khoa",
+      "ilab"
+    ],
+    "partnerNameNormalized": "cong ty tnhh  thuong mai dich vu y khoa ilab",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YTEHCXN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "HỘ KINH DOANH CỬA HÀNG THIẾT BỊ Y TẾ VÀ HÓA CHẤT XÉT NGHIỆM",
+    "searchKeywords": [
+      "ho",
+      "kinh",
+      "doanh",
+      "cua",
+      "hang",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "va",
+      "hoa",
+      "chat",
+      "xet",
+      "nghiem"
+    ],
+    "partnerNameNormalized": "ho kinh doanh cua hang thiet bi y te va hoa chat xet nghiem",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YTEHN",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ CÔNG NGHỆ Y TẾ HÀ NỘI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "dau",
+      "tu",
+      "va",
+      "cong",
+      "nghe",
+      "y",
+      "te",
+      "ha",
+      "noi"
+    ],
+    "partnerNameNormalized": "cong ty co phan dau tu va cong nghe y te ha noi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YTEVIETNHAT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY CỔ PHẦN CÔNG NGHỆ Y TẾ NHẬT VIỆT – CHI NHÁNH HÀ NỘI",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "co",
+      "phan",
+      "cong",
+      "nghe",
+      "y",
+      "te",
+      "nhat",
+      "viet",
+      "–",
+      "chi",
+      "nhanh",
+      "ha",
+      "noi"
+    ],
+    "partnerNameNormalized": "cong ty co phan cong nghe y te nhat viet – chi nhanh ha noi",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "R-YTTT",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "CÔNG TY TNHH TRANG THIẾT BỊ Y TẾ TRẦN VÀ TRUNG",
+    "searchKeywords": [
+      "cong",
+      "ty",
+      "tnhh",
+      "trang",
+      "thiet",
+      "bi",
+      "y",
+      "te",
+      "tran",
+      "va",
+      "trung"
+    ],
+    "partnerNameNormalized": "cong ty tnhh trang thiet bi y te tran va trung",
+    "partnerType": "customer"
+  },
+  {
+    "_id": "ROVERS",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerName": "Rovers Medical Devices B.V.",
+    "searchKeywords": [
+      "rovers",
+      "medical",
+      "devices",
+      "b.v."
+    ],
+    "partnerNameNormalized": "rovers medical devices b.v.",
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "SCHUELKE",
+    "partnerName": "Schülke & Mayr (Asia) Pte. Ltd.",
+    "searchKeywords": [
+      "schulke",
+      "&",
+      "mayr",
+      "(asia)",
+      "pte.",
+      "ltd."
+    ],
+    "partnerNameNormalized": "schulke & mayr (asia) pte. ltd.",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 793000000
+    },
+    "partnerType": "supplier"
+  },
+  {
+    "_id": "VINTT-KHLE",
+    "createdAt": {
+      "_seconds": 1758469565,
+      "_nanoseconds": 792000000
+    },
+    "partnerName": "Nguyễn Thị Tường Vi",
+    "searchKeywords": [
+      "nguyen",
+      "thi",
+      "tuong",
+      "vi"
+    ],
+    "partnerNameNormalized": "nguyen thi tuong vi",
+    "partnerType": "customer"
+  }
+]

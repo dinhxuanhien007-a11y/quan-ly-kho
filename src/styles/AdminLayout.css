@@ -199,20 +199,42 @@
   border-radius: 8px;
   width: 500px;
   max-width: 90%;
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
+  
+  /* --- CÁC DÒNG QUAN TRỌNG CẦN CÓ --- */
+  display: flex;          /* Sử dụng Flexbox */
+  flex-direction: column; /* Xếp theo chiều dọc */
+  max-height: 90vh;       /* Giới hạn chiều cao tối đa là 90% chiều cao màn hình */
+  position: relative;     /* Để xử lý vị trí */
 }
 
+/* Thêm đoạn này để xử lý phần Form ở giữa Modal */
+.modal-content .form-section {
+  overflow-y: auto;       /* Tự động hiện thanh cuộn nếu nội dung dài */
+  flex-grow: 1;           /* Cho phép phần này giãn ra chiếm chỗ trống */
+  margin-bottom: 10px;    /* Tạo khoảng cách với nút bấm bên dưới */
+  
+  /* Giữ lại style cũ nếu có, nhưng đảm bảo overflow-y là auto */
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Đảm bảo tiêu đề luôn hiển thị, không bị co lại */
 .modal-content h2 {
   margin-top: 0;
+  flex-shrink: 0; 
 }
 
+/* Đảm bảo khu vực nút bấm luôn hiển thị ở đáy và không bị che */
 .modal-actions {
   display: grid; 
-  grid-template-columns: 1fr 1fr 1fr; 
+  grid-template-columns: 1fr 1fr; /* Chia đều 2 nút (hoặc 1fr 1fr 1fr tùy code cũ) */
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 0; 
+  flex-shrink: 0; /* Quan trọng: Không để phần này bị co lại hoặc đẩy ra ngoài */
+  padding-top: 10px;
+  border-top: 1px solid #eee; /* Thêm đường kẻ mờ ngăn cách cho đẹp */
 }
 
 /* THÊM KHỐI MÃ NÀY VÀO */

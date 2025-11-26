@@ -14,8 +14,10 @@ import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
+import { useAuth } from '../context/UserContext';
 
 const StocktakeListPage = () => {
+    const { role } = useAuth();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
@@ -153,8 +155,14 @@ useEffect(() => {
             />
 
             {isCreateModalOpen && (
-                <CreateStocktakeModal onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateStocktake} isCreating={isCreating} />
-            )}
+    <CreateStocktakeModal 
+        onClose={() => setIsCreateModalOpen(false)} 
+        // THAY onCreate={handleCreateStocktake} BẰNG onSuccess={handleRefresh}
+        onSuccess={handleRefresh} 
+        // Truyền thêm userRole để Modal tự chọn Team
+        userRole={role} // (Giả sử bạn đã lấy 'const { role } = useAuth();' ở trên)
+    />
+)}
             <div className="page-header">
                 <h1>Danh sách Phiên Kiểm Kê Kho</h1>
                 <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">Tạo Phiên Mới</button>
