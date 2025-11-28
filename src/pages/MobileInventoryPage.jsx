@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 // --- THAY ĐỔI 1: Import thêm 'app' từ config và 'httpsCallable' từ functions ---
 import { db, app } from '../firebaseConfig'; 
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, documentId, limit } from 'firebase/firestore'; // Thêm documentId và limit
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import { FiSearch, FiAlertCircle, FiMic } from 'react-icons/fi';
@@ -35,74 +35,116 @@ const MobileInventoryPage = () => {
         try {
             const trimmedTerm = term.trim().toUpperCase();
             let baseQuery = collection(db, 'inventory_lots');
+            
             if (userRole === 'med') {
                 baseQuery = query(baseQuery, where('team', '==', 'MED'));
             } else if (userRole === 'bio') {
                 baseQuery = query(baseQuery, where('team', 'in', ['BIO', 'Spare Part']));
             }
-            const lotsByProductIdQuery = query(baseQuery, where('productId', '==', trimmedTerm));
-            const lotsByLotNumberQuery = query(baseQuery, where('lotNumber', '==', trimmedTerm));
+
+            const lotsByProductIdQuery = query(
+                baseQuery, 
+                where('productId', '>=', trimmedTerm),
+                where('productId', '<=', trimmedTerm + '\uf8ff')
+            );
+
+            const lotsByLotNumberQuery = query(
+                baseQuery, 
+                where('lotNumber', '>=', trimmedTerm),
+                where('lotNumber', '<=', trimmedTerm + '\uf8ff')
+            );
+
             const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
                 getDocs(lotsByProductIdQuery),
                 getDocs(lotsByLotNumberQuery)
             ]);
-            let lots = [
-                ...byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-                ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-            ];
+
+            let lots = [];
+
+            // --- LOGIC ƯU TIÊN MỚI (MOBILE) ---
+            if (!byProductIdSnap.empty) {
+                // Ưu tiên Mã hàng
+                lots = byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } else if (!byLotNumberSnap.empty) {
+                // Mới đến Số lô
+                lots = byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+            // ----------------------------------
+
             const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
-            // Đoạn code mới để thay thế
-if (uniqueLots.length > 0) {
-    const productId = uniqueLots[0].productId;
-    const productDocRef = doc(db, 'products', productId);
-    const productSnap = await getDoc(productDocRef);
-    const productInfo = productSnap.exists() ? productSnap.data() : null;
 
-    if (productInfo) {
-        // BẮT ĐẦU LOGIC MỚI: Gộp các lô có cùng số lô
-        const lotAggregator = new Map();
-        for (const lot of uniqueLots) {
-            if (lot.quantityRemaining <= 0) continue;
+            if (uniqueLots.length > 0) {
+                const productId = uniqueLots[0].productId;
+                const productDocRef = doc(db, 'products', productId);
+                const productSnap = await getDoc(productDocRef);
+                const productInfo = productSnap.exists() ? productSnap.data() : null;
 
-            const lotKey = lot.lotNumber || '(Không có)'; // Dùng '(Không có)' làm key nếu lotNumber là null
-            if (lotAggregator.has(lotKey)) {
-                const existingLot = lotAggregator.get(lotKey);
-                existingLot.quantityRemaining += lot.quantityRemaining;
-                // Ưu tiên giữ lại HSD ngắn nhất
-                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
-                    existingLot.expiryDate = lot.expiryDate;
+                if (productInfo) {
+                    const lotAggregator = new Map();
+                    for (const lot of uniqueLots) {
+                        if (lot.quantityRemaining <= 0) continue;
+
+                        const lotKey = lot.lotNumber || '(Không có)';
+                        if (lotAggregator.has(lotKey)) {
+                            const existingLot = lotAggregator.get(lotKey);
+                            existingLot.quantityRemaining += lot.quantityRemaining;
+                            if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                                existingLot.expiryDate = lot.expiryDate;
+                            }
+                        } else {
+                            lotAggregator.set(lotKey, { ...lot });
+                        }
+                    }
+                    const aggregatedLots = Array.from(lotAggregator.values());
+                    const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+                    setProductData({
+                        generalInfo: { ...productInfo, productId: productId },
+                        lots: aggregatedLots.sort((a, b) => {
+                            const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                            const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+                            if (dateA !== dateB) return dateA - dateB;
+                            return a.quantityRemaining - b.quantityRemaining;
+                        }),
+                        totalRemaining: totalRemaining
+                    });
+                } else {
+                    setProductData(null);
                 }
             } else {
-                lotAggregator.set(lotKey, { ...lot });
-            }
-        }
-        const aggregatedLots = Array.from(lotAggregator.values());
-        // KẾT THÚC LOGIC MỚI
+                 // Fallback tìm sản phẩm rỗng (Mobile)
+                 const productsRef = collection(db, 'products');
+                 const productsQuery = query(
+                    productsRef,
+                    where(documentId(), '>=', trimmedTerm),
+                    where(documentId(), '<=', trimmedTerm + '\uf8ff'),
+                    limit(1)
+                );
+                const productSnap = await getDocs(productsQuery);
 
-        const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+                if (!productSnap.empty) {
+                    const productDoc = productSnap.docs[0];
+                    const prodData = productDoc.data();
+                    
+                    const isAllowed = 
+                        (userRole === 'owner' || userRole === 'admin') ||
+                        (userRole === 'med' && prodData.team === 'MED') ||
+                        (userRole === 'bio' && (prodData.team === 'BIO' || prodData.team === 'Spare Part'));
 
-        setProductData({
-            generalInfo: { ...productInfo, productId: productId },
-            // THAY ĐỔI LOGIC SẮP XẾP TẠI ĐÂY
-            lots: aggregatedLots.sort((a, b) => {
-                // Xử lý trường hợp không có HSD (đưa xuống cuối)
-                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
-                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
-
-                // 1. Ưu tiên sắp xếp theo HSD tăng dần (date gần nhất lên trước)
-                if (dateA !== dateB) {
-                    return dateA - dateB;
+                    if (isAllowed) {
+                        setProductData({
+                            generalInfo: { ...prodData, productId: productDoc.id },
+                            lots: [],
+                            totalRemaining: 0
+                        });
+                    } else {
+                        setProductData(null);
+                    }
+                } else {
+                    setProductData(null);
                 }
+            }
 
-                // 2. Nếu HSD bằng nhau, ưu tiên sắp xếp theo số lượng tồn tăng dần (số lượng ít hơn lên trước)
-                return a.quantityRemaining - b.quantityRemaining;
-            }),
-            totalRemaining: totalRemaining
-        });
-    } else {
-        setProductData(null);
-    }
-}
         } catch (error) {
             console.error("Lỗi tra cứu tồn kho:", error);
             setProductData(null);

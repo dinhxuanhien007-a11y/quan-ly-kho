@@ -1,3 +1,4 @@
+// src/hooks/useFirestorePagination.js
 import { useState, useEffect, useCallback } from 'react';
 import { getDocs, query, startAfter, limit } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -10,6 +11,13 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
     const [isLastPage, setIsLastPage] = useState(false);
 
     const fetchData = useCallback(async (targetPage, currentCursorHistory = [null]) => {
+        // --- SỬA LỖI: Kiểm tra nếu baseQuery là null thì không làm gì cả ---
+        if (!baseQuery) {
+            setLoading(false);
+            return;
+        }
+        // ------------------------------------------------------------------
+
         setLoading(true);
         try {
             const cursor = currentCursorHistory[targetPage - 1];
@@ -37,14 +45,14 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
             }
         } catch (error) {
             console.error("Lỗi khi phân trang Firestore: ", error);
-            toast.error("Không thể tải dữ liệu trang.");
+            // Có thể bỏ toast này nếu muốn im lặng khi lỗi, hoặc giữ lại để debug
+            // toast.error("Không thể tải dữ liệu trang."); 
             setDocuments([]);
         } finally {
             setLoading(false);
         }
     }, [baseQuery, pageSize]);
 
-    // HÀM MỚI: Reset lại trạng thái và tải lại trang đầu
     const reset = useCallback(() => {
         setPage(1);
         setCursorHistory([null]);

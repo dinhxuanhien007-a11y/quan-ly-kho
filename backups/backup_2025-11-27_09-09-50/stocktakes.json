@@ -1,0 +1,32 @@
+[
+  {
+    "_id": "06iNzf9EkSVp9JM4HdTV",
+    "scope": "BIO",
+    "name": "Kiểm kê hàng BIO ngày 24/09/2025",
+    "createdAt": {
+      "_seconds": 1758710948,
+      "_nanoseconds": 419000000
+    },
+    "status": "adjusted"
+  },
+  {
+    "_id": "YqS3T5vQvDAsBaCCXf5J",
+    "name": "điều chỉnh",
+    "scope": "BIO",
+    "createdAt": {
+      "_seconds": 1758798034,
+      "_nanoseconds": 972000000
+    },
+    "status": "adjusted"
+  },
+  {
+    "_id": "ikJUIgfbri9DL9dAQI19",
+    "name": "kiểm kê tháng 10/2025",
+    "scope": "all",
+    "createdAt": {
+      "_seconds": 1761123502,
+      "_nanoseconds": 498000000
+    },
+    "status": "completed"
+  }
+]

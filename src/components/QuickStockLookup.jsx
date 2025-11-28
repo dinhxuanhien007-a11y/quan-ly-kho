@@ -22,14 +22,18 @@ const QuickStockLookup = () => {
     try {
       const trimmedTerm = term.trim().toUpperCase();
 
+      // 1. Query tìm theo Mã hàng
       const lotsByProductIdQuery = query(
         collection(db, 'inventory_lots'),
-        where('productId', '==', trimmedTerm)
+        where('productId', '>=', trimmedTerm),
+        where('productId', '<=', trimmedTerm + '\uf8ff')
       );
 
+      // 2. Query tìm theo Số lô
       const lotsByLotNumberQuery = query(
         collection(db, 'inventory_lots'),
-        where('lotNumber', '==', trimmedTerm)
+        where('lotNumber', '>=', trimmedTerm),
+        where('lotNumber', '<=', trimmedTerm + '\uf8ff')
       );
 
       const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
@@ -37,14 +41,24 @@ const QuickStockLookup = () => {
         getDocs(lotsByLotNumberQuery)
       ]);
 
-      let lots = [
-        ...byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      ];
+      let lots = [];
+
+      // --- LOGIC ƯU TIÊN MỚI ---
+      // Nếu tìm thấy kết quả theo Mã hàng -> CHỈ lấy kết quả Mã hàng (Bỏ qua số lô để tránh nhiễu)
+      if (!byProductIdSnap.empty) {
+          lots = byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } 
+      // Nếu không tìm thấy Mã hàng -> Mới lấy kết quả theo Số lô
+      else if (!byLotNumberSnap.empty) {
+          lots = byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
+      // --------------------------
 
       const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
       
       if (uniqueLots.length > 0) {
+        // Lấy thông tin sản phẩm từ lô đầu tiên tìm thấy
+        // Lưu ý: Nếu tìm ra nhiều mã hàng khác nhau (vd 2000A, 2000B), hệ thống hiện tại sẽ hiển thị mã đầu tiên nó thấy.
         const productId = uniqueLots[0].productId;
         const productDocRef = doc(db, 'products', productId);
         const productSnap = await getDoc(productDocRef);
@@ -70,33 +84,31 @@ const QuickStockLookup = () => {
         if (productInfo) {
           setProductData({
             generalInfo: { ...productInfo, productId: productId },
-            // --- BẮT ĐẦU THAY ĐỔI LOGIC SẮP XẾP ---
             lots: aggregatedLots.sort((a, b) => {
-                // Xử lý trường hợp không có HSD (đưa xuống cuối)
                 const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
                 const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
-
-                // 1. Ưu tiên sắp xếp theo HSD tăng dần (date gần nhất lên trước)
-                if (dateA !== dateB) {
-                    return dateA - dateB;
-                }
-
-                // 2. Nếu HSD bằng nhau, ưu tiên sắp xếp theo số lượng tồn tăng dần (số lượng ít hơn lên trước)
+                if (dateA !== dateB) return dateA - dateB;
                 return a.quantityRemaining - b.quantityRemaining;
             }),
-            // --- KẾT THÚC THAY ĐỔI ---
             totalRemaining: totalRemaining
           });
         } else {
           setProductData(null);
         }
       } else {
-        const productDocRef = doc(db, 'products', trimmedTerm);
-        const productSnap = await getDoc(productDocRef);
+        // Fallback: Tìm trong danh mục sản phẩm (nếu chưa có tồn kho)
+        const productsQuery = query(
+            collection(db, 'products'),
+            where(documentId(), '>=', trimmedTerm),
+            where(documentId(), '<=', trimmedTerm + '\uf8ff'),
+            limit(1)
+        );
+        const productSnap = await getDocs(productsQuery);
 
-        if (productSnap.exists()) {
+        if (!productSnap.empty) {
+          const productDoc = productSnap.docs[0];
           setProductData({
-            generalInfo: { ...productSnap.data(), productId: trimmedTerm },
+            generalInfo: { ...productDoc.data(), productId: productDoc.id },
             lots: [],
             totalRemaining: 0
           });

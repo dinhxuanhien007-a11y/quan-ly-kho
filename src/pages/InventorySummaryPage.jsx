@@ -459,7 +459,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 <div className="search-container" style={{ flexGrow: 1, maxWidth: '400px' }}>
                     <input
                         type="text"
-                        placeholder="Tìm theo Mã hàng..."
+                        placeholder="Tìm theo Mã hàng hoặc Số lô..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
