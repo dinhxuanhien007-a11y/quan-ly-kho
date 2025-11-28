@@ -82,3 +82,19 @@ export const getConversionFactor = (packagingStr) => {
     
     return 1;
 };
+
+/**
+ * --- HÀM MỚI ---
+ * Chuẩn hóa chuỗi để tìm kiếm mờ (Fuzzy Search):
+ * - Về chữ thường
+ * - Bỏ dấu tiếng Việt
+ * - Bỏ toàn bộ khoảng trắng
+ */
+export const fuzzyNormalize = (str) => {
+    if (!str) return '';
+    return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Bỏ dấu
+        .replace(/\s+/g, ""); // Bỏ khoảng trắng
+};

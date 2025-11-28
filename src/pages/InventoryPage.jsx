@@ -1,9 +1,8 @@
 // src/pages/InventoryPage.jsx
 import { formatNumber } from '../utils/numberUtils';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-// <-- THAY ĐỔI 1: Thêm getDocs, limit vào import
-import { collection, query, where, orderBy, Timestamp, getDocs, limit } from 'firebase/firestore'; 
+import { collection, query, where, orderBy, Timestamp, getDocs, limit, startAfter } from 'firebase/firestore'; 
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
@@ -16,6 +15,18 @@ import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
 import NewDataNotification from '../components/NewDataNotification';
 import { PAGE_SIZE } from '../constants';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+import { fuzzyNormalize } from '../utils/stringUtils'; 
+import HighlightText from '../components/HighlightText'; 
+
+// --- HÀM CHUẨN HÓA CHUỖI ---
+const localFuzzyNormalize = (str) => {
+    if (!str) return '';
+    return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/\s+/g, ""); 
+};
 
 const InventoryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
@@ -23,12 +34,34 @@ const InventoryPage = ({ pageTitle }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    // --- THÊM MỚI: State cho tìm kiếm ---
+    // --- STATE CHO TÌM KIẾM ---
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
+    
+    // --- STATE CACHE ---
+    const [allProductsCache, setAllProductsCache] = useState([]);
 
-    // --- HÀM TÌM KIẾM KÉP (MÃ HÀNG + SỐ LÔ) ---
-    const performSearch = async (term) => {
+    // --- 1. TẢI CACHE (Chạy 1 lần) ---
+    useEffect(() => {
+        const fetchCache = async () => {
+            try {
+                const q = query(collection(db, 'products'));
+                const snapshot = await getDocs(q);
+                const cache = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    normName: localFuzzyNormalize(doc.data().productName || ''),
+                    normId: localFuzzyNormalize(doc.id)
+                }));
+                setAllProductsCache(cache);
+            } catch (err) {
+                console.error("Lỗi tải cache sản phẩm:", err);
+            }
+        };
+        fetchCache();
+    }, []);
+
+    // --- 2. HÀM TÌM KIẾM KÉP ---
+    const performSearch = useCallback(async (term) => {
         if (!term) {
             setIsSearching(false);
             setSearchResults([]);
@@ -36,50 +69,72 @@ const InventoryPage = ({ pageTitle }) => {
         }
         
         setIsSearching(true); 
-        // Lưu ý: Ta có thể dùng biến loading riêng, nhưng ở đây tận dụng biến loading của hook hoặc chấp nhận UI update ngay
 
         try {
-            const trimmedTerm = term.trim().toUpperCase();
+            const rawTerm = term.trim().toUpperCase();
+
+            // --- A. TÌM KIẾM ID DỰA TRÊN TÊN HÀNG (CACHE) ---
+            const searchKey = localFuzzyNormalize(term);
+            const matchedProducts = allProductsCache.filter(p => 
+                p.normName.includes(searchKey) || p.normId.includes(searchKey)
+            );
+            const productIdsFromCache = matchedProducts.map(p => p.id);
+
+            // --- B. CHUẨN BỊ QUERY FIRESTORE ---
             const lotsRef = collection(db, "inventory_lots");
-            
-            // Xây dựng điều kiện lọc cơ bản (Role, Team, SubGroup)
-            // Lưu ý: Logic này phải khớp với baseQuery bên dưới để kết quả nhất quán
             const constraints = [where("quantityRemaining", ">", 0)];
 
             if (userRole === 'med') constraints.push(where("team", "==", "MED"));
-            else if (userRole === 'bio') constraints.push(where("team", "==", "BIO"));
+            else if (userRole === 'bio') constraints.push(where("team", "in", ["BIO", "Spare Part"]));
 
             if (filters.team !== 'all') constraints.push(where("team", "==", filters.team));
             if (filters.subGroup && filters.subGroup !== 'all') constraints.push(where("subGroup", "==", filters.subGroup));
 
-            // 1. Tìm theo Mã hàng (Prefix search)
-            const q1 = query(lotsRef, ...constraints, 
-                where('productId', '>=', trimmedTerm),
-                where('productId', '<=', trimmedTerm + '\uf8ff'),
-                limit(50)
-            );
+            const queryPromises = [];
 
-            // 2. Tìm theo Số lô (Prefix search)
-            const q2 = query(lotsRef, ...constraints,
-                where('lotNumber', '>=', trimmedTerm),
-                where('lotNumber', '<=', trimmedTerm + '\uf8ff'),
-                limit(50)
-            );
+            // 1. Query các lô thuộc về Sản phẩm tìm thấy trong Cache
+            if (productIdsFromCache.length > 0) {
+                const chunks = [];
+                const idsToQuery = productIdsFromCache.slice(0, 60); 
+                while (idsToQuery.length > 0) chunks.push(idsToQuery.splice(0, 30));
+                
+                chunks.forEach(chunk => {
+                    queryPromises.push(getDocs(query(lotsRef, ...constraints, where('productId', 'in', chunk))));
+                });
+            }
 
-            // Chạy song song 2 truy vấn
-            const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+            // 2. Query trực tiếp Mã hàng & Số lô
+            const searchTerms = [rawTerm];
+            if (!rawTerm.includes('-') && rawTerm.length > 2) searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
+            if (rawTerm.includes('-')) searchTerms.push(rawTerm.replace(/-/g, ''));
 
-            // Gộp kết quả và loại bỏ trùng lặp bằng Map (dựa vào ID document)
+            searchTerms.forEach(t => {
+                // Mã hàng
+                queryPromises.push(getDocs(query(lotsRef, ...constraints, where('productId', '>=', t), where('productId', '<=', t + '\uf8ff'), limit(50))));
+                // Số lô
+                if (t === rawTerm) {
+                    queryPromises.push(getDocs(query(lotsRef, ...constraints, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(50))));
+                }
+            });
+
+            const snapshots = await Promise.all(queryPromises);
+
+            // --- C. GỘP KẾT QUẢ ---
             const mergedMap = new Map();
-            
-            [...snap1.docs, ...snap2.docs].forEach(doc => {
-                mergedMap.set(doc.id, { id: doc.id, ...doc.data() });
+            snapshots.forEach(snap => {
+                snap.docs.forEach(doc => {
+                    mergedMap.set(doc.id, { id: doc.id, ...doc.data() });
+                });
             });
 
             const results = Array.from(mergedMap.values());
 
-            // Sắp xếp kết quả (Ưu tiên HSD gần nhất - FEFO)
+            // --- D. SẮP XẾP ---
             results.sort((a, b) => {
+                // Ưu tiên Mã hàng chính xác
+                if (a.productId === rawTerm && b.productId !== rawTerm) return -1;
+                if (b.productId === rawTerm && a.productId !== rawTerm) return 1;
+                // Ưu tiên FEFO
                 const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
                 const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
                 if (dateA !== dateB) return dateA - dateB;
@@ -92,9 +147,9 @@ const InventoryPage = ({ pageTitle }) => {
             console.error("Lỗi tìm kiếm:", error);
             toast.error("Đã xảy ra lỗi khi tìm kiếm.");
         }
-    };
+    }, [userRole, filters, allProductsCache]);
 
-    // --- useEffect xử lý debounce cho tìm kiếm ---
+    // --- useEffect debounce ---
     useEffect(() => {
         const debounce = setTimeout(() => {
             if (searchTerm) {
@@ -102,15 +157,13 @@ const InventoryPage = ({ pageTitle }) => {
             } else {
                 setIsSearching(false);
                 setSearchResults([]);
-                // Reset về trang 1 khi xóa tìm kiếm để hook pagination hoạt động lại đúng
-                // (Hook useFirestorePagination sẽ tự động chạy lại khi query thay đổi)
             }
         }, 500);
         return () => clearTimeout(debounce);
-    }, [searchTerm, filters]); // Thêm filters vào để tìm kiếm lại khi đổi bộ lọc
+    }, [searchTerm, performSearch]);
 
+    // --- BASE QUERY ---
     const baseQuery = useMemo(() => {
-        // --- THAY ĐỔI QUAN TRỌNG: Nếu đang có từ khóa tìm kiếm, trả về NULL để hook pagination tạm dừng ---
         if (searchTerm) {
             return null; 
         }
@@ -136,12 +189,11 @@ const InventoryPage = ({ pageTitle }) => {
             constraints.push(orderBy("expiryDate", "asc")); 
             constraints.push(orderBy("quantityRemaining", "asc"));
         } else {
-            // Mặc định
             constraints.push(orderBy("productId", "asc"), orderBy("importDate", "asc"));
         }
 
         return query(baseCollection, ...constraints);
-    }, [userRole, filters, searchTerm]); // Thêm searchTerm vào dependency
+    }, [userRole, filters, searchTerm]);
 
     const {
         documents: inventory,
@@ -155,22 +207,16 @@ const InventoryPage = ({ pageTitle }) => {
 
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
-    // --- XÁC ĐỊNH NGUỒN DỮ LIỆU ĐỂ HIỂN THỊ ---
     const dataToDisplay = useMemo(() => {
-        // 1. Nếu đang tìm kiếm -> Dùng searchResults
         if (isSearching) {
             return searchResults;
         }
-        
-        // 2. Nếu không tìm kiếm -> Dùng inventory từ hook phân trang
-        // (Áp dụng thêm logic lọc màu sắc nếu đang ở tab Cận date - logic cũ của bạn)
         if (filters.dateStatus === 'near_expiry') {
             return inventory.filter(lot => {
                 const colorClass = getRowColorByExpiry(lot.expiryDate, lot.subGroup);
                 return colorClass.includes('near-expiry') || colorClass.includes('expired');
             });
         }
-        
         return inventory;
     }, [isSearching, searchResults, inventory, filters.dateStatus]);
 
@@ -205,7 +251,7 @@ const InventoryPage = ({ pageTitle }) => {
                 <div className="search-container">
                      <input
                         type="text"
-                        placeholder="Tìm theo Mã hàng hoặc Số lô..." // Cập nhật placeholder
+                        placeholder="Tìm theo Tên, Mã hàng hoặc Số lô..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
@@ -219,6 +265,7 @@ const InventoryPage = ({ pageTitle }) => {
                         <table className="inventory-table">
                             <thead>
                                 <tr>
+                                    {/* --- TIÊU ĐỀ CỘT (Đúng thứ tự) --- */}
                                     <th>Ngày nhập</th>
                                     <th>Mã hàng</th>
                                     <th>Tên hàng</th>
@@ -243,19 +290,48 @@ const InventoryPage = ({ pageTitle }) => {
                                             onClick={() => handleRowClick(lot.id)}
                                             className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate, lot.subGroup)}`}
                                         >
+                                            {/* --- DỮ LIỆU (Đã sắp xếp lại khớp với Tiêu đề) --- */}
+                                            
+                                            {/* 1. Ngày nhập */}
                                             <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
-                                            <td data-label="Mã hàng">{lot.productId}</td>
-                                            <td data-label="Tên hàng">{lot.productName}</td>
-                                            <td data-label="Số lô">{lot.lotNumber || '(Không có)'}</td>
+                                            
+                                            {/* 2. Mã hàng */}
+                                            <td data-label="Mã hàng"><strong><HighlightText text={lot.productId} highlight={searchTerm} /></strong></td>
+                                            
+                                            {/* 3. Tên hàng */}
+                                            <td data-label="Tên hàng"><HighlightText text={lot.productName} highlight={searchTerm} /></td>
+                                            
+                                            {/* 4. Số lô */}
+                                            <td data-label="Số lô"><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></td>
+                                            
+                                            {/* 5. HSD */}
                                             <td data-label="HSD">{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</td>
+                                            
+                                            {/* 6. ĐVT */}
                                             <td data-label="ĐVT">{lot.unit}</td>
+                                            
+                                            {/* 7. Quy cách */}
                                             <td data-label="Quy cách">{lot.packaging}</td>
+                                            
+                                            {/* 8. SL Nhập */}
                                             <td data-label="SL Nhập">{formatNumber(lot.quantityImported)}</td>
+                                            
+                                            {/* 9. SL Còn lại */}
                                             <td data-label="SL Còn lại">{formatNumber(lot.quantityRemaining)}</td>
+                                            
+                                            {/* 10. Ghi chú */}
                                             <td data-label="Ghi chú">{lot.notes}</td>
+                                            
+                                            {/* 11. Nhiệt độ BQ */}
                                             <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
+                                            
+                                            {/* 12. Hãng SX */}
                                             <td data-label="Hãng sản xuất">{lot.manufacturer}</td>
+                                            
+                                            {/* 13. Nhóm Hàng */}
                                             <td data-label="Nhóm Hàng">{lot.subGroup}</td>
+                                            
+                                            {/* 14. Team */}
                                             <td data-label="Team"><TeamBadge team={lot.team} /></td>
                                         </tr>
                                     ))
@@ -270,7 +346,6 @@ const InventoryPage = ({ pageTitle }) => {
                         </table>
                     </div>
                     
-                    {/* Chỉ hiện phân trang khi KHÔNG tìm kiếm */}
                     {!isSearching && (
                         <div className="pagination-controls">
                             <button onClick={prevPage} disabled={page <= 1 || loading}>

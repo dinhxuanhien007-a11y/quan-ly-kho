@@ -31,6 +31,7 @@ import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
+import { fuzzyNormalize } from '../utils/stringUtils'; // <-- THÊM IMPORT NÀY
 
 const PAGE_SIZE = 15;
 
@@ -78,11 +79,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
     });
     
     const [hasNewData, setHasNewData] = useState(false);
-    
-    // Đổi ref này để theo dõi thay đổi của products
-    // Lưu ý: Chúng ta dùng snapshot listener trực tiếp, nên ref này có thể không cần thiết 
-    // nếu logic refresh dựa trên snapshot metadata. 
-    // Tuy nhiên, để giữ logic cũ hoạt động, ta sẽ giữ lại.
     const lastSeenSnapshotRef = useRef(null); 
 
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
@@ -90,22 +86,43 @@ const InventorySummaryPage = ({ pageTitle }) => {
     
     const [isExporting, setIsExporting] = useState(false);
 
-    // --- TỐI ƯU HÓA 1: Query trực tiếp từ 'products' ---
+    // --- THÊM STATE CACHE ---
+    const [allProductsCache, setAllProductsCache] = useState([]);
+
+    // --- 1. TẢI CACHE (Chạy 1 lần) ---
+    useEffect(() => {
+        const fetchCache = async () => {
+            try {
+                const q = query(collection(db, 'products'));
+                const snapshot = await getDocs(q);
+                const cache = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    productName: doc.data().productName || '',
+                    team: doc.data().team,
+                    normName: fuzzyNormalize(doc.data().productName || ''),
+                    normId: fuzzyNormalize(doc.id)
+                }));
+                setAllProductsCache(cache);
+            } catch (err) {
+                console.error("Lỗi tải cache:", err);
+            }
+        };
+        fetchCache();
+    }, []);
+
+    // --- QUERY CHÍNH (PHÂN TRANG) ---
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            // THAY ĐỔI QUAN TRỌNG: Đọc từ 'products'
             const baseCollectionRef = collection(db, "products");
             let queryConstraints = [];
 
-            // 1. Lọc theo Role
             if (userRole === 'med') {
                 queryConstraints.push(where("team", "==", "MED"));
             } else if (userRole === 'bio') {
                 queryConstraints.push(where("team", "==", "BIO"));
             }
 
-            // 2. Lọc theo UI
             if (filters.team !== 'all') {
                 queryConstraints.push(where("team", "==", filters.team));
             }
@@ -113,8 +130,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(where("subGroup", "==", filters.subGroup));
             }
 
-            // 3. Lọc theo Date & Sắp xếp
-            // Lưu ý: Trường nearestExpiryDate giờ đã có trong products nhờ script đồng bộ
             if (filters.dateStatus === 'expired') {
                 queryConstraints.push(where("nearestExpiryDate", "<", Timestamp.now()));
                 queryConstraints.push(orderBy("nearestExpiryDate", "desc"));
@@ -127,11 +142,9 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
                 queryConstraints.push(orderBy(documentId(), "asc"));
             } else {
-                // Mặc định sắp xếp theo ID (Mã hàng)
                 queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
-            // 4. Phân trang
             if (direction === 'next' && cursor) {
                 queryConstraints.push(startAfter(cursor));
             } else if (direction === 'first') {
@@ -149,17 +162,14 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 return;
             }
             
-            // Lấy dữ liệu trực tiếp, không cần map thêm
             const summaryDocs = mainSnapshot.docs.map(doc => ({ 
                 id: doc.id, 
                 ...doc.data(),
-                // Đảm bảo có giá trị mặc định nếu dữ liệu cũ chưa chuẩn
                 totalRemaining: doc.data().totalRemaining ?? 0,
                 nearestExpiryDate: doc.data().nearestExpiryDate ?? null
             }));
             
             setSummaries(summaryDocs);
-
             setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
             setIsLastPage(mainSnapshot.docs.length < PAGE_SIZE);
 
@@ -175,48 +185,73 @@ const InventorySummaryPage = ({ pageTitle }) => {
         }
     }, [filters, userRole]);
 
-    // --- TỐI ƯU HÓA 2: Tìm kiếm gọn nhẹ hơn ---
+    // --- 2. HÀM TÌM KIẾM THÔNG MINH (ĐÃ CẬP NHẬT) ---
     const performSearch = useCallback(async (term) => {
         if (!term) return;
         setLoading(true);
+        
         try {
-            const upperTerm = term.toUpperCase();
+            const rawTerm = term.trim().toUpperCase();
             let foundProductIds = new Set();
 
-            // Cách 1: Tìm theo ID (Mã hàng) trong products
-            // Lưu ý: Firestore không hỗ trợ tìm 'contains' (chứa), chỉ có 'startsWith'
-            const productsRef = collection(db, "products");
-            const idQuery = query(
-                productsRef, 
-                where(documentId(), ">=", upperTerm), 
-                where(documentId(), "<=", upperTerm + '\uf8ff'),
-                limit(30)
-            );
-            const idSnapshot = await getDocs(idQuery);
-            idSnapshot.forEach(doc => foundProductIds.add(doc.id));
+            // A. TÌM TRONG CACHE (Tên hàng & Mã hàng fuzzy)
+            const searchKey = fuzzyNormalize(term);
+            const cachedMatches = allProductsCache.filter(p => {
+                const isAllowed = 
+                    (userRole === 'owner' || userRole === 'admin') ||
+                    (userRole === 'med' && p.team === 'MED') ||
+                    (userRole === 'bio' && (p.team === 'BIO' || p.team === 'Spare Part')); // Cập nhật Spare Part
+                
+                if (!isAllowed) return false;
+                return p.normName.includes(searchKey) || p.normId.includes(searchKey);
+            });
+            cachedMatches.forEach(p => foundProductIds.add(p.id));
 
-            // Cách 2: Tìm theo Số lô trong inventory_lots -> suy ra Mã hàng
-            // Chỉ tìm nếu Cách 1 trả về ít kết quả để tối ưu
-            if (foundProductIds.size < 5) {
-                const lotsRef = collection(db, "inventory_lots");
-                const lotQuery = query(lotsRef, where("lotNumber", "==", term), limit(20));
-                const lotSnapshot = await getDocs(lotQuery);
-                lotSnapshot.forEach(doc => foundProductIds.add(doc.data().productId));
+            // B. TÌM TRONG FIRESTORE (Smart ID & Số lô)
+            const searchTerms = [rawTerm];
+            if (!rawTerm.includes('-') && rawTerm.length > 2) {
+                searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
             }
+            if (rawTerm.includes('-')) {
+                searchTerms.push(rawTerm.replace(/-/g, ''));
+            }
+
+            const promises = [];
+            const lotsRef = collection(db, 'inventory_lots');
+            const productsRef = collection(db, 'products');
+
+            let lotQueryBase = lotsRef;
+            if (userRole === 'med') lotQueryBase = query(lotsRef, where('team', '==', 'MED'));
+            else if (userRole === 'bio') lotQueryBase = query(lotsRef, where('team', 'in', ['BIO', 'Spare Part']));
+
+            searchTerms.forEach(t => {
+                // 1. Tìm Mã hàng (Prefix)
+                promises.push(getDocs(query(productsRef, where(documentId(), '>=', t), where(documentId(), '<=', t + '\uf8ff'), limit(20))));
+                
+                // 2. Tìm Số lô (Prefix) -> Suy ra Mã hàng
+                if (t === rawTerm) {
+                    promises.push(getDocs(query(lotQueryBase, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(20))));
+                }
+            });
+
+            const snapshots = await Promise.all(promises);
+
+            snapshots.forEach(snap => {
+                snap.docs.forEach(doc => {
+                    const id = doc.ref.parent.id === 'products' ? doc.id : doc.data().productId;
+                    foundProductIds.add(id);
+                });
+            });
 
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
             } else {
-                // Lọc lại theo Role và Team (Client-side filtering cho đơn giản vì số lượng ít)
                 let ids = Array.from(foundProductIds);
-                
-                // Fetch chi tiết các sản phẩm tìm được
-                // Firestore 'in' query giới hạn 30 items
+                ids = ids.slice(0, 50); // Giới hạn 50 kết quả
+
                 const chunks = [];
-                while (ids.length > 0) {
-                    chunks.push(ids.splice(0, 30));
-                }
+                while (ids.length > 0) chunks.push(ids.splice(0, 30));
 
                 let finalResults = [];
                 for (const chunkIds of chunks) {
@@ -224,11 +259,10 @@ const InventorySummaryPage = ({ pageTitle }) => {
                     const snap = await getDocs(q);
                     snap.forEach(doc => {
                         const data = doc.data();
-                        // Kiểm tra quyền xem user có được thấy sản phẩm này không
                         const isAllowed = 
                             (userRole === 'owner' || userRole === 'admin') ||
                             (userRole === 'med' && data.team === 'MED') ||
-                            (userRole === 'bio' && data.team === 'BIO');
+                            (userRole === 'bio' && (data.team === 'BIO' || data.team === 'Spare Part'));
                         
                         if (isAllowed) {
                             finalResults.push({ 
@@ -241,16 +275,26 @@ const InventorySummaryPage = ({ pageTitle }) => {
                     });
                 }
                 
+                // Sắp xếp kết quả
+                finalResults.sort((a, b) => {
+                    const idA = a.id.toUpperCase();
+                    const idB = b.id.toUpperCase();
+                    if (idA === rawTerm) return -1;
+                    if (idB === rawTerm) return 1;
+                    return idA.localeCompare(idB);
+                });
+
                 setSummaries(finalResults);
-                setIsLastPage(true); // Tìm kiếm thì không phân trang tiếp
+                setIsLastPage(true);
             }
 
         } catch (error) {
             console.error("Lỗi khi tìm kiếm:", error);
+            toast.error("Lỗi khi tìm kiếm.");
         } finally {
             setLoading(false);
         }
-    }, [userRole]);
+    }, [userRole, allProductsCache]);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -265,24 +309,17 @@ const InventorySummaryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, filters, fetchData, performSearch]);
     
-    // --- TỐI ƯU HÓA 3: Realtime Listener trên 'product_summaries' hoặc 'products' ---
-    // Để tránh tốn kém, ta vẫn lắng nghe 'product_summaries' vì nó chỉ thay đổi khi tồn kho đổi.
-    // (Cloud Function vẫn update summary song song với products)
-    // Biến cờ để kiểm tra xem có phải lần load đầu tiên không
+    // --- CÁC PHẦN CÒN LẠI GIỮ NGUYÊN ---
     const isFirstRun = useRef(true);
 
     useEffect(() => {
         const q = query(collection(db, "product_summaries"), orderBy("lastUpdatedAt", "desc"), limit(1));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            // 1. Nếu là lần chạy đầu tiên (vừa vào trang), ta bỏ qua không thông báo
             if (isFirstRun.current) {
                 isFirstRun.current = false;
                 return;
             }
-
             if (snapshot.empty) return;
-            
-            // 2. Từ lần thứ 2 trở đi, nếu có thay đổi mới báo
             if (!snapshot.metadata.hasPendingWrites) {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added" || change.type === "modified") {
@@ -361,7 +398,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
             }
             const aggregatedLots = Array.from(lotAggregator.values());
 
-            // Logic sắp xếp an toàn (Đã sửa từ trước)
             aggregatedLots.sort((a, b) => {
                 const getTime = (dateObj) => {
                     if (!dateObj) return Infinity;
@@ -459,7 +495,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 <div className="search-container" style={{ flexGrow: 1, maxWidth: '400px' }}>
                     <input
                         type="text"
-                        placeholder="Tìm theo Mã hàng hoặc Số lô..."
+                        placeholder="Tìm theo Tên, Mã hàng hoặc Số lô..." // Cập nhật Placeholder
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
@@ -519,8 +555,17 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                             className={getRowColorByExpiry(product.nearestExpiryDate, product.subGroup)}
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
-                                            <td data-label="Mã hàng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
-                                            <td data-label="Tên hàng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
+                                            {/* --- ÁP DỤNG HIGHLIGHT CHO MÃ HÀNG --- */}
+                                            <td data-label="Mã hàng">
+                                                <strong>
+                                                    <HighlightText text={product.id} highlight={searchTerm} />
+                                                </strong>
+                                            </td>
+
+                                            {/* --- ÁP DỤNG HIGHLIGHT CHO TÊN HÀNG --- */}
+                                            <td data-label="Tên hàng">
+                                                <HighlightText text={product.productName} highlight={searchTerm} />
+                                            </td>
                                             <td data-label="HSD Gần Nhất">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(Không có)'}</td>
                                             <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
@@ -547,7 +592,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                                                     <ul>
                                                                         {lotDetails[product.id].map(lot => (
                                                                             <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`}>
-                                                                                <span>Lô: <strong>{lot.lotNumber || '(Không có)'}</strong></span>
+                                                                                <span>Lô: <strong><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></strong></span>
                                                                                 <span>HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</strong></span>
                                                                                 <span>Tồn: <strong>{formatNumber(lot.quantityRemaining)}</strong></span>
                                                                             </li>
@@ -565,6 +610,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                             </tbody>
                         </table>
                     </div>
+                    
                     {!searchTerm && (
                         <div className="pagination-controls">
                             <button onClick={handlePrevPage} disabled={page <= 1}>

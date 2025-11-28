@@ -1,224 +1,267 @@
+// src/pages/MobileInventoryPage.jsx
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-// --- THAY ĐỔI 1: Import thêm 'app' từ config và 'httpsCallable' từ functions ---
 import { db, app } from '../firebaseConfig'; 
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { collection, query, where, getDocs, doc, getDoc, documentId, limit } from 'firebase/firestore'; // Thêm documentId và limit
+import { collection, query, where, getDocs, doc, getDoc, documentId, limit } from 'firebase/firestore';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiSearch, FiAlertCircle, FiMic } from 'react-icons/fi';
+import { FiSearch, FiAlertCircle, FiMic, FiBox, FiLayers, FiArrowLeft } from 'react-icons/fi';
 import styles from '../styles/MobileInventoryPage.module.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import companyLogo from '../assets/logo.png';
 import { toast } from 'react-toastify';
+import HighlightText from '../components/HighlightText'; // <-- IMPORT COMPONENT HIGHLIGHT
 
-// --- THAY ĐỔI 2: Tạo một kết nối riêng đến server Châu Á ---
 const functionsAsia = getFunctions(app, 'asia-southeast1');
+
+// Chuyển đổi chuỗi: Xóa dấu, xóa khoảng trắng, về chữ thường
+const fuzzyNormalize = (str) => {
+    if (!str) return '';
+    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+};
 
 const MobileInventoryPage = () => {
     const { role: userRole } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
-    const [productData, setProductData] = useState(null);
+    
+    const [candidates, setCandidates] = useState([]); 
+    const [selectedProductData, setSelectedProductData] = useState(null); 
+    const [allProductsCache, setAllProductsCache] = useState([]);
+    
     const [loading, setLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
     
-    // Các Ref để quản lý việc ghi âm
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
+    // --- TẢI CACHE KHI MOUNT ---
+    useEffect(() => {
+        const fetchAllProducts = async () => {
+            try {
+                const q = query(collection(db, 'products'));
+                const snapshot = await getDocs(q);
+                
+                const cache = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        productName: data.productName || '',
+                        team: data.team,
+                        normName: fuzzyNormalize(data.productName),
+                        normId: fuzzyNormalize(doc.id)
+                    };
+                });
+                setAllProductsCache(cache);
+            } catch (error) {
+                console.error("Lỗi tải cache sản phẩm:", error);
+            }
+        };
+        fetchAllProducts();
+    }, []);
+
+    // --- HÀM TÌM KIẾM ỨNG VIÊN ---
     const performSearch = useCallback(async (term) => {
         if (!term) {
-            setProductData(null);
+            setCandidates([]);
+            setSelectedProductData(null);
             return;
         }
         setLoading(true);
+        setSelectedProductData(null); 
+
         try {
-            const trimmedTerm = term.trim().toUpperCase();
+            const rawTerm = term.trim().toUpperCase();
+            const searchTerms = [rawTerm];
+            if (!rawTerm.includes('-') && rawTerm.length > 2) {
+                searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
+            }
+            if (rawTerm.includes('-')) {
+                searchTerms.push(rawTerm.replace(/-/g, ''));
+            }
+
             let baseQuery = collection(db, 'inventory_lots');
-            
-            if (userRole === 'med') {
-                baseQuery = query(baseQuery, where('team', '==', 'MED'));
-            } else if (userRole === 'bio') {
-                baseQuery = query(baseQuery, where('team', 'in', ['BIO', 'Spare Part']));
-            }
+            if (userRole === 'med') baseQuery = query(baseQuery, where('team', '==', 'MED'));
+            else if (userRole === 'bio') baseQuery = query(baseQuery, where('team', 'in', ['BIO', 'Spare Part']));
 
-            const lotsByProductIdQuery = query(
-                baseQuery, 
-                where('productId', '>=', trimmedTerm),
-                where('productId', '<=', trimmedTerm + '\uf8ff')
-            );
-
-            const lotsByLotNumberQuery = query(
-                baseQuery, 
-                where('lotNumber', '>=', trimmedTerm),
-                where('lotNumber', '<=', trimmedTerm + '\uf8ff')
-            );
-
-            const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
-                getDocs(lotsByProductIdQuery),
-                getDocs(lotsByLotNumberQuery)
-            ]);
-
-            let lots = [];
-
-            // --- LOGIC ƯU TIÊN MỚI (MOBILE) ---
-            if (!byProductIdSnap.empty) {
-                // Ưu tiên Mã hàng
-                lots = byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            } else if (!byLotNumberSnap.empty) {
-                // Mới đến Số lô
-                lots = byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            }
-            // ----------------------------------
-
-            const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
-
-            if (uniqueLots.length > 0) {
-                const productId = uniqueLots[0].productId;
-                const productDocRef = doc(db, 'products', productId);
-                const productSnap = await getDoc(productDocRef);
-                const productInfo = productSnap.exists() ? productSnap.data() : null;
-
-                if (productInfo) {
-                    const lotAggregator = new Map();
-                    for (const lot of uniqueLots) {
-                        if (lot.quantityRemaining <= 0) continue;
-
-                        const lotKey = lot.lotNumber || '(Không có)';
-                        if (lotAggregator.has(lotKey)) {
-                            const existingLot = lotAggregator.get(lotKey);
-                            existingLot.quantityRemaining += lot.quantityRemaining;
-                            if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
-                                existingLot.expiryDate = lot.expiryDate;
-                            }
-                        } else {
-                            lotAggregator.set(lotKey, { ...lot });
-                        }
-                    }
-                    const aggregatedLots = Array.from(lotAggregator.values());
-                    const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
-
-                    setProductData({
-                        generalInfo: { ...productInfo, productId: productId },
-                        lots: aggregatedLots.sort((a, b) => {
-                            const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
-                            const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
-                            if (dateA !== dateB) return dateA - dateB;
-                            return a.quantityRemaining - b.quantityRemaining;
-                        }),
-                        totalRemaining: totalRemaining
-                    });
-                } else {
-                    setProductData(null);
+            const queryPromises = [];
+            searchTerms.forEach(t => {
+                queryPromises.push(getDocs(query(baseQuery, where('productId', '>=', t), where('productId', '<=', t + '\uf8ff'), limit(5))));
+                if (t === rawTerm) {
+                    queryPromises.push(getDocs(query(baseQuery, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(10))));
                 }
-            } else {
-                 // Fallback tìm sản phẩm rỗng (Mobile)
-                 const productsRef = collection(db, 'products');
-                 const productsQuery = query(
-                    productsRef,
-                    where(documentId(), '>=', trimmedTerm),
-                    where(documentId(), '<=', trimmedTerm + '\uf8ff'),
-                    limit(1)
-                );
-                const productSnap = await getDocs(productsQuery);
+            });
 
-                if (!productSnap.empty) {
-                    const productDoc = productSnap.docs[0];
-                    const prodData = productDoc.data();
-                    
-                    const isAllowed = 
-                        (userRole === 'owner' || userRole === 'admin') ||
-                        (userRole === 'med' && prodData.team === 'MED') ||
-                        (userRole === 'bio' && (prodData.team === 'BIO' || prodData.team === 'Spare Part'));
+            const snapshots = await Promise.all(queryPromises);
+            const resultMap = new Map();
 
-                    if (isAllowed) {
-                        setProductData({
-                            generalInfo: { ...prodData, productId: productDoc.id },
-                            lots: [],
-                            totalRemaining: 0
+            // Tìm Cache
+            const searchKey = fuzzyNormalize(term);
+            const matchedProducts = allProductsCache.filter(p => {
+                const isAllowed = 
+                    (userRole === 'owner' || userRole === 'admin') ||
+                    (userRole === 'med' && p.team === 'MED') ||
+                    (userRole === 'bio' && (p.team === 'BIO' || p.team === 'Spare Part'));
+                
+                if (!isAllowed) return false;
+                return p.normName.includes(searchKey) || p.normId.includes(searchKey);
+            }).slice(0, 15);
+
+            matchedProducts.forEach(p => {
+                const uniqueKey = `PROD_${p.id}`;
+                resultMap.set(uniqueKey, {
+                    key: uniqueKey,
+                    type: 'product',
+                    value: p.id,
+                    subText: p.productName,
+                    queryId: p.id,
+                    lotNumberQuery: null
+                });
+            });
+
+            // Tìm Firestore
+            snapshots.forEach(snap => {
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const isLotMatch = searchTerms[0] === data.lotNumber; 
+                    const uniqueKey = isLotMatch 
+                        ? `LOT_${data.lotNumber}_${data.productId}` 
+                        : `PROD_${data.productId}`;
+
+                    if (isLotMatch) {
+                        resultMap.set(uniqueKey, {
+                            key: uniqueKey,
+                            type: 'lot',
+                            value: data.lotNumber,
+                            subText: `Thuộc mã: ${data.productId}`,
+                            queryId: data.productId,
+                            lotNumberQuery: data.lotNumber
                         });
-                    } else {
-                        setProductData(null);
+                    } else if (!resultMap.has(uniqueKey)) {
+                         resultMap.set(uniqueKey, {
+                            key: uniqueKey,
+                            type: 'product',
+                            value: data.productId,
+                            subText: data.productName,
+                            queryId: data.productId,
+                            lotNumberQuery: null
+                        });
                     }
-                } else {
-                    setProductData(null);
-                }
-            }
+                });
+            });
+
+            setCandidates(Array.from(resultMap.values()));
 
         } catch (error) {
-            console.error("Lỗi tra cứu tồn kho:", error);
-            setProductData(null);
+            console.error("Lỗi tìm kiếm:", error);
+            toast.error("Lỗi khi tìm kiếm.");
         } finally {
             setLoading(false);
         }
-    }, [userRole]);
+    }, [userRole, allProductsCache]);
+
+    // --- HÀM XEM CHI TIẾT ---
+    const handleSelectCandidate = async (candidate) => {
+        setLoading(true);
+        try {
+            const productId = candidate.queryId;
+            const productDocRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productDocRef);
+            const productInfo = productSnap.exists() ? productSnap.data() : null;
+
+            if (!productInfo) {
+                toast.warn("Không tìm thấy thông tin sản phẩm này.");
+                setLoading(false);
+                return;
+            }
+
+            const lotsRef = collection(db, 'inventory_lots');
+            const q = query(lotsRef, where('productId', '==', productId), where('quantityRemaining', '>', 0));
+            const lotsSnap = await getDocs(q);
+            
+            const lots = lotsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            const lotAggregator = new Map();
+            for (const lot of lots) {
+                if (lot.productId !== productId) continue;
+
+                const lotKey = lot.lotNumber || '(Không có)';
+                if (lotAggregator.has(lotKey)) {
+                    const existingLot = lotAggregator.get(lotKey);
+                    existingLot.quantityRemaining += lot.quantityRemaining;
+                    if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                        existingLot.expiryDate = lot.expiryDate;
+                    }
+                } else {
+                    lotAggregator.set(lotKey, { ...lot });
+                }
+            }
+            const aggregatedLots = Array.from(lotAggregator.values());
+            const totalRemaining = aggregatedLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+            setSelectedProductData({
+                generalInfo: { ...productInfo, productId: productId },
+                lots: aggregatedLots.sort((a, b) => {
+                    const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                    const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+                    if (dateA !== dateB) return dateA - dateB;
+                    return a.quantityRemaining - b.quantityRemaining;
+                }),
+                totalRemaining: totalRemaining
+            });
+
+        } catch (error) {
+            console.error("Lỗi tải chi tiết:", error);
+            toast.error("Không thể tải chi tiết.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const debounce = setTimeout(() => {
-            performSearch(searchTerm);
+            if (searchTerm) performSearch(searchTerm);
+            else setCandidates([]);
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchTerm, performSearch]);
 
     const handleVoiceSearch = async () => {
-        if (isListening) {
-            mediaRecorderRef.current?.stop();
-            setIsListening(false);
-            return;
-        }
-
+        if (isListening) { mediaRecorderRef.current?.stop(); setIsListening(false); return; }
         try {
-            // Xin quyền truy cập micro
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
-            // Bắt đầu ghi âm
             mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm; codecs=opus' });
-            audioChunksRef.current = []; // Xóa các mẩu ghi âm cũ
-
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                audioChunksRef.current.push(event.data);
-            };
-
-            // Xử lý khi kết thúc ghi âm
+            audioChunksRef.current = [];
+            mediaRecorderRef.current.ondataavailable = (event) => audioChunksRef.current.push(event.data);
             mediaRecorderRef.current.onstop = async () => {
-                stream.getTracks().forEach(track => track.stop()); // Tắt micro
+                stream.getTracks().forEach(track => track.stop());
                 toast.info("Đang xử lý âm thanh...");
-
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm; codecs=opus' });
-                
-                // Chuyển file âm thanh thành chuỗi base64
                 const reader = new FileReader();
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = async () => {
                     const base64Audio = reader.result.split(',')[1];
-                    
                     try {
-                        // --- THAY ĐỔI 3: Gọi hàm bằng kết nối đến server Châu Á ---
                         const transcribe = httpsCallable(functionsAsia, 'transcribeAudio');
                         const result = await transcribe({ audioData: base64Audio });
-                        
                         const transcript = result.data.transcript;
                         if (transcript) {
                             setSearchTerm(transcript.replace(/\s+/g, ''));
+                            setSelectedProductData(null); 
                             toast.success("Đã nhận dạng!");
-                        } else {
-                            toast.warn("Không nghe rõ, vui lòng thử lại.");
-                        }
-                    } catch (error) {
-                        console.error("Lỗi khi gọi Cloud Function:", error);
-                        toast.error("Lỗi máy chủ khi xử lý giọng nói.");
-                    }
+                        } else { toast.warn("Không nghe rõ."); }
+                    } catch (error) { console.error(error); toast.error("Lỗi máy chủ."); }
                 };
             };
-
             mediaRecorderRef.current.start();
             setIsListening(true);
             toast.info("🎤 Nói ngay...");
+        } catch (err) { console.error(err); toast.error("Lỗi micro."); }
+    };
 
-        } catch (err) {
-            console.error("Lỗi khi truy cập micro:", err);
-            toast.error("Không thể truy cập micro. Vui lòng cấp quyền.");
-        }
+    const handleBackToList = () => {
+        setSelectedProductData(null);
     };
 
     return (
@@ -228,72 +271,108 @@ const MobileInventoryPage = () => {
                 <h2>Tra cứu tồn kho</h2>
             </div>
             
-            <div className={styles.searchBox}>
-                <input 
-                    type="text" 
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    placeholder="Tìm Mã hàng hoặc Số lô..."
-                    autoFocus
-                />
-                <FiSearch className={styles.searchIcon} />
-                <button
-                    onClick={handleVoiceSearch}
-                    className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}
-                    title="Tìm kiếm bằng giọng nói"
-                >
-                    <FiMic />
-                </button>
-            </div>
-            
-            {loading ? (
-                <Spinner />
-            ) : productData ? (
-                <div className={styles.resultsContainer}>
-                    <div className={styles.generalInfoCard}>
-                        <h3>Thông tin chung</h3>
-                        <div className={styles.infoGrid}>
-                            <div><strong>Mã hàng:</strong><span>{productData.generalInfo.productId}</span></div>
-                            <div><strong>Tên hàng:</strong><span>{productData.generalInfo.productName}</span></div>
-                            <div><strong>ĐVT:</strong><span>{productData.generalInfo.unit}</span></div>
-                            <div><strong>Quy cách:</strong><span>{productData.generalInfo.packaging}</span></div>
-                            <div><strong>Nhiệt độ BQ:</strong><span>{productData.generalInfo.storageTemp}</span></div>
-                            <div><strong>Hãng SX:</strong><span>{productData.generalInfo.manufacturer}</span></div>
-                            <div><strong>Team:</strong><span>{productData.generalInfo.team}</span></div>
-                            <div><strong>Nhóm hàng:</strong><span>{productData.generalInfo.subGroup}</span></div>
-                        </div>
-                        <div className={styles.totalInfo}>
-                            <strong>Tổng tồn:</strong>
-                            <span>{formatNumber(productData.totalRemaining)} {productData.generalInfo.unit}</span>
-                        </div>
-                    </div>
-                    <div className={styles.lotListCard}>
-    <h3>Tồn kho theo lô</h3>
-    {productData.lots.length > 0 ? (
-        productData.lots.map(lot => {
-            // 2. Tính toán màu sắc
-            const colorClass = getRowColorByExpiry(lot.expiryDate, productData.generalInfo.subGroup);
+            {!selectedProductData && (
+                <div className={styles.searchBox}>
+                    <input 
+                        type="text" 
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Nhập Mã hàng hoặc Số lô..."
+                        autoFocus
+                    />
+                    <FiSearch className={styles.searchIcon} />
+                    <button onClick={handleVoiceSearch} className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}>
+                        <FiMic />
+                    </button>
+                </div>
+            )}
 
-            return (
-                // 3. Áp dụng class màu vào thẻ div
-                <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
-                    <div><strong>Số lô:</strong><span>{lot.lotNumber}</span></div>
-                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
-                    <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
-                    {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
-                </div>
-            );
-        })
-    ) : (
-                            <p className={styles.emptyMessage}>Không có lô hàng nào còn tồn kho.</p>
-                        )}
-                    </div>
-                </div>
-            ) : (
-                <div className={styles.noResults}> 
-                    <FiAlertCircle />
-                    <p>{searchTerm ? 'Không tìm thấy kết quả.' : 'Vui lòng nhập từ khóa để tìm kiếm.'}</p>
-                </div>
+            {loading ? <Spinner /> : (
+                <>
+                    {/* TRƯỜNG HỢP 1: HIỂN THỊ DANH SÁCH GỢI Ý */}
+                    {!selectedProductData && candidates.length > 0 && (
+                        <div className={styles.resultsContainer}>
+                            <p style={{fontSize: '13px', color: '#666', margin: '0 0 10px 5px'}}>Tìm thấy {candidates.length} kết quả:</p>
+                            {candidates.map(item => (
+                                <div 
+                                    key={item.key} 
+                                    className={styles.generalInfoCard} 
+                                    style={{marginBottom: '10px', cursor: 'pointer', borderLeft: item.type === 'product' ? '5px solid #007bff' : '5px solid #28a745'}}
+                                    onClick={() => handleSelectCandidate(item)}
+                                >
+                                    <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+                                        <div style={{fontSize: '24px', color: item.type === 'product' ? '#007bff' : '#28a745'}}>
+                                            {item.type === 'product' ? <FiBox /> : <FiLayers />}
+                                        </div>
+                                        <div>
+                                            <h3 style={{margin: '0 0 5px 0', fontSize: '16px', color: '#333'}}>
+                                                {/* --- HIGHLIGHT GỢI Ý MOBILE --- */}
+                                                <HighlightText text={item.value} highlight={searchTerm} />
+                                            </h3>
+                                            <p style={{margin: 0, fontSize: '13px', color: '#666'}}>
+                                                <HighlightText text={item.subText} highlight={searchTerm} />
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* TRƯỜNG HỢP 2: HIỂN THỊ CHI TIẾT SẢN PHẨM */}
+                    {selectedProductData && (
+                        <div className={styles.resultsContainer}>
+                            <button onClick={handleBackToList} className="btn-secondary" style={{marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px', width: 'fit-content'}}>
+                                <FiArrowLeft /> Quay lại danh sách
+                            </button>
+
+                            <div className={styles.generalInfoCard}>
+                                <h3><HighlightText text={selectedProductData.generalInfo.productName} highlight={searchTerm} /></h3>
+                                <div className={styles.infoGrid}>
+                                    <div><strong>Mã hàng:</strong><span><HighlightText text={selectedProductData.generalInfo.productId} highlight={searchTerm} /></span></div>
+                                    <div><strong>ĐVT:</strong><span>{selectedProductData.generalInfo.unit}</span></div>
+                                    <div><strong>Quy cách:</strong><span>{selectedProductData.generalInfo.packaging}</span></div>
+                                    <div><strong>Nhiệt độ BQ:</strong><span>{selectedProductData.generalInfo.storageTemp}</span></div>
+                                    <div><strong>Hãng SX:</strong><span>{selectedProductData.generalInfo.manufacturer}</span></div>
+                                    <div><strong>Team:</strong><span>{selectedProductData.generalInfo.team}</span></div>
+                                    <div><strong>Nhóm hàng:</strong><span>{selectedProductData.generalInfo.subGroup}</span></div>
+                                </div>
+                                <div className={styles.totalInfo}>
+                                    <strong>Tổng tồn:</strong>
+                                    <span>{formatNumber(selectedProductData.totalRemaining)} {selectedProductData.generalInfo.unit}</span>
+                                </div>
+                            </div>
+
+                            <div className={styles.lotListCard}>
+                                <h3>Chi tiết lô (FEFO)</h3>
+                                {selectedProductData.lots.length > 0 ? (
+                                    selectedProductData.lots.map(lot => {
+                                        const colorClass = getRowColorByExpiry(lot.expiryDate, selectedProductData.generalInfo.subGroup);
+                                        return (
+                                            <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
+                                                {/* --- HIGHLIGHT SỐ LÔ --- */}
+                                                <div><strong>Số lô:</strong><span><HighlightText text={lot.lotNumber} highlight={searchTerm} /></span></div>
+                                                <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                                                <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)}</span></div>
+                                                {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className={styles.emptyMessage}>Không có tồn kho.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TRƯỜNG HỢP 3: KHÔNG TÌM THẤY */}
+                    {!selectedProductData && candidates.length === 0 && searchTerm && (
+                        <div className={styles.noResults}> 
+                            <FiAlertCircle />
+                            <p>Không tìm thấy kết quả nào phù hợp.</p>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
