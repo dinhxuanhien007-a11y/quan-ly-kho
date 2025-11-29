@@ -1545,3 +1545,35 @@ tbody tr.selected-row td {
     font-size: 13px;
   }
 }
+
+/* Thêm vào cuối file src/styles/AdminLayout.css */
+
+/* --- EMPTY STATE (Trạng thái trống) --- */
+.empty-state-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #adb5bd; /* Màu xám nhạt */
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-state-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+/* --- SKELETON LOADING (Cho chế độ Dark mode nếu có) --- */
+/* react-loading-skeleton tự xử lý tốt, nhưng ta có thể tweak thêm nếu cần */

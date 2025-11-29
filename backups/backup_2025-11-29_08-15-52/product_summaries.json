@@ -1,0 +1,7447 @@
+[
+  {
+    "_id": "02-61860-00",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Dây dẫn dung dịch kèm van máy Count/Calibur",
+    "manufacturer": "Becton Dickinson",
+    "totalRemaining": 5,
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 279000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "17544202",
+    "unit": "Chai",
+    "storageTemp": "4 → 30°C",
+    "subGroup": "KHÁC",
+    "packaging": "100 mL/ Chai",
+    "nearestExpiryDate": {
+      "_seconds": 1853859600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "FILCOLL PAQUE PREMIUM",
+    "manufacturer": "Cytiva",
+    "lastUpdatedAt": {
+      "_seconds": 1762850890,
+      "_nanoseconds": 761000000
+    },
+    "totalRemaining": 3
+  },
+  {
+    "_id": "2000E7D",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n100 Cái/ Thùng",
+    "team": "MED",
+    "productName": "SMART SITE NEEDLE-FREE VALVE",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1832864400,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764065984,
+      "_nanoseconds": 268000000
+    },
+    "totalRemaining": 47083
+  },
+  {
+    "_id": "20012027",
+    "unit": "Chai",
+    "storageTemp": "15 → 30°C",
+    "subGroup": "KHÁC",
+    "packaging": "500 mL/ Chai",
+    "nearestExpiryDate": {
+      "_seconds": 1814374800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "inventoryHistory": [],
+    "productName": "PBS, pH 7.2",
+    "manufacturer": "Thermo Fisher",
+    "lastUpdatedAt": {
+      "_seconds": 1764236150,
+      "_nanoseconds": 365000000
+    },
+    "totalRemaining": 8
+  },
+  {
+    "_id": "20019E7DS",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1864141200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Dây nối chữ Y 24 cm",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764065985,
+      "_nanoseconds": 567000000
+    },
+    "totalRemaining": 8088
+  },
+  {
+    "_id": "20038E7DS",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1858870800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "SmartSite 3 dây",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762586450,
+      "_nanoseconds": 23000000
+    },
+    "totalRemaining": 947
+  },
+  {
+    "_id": "212322",
+    "unit": "Chai",
+    "storageTemp": "2 → 25°C",
+    "packaging": "500G/ Chai",
+    "nearestExpiryDate": {
+      "_seconds": 1761843600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BBL Mueller Hinton II Broth",
+    "totalRemaining": 20,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 913000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "212961",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "500G/ Chai",
+    "nearestExpiryDate": {
+      "_seconds": 1772211600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Bottle Chromagar \ncandida 500mg",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 727000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "215348",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "6 Lọ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1765818000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kanamycin Sulfate",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "totalRemaining": 8,
+    "lastUpdatedAt": {
+      "_seconds": 1761661626,
+      "_nanoseconds": 721000000
+    }
+  },
+  {
+    "_id": "215349",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "6 Lọ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1779728400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Moxifloxacin Hydrochloride",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761627100,
+      "_nanoseconds": 598000000
+    },
+    "totalRemaining": 5
+  },
+  {
+    "_id": "220909",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Hộp",
+    "team": "BIO",
+    "productName": "BBL Prepared Culture Media (BBL Lowenstein-Jensen Medium)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1792861200,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764227296,
+      "_nanoseconds": 521000000
+    },
+    "totalRemaining": 22
+  },
+  {
+    "_id": "231274",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1811696400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Chloramphenicol C-30 10 Ea",
+    "totalRemaining": 30,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 992000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231286",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1801846800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Doxycycline D-30 10 Ea",
+    "totalRemaining": 10,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 78000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231293",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1822323600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Nitrofurantoin F/N-300 10 Ea",
+    "totalRemaining": 10,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 190000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231539",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1791392400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Sulfamethoxazole W/Trim Sxt 10 Ea",
+    "totalRemaining": 20,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 286000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231591",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1777568400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Cefoxitin Fox-30 10 Ea",
+    "totalRemaining": 10,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 95000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231607",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1762448400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Cefotaxime Ctx-30 10 Ea",
+    "totalRemaining": 8,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 93000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231621",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1762448400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Cefuroxime Cxm-30 10 Ea",
+    "totalRemaining": 20,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 564000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231633",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1760547600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Ceftazidime Caz-30 10 Ea",
+    "totalRemaining": 6,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 979000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231647",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1791392400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Norfloxacin Nor-10 10 Ea",
+    "totalRemaining": 15,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 652000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231649",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1764694800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Ticarcillin/Clavulanic Tim-85 10 Ea",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "lastUpdatedAt": {
+      "_seconds": 1760359324,
+      "_nanoseconds": 85000000
+    },
+    "totalRemaining": 5,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231658",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1781110800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Ciprofloxacin Cip-5 10 Ea",
+    "totalRemaining": 10,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 954000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231692",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1765040400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Piperacillin/Tazobactam Tzp110 10Ea",
+    "totalRemaining": 10,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 293000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "231704",
+    "unit": "Ống",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Khoanh/ Ống,\n10 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1765472400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Disc Meropenem Mem-10 10 Ea",
+    "totalRemaining": 20,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 574000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "240863",
+    "unit": "Bộ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "10 Chai/ Bộ",
+    "nearestExpiryDate": {
+      "_seconds": 1761930000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD BBL MycoPrep Kit",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 17000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "245116",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD DS",
+    "packaging": "15 mL/ Lọ, \n6 Lọ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1799946000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BBL MGIT OADC",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1762311771,
+      "_nanoseconds": 389000000
+    },
+    "totalRemaining": 1
+  },
+  {
+    "_id": "245122",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "100 Test/ Hộp",
+    "team": "BIO",
+    "productName": "BBL MGIT Mycobacteria Growth Indicator Tubes (7 mL)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1783443600,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764066926,
+      "_nanoseconds": 541000000
+    },
+    "totalRemaining": 90
+  },
+  {
+    "_id": "245123",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "40 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1788886800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BACTEC MGIT 960 SIRE Kit",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763111337,
+      "_nanoseconds": 353000000
+    },
+    "totalRemaining": 4
+  },
+  {
+    "_id": "245124",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Hộp",
+    "team": "BIO",
+    "productName": "BACTEC MGIT 960 Supplement Kit",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1792429200,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763111337,
+      "_nanoseconds": 368000000
+    },
+    "totalRemaining": 90
+  },
+  {
+    "_id": "245159",
+    "unit": "Hộp",
+    "storageTemp": "2 → 35°C",
+    "packaging": "25 Test/ Hộp",
+    "team": "BIO",
+    "productName": "MGIT TBc Identification Test",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1778086800,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764323537,
+      "_nanoseconds": 767000000
+    },
+    "totalRemaining": 114
+  },
+  {
+    "_id": "246001",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "4.5 mL/ Lọ, \n100 Lọ/ Hộp",
+    "team": "BIO",
+    "productName": "Phoenix ID Broth",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1782234000,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 94,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 842000000
+    }
+  },
+  {
+    "_id": "246003",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "8 mL/ Lọ, \n100 Lọ/ Hộp",
+    "team": "BIO",
+    "productName": "Phoenix AST Broth",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1779814800,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "totalRemaining": 83.5,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 589000000
+    }
+  },
+  {
+    "_id": "246004",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+    "team": "BIO",
+    "productName": "Phoenix AST Indicator Solution",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1780592400,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 70,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 834000000
+    }
+  },
+  {
+    "_id": "246007",
+    "unit": "Lọ",
+    "storageTemp": "2 → 25°C",
+    "packaging": "8 mL/ Lọ,\n 100 Lọ/ Hộp",
+    "team": "BIO",
+    "productName": "Phoenix AST-S Broth",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1759770000,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764132757,
+      "_nanoseconds": 892000000
+    },
+    "totalRemaining": 30
+  },
+  {
+    "_id": "246009",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "6 mL/ Lọ,\n 10 Lọ/ Hộp",
+    "team": "BIO",
+    "productName": "Phoenix AST-S Indicator Solution",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1775494800,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "totalRemaining": 1,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 851000000
+    }
+  },
+  {
+    "_id": "260680",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "20 Gói/ Hộp",
+    "team": "BIO",
+    "productName": "Sachet Gaspak EZ Campy Container",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1759251600,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761293971,
+      "_nanoseconds": 760000000
+    },
+    "totalRemaining": 3
+  },
+  {
+    "_id": "260683",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "20 Gói/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1751302800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Pouch GasPack EZ Anaerobe",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764146990,
+      "_nanoseconds": 709000000
+    },
+    "totalRemaining": 4
+  },
+  {
+    "_id": "260685",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "20 Gói/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1780246800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Gaspak EZ Campy System",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "totalRemaining": 4,
+    "lastUpdatedAt": {
+      "_seconds": 1761987540,
+      "_nanoseconds": 696000000
+    }
+  },
+  {
+    "_id": "262710",
+    "unit": "Chai",
+    "storageTemp": "2 → 25°C",
+    "packaging": "500G/ Chai",
+    "nearestExpiryDate": {
+      "_seconds": 1869584400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Bottle Middlebrook 7H10 Agar 500G",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 938000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "2720-12",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "12 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Bình đựng xà phòng rửa tay diệt PURELL TFX 1200ml",
+    "manufacturer": "Purell",
+    "subGroup": "Purell",
+    "nearestExpiryDate": null,
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763013841,
+      "_nanoseconds": 160000000
+    },
+    "totalRemaining": 7
+  },
+  {
+    "_id": "301747",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1780160400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Kim lấy máu đốc trong cỡ 22G",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764065986,
+      "_nanoseconds": 137000000
+    },
+    "totalRemaining": 210575
+  },
+  {
+    "_id": "306574",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "30 Cái/ Hộp,\n480 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Bơm nước muối 5ml",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1824915600,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764236198,
+      "_nanoseconds": 644000000
+    },
+    "totalRemaining": 49486
+  },
+  {
+    "_id": "306575",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "30 Cái/ Hộp,\n480 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Bơm nước muối 10ml",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1835370000,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764236198,
+      "_nanoseconds": 597000000
+    },
+    "totalRemaining": 70738
+  },
+  {
+    "_id": "320566",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1200 Cái/ Thùng",
+    "team": "MED",
+    "productName": "BD Ultra-Fine PRO Pen Needles 0.23mm (32G) x 4mm",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1885395600,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD BDC",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764035459,
+      "_nanoseconds": 210000000
+    },
+    "totalRemaining": 114300
+  },
+  {
+    "_id": "323 015DN",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1819386000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Trilucath - 5,5F - 13 cm",
+    "totalRemaining": 197,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 965000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "323 015DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1833469200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Trilucath - 5,5F - 13 cm\n3lumen CVC Kit",
+    "totalRemaining": 200,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 460000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "323 017DN",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1769792400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Trilucath - 7 F - 16 cm\n3lumen CVC Kit with blade, Niti-GW",
+    "totalRemaining": 200,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 896000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "323 017DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1817485200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Trilucath - 7 F - 16 cm\n3lumen CVC Kit with blade, Niti-GW, Y needle",
+    "totalRemaining": 660,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 891000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "323 027DN",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1816966800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Trilucath - 7 F - 20 cm\n3lumen CVC Kit",
+    "totalRemaining": 198,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 79000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "323 027DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1803747600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Trilucath - 7 F - 20 cm\n3lumen CVC Kit",
+    "totalRemaining": 349,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 948000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "324900",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 796000000
+    },
+    "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1759165200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD ULTRA-FINE™ INSULIN SYRINGE WITH STERILE INTERIOR",
+    "totalRemaining": 480,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "324903",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1795971600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD ULTRA-FINE™ INSULIN SYRINGE WITH STERILE INTERIOR",
+    "totalRemaining": 4500,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 551000000
+    },
+    "subGroup": "BD BDC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "326674",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+    "team": "MED",
+    "productName": "BD Ultra- Fine Insulin Sringes 6MM (1mL)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDC",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1901120400,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 10100,
+    "lastUpdatedAt": {
+      "_seconds": 1764147033,
+      "_nanoseconds": 497000000
+    }
+  },
+  {
+    "_id": "326675",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1777482000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD ULTRA-FINE™ INSULIN SYRINGES 6MM (0.25 mL)",
+    "manufacturer": "Becton Dickinson",
+    "totalRemaining": 25383,
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 181000000
+    },
+    "subGroup": "BD BDC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "326702",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD Ultra- Fine II Short Needle Insulin Syringe (100Ul/1.0ML, 30GX8MM)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDC",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764037726,
+      "_nanoseconds": 356000000
+    },
+    "totalRemaining": 22475
+  },
+  {
+    "_id": "326725",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1840640400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD Ultra-Fine II Short Needles Insulin Syringe (100UI/0.5ML, 30GX8MM)",
+    "totalRemaining": 3400,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 987000000
+    },
+    "subGroup": "BD BDC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "331 208HDNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1826557200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Venoseld 18 G - 20 cm\n1lumen CVC Kit",
+    "totalRemaining": 200,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 223000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 014SDNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1826557200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 4 F - 10 cm",
+    "totalRemaining": 152,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 862000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 015S1DN",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1819472400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 5 F - 13 cm",
+    "totalRemaining": 95,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 117000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 015S1DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1826557200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 5 F - 13 cm",
+    "totalRemaining": 300,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 338000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 017DN",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1816966800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 7 F - 15 cm\n2lumen CVC Kit",
+    "totalRemaining": 297,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 878000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 017DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1823101200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 7 F - 15 cm\n2lumen CVC Kit",
+    "totalRemaining": 205,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179229,
+      "_nanoseconds": 519000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 027DN",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1816966800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 7 F - 20 cm\n2lumen CVC Kit",
+    "totalRemaining": 292,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 300000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 027DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1794070800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 7 F - 20 cm\n2lumen CVC Kit",
+    "totalRemaining": 79,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 6000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 084DN",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1819386000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 4 F - 8 cm",
+    "totalRemaining": 183,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 368000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332 084DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1818867600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Doucath - 4 F - 8 cm\n2lumen CVC Kit",
+    "totalRemaining": 100,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 897000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "33206007",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bảng điều khiển Fluidic máy Canto/Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 292000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "33206210",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bảng điều khiển đường dịch máy Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 908000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332771",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196808,
+      "_nanoseconds": 0
+    },
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1759165200,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD3 (SK7) PerCP Cy (TM) 5.5",
+    "totalRemaining": 6,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332774",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1777482000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD7 (M-T701) PE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 556000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332778",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1798650000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD15 FITC CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761830481,
+      "_nanoseconds": 999000000
+    }
+  },
+  {
+    "_id": "332779",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD16 PE CE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 620000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332784",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1764435600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD45 (2D1) PerCP-\nCyTM5.5",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 730000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "332791",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "team": "BIO",
+    "productName": "Anti-Tdt (E17-1519) APC",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 604000000
+    },
+    "nearestExpiryDate": {
+      "_seconds": 1756573200,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 2,
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "33304507",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối loại nhỏ dùng để cắm phin lọc máy Canto II",
+    "totalRemaining": 4,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 269000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "33304607",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối loại to dùng để cắm phin lọc máy Canto II",
+    "totalRemaining": 8,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 497000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "33307207",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối phin lọc máy Canto II",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 468000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "333140",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Anti-TCR A/B FITC CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 999000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "333144",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1780160400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD11c APC CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761830481,
+      "_nanoseconds": 743000000
+    }
+  },
+  {
+    "_id": "333151",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1816966800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD71 FITC LO1.1 CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761830482,
+      "_nanoseconds": 310000000
+    }
+  },
+  {
+    "_id": "333167",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1777482000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD1a PE CE",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 939000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "333169",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1780160400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD57 FITC CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 269000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "334 028DNY",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1806858000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Quadrocath - 8,5 F - 20 cm",
+    "totalRemaining": 17,
+    "manufacturer": "Intra Special Catheters",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 71000000
+    },
+    "subGroup": "CVC",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "334044",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Check Valve Waste",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 21000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "334224",
+    "unit": "Thùng",
+    "storageTemp": "2 → 30°C",
+    "subGroup": "BD BDB",
+    "packaging": "5L/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1804870800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "inventoryHistory": [],
+    "productName": "FACS Shutdown Solution",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1764227307,
+      "_nanoseconds": 304000000
+    },
+    "totalRemaining": 17
+  },
+  {
+    "_id": "334914",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Cảm biến bình Sheat máy Canto/Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 539000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "335683",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Pinhole Alignment Tool",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 729000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "335775",
+    "unit": "Test",
+    "storageTemp": "2 → 8°C",
+    "packaging": "25 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1769792400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "FACS 7-Color Setup Beads 25 Test",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763448516,
+      "_nanoseconds": 205000000
+    },
+    "totalRemaining": 15
+  },
+  {
+    "_id": "336488",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Máy nén khí",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 342000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "337166",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1780160400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD Multitest 6-Color TBNK Kit W/Trucount",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762266652,
+      "_nanoseconds": 708000000
+    },
+    "totalRemaining": 1
+  },
+  {
+    "_id": "337592",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "WIRE 005 DIAX7.3INL 316 VMSS",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 617000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "337898",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1769792400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD22 FITC CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 45000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "338978",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Cảm biến máy Canto/Canto II (7-Pin)",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 399000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "338979",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Cảm biến máy Canto/Canto II (6-Pin)",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 86000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "339074",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Cable FSC máy Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 305000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "339637",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối dùng để cắm cảm biến bình sheat máy Canto / Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 697000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "339638",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối dùng để cắm cảm biến bình thải máy Canto / Canto II",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 225000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "340334",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "subGroup": "BD BDB",
+    "packaging": "50 Test/ Hộp",
+    "team": "BIO",
+    "productName": "Trucount Absolute Counting Tubes US IVD",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1806426000,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1763448516,
+      "_nanoseconds": 204000000
+    },
+    "totalRemaining": 26
+  },
+  {
+    "_id": "340345",
+    "unit": "Thùng",
+    "storageTemp": "2 → 30°C",
+    "packaging": "5 Lít/ Thùng",
+    "team": "BIO",
+    "productName": "BD FACS Clean Solution 5L",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1753722000,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763633603,
+      "_nanoseconds": 869000000
+    },
+    "totalRemaining": 34
+  },
+  {
+    "_id": "340410",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "team": "BIO",
+    "productName": "CD56 FITC NCAM16.2 50 Test RUO/GMP",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1764435600,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1762921406,
+      "_nanoseconds": 715000000
+    },
+    "totalRemaining": 1
+  },
+  {
+    "_id": "340437",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1764435600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD19 APC SJ25C1 100 Test RUO/GMP",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 162000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "340499",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "team": "BIO",
+    "productName": "Multitest CD3/CD8/CD45/CD4 50\nTests IVD",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1798650000,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 41,
+    "lastUpdatedAt": {
+      "_seconds": 1763448516,
+      "_nanoseconds": 208000000
+    }
+  },
+  {
+    "_id": "340545",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD123 PE 9F5 50 Test RUO/GMP",
+    "totalRemaining": 4,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 673000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "340827",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 617000000
+    },
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1759165200,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Quantibrite HLA-DR PE/Mono PerCP-Cy5.5",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "340991",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "lastUpdatedAt": {
+      "_seconds": 1763978004,
+      "_nanoseconds": 726000000
+    },
+    "subGroup": "BD BDB",
+    "packaging": "15 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1771174800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "inventoryHistory": [],
+    "productName": "BD Stem Cell Control Kit: 2 x 2mL (1-CD34+Low, 1-CD34+High)",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson"
+  },
+  {
+    "_id": "341027",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD56 (NCAM 16.2) APC",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761830482,
+      "_nanoseconds": 140000000
+    }
+  },
+  {
+    "_id": "341109",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1764435600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD5 PerCP-Cy5.5 CE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179229,
+      "_nanoseconds": 982000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "342003",
+    "unit": "Thùng",
+    "storageTemp": "2 → 30°C",
+    "subGroup": "BD BDB",
+    "packaging": "20L/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1842973200,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "inventoryHistory": [],
+    "productName": "BD FACSFlow Sheath Fluid 20L",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1764305744,
+      "_nanoseconds": 555000000
+    },
+    "totalRemaining": 9
+  },
+  {
+    "_id": "34334637",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PCB Assembly Fluidics Driver Service",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 280000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "343508",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối 1/16 máy Canto/Canto II",
+    "totalRemaining": 7,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 315000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "343509",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Vòng đệm Flowcell cho máy Canto/CantoII/Calibur",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 984000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "343528",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng 1/8 máy Calibur/Canto/Canto II",
+    "totalRemaining": 8,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 465000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "343618",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng cho đầu ngắt kết nối",
+    "totalRemaining": 10,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 905000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "34363910",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ bảo dưỡng Scan/Sort/Calib/LSR máy Calibur, code cũ: 343639",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 812000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "343663",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng cao su máy Calibur",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 816000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "343835",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Dây cảm biến máy mực nước Aria",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 414000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "344867",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Cảm biến nhận diện ống mẫu máy Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 217000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345774",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1761843600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD8 PerCP SK1 CE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 755000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345783",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1761843600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD5 APC L17F12 CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 135000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345784",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1777482000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD14 (MΦP9) FITC",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 73000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345786",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD14 PerCP MOP9 CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 142000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345787",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1769792400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD14 APC MOP9 CE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 189000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345789",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1806426000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD19 PE SJ25C1 CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761830481,
+      "_nanoseconds": 846000000
+    }
+  },
+  {
+    "_id": "345792",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1767114000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD20 FITC L27 CE",
+    "totalRemaining": 4,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 951000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345793",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD20 PE L27 CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 425000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345800",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1811696400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD33 APC P67.6 CE",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1763453295,
+      "_nanoseconds": 96000000
+    },
+    "totalRemaining": 1
+  },
+  {
+    "_id": "345807",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1761843600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD38 APC HB-7 CE",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 448000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "345809",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1764435600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD45 PerCP 2D1 CE",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 908000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "346410",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối bộ làm khô không khí xe dịch máy Canto",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 311000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "347240",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "",
+    "productName": "Red Nile Reference Beads 2.49um",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761054886,
+      "_nanoseconds": 770000000
+    },
+    "nearestExpiryDate": {
+      "_seconds": 1772211600,
+      "_nanoseconds": 695000000
+    }
+  },
+  {
+    "_id": "347241",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196808,
+      "_nanoseconds": 636000000
+    },
+    "packaging": "",
+    "nearestExpiryDate": {
+      "_seconds": 1732899600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Blue Reference Beads 6.0um",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "Spare Part",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "347247",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Anti-Lambda FITC CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 501000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "347406",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1801328400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD13 PE CE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 912000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "348809",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD4 (SK3) PE-Cy(TM) 7",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 475000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "348813",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD8 APC-Cy7 CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 217000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "348815",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD45 APC-Cy7 CE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761830482,
+      "_nanoseconds": 102000000
+    }
+  },
+  {
+    "_id": "349202",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 mL / Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1806426000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "FACS Lysing Solution 10X 100ML IVD",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1763448515,
+      "_nanoseconds": 654000000
+    },
+    "totalRemaining": 1
+  },
+  {
+    "_id": "349532",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Switch áp xuất máy Calibur/Count",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 524000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "349700",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "2.5 mL/ Hộp",
+    "team": "BIO",
+    "productName": "BD™ Multi-Check Control",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1754067600,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763978004,
+      "_nanoseconds": 731000000
+    },
+    "totalRemaining": 5
+  },
+  {
+    "_id": "349703",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "2.5 mL/ Hộp",
+    "team": "BIO",
+    "productName": "BD™ Multi-Check CD4 Low Control",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1754067600,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763978004,
+      "_nanoseconds": 721000000
+    },
+    "totalRemaining": 6
+  },
+  {
+    "_id": "352054",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "KHÁC",
+    "packaging": "125 Ống/ Túi,\n1000 Ống/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1910970000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Falcon 5mL, đáy tròn, Polystyrene Cap",
+    "manufacturer": "Corning",
+    "lastUpdatedAt": {
+      "_seconds": 1762749169,
+      "_nanoseconds": 548000000
+    },
+    "totalRemaining": 1625
+  },
+  {
+    "_id": "360211",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "BD SM",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "team": "MED",
+    "inventoryHistory": [],
+    "productName": "Kim đốc đục",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1903712400,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 41200,
+    "lastUpdatedAt": {
+      "_seconds": 1764147240,
+      "_nanoseconds": 307000000
+    }
+  },
+  {
+    "_id": "360213",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1822237200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD Vacutainer®",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763013858,
+      "_nanoseconds": 324000000
+    },
+    "totalRemaining": 11850
+  },
+  {
+    "_id": "363080",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+    "team": "MED",
+    "productName": "Ống nghiệm chân không chống đông Citrate 3,2% 1,8ml",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 20400,
+    "lastUpdatedAt": {
+      "_seconds": 1764227501,
+      "_nanoseconds": 401000000
+    }
+  },
+  {
+    "_id": "364356",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Bơm tiêm khí máu động mạch - BD Drihep A-line Syringe 1ml SYR ABG ALINE 1(.6) S/T CE",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764065983,
+      "_nanoseconds": 976000000
+    },
+    "totalRemaining": 9735
+  },
+  {
+    "_id": "364376",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Xylanh lấy máu động mạch 3ml không có chế độ tự động hút máu (loại không có kim)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1795971600,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764065983,
+      "_nanoseconds": 874000000
+    },
+    "totalRemaining": 8200
+  },
+  {
+    "_id": "364415",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1790701200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Xylanh lấy máu động mạch 1ml có chế độ tự động hút máu (có kim cỡ 25G)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "totalRemaining": 1915,
+    "lastUpdatedAt": {
+      "_seconds": 1764227299,
+      "_nanoseconds": 704000000
+    }
+  },
+  {
+    "_id": "364606",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Ống/ Hộp,\n1000 Ống/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1772211600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "TUBE ACD GC 16X100 8.5 PLBL YEL",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "totalRemaining": 54900,
+    "lastUpdatedAt": {
+      "_seconds": 1764236198,
+      "_nanoseconds": 951000000
+    }
+  },
+  {
+    "_id": "364879",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "250 Cái/ Túi,\n1000 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Vacutainer Standard Yellow Holder",
+    "totalRemaining": 7,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "lastUpdatedAt": {
+      "_seconds": 1760365678,
+      "_nanoseconds": 967000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "365963",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Ống nghiệm Serum 0,5ml",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763013930,
+      "_nanoseconds": 433000000
+    },
+    "totalRemaining": 50
+  },
+  {
+    "_id": "365965",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "BD SM",
+    "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Ống nghiệm Lithium Heparin 0,5ml",
+    "manufacturer": "Becton Dickinson",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763956534,
+      "_nanoseconds": 191000000
+    },
+    "totalRemaining": 50
+  },
+  {
+    "_id": "365974",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "BD SM",
+    "packaging": "50 Ống/ Túi,\n200 Ống/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1795971600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Microtainer Tubes with K2E (K2EDTA)",
+    "manufacturer": "Becton Dickinson",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764065984,
+      "_nanoseconds": 164000000
+    },
+    "totalRemaining": 1850
+  },
+  {
+    "_id": "366594",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "200 Cái/ Hộp,\n2000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1884099600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD Microtainer Contact-Activated Lancet 2.0 mm x 1.5 mm",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762490288,
+      "_nanoseconds": 531000000
+    },
+    "totalRemaining": 19800
+  },
+  {
+    "_id": "367203",
+    "unit": "Sợi",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "25 Sợi/ Hộp,\n500 Sợi/ Thùng",
+    "team": "MED",
+    "productName": "Vacutainer Brand STRETCH Latex Free Tourniquet",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "nearestExpiryDate": null,
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763436241,
+      "_nanoseconds": 858000000
+    },
+    "totalRemaining": 1250
+  },
+  {
+    "_id": "367281",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Vacutainer Safety-Lok Blood Collection Set (21G)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1840640400,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764323324,
+      "_nanoseconds": 392000000
+    },
+    "totalRemaining": 17089
+  },
+  {
+    "_id": "367283",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Vacutainer Safety-Lok Blood Collection Set (23G)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1848589200,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764065984,
+      "_nanoseconds": 351000000
+    },
+    "totalRemaining": 29750
+  },
+  {
+    "_id": "367285",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1830186000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Vacutainer Safety-Lok Blood Collection Set (25G)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764065383,
+      "_nanoseconds": 998000000
+    },
+    "totalRemaining": 5240
+  },
+  {
+    "_id": "367290",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1790701200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Vacutainer Multiple Sample Luer Adapter",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761043798,
+      "_nanoseconds": 678000000
+    },
+    "totalRemaining": 2230
+  },
+  {
+    "_id": "367525",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Tube EDTA PLH 16x100 10.0 PLBLCE LAV",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763462188,
+      "_nanoseconds": 304000000
+    },
+    "totalRemaining": 200
+  },
+  {
+    "_id": "367526",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1780160400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD Vacutainer LH 170 I.U. Plus Blood Collection Tubes",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761293953,
+      "_nanoseconds": 332000000
+    },
+    "totalRemaining": 400
+  },
+  {
+    "_id": "367587",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "team": "MED",
+    "productName": "BD Vacutainer Sodium Fluoride: 3mg. Na2 EDTA: 6mg Blood Collection Tubes",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1763974128,
+      "_nanoseconds": 213000000
+    },
+    "totalRemaining": 4400
+  },
+  {
+    "_id": "367812",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Ống nghiệm chân không BD Vacutainer® serum 4ml",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "nearestExpiryDate": {
+      "_seconds": 1788109200,
+      "_nanoseconds": 0
+    },
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764065985,
+      "_nanoseconds": 523000000
+    },
+    "totalRemaining": 13900
+  },
+  {
+    "_id": "367841",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "BD SM",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Ống nghiệm chân không BD Vacutainer® EDTA 2ml",
+    "manufacturer": "Becton Dickinson",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763974128,
+      "_nanoseconds": 137000000
+    },
+    "totalRemaining": 36100
+  },
+  {
+    "_id": "367861",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "BD SM",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1788109200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "inventoryHistory": [],
+    "productName": "Ống nghiệm chân không EDTA K2 4ml",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1764323326,
+      "_nanoseconds": 443000000
+    },
+    "totalRemaining": 14500
+  },
+  {
+    "_id": "367884",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Ống nghiệm chân không Lithium Heparin 4ml",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764297374,
+      "_nanoseconds": 136000000
+    },
+    "totalRemaining": 103400
+  },
+  {
+    "_id": "367896",
+    "unit": "Ống",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Ống nghiệm chân không Serum 10ml",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763701225,
+      "_nanoseconds": 807000000
+    },
+    "nearestExpiryDate": {
+      "_seconds": 1790701200,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 48300
+  },
+  {
+    "_id": "368101",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Lancet lấy máu quikheel",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1885395600,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764065984,
+      "_nanoseconds": 455000000
+    },
+    "totalRemaining": 730
+  },
+  {
+    "_id": "368872",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "20 Cái/ Hộp,\n100 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Vacutainer Pronto Quick Release Needle Holder",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD SM",
+    "nearestExpiryDate": null,
+    "inventoryHistory": [],
+    "totalRemaining": 480,
+    "lastUpdatedAt": {
+      "_seconds": 1764146872,
+      "_nanoseconds": 215000000
+    }
+  },
+  {
+    "_id": "3691-12",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Purell",
+    "packaging": "12 Chai/ Thùng",
+    "team": "MED",
+    "inventoryHistory": [],
+    "productName": "Gel rửa tay diệt khuẩn PURELL 354ml",
+    "manufacturer": "Purell",
+    "nearestExpiryDate": {
+      "_seconds": 1835370000,
+      "_nanoseconds": 303000000
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764305736,
+      "_nanoseconds": 71000000
+    },
+    "totalRemaining": 880
+  },
+  {
+    "_id": "380100331",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp,\n600 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1819731600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Rovers® Cervex-Brush® sterile 100 pcs",
+    "manufacturer": "Rovers",
+    "subGroup": "Rovers",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763366961,
+      "_nanoseconds": 399000000
+    },
+    "totalRemaining": 13170
+  },
+  {
+    "_id": "382912",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1809018000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Insyte Autoguard BC Pro Winged (24GA)",
+    "manufacturer": "Becton Dickinson",
+    "totalRemaining": 2,
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 946000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "382923",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1814288400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Insyte Autoguard BC Pro Winged (22GA)",
+    "manufacturer": "Becton Dickinson",
+    "totalRemaining": 867,
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 770000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "382933",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Insyte Autoguard BC Pro Winged (20GA)",
+    "manufacturer": "Becton Dickinson",
+    "totalRemaining": 3872,
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 548000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "383532",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1811696400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "NEXIVA 22GA 1.00IN Y",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763454944,
+      "_nanoseconds": 381000000
+    },
+    "totalRemaining": 1785
+  },
+  {
+    "_id": "383537",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "NEXIVA 20GA 1.25IN HF Y",
+    "totalRemaining": 3657,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 96000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "383641",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+    "team": "MED",
+    "productName": "BD NEXIVA 24G",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1840640400,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764065986,
+      "_nanoseconds": 256000000
+    },
+    "totalRemaining": 2544
+  },
+  {
+    "_id": "383642",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1838048400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD NEXIVA 22G",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "totalRemaining": 3269,
+    "lastUpdatedAt": {
+      "_seconds": 1764297374,
+      "_nanoseconds": 284000000
+    }
+  },
+  {
+    "_id": "383647",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "20 Cái/ Hộp,\n80 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1840640400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD NEXIVA 20G (1.25 IN)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764297374,
+      "_nanoseconds": 256000000
+    },
+    "totalRemaining": 1663
+  },
+  {
+    "_id": "388000",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Túi,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1827507600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD Gravity IV Set With ARD Technology and Auto Prime",
+    "manufacturer": "Becton Dickinson",
+    "totalRemaining": 5700,
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 98000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "388002",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Túi,\n100 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "BD Gravity IV Set With ARD Technology and Auto Prime\nBộ dây truyền dịch an toàn có đầu nối không kim",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763104074,
+      "_nanoseconds": 311000000
+    },
+    "totalRemaining": 12
+  },
+  {
+    "_id": "391891",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n500 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Venflon I 22GA 0.8mm x 25mm Global",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1851267600,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1763956348,
+      "_nanoseconds": 257000000
+    },
+    "totalRemaining": 332
+  },
+  {
+    "_id": "391892",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1798650000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Venflon I 20GA 1.0mm x 32mm Global",
+    "totalRemaining": 279,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 355000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "391893",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1798650000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Venflon I 18GA 1.2mm x 45mm Global",
+    "totalRemaining": 50,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 486000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "393222",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Venflon Pro Safety (22GA)",
+    "totalRemaining": 1110,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 70000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "393224",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1824915600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Venflon Pro Safety (20GA)",
+    "totalRemaining": 1500,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 295000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "393227",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1798650000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Venflon Pro Safety (18GA)",
+    "totalRemaining": 1100,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 168000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "394600",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "BD MDS",
+    "packaging": "100 Cái/ Hộp,\n500 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1806426000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Chạc ba dịch truyền Connecta không dây",
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1763437271,
+      "_nanoseconds": 138000000
+    },
+    "totalRemaining": 800
+  },
+  {
+    "_id": "394995",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n250 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1767114000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Chạc ba dịch truyền Connecta có dây",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD MDS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762266727,
+      "_nanoseconds": 845000000
+    },
+    "totalRemaining": 870
+  },
+  {
+    "_id": "405248",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "25 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1840640400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Spinal Needle (18GA)",
+    "totalRemaining": 15,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 672000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "405257",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "25 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1811696400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Spinal Needle (25GA)",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 92000000
+    },
+    "subGroup": "BD MDS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "437519",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "576 Test/ Hộp",
+    "team": "BIO",
+    "productName": "BD PCR Cartridges",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763371851,
+      "_nanoseconds": 607000000
+    },
+    "nearestExpiryDate": {
+      "_seconds": 1811264400,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 2
+  },
+  {
+    "_id": "440038",
+    "unit": "Gói",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Membrane Switch Bactec 9050\nBàn phím điều khiển kèm cáp kết nối",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 831000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440047",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Mô tơ bước cho máy MGIT 960",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 918000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440050",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "DUAL CHAIN MGIT SPARE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 143000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440053",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bo điều khiển bộ ra nhiệt Mgit 960",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 262000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440054",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "SET OF SLIDES DRAWER MGIT 960 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 354000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "4405896",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "DRAWER SENSOR BOARD",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 314000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "4405902",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Nguồn 5v/15v",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 509000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "4406",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n1000 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1877533200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "SURGICAL CLIPPER BLADE-GENERAL USE",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDI",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763436234,
+      "_nanoseconds": 704000000
+    },
+    "totalRemaining": 3513
+  },
+  {
+    "_id": "440774",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bo cảm biến máy Mgit 960",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 829000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440776",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bảng cảm biến nhiệt độ Mgit 960",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 393000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440777",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bo nguồn máy Mgit 960",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 265000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440825",
+    "unit": "Gói",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "QUICK REFERENCE GUIDE BACTEC FX REVISION 07",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 386000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "440910",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PhoenixSpec™ Nephelometer\nMáy đo độ đục BD PhoenixSpec™",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "nearestExpiryDate": null,
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 269000000
+    },
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441183",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "BD Viper Thermal Verification Tool",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 108000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441306",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ mô tơ rung máy FX",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 198000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441341",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "HANDLE DRAWER A/D BFX SPARE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 245000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441342",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "HANDLE DRAWER B/C BFX SPARE",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 514000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441364",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu đọc mã vạch máy Mgit 960",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 296000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441458",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bo điều khiển mo tơ blower máy FX",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 223000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441459",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Màn hình LCD máy FX",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 821000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441460",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bo điều khiển Drawer máy FX",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 224000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441468",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ khóa cài máy FX",
+    "totalRemaining": 4,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 200000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441476",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Calibration Verification Kit\nBFX SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 790000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441772",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "24 Test/ Hộp",
+    "team": "BIO",
+    "productName": "BD MAX GBS",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1791565200,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1763954650,
+      "_nanoseconds": 196000000
+    },
+    "totalRemaining": 24
+  },
+  {
+    "_id": "441842",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "KIT DISPLAY AND ELECTRONICS MOD MGIT 960",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 273000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441959",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "TEST TOOL GAUS METER EXT VPRLT SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 333000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "441993",
+    "unit": "Hộp",
+    "storageTemp": "2 → 33°C",
+    "lastUpdatedAt": {
+      "_seconds": 1764065985,
+      "_nanoseconds": 860000000
+    },
+    "subGroup": "BD DS",
+    "packaging": "48 Ống/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1777482000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "inventoryHistory": [],
+    "productName": "Control Set for the BD Onclarity HPV Assy",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson"
+  },
+  {
+    "_id": "442017",
+    "unit": "Chai",
+    "storageTemp": "2 → 25°C",
+    "subGroup": "BD DS",
+    "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+    "team": "BIO",
+    "productName": "BACTEC Mycosis IC/F Culture Vials (Plastic)",
+    "manufacturer": "Becton Dickinson",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1797958800,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 1800,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 561000000
+    }
+  },
+  {
+    "_id": "442020",
+    "unit": "Chai",
+    "storageTemp": "2 → 25°C",
+    "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+    "team": "BIO",
+    "productName": "BACTEC Peds Plus/F Culture Vials",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1770570000,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 8260,
+    "lastUpdatedAt": {
+      "_seconds": 1764224155,
+      "_nanoseconds": 949000000
+    }
+  },
+  {
+    "_id": "442021",
+    "unit": "Chai",
+    "storageTemp": "2 → 25°C",
+    "packaging": "40 mL/ Chai,\n 50 Chai/ Thùng",
+    "team": "BIO",
+    "productName": "BACTEC Lytic/10 Anaerobic/F Culture Vials",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1775494800,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 4650,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 589000000
+    }
+  },
+  {
+    "_id": "442023",
+    "unit": "Chai",
+    "storageTemp": "2 → 25°C",
+    "packaging": "30 mL/ Chai,\n 50 Chai/ Thùng",
+    "team": "BIO",
+    "productName": "BACTEC Plus Aerobic/F Culture Vials\n(Chai cấy máu hiếu khí người lớn)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1774198800,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 15485,
+    "lastUpdatedAt": {
+      "_seconds": 1764224270,
+      "_nanoseconds": 197000000
+    }
+  },
+  {
+    "_id": "442555",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 953000000
+    },
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1754067600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max Cdiff EU",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442794",
+    "unit": "Chai",
+    "storageTemp": "2 → 25°C",
+    "subGroup": "BD DS",
+    "packaging": "50 Chai/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1778432400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Bactec Plastic Myco/F Lytic Medium",
+    "manufacturer": "Becton Dickinson",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764146858,
+      "_nanoseconds": 872000000
+    },
+    "totalRemaining": 650
+  },
+  {
+    "_id": "442818",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1752858000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max ExK DNA-1 EU LUO",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760196808,
+      "_nanoseconds": 25000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442819",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 673000000
+    },
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1742058000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max ExK DNA-2 USA",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442821",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1749229200,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max ExK DNA-3 USA",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 710000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442827",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1745600400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max ExK TNA-3",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760196808,
+      "_nanoseconds": 634000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442840",
+    "unit": "Hộp",
+    "storageTemp": "2 → 33°C",
+    "packaging": "400 Ống/ Hộp",
+    "team": "BIO",
+    "productName": "Onclarity HPV Liquid Based Cytology Specimen (LBC) Diluent Tubes",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762941589,
+      "_nanoseconds": 513000000
+    },
+    "nearestExpiryDate": {
+      "_seconds": 1803747600,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 4
+  },
+  {
+    "_id": "442841",
+    "unit": "Máng",
+    "storageTemp": "2 → 33°C",
+    "packaging": "12 Máng/ Thùng",
+    "team": "BIO",
+    "productName": "Viper PCR Extraction Reagent Trough with Piercing Tool",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "nearestExpiryDate": {
+      "_seconds": 1795971600,
+      "_nanoseconds": 0
+    },
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763436222,
+      "_nanoseconds": 530000000
+    },
+    "totalRemaining": 48
+  },
+  {
+    "_id": "442946",
+    "unit": "Hộp",
+    "storageTemp": "2 → 33°C",
+    "packaging": "192 Test/ Hộp",
+    "team": "BIO",
+    "productName": "Onclarity HPV Assay Reagent Pack",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1798650000,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 14,
+    "lastUpdatedAt": {
+      "_seconds": 1762752621,
+      "_nanoseconds": 196000000
+    }
+  },
+  {
+    "_id": "442960",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 985000000
+    },
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1748019600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max Enteric Parasite Panel",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442963",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196808,
+      "_nanoseconds": 37000000
+    },
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1748019600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max Enteric Bacterial Panel",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442967",
+    "unit": "Bộ",
+    "storageTemp": "15 → 30°C",
+    "packaging": "1 Bộ/ Hộp",
+    "team": "BIO",
+    "productName": "Kit Accessory PCR Viper LT",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 909000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "442968",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "100 Cái/ Hộp",
+    "team": "BIO",
+    "productName": "Waste Bag",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 85000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443032",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "FLOWMETER 40 TO 600 CCM FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 385000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443051",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "ELEVATOR INTERCONNECT BOARD FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 352000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443066",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PBA CPU AVALUE BCM QM57 FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 727000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443067",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PINCH VALVE DR LOOP HARNESS FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 384000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443083",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "USB HUB CIRCUIT BOARD FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 491000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443138",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "CENTRIFUGE CENTER TEACH TOOL FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 684000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443139",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PROCESS DECK TEACH TOOL FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 885000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443161",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PCA USB AND COM HUB VPRLT SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 306000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443189",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ nguồn 300W",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 436000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443190",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ nguồn đầu cuối 48VDC",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 353000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443191",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "MOTOR X-AXIS AND Z-AXIS FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 568000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443196",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Pipette Head 1ml HAM VPRLT Spare",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 315000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443208",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Cảm biến vị trí",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 635000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443219",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ nguồn 42v 600W",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 30000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443224",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PROG PCB ASSY DOOR LOCK HAM VPRLT SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 710000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443253",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đai truyền chuyển động trục Z",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 288000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443255",
+    "unit": "Gói",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "SET OF 8 1ML O RING HAM VPRLT SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 820000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443263",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "GRIPPER FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 892000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443375",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PROBE ALIGNMENT TOOL FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 602000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443384",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Cảm biến chốt cửa máy FX40",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 611000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443503",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ nguồn",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 796000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443682",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "XY CONTROLLER ASSY WIN MAX6 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 819000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443684",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bo mạch điều khiển bộ phận chiết tách mẫu PCB 2X MTR CNTRL MAG DRV WIN MAX6 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 536000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443687",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "BENDER BOARD WIN MAX6 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 68000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443691",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bo mạch điều khiển đầu đọc B - PCB 2X MTR CNTRL RDR RT WIN MAX6 SPARE",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 585000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443693",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PCB ASSEMBLY MUX WIN VER MAX6 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 195000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443704",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "ENCODER CENTRIFUGE HETTICH SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 277000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443747",
+    "unit": "Gói",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "1000 Cái/ Gói",
+    "team": "BIO",
+    "productName": "Key Card for the BD Viper LT System",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "nearestExpiryDate": null,
+    "inventoryHistory": [],
+    "totalRemaining": 24,
+    "lastUpdatedAt": {
+      "_seconds": 1762752621,
+      "_nanoseconds": 186000000
+    }
+  },
+  {
+    "_id": "443806",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "8 mL/ Lọ x 48 Lọ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1722358800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD MAX STR",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 889000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443812",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196808,
+      "_nanoseconds": 3000000
+    },
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1721408400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD Max ETX Enteric Bacterial Panel",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443831",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Spare Part",
+    "packaging": "",
+    "nearestExpiryDate": null,
+    "team": "BIO",
+    "productName": "SERVO MOTOR ASSEMBLY PHX50 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761737915,
+      "_nanoseconds": 181000000
+    }
+  },
+  {
+    "_id": "443843",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "POWER ENTRY PANEL ASSEMBLY PHX50 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 196000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443845",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Máy đọc mã vạch",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 103000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443846",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ điều khiển và chia nguồn máy Phoenix M50",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 262000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443853",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "INCUBATION ASSEMBLY PHX50 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 247000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443855",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Dây curoa",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 895000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443856",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ mô tơ và dây máy Phoenix M50",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 624000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443878",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 774000000
+    },
+    "packaging": "24 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1730394000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit BD MAX MDR-TB",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "443910",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ phụ kiện giá đỡ lắp máy PHX50",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 345000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444004",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "SPRING TORSION MODIFIED FEA SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 182000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444510",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Mạch phân phối công suất",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 319000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444513",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Motor trục Y",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 284000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444531",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Rack máy FX, code cũ: 441170",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 987000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444568",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "AC MOTOR MODI GEN2 MGIT 960 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 724000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444575",
+    "unit": "Gói",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Windows 10 license Spare",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 626000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444876",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "SHORTING PCB ASSY BFX SPARE (Set of 10)",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 501000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "444894",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "TRIPLE SUPPLY MODULE 960 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 5000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "445331",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "POWER SUPPLY FX40 SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 598000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "445332",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "NYOGEL 760G 30CC SYRINGE BFX SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 278000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "445333",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "DISPENSING TIPS BFX SPARE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 387000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "445872",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Temp Qc Device Mgit Instrument\nThiết bị đo chuẩn nhiệt",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 277000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "445999",
+    "unit": "Hộp",
+    "storageTemp": "2 → 25°C",
+    "packaging": "51 Lọ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1791910800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit Cablirator Mgit960 51 Pk",
+    "totalRemaining": 7,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 847000000
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "447157",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Phoenix Normalizer Panel",
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "nearestExpiryDate": null,
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763546303,
+      "_nanoseconds": 154000000
+    },
+    "totalRemaining": 3
+  },
+  {
+    "_id": "448007",
+    "unit": "Thẻ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "25 Thẻ/ Thùng",
+    "team": "BIO",
+    "productName": "Phoenix NID",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1782838800,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 2326,
+    "lastUpdatedAt": {
+      "_seconds": 1764224270,
+      "_nanoseconds": 224000000
+    }
+  },
+  {
+    "_id": "448008",
+    "unit": "Thẻ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "25 Thẻ/ Thùng",
+    "team": "BIO",
+    "productName": "Phoenix PID",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1783011600,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 685,
+    "lastUpdatedAt": {
+      "_seconds": 1764224269,
+      "_nanoseconds": 887000000
+    }
+  },
+  {
+    "_id": "448316",
+    "unit": "Thẻ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "25 Thẻ/ Thùng",
+    "team": "BIO",
+    "productName": "Phoenix YEAST ID",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1779555600,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 125,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 853000000
+    }
+  },
+  {
+    "_id": "448420",
+    "unit": "Thẻ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "25 Thẻ/ Thùng",
+    "team": "BIO",
+    "productName": "Phoenix PMIC-84\n(Thẻ kháng sinh đồ vi khuẩn gram dương)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1781197200,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 565,
+    "lastUpdatedAt": {
+      "_seconds": 1764143627,
+      "_nanoseconds": 195000000
+    }
+  },
+  {
+    "_id": "448614",
+    "unit": "Thẻ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "25 Thẻ/ Thùng",
+    "team": "BIO",
+    "productName": "Phoenix PMIC/ID-95\n(Thẻ định danh và kháng sinh đồ gram dương)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1779728400,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1763371852,
+      "_nanoseconds": 90000000
+    },
+    "totalRemaining": 1100
+  },
+  {
+    "_id": "448984",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Panel Phoenix Temperature",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 882000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "449023",
+    "unit": "Thẻ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "25 Thẻ/ Thùng",
+    "team": "BIO",
+    "productName": "Phoenix NMIC/ID-500",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1784912400,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 375,
+    "lastUpdatedAt": {
+      "_seconds": 1764224270,
+      "_nanoseconds": 146000000
+    }
+  },
+  {
+    "_id": "449027",
+    "unit": "Thẻ",
+    "storageTemp": "15 → 25°C",
+    "packaging": "25 Thẻ/ Thùng",
+    "team": "BIO",
+    "productName": "Phoenix NMIC/ID-504",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "inventoryHistory": [],
+    "totalRemaining": 2775,
+    "lastUpdatedAt": {
+      "_seconds": 1764233927,
+      "_nanoseconds": 841000000
+    }
+  },
+  {
+    "_id": "4619PG",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1838048400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (25G)",
+    "manufacturer": "Smiths Medical",
+    "subGroup": "Smiths Medical",
+    "inventoryHistory": [],
+    "totalRemaining": 2650,
+    "lastUpdatedAt": {
+      "_seconds": 1762840403,
+      "_nanoseconds": 800000000
+    }
+  },
+  {
+    "_id": "4629PG",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "50 Cái/ Hộp,\n200 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1838048400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Bơm tiêm khí máu động mạch tráng sẵn heparin, Pro-vent Plus, 1CC (23G)",
+    "manufacturer": "Smiths Medical",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763956530,
+      "_nanoseconds": 689000000
+    },
+    "totalRemaining": 36000
+  },
+  {
+    "_id": "490518",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "1 Bộ/ Gói",
+    "team": "BIO",
+    "productName": "Buffered Tris",
+    "totalRemaining": 20,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 601000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "490795",
+    "unit": "Gói",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Z-MAX GAUGE",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 196000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "491266",
+    "unit": "Thùng",
+    "storageTemp": "15 → 30°C",
+    "packaging": "480 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1766163600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "SurePath Manual Method Kit",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763366965,
+      "_nanoseconds": 663000000
+    },
+    "totalRemaining": 13
+  },
+  {
+    "_id": "491364",
+    "unit": "Gói",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "TIP CENTERING TOOL TOTALYS SLIDEPREP",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 612000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "491452",
+    "unit": "Khay",
+    "storageTemp": "15 → 30°C",
+    "packaging": "25 Lọ/ Khay,\n20 Khay /Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1797526800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "SurePath Collection Vial Kit 500 (10 mL)",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764305777,
+      "_nanoseconds": 971000000
+    },
+    "totalRemaining": 911
+  },
+  {
+    "_id": "491453",
+    "unit": "Thùng",
+    "storageTemp": "15 → 30°C",
+    "packaging": "480 Cái/ Thùng",
+    "team": "BIO",
+    "productName": "Totalys MultiProcessor Consumables Kit",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1758128400,
+      "_nanoseconds": 0
+    },
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762941589,
+      "_nanoseconds": 408000000
+    },
+    "totalRemaining": 9
+  },
+  {
+    "_id": "491456",
+    "unit": "Thùng",
+    "storageTemp": "15 → 30°C",
+    "packaging": "480 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1764090000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Totalys SlidePrep Consumables Kit",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762941588,
+      "_nanoseconds": 895000000
+    },
+    "totalRemaining": 28
+  },
+  {
+    "_id": "491457",
+    "unit": "Chai",
+    "storageTemp": "15 → 30°C",
+    "packaging": "1700 mL/ Chai",
+    "team": "BIO",
+    "productName": "Bottle Alcohol Blend Rinse 1700ml CE M",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD DS",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1833814800,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764323538,
+      "_nanoseconds": 58000000
+    },
+    "totalRemaining": 13
+  },
+  {
+    "_id": "50-7050",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1866906000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "PleurX Pleural Catheter Mini Kit",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDI",
+    "inventoryHistory": [],
+    "totalRemaining": 64,
+    "lastUpdatedAt": {
+      "_seconds": 1764323213,
+      "_nanoseconds": 428000000
+    }
+  },
+  {
+    "_id": "50-7280A",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "nearestExpiryDate": {
+      "_seconds": 1776618000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "CATHETER ACCESS KIT",
+    "totalRemaining": 47,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 212000000
+    },
+    "subGroup": "BD BDI",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "5476-04",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "4 Chai/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1824915600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Gel rửa tay diệt khuẩn PURELL TFX 1200ml",
+    "manufacturer": "Purell",
+    "subGroup": "Purell",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764323075,
+      "_nanoseconds": 298000000
+    },
+    "totalRemaining": 77
+  },
+  {
+    "_id": "550633",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1888074000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD Pharmingen™ PE Mouse Anti-Human CD183",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 618000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "551108",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1851267600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu CD81 FITC JS-81 100 Tst",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 973000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "5513E",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "1 Cái/ Hộp",
+    "team": "MED",
+    "productName": "SURGICAL CLIPPER",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDI",
+    "totalRemaining": 6,
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 123000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "5514E",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "1 Cái/ Hộp",
+    "team": "MED",
+    "productName": "SURGICAL CLIPPER CHARGER",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDI",
+    "nearestExpiryDate": null,
+    "totalRemaining": 11,
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761662269,
+      "_nanoseconds": 627000000
+    }
+  },
+  {
+    "_id": "552843",
+    "unit": "Bộ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "2 Lọ/ Bộ",
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Ms Ig Kpa Comp Bead Set 6mL",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 489000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "555349",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu CD4 APC RPA-T4 100Tst",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 191000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "555492",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1906390800,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD Pharmingen™ FITC Mouse Anti-Human CD45RO",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 101000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "555688",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1869584400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu CD99 FITC TU12 100 Test",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 469000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "556020",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1814288400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu CD63 PE H5C6 100 Tst",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 609000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "556291",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "nearestExpiryDate": {
+      "_seconds": 1948035600,
+      "_nanoseconds": 0
+    },
+    "manufacturer": "Becton Dickinson",
+    "packaging": "",
+    "productName": "Rainbow beads - Service Tool",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761055339,
+      "_nanoseconds": 820000000
+    },
+    "totalRemaining": 1
+  },
+  {
+    "_id": "556577",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "100 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1790701200,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu Perforin FITC Set dG9 100 Test",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761661154,
+      "_nanoseconds": 984000000
+    }
+  },
+  {
+    "_id": "557454",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1795971600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu CD13 APC WM15 100 Test",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 893000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "560365",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "120 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1761843600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu CD3 Horizon V450 UCHT1 120Tst",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 115000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "560619",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1835370000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD Pharmingen™ APC Mouse Anti-Human CD196 (CCR6)",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 912000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "560952",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "25 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1893344400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu IgG FITC G18-145 25Tst",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 501000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "563671",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1814288400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Hu CD71 APC-H7 M-A712 100 Tst",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 982000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10092-02",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Long đen thép 1/8 máy Caibur/Canto/Canto II",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 685000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10117-01",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng đầu nối White máy Count/Calibur",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 227000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10117-02",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng đầu nối Black máy Count/Calibur",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 502000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10117-03",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng đầu nối Red máy Count/Calibur",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 908000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10117-04",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng đầu nối Green máy Count/Calibur",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 457000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10117-05",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng đầu nối Blue máy Count/Calibur",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 550000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10117-06",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gioăng đầu nối Orange máy Count/Calibur",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 127000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "59-10119-00S",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối dịch máy Calibur",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 904000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "640323",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bộ dây cảm biến máy Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 18000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "64050707",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Assy Sample Housing 180 Degree Service",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 612000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "640607",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Van điều áp máy Canto/Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 171000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "64067207",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "FACScanto II Loader Intrlock Defeat Serv",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 385000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "641415",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "lastUpdatedAt": {
+      "_seconds": 1760196807,
+      "_nanoseconds": 817000000
+    },
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1756573200,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD3 (SK7) AC-H7, 100 Test/Ea",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "641841",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Phin lọc hóa chất trong máy Canto\\Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 157000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "641863",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối Flowcell máy Lyric/CantoII",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 20000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "641925",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Bơm P2 máy Lyric",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 122000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "642160",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Đầu nối 1/4 máy Lyric",
+    "totalRemaining": 5,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 609000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "642805",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "PMT Socket Assembly Dp-Type",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 820000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "644254",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Manifold máy Canto/Canto II",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 915000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "649760",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Kèm 3 cái phao quả lọc",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 182000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "649761",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Chưa biết tên hàng",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 310000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "651351",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Chưa biết tên hàng",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 891000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "651451",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Quả lọc Sheath",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 569000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "652531",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Filter Element Sheath Tank",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365676,
+      "_nanoseconds": 819000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "653144",
+    "unit": "Bộ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "1 Lọ/ Bộ",
+    "nearestExpiryDate": {
+      "_seconds": 1761498000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Beads SPHEROTECH 8 Peak Validation 4mL",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 596000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "653145",
+    "unit": "Bộ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "2 Lọ/ Bộ",
+    "nearestExpiryDate": {
+      "_seconds": 1765818000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Beads SPHEROTECH 6 Peak Validation 4mL",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 795000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "655050",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1769792400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD FACSDlva CS&T Research Beads Kit 50T",
+    "totalRemaining": 2,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 108000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "655406",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1772211600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD200 APC (MRC OX-104) RUO",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 972000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "655873",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "team": "BIO",
+    "productName": "CD45 V500-C CE",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1762311763,
+      "_nanoseconds": 193000000
+    },
+    "totalRemaining": 1
+  },
+  {
+    "_id": "655874",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "team": "BIO",
+    "productName": "Anti-HLA DR V450 CE",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762311762,
+      "_nanoseconds": 997000000
+    },
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 2
+  },
+  {
+    "_id": "656643",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "50 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1761843600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD27 PerCP-C y5.5  (L128) RUO",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 65000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "656647",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1782752400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD81 APC-H7 (JS-81) RUO",
+    "totalRemaining": 3,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 339000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "657681",
+    "storageTemp": "4 → 31°C",
+    "packaging": "100 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1767114000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "FACSPresto Cartridge",
+    "manufacturer": "Becton Dickinson",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "unit": "Hộp",
+    "totalRemaining": 17.85,
+    "lastUpdatedAt": {
+      "_seconds": 1764168587,
+      "_nanoseconds": 32000000
+    }
+  },
+  {
+    "_id": "657954",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Retrofit Kit Transducer",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 728000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "658331",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "100 Test/ Lọ",
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "CD24 APC-H7 (ML5) RUO",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 543000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "658619",
+    "storageTemp": "2 → 27°C",
+    "packaging": "20 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1780160400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "OneFlow LST",
+    "manufacturer": "Becton Dickinson",
+    "unit": "Hộp",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1763460116,
+      "_nanoseconds": 884000000
+    },
+    "totalRemaining": 9
+  },
+  {
+    "_id": "659293",
+    "storageTemp": "2 → 27°C",
+    "packaging": "20 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1767114000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD OneFlow B-CLPD T1",
+    "manufacturer": "Becton Dickinson",
+    "unit": "Hộp",
+    "subGroup": "BD BDB",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1762267810,
+      "_nanoseconds": 367000000
+    },
+    "totalRemaining": 0.5
+  },
+  {
+    "_id": "659913",
+    "unit": "Hộp",
+    "storageTemp": "2 → 27°C",
+    "subGroup": "BD BDB",
+    "packaging": "10 Test/ Hộp",
+    "team": "BIO",
+    "productName": "BD OneFlow PCD",
+    "manufacturer": "Becton Dickinson",
+    "nearestExpiryDate": {
+      "_seconds": 1819645200,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 1,
+    "lastUpdatedAt": {
+      "_seconds": 1763460116,
+      "_nanoseconds": 962000000
+    }
+  },
+  {
+    "_id": "660322",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Filter máy Accuri C6 Plus/Via - PM KIT",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 541000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "660584",
+    "unit": "Lọ",
+    "storageTemp": "20 → 30°C",
+    "packaging": "10 Lọ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1761843600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD Sheath Additive",
+    "manufacturer": "Becton Dickinson",
+    "totalRemaining": 20,
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 821000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "660585",
+    "unit": "Lọ",
+    "storageTemp": "20 → 30°C",
+    "packaging": "1 Lọ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1790701200,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD Detergent Solution Concentrate",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 407000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "660586",
+    "unit": "Bộ",
+    "storageTemp": "20 → 30°C",
+    "packaging": "1 Bộ/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1772211600,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD Extended Flow Cell Clean Solution",
+    "totalRemaining": 4,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 626000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "661564",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "packaging": "5 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1777482000,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "Kit FC Beads 5-Color CE/IVD",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179232,
+      "_nanoseconds": 22000000
+    },
+    "subGroup": "BD BDB",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "662413",
+    "unit": "Hộp",
+    "storageTemp": "2 → 8°C",
+    "subGroup": "BD BDB",
+    "packaging": "50 Test/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1811696400,
+      "_nanoseconds": 0
+    },
+    "team": "BIO",
+    "productName": "BD™ CS&T IVD Beads",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1761830482,
+      "_nanoseconds": 51000000
+    }
+  },
+  {
+    "_id": "665788",
+    "unit": "Bộ",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "FACSLyric PM Kit",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 349000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "70000998",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "1 Lít/ Chai",
+    "nearestExpiryDate": {
+      "_seconds": 1774890000,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Mikrozid Universal liquid 1L",
+    "totalRemaining": 80,
+    "manufacturer": "Schulke",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 426000000
+    },
+    "subGroup": "Schulke",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "70003135",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "1 Lít/ Chai",
+    "nearestExpiryDate": {
+      "_seconds": 1801328400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Mikrozid sensitive liquid 1L",
+    "totalRemaining": 93,
+    "manufacturer": "Schulke",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 19000000
+    },
+    "subGroup": "Schulke",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "70003408",
+    "unit": "Can",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "5 Lít/ Can",
+    "team": "MED",
+    "productName": "GIGAZYME 5L",
+    "manufacturer": "Schulke",
+    "subGroup": "Schulke",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764147703,
+      "_nanoseconds": 204000000
+    },
+    "nearestExpiryDate": {
+      "_seconds": 1793379600,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 155
+  },
+  {
+    "_id": "70003411",
+    "unit": "Can",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "5 Lít/ Can",
+    "nearestExpiryDate": {
+      "_seconds": 1769792400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "GYGAZYME X-tra 5L",
+    "manufacturer": "Schulke",
+    "subGroup": "Schulke",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764147907,
+      "_nanoseconds": 654000000
+    },
+    "totalRemaining": 29
+  },
+  {
+    "_id": "8703-04",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "4 Chai/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1814288400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Gel rửa tay diệt khuẩn PURELL ADX 700ml",
+    "manufacturer": "Purell",
+    "subGroup": "Purell",
+    "inventoryHistory": [],
+    "totalRemaining": 72,
+    "lastUpdatedAt": {
+      "_seconds": 1764305674,
+      "_nanoseconds": 136000000
+    }
+  },
+  {
+    "_id": "8720-06",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "6 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Bình đựng gel rửa tay diệt khuẩn PURELL 700ml",
+    "totalRemaining": 85,
+    "manufacturer": "Purell",
+    "subGroup": "Purell",
+    "lastUpdatedAt": {
+      "_seconds": 1760365678,
+      "_nanoseconds": 964000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "8780-06",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "6 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Bình đựng Xà phòng rửa tay Gojo ADX 700ml",
+    "totalRemaining": 54,
+    "manufacturer": "Gojo",
+    "subGroup": "Gojo",
+    "lastUpdatedAt": {
+      "_seconds": 1760365677,
+      "_nanoseconds": 486000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "8803-03",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "3 Chai/ Thùng",
+    "team": "MED",
+    "productName": "Gel rửa tay diệt khuẩn Purell ADX 1200ml",
+    "manufacturer": "Purell",
+    "subGroup": "Purell",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1785430800,
+      "_nanoseconds": 0
+    },
+    "lastUpdatedAt": {
+      "_seconds": 1764305674,
+      "_nanoseconds": 127000000
+    },
+    "totalRemaining": 141
+  },
+  {
+    "_id": "8820-06",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "6 Cái/ Thùng",
+    "team": "MED",
+    "productName": "Bình đựng gel rửa tay diệt khuẩn PURELL ADX 1200ml",
+    "manufacturer": "Purell",
+    "subGroup": "Purell",
+    "nearestExpiryDate": null,
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1761201821,
+      "_nanoseconds": 352000000
+    },
+    "totalRemaining": 35
+  },
+  {
+    "_id": "99-30095-01",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "",
+    "productName": "Gel Optical",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson",
+    "team": "BIO",
+    "subGroup": "Spare Part",
+    "lastUpdatedAt": {
+      "_seconds": 1760365679,
+      "_nanoseconds": 623000000
+    },
+    "nearestExpiryDate": null,
+    "inventoryHistory": []
+  },
+  {
+    "_id": "CYT-INF-D",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "lastUpdatedAt": {
+      "_seconds": 1761987540,
+      "_nanoseconds": 689000000
+    },
+    "subGroup": "Spare Part",
+    "packaging": "",
+    "nearestExpiryDate": null,
+    "team": "BIO",
+    "productName": "Infinicyt with Dongle+5DB",
+    "totalRemaining": 1,
+    "manufacturer": "Becton Dickinson"
+  },
+  {
+    "_id": "DIN1515X",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1830358800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "ILLINOIS NEEDLE BONE MARROW 15G ADJ LEN",
+    "totalRemaining": 556,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 234000000
+    },
+    "subGroup": "BD BDI",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "DIN1518X",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "10 Cái/ Hộp",
+    "nearestExpiryDate": {
+      "_seconds": 1804179600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "ILLINOIS NEEDLE BONE MARROW 18G ADJ LEN",
+    "totalRemaining": 153,
+    "manufacturer": "Becton Dickinson",
+    "lastUpdatedAt": {
+      "_seconds": 1760179231,
+      "_nanoseconds": 568000000
+    },
+    "subGroup": "BD BDI",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "DL2301",
+    "unit": "Can",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "5 Lít/ Can,\n4 Can/ Thùng",
+    "team": "MED",
+    "productName": "Clinicare Alcohol Free Disinfectant 5L",
+    "manufacturer": "DentaLife",
+    "subGroup": "DentaLife",
+    "inventoryHistory": [],
+    "nearestExpiryDate": {
+      "_seconds": 1849798800,
+      "_nanoseconds": 0
+    },
+    "totalRemaining": 15,
+    "lastUpdatedAt": {
+      "_seconds": 1764146881,
+      "_nanoseconds": 348000000
+    }
+  },
+  {
+    "_id": "DL2303",
+    "unit": "Chai",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "12 Chai/ Thùng",
+    "team": "MED",
+    "productName": "Clinicare Alcohol Free Disinfectant Trigger Spray",
+    "manufacturer": "DentaLife",
+    "nearestExpiryDate": {
+      "_seconds": 1758819600,
+      "_nanoseconds": 0
+    },
+    "subGroup": "DentaLife",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764146881,
+      "_nanoseconds": 759000000
+    },
+    "totalRemaining": 301
+  },
+  {
+    "_id": "DL2345",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "12 Hộp/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1836579600,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Clinicare Alcohol Free Disinfectant 220 Toweletles",
+    "manufacturer": "DentaLife",
+    "subGroup": "DentaLife",
+    "inventoryHistory": [],
+    "totalRemaining": 1023,
+    "lastUpdatedAt": {
+      "_seconds": 1764323178,
+      "_nanoseconds": 815000000
+    }
+  },
+  {
+    "_id": "DL2901",
+    "unit": "Can",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "5 Lít/ Can,\n4 Can/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1765558800,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Clinicare Disinfectant 5L",
+    "totalRemaining": 15,
+    "manufacturer": "DentaLife",
+    "lastUpdatedAt": {
+      "_seconds": 1760179230,
+      "_nanoseconds": 737000000
+    },
+    "subGroup": "DentaLife",
+    "inventoryHistory": []
+  },
+  {
+    "_id": "DL2945",
+    "unit": "Hộp",
+    "storageTemp": "Nhiệt độ phòng",
+    "packaging": "12 Hộp/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1849712400,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "Clinicare Ultra Disinfectant 220 Towelettes",
+    "manufacturer": "DentaLife",
+    "subGroup": "DentaLife",
+    "inventoryHistory": [],
+    "lastUpdatedAt": {
+      "_seconds": 1764131308,
+      "_nanoseconds": 183000000
+    },
+    "totalRemaining": 640
+  },
+  {
+    "_id": "E6005-5G",
+    "unit": "Lọ",
+    "storageTemp": "2 → 8°C",
+    "lastUpdatedAt": {
+      "_seconds": 1762406344,
+      "_nanoseconds": 600000000
+    },
+    "subGroup": "KHÁC",
+    "packaging": "5G/ Lọ",
+    "nearestExpiryDate": null,
+    "team": "BIO",
+    "productName": "Hóa chất Ethionamide",
+    "totalRemaining": 1,
+    "manufacturer": "Sigma"
+  },
+  {
+    "_id": "HL-90-INT-230",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "1 Cái/ Thùng",
+    "nearestExpiryDate": null,
+    "team": "MED",
+    "productName": "HOTLINE® Fluid Warmer",
+    "manufacturer": "Smiths Medical",
+    "lastUpdatedAt": {
+      "_seconds": 1761807727,
+      "_nanoseconds": 546000000
+    },
+    "totalRemaining": 2
+  },
+  {
+    "_id": "L-70NI",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "30 Cái/ Thùng",
+    "nearestExpiryDate": {
+      "_seconds": 1763917200,
+      "_nanoseconds": 0
+    },
+    "team": "MED",
+    "productName": "HOTLINE® Fluid Warming Set",
+    "totalRemaining": 29,
+    "manufacturer": "Smiths Medical",
+    "lastUpdatedAt": {
+      "_seconds": 1761559930,
+      "_nanoseconds": 920000000
+    }
+  },
+  {
+    "_id": "L1-CART",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "1 Cái/ Thùng",
+    "nearestExpiryDate": null,
+    "team": "MED",
+    "productName": "Level 1® Convective Cart",
+    "totalRemaining": 1,
+    "manufacturer": "Smiths Medical",
+    "lastUpdatedAt": {
+      "_seconds": 1761559964,
+      "_nanoseconds": 62000000
+    }
+  },
+  {
+    "_id": "L1-CLAMP",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "1 Cái/ Thùng",
+    "nearestExpiryDate": null,
+    "team": "MED",
+    "productName": "Level 1® Convective Warmer IV Pole Clamp",
+    "totalRemaining": 1,
+    "manufacturer": "Smiths Medical",
+    "lastUpdatedAt": {
+      "_seconds": 1761560000,
+      "_nanoseconds": 91000000
+    }
+  },
+  {
+    "_id": "L1-CW-220V",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "1 Cái/ Thùng",
+    "nearestExpiryDate": null,
+    "team": "MED",
+    "productName": "Level 1® Convective Warmer",
+    "manufacturer": "Smiths Medical",
+    "lastUpdatedAt": {
+      "_seconds": 1764302301,
+      "_nanoseconds": 451000000
+    },
+    "inventoryHistory": [],
+    "totalRemaining": 3
+  },
+  {
+    "_id": "L1-HOSE",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "1 Cái/ Thùng",
+    "nearestExpiryDate": null,
+    "team": "MED",
+    "productName": "Level 1® Convective Warmer Hose",
+    "totalRemaining": 1,
+    "manufacturer": "Smiths Medical",
+    "lastUpdatedAt": {
+      "_seconds": 1761560081,
+      "_nanoseconds": 2000000
+    }
+  },
+  {
+    "_id": "L1-SHELF",
+    "unit": "Cái",
+    "storageTemp": "Nhiệt độ phòng",
+    "subGroup": "Smiths Medical",
+    "packaging": "1 Cái/ Thùng",
+    "nearestExpiryDate": null,
+    "team": "MED",
+    "productName": "Level 1® Convective Warmer Shelf",
+    "totalRemaining": 1,
+    "manufacturer": "Smiths Medical",
+    "lastUpdatedAt": {
+      "_seconds": 1761560114,
+      "_nanoseconds": 76000000
+    }
+  }
+]

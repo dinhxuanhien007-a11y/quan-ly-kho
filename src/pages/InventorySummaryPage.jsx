@@ -27,11 +27,11 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
-import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+import { formatDate, getRowColorByExpiry, calculateLifePercentage } from '../utils/dateUtils'; // <-- Bổ sung calculateLifePercentage
 import HighlightText from '../components/HighlightText';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
-import { fuzzyNormalize } from '../utils/stringUtils'; // <-- THÊM IMPORT NÀY
+import { fuzzyNormalize } from '../utils/stringUtils';
 
 const PAGE_SIZE = 15;
 
@@ -86,7 +86,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
     
     const [isExporting, setIsExporting] = useState(false);
 
-    // --- THÊM STATE CACHE ---
     const [allProductsCache, setAllProductsCache] = useState([]);
 
     // --- 1. TẢI CACHE (Chạy 1 lần) ---
@@ -117,12 +116,14 @@ const InventorySummaryPage = ({ pageTitle }) => {
             const baseCollectionRef = collection(db, "products");
             let queryConstraints = [];
 
+            // 1. Lọc theo Role
             if (userRole === 'med') {
                 queryConstraints.push(where("team", "==", "MED"));
             } else if (userRole === 'bio') {
                 queryConstraints.push(where("team", "==", "BIO"));
             }
 
+            // 2. Lọc theo UI
             if (filters.team !== 'all') {
                 queryConstraints.push(where("team", "==", filters.team));
             }
@@ -130,6 +131,11 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(where("subGroup", "==", filters.subGroup));
             }
 
+            // --- SỬA ĐỔI: BỎ LỌC DB ĐỂ TRÁNH LỖI ---
+            // Chúng ta sẽ lọc totalRemaining > 0 ở Client-side bên dưới
+            // ---------------------------------------
+
+            // 3. Lọc theo Date & Sắp xếp
             if (filters.dateStatus === 'expired') {
                 queryConstraints.push(where("nearestExpiryDate", "<", Timestamp.now()));
                 queryConstraints.push(orderBy("nearestExpiryDate", "desc"));
@@ -145,6 +151,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
+            // 4. Phân trang
             if (direction === 'next' && cursor) {
                 queryConstraints.push(startAfter(cursor));
             } else if (direction === 'first') {
@@ -162,12 +169,17 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 return;
             }
             
-            const summaryDocs = mainSnapshot.docs.map(doc => ({ 
+            let summaryDocs = mainSnapshot.docs.map(doc => ({ 
                 id: doc.id, 
                 ...doc.data(),
                 totalRemaining: doc.data().totalRemaining ?? 0,
                 nearestExpiryDate: doc.data().nearestExpiryDate ?? null
             }));
+
+            // --- SỬA ĐỔI: LỌC CLIENT-SIDE AN TOÀN ---
+            // Luôn lọc bỏ hàng có tồn kho <= 0 trước khi hiển thị
+            summaryDocs = summaryDocs.filter(item => item.totalRemaining > 0);
+            // ----------------------------------------
             
             setSummaries(summaryDocs);
             setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
@@ -185,7 +197,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
         }
     }, [filters, userRole]);
 
-    // --- 2. HÀM TÌM KIẾM THÔNG MINH (ĐÃ CẬP NHẬT) ---
+    // --- 2. HÀM TÌM KIẾM THÔNG MINH ---
     const performSearch = useCallback(async (term) => {
         if (!term) return;
         setLoading(true);
@@ -200,7 +212,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 const isAllowed = 
                     (userRole === 'owner' || userRole === 'admin') ||
                     (userRole === 'med' && p.team === 'MED') ||
-                    (userRole === 'bio' && (p.team === 'BIO' || p.team === 'Spare Part')); // Cập nhật Spare Part
+                    (userRole === 'bio' && (p.team === 'BIO' || p.team === 'Spare Part'));
                 
                 if (!isAllowed) return false;
                 return p.normName.includes(searchKey) || p.normId.includes(searchKey);
@@ -248,7 +260,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 setIsLastPage(true);
             } else {
                 let ids = Array.from(foundProductIds);
-                ids = ids.slice(0, 50); // Giới hạn 50 kết quả
+                ids = ids.slice(0, 50);
 
                 const chunks = [];
                 while (ids.length > 0) chunks.push(ids.splice(0, 30));
@@ -259,23 +271,27 @@ const InventorySummaryPage = ({ pageTitle }) => {
                     const snap = await getDocs(q);
                     snap.forEach(doc => {
                         const data = doc.data();
+                        // --- SỬA ĐỔI: CHỈ THÊM NẾU TỔN KHO > 0 ---
+                        const totalRem = data.totalRemaining ?? 0;
+                        
                         const isAllowed = 
-                            (userRole === 'owner' || userRole === 'admin') ||
+                            ((userRole === 'owner' || userRole === 'admin') ||
                             (userRole === 'med' && data.team === 'MED') ||
-                            (userRole === 'bio' && (data.team === 'BIO' || data.team === 'Spare Part'));
+                            (userRole === 'bio' && (data.team === 'BIO' || data.team === 'Spare Part'))) &&
+                            totalRem > 0; // <-- KIỂM TRA TỒN KHO TẠI ĐÂY
                         
                         if (isAllowed) {
                             finalResults.push({ 
                                 id: doc.id, 
                                 ...data,
-                                totalRemaining: data.totalRemaining ?? 0,
+                                totalRemaining: totalRem,
                                 nearestExpiryDate: data.nearestExpiryDate ?? null
                             });
                         }
+                        // -----------------------------------------
                     });
                 }
                 
-                // Sắp xếp kết quả
                 finalResults.sort((a, b) => {
                     const idA = a.id.toUpperCase();
                     const idB = b.id.toUpperCase();
@@ -555,17 +571,8 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                             className={getRowColorByExpiry(product.nearestExpiryDate, product.subGroup)}
                                         >
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
-                                            {/* --- ÁP DỤNG HIGHLIGHT CHO MÃ HÀNG --- */}
-                                            <td data-label="Mã hàng">
-                                                <strong>
-                                                    <HighlightText text={product.id} highlight={searchTerm} />
-                                                </strong>
-                                            </td>
-
-                                            {/* --- ÁP DỤNG HIGHLIGHT CHO TÊN HÀNG --- */}
-                                            <td data-label="Tên hàng">
-                                                <HighlightText text={product.productName} highlight={searchTerm} />
-                                            </td>
+                                            <td data-label="Mã hàng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
+                                            <td data-label="Tên hàng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
                                             <td data-label="HSD Gần Nhất">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(Không có)'}</td>
                                             <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
@@ -591,10 +598,47 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                                                     <h4>Chi tiết các lô hàng (FEFO):</h4>
                                                                     <ul>
                                                                         {lotDetails[product.id].map(lot => (
-                                                                            <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`}>
-                                                                                <span>Lô: <strong><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></strong></span>
-                                                                                <span>HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</strong></span>
-                                                                                <span>Tồn: <strong>{formatNumber(lot.quantityRemaining)}</strong></span>
+                                                                            <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`} style={{ alignItems: 'center' }}>
+                                                                                
+                                                                                {/* Cột Số Lô */}
+                                                                                <span style={{ minWidth: '150px' }}>
+                                                                                    Lô: <strong><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></strong>
+                                                                                </span>
+
+                                                                                {/* --- CẬP NHẬT: CỘT HSD CÓ THANH TUỔI THỌ --- */}
+                                                                                <div style={{ display: 'flex', flexDirection: 'column', minWidth: '140px', marginRight: '20px' }}>
+                                                                                    <span style={{ fontSize: '14px' }}>
+                                                                                        HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</strong>
+                                                                                    </span>
+                                                                                    
+                                                                                    {/* Thanh tuổi thọ */}
+                                                                                    {lot.expiryDate && (
+                                                                                        <div style={{ 
+                                                                                            width: '100%', 
+                                                                                            height: '5px', 
+                                                                                            backgroundColor: 'rgba(0,0,0,0.1)', /* Màu nền mờ để nổi trên mọi màu background */
+                                                                                            borderRadius: '3px',
+                                                                                            marginTop: '4px',
+                                                                                            overflow: 'hidden'
+                                                                                        }}>
+                                                                                            <div style={{
+                                                                                                width: `${calculateLifePercentage(lot.expiryDate)}%`,
+                                                                                                height: '100%',
+                                                                                                borderRadius: '3px',
+                                                                                                backgroundColor: calculateLifePercentage(lot.expiryDate) > 50 
+                                                                                                    ? '#28a745' 
+                                                                                                    : (calculateLifePercentage(lot.expiryDate) > 20 ? '#ffc107' : '#dc3545'),
+                                                                                                transition: 'width 0.5s ease'
+                                                                                            }}></div>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                                {/* ------------------------------------------- */}
+
+                                                                                {/* Cột Tồn kho */}
+                                                                                <span>
+                                                                                    Tồn: <strong>{formatNumber(lot.quantityRemaining)}</strong>
+                                                                                </span>
                                                                             </li>
                                                                         ))}
                                                                     </ul>

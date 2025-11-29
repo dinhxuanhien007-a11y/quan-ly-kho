@@ -109,3 +109,39 @@ export const getExpiryStatusPrefix = (expiryDate, subGroup) => {
 
   return '';
 };
+
+/**
+ * Tính phần trăm tuổi thọ còn lại của sản phẩm.
+ * Giả định: Mốc so sánh là 1 năm (365 ngày) để hiển thị trực quan.
+ * - Nếu còn > 365 ngày: Full cây (100%)
+ * - Nếu đã hết hạn: 0%
+ */
+export const calculateLifePercentage = (expiryDate) => {
+    if (!expiryDate) return 0;
+    
+    // Chuyển đổi Firestore Timestamp hoặc String sang Date object
+    let exp;
+    if (expiryDate.toDate) {
+        exp = expiryDate.toDate();
+    } else if (expiryDate instanceof Date) {
+        exp = expiryDate;
+    } else {
+        // Trường hợp chuỗi hoặc null
+        return 0;
+    }
+
+    const now = new Date();
+    // Tính số ngày còn lại: (HSD - Hôm nay) / (ms * giây * phút * giờ)
+    const daysLeft = (exp - now) / (1000 * 60 * 60 * 24);
+
+    if (daysLeft <= 0) return 0; // Đã hết hạn
+
+    // Quy ước: Thanh hiển thị tối đa cho 365 ngày (1 năm)
+    // Bạn có thể tăng số này lên 730 (2 năm) tùy đặc thù hàng hóa
+    const standardLifeSpan = 365; 
+
+    let percent = (daysLeft / standardLifeSpan) * 100;
+    
+    // Giới hạn trong khoảng 0 - 100
+    return Math.min(100, Math.max(0, percent));
+};

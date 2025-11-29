@@ -8,15 +8,17 @@ import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { useAuth } from '../context/UserContext';
-import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
 import NewDataNotification from '../components/NewDataNotification';
 import { PAGE_SIZE } from '../constants';
-import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
-import { fuzzyNormalize } from '../utils/stringUtils'; 
+import { formatDate, getRowColorByExpiry, calculateLifePercentage } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText'; 
+// --- IMPORT MỚI ---
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import EmptyState from '../components/EmptyState';
 
 // --- HÀM CHUẨN HÓA CHUỖI ---
 const localFuzzyNormalize = (str) => {
@@ -34,14 +36,11 @@ const InventoryPage = ({ pageTitle }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
-    // --- STATE CHO TÌM KIẾM ---
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
-    
-    // --- STATE CACHE ---
     const [allProductsCache, setAllProductsCache] = useState([]);
 
-    // --- 1. TẢI CACHE (Chạy 1 lần) ---
+    // --- 1. TẢI CACHE ---
     useEffect(() => {
         const fetchCache = async () => {
             try {
@@ -60,7 +59,7 @@ const InventoryPage = ({ pageTitle }) => {
         fetchCache();
     }, []);
 
-    // --- 2. HÀM TÌM KIẾM KÉP ---
+    // --- 2. HÀM TÌM KIẾM ---
     const performSearch = useCallback(async (term) => {
         if (!term) {
             setIsSearching(false);
@@ -72,15 +71,12 @@ const InventoryPage = ({ pageTitle }) => {
 
         try {
             const rawTerm = term.trim().toUpperCase();
-
-            // --- A. TÌM KIẾM ID DỰA TRÊN TÊN HÀNG (CACHE) ---
             const searchKey = localFuzzyNormalize(term);
             const matchedProducts = allProductsCache.filter(p => 
                 p.normName.includes(searchKey) || p.normId.includes(searchKey)
             );
             const productIdsFromCache = matchedProducts.map(p => p.id);
 
-            // --- B. CHUẨN BỊ QUERY FIRESTORE ---
             const lotsRef = collection(db, "inventory_lots");
             const constraints = [where("quantityRemaining", ">", 0)];
 
@@ -92,7 +88,6 @@ const InventoryPage = ({ pageTitle }) => {
 
             const queryPromises = [];
 
-            // 1. Query các lô thuộc về Sản phẩm tìm thấy trong Cache
             if (productIdsFromCache.length > 0) {
                 const chunks = [];
                 const idsToQuery = productIdsFromCache.slice(0, 60); 
@@ -103,23 +98,18 @@ const InventoryPage = ({ pageTitle }) => {
                 });
             }
 
-            // 2. Query trực tiếp Mã hàng & Số lô
             const searchTerms = [rawTerm];
             if (!rawTerm.includes('-') && rawTerm.length > 2) searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
             if (rawTerm.includes('-')) searchTerms.push(rawTerm.replace(/-/g, ''));
 
             searchTerms.forEach(t => {
-                // Mã hàng
                 queryPromises.push(getDocs(query(lotsRef, ...constraints, where('productId', '>=', t), where('productId', '<=', t + '\uf8ff'), limit(50))));
-                // Số lô
                 if (t === rawTerm) {
                     queryPromises.push(getDocs(query(lotsRef, ...constraints, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(50))));
                 }
             });
 
             const snapshots = await Promise.all(queryPromises);
-
-            // --- C. GỘP KẾT QUẢ ---
             const mergedMap = new Map();
             snapshots.forEach(snap => {
                 snap.docs.forEach(doc => {
@@ -128,13 +118,9 @@ const InventoryPage = ({ pageTitle }) => {
             });
 
             const results = Array.from(mergedMap.values());
-
-            // --- D. SẮP XẾP ---
             results.sort((a, b) => {
-                // Ưu tiên Mã hàng chính xác
                 if (a.productId === rawTerm && b.productId !== rawTerm) return -1;
                 if (b.productId === rawTerm && a.productId !== rawTerm) return 1;
-                // Ưu tiên FEFO
                 const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
                 const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
                 if (dateA !== dateB) return dateA - dateB;
@@ -149,7 +135,6 @@ const InventoryPage = ({ pageTitle }) => {
         }
     }, [userRole, filters, allProductsCache]);
 
-    // --- useEffect debounce ---
     useEffect(() => {
         const debounce = setTimeout(() => {
             if (searchTerm) {
@@ -162,11 +147,8 @@ const InventoryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, performSearch]);
 
-    // --- BASE QUERY ---
     const baseQuery = useMemo(() => {
-        if (searchTerm) {
-            return null; 
-        }
+        if (searchTerm) return null; 
         
         const baseCollection = collection(db, "inventory_lots");
         let constraints = [where("quantityRemaining", ">", 0)];
@@ -208,9 +190,7 @@ const InventoryPage = ({ pageTitle }) => {
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
     const dataToDisplay = useMemo(() => {
-        if (isSearching) {
-            return searchResults;
-        }
+        if (isSearching) return searchResults;
         if (filters.dateStatus === 'near_expiry') {
             return inventory.filter(lot => {
                 const colorClass = getRowColorByExpiry(lot.expiryDate, lot.subGroup);
@@ -231,6 +211,28 @@ const InventoryPage = ({ pageTitle }) => {
 
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
+    };
+
+    // --- RENDER SKELETON (HIỆU ỨNG LOADING) ---
+    const renderSkeleton = () => {
+        return Array(10).fill(0).map((_, index) => (
+            <tr key={`skeleton-${index}`}>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={100} /></td>
+                <td><Skeleton width={200} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={50} /></td>
+                <td><Skeleton width={120} /></td>
+                <td><Skeleton width={50} /></td>
+                <td><Skeleton width={50} /></td>
+                <td><Skeleton width={100} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={100} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={50} /></td>
+            </tr>
+        ));
     };
 
     return (
@@ -259,105 +261,114 @@ const InventoryPage = ({ pageTitle }) => {
                 </div>
             </div>
 
-            {loading && !isSearching ? <Spinner /> : (
-                <>
-                    <div className="table-container">
-                        <table className="inventory-table">
-                            <thead>
-                                <tr>
-                                    {/* --- TIÊU ĐỀ CỘT (Đúng thứ tự) --- */}
-                                    <th>Ngày nhập</th>
-                                    <th>Mã hàng</th>
-                                    <th>Tên hàng</th>
-                                    <th>Số lô</th>
-                                    <th>HSD</th>
-                                    <th>ĐVT</th>
-                                    <th>Quy cách</th>
-                                    <th>SL Nhập</th>
-                                    <th>SL Còn lại</th>
-                                    <th>Ghi chú</th>
-                                    <th>Nhiệt độ BQ</th>
-                                    <th>Hãng sản xuất</th>
-                                    <th>Nhóm Hàng</th>
-                                    <th>Team</th>
-                                </tr>
-                            </thead>
-                            <tbody className="inventory-table-body">
-                                {dataToDisplay.length > 0 ? (
-                                    dataToDisplay.map(lot => (
-                                        <tr 
-                                            key={lot.id} 
-                                            onClick={() => handleRowClick(lot.id)}
-                                            className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate, lot.subGroup)}`}
-                                        >
-                                            {/* --- DỮ LIỆU (Đã sắp xếp lại khớp với Tiêu đề) --- */}
-                                            
-                                            {/* 1. Ngày nhập */}
-                                            <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
-                                            
-                                            {/* 2. Mã hàng */}
-                                            <td data-label="Mã hàng"><strong><HighlightText text={lot.productId} highlight={searchTerm} /></strong></td>
-                                            
-                                            {/* 3. Tên hàng */}
-                                            <td data-label="Tên hàng"><HighlightText text={lot.productName} highlight={searchTerm} /></td>
-                                            
-                                            {/* 4. Số lô */}
-                                            <td data-label="Số lô"><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></td>
-                                            
-                                            {/* 5. HSD */}
-                                            <td data-label="HSD">{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</td>
-                                            
-                                            {/* 6. ĐVT */}
-                                            <td data-label="ĐVT">{lot.unit}</td>
-                                            
-                                            {/* 7. Quy cách */}
-                                            <td data-label="Quy cách">{lot.packaging}</td>
-                                            
-                                            {/* 8. SL Nhập */}
-                                            <td data-label="SL Nhập">{formatNumber(lot.quantityImported)}</td>
-                                            
-                                            {/* 9. SL Còn lại */}
-                                            <td data-label="SL Còn lại">{formatNumber(lot.quantityRemaining)}</td>
-                                            
-                                            {/* 10. Ghi chú */}
-                                            <td data-label="Ghi chú">{lot.notes}</td>
-                                            
-                                            {/* 11. Nhiệt độ BQ */}
-                                            <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
-                                            
-                                            {/* 12. Hãng SX */}
-                                            <td data-label="Hãng sản xuất">{lot.manufacturer}</td>
-                                            
-                                            {/* 13. Nhóm Hàng */}
-                                            <td data-label="Nhóm Hàng">{lot.subGroup}</td>
-                                            
-                                            {/* 14. Team */}
-                                            <td data-label="Team"><TeamBadge team={lot.team} /></td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="14" style={{textAlign: 'center', padding: '20px'}}>
-                                            {isSearching ? 'Không tìm thấy kết quả phù hợp.' : 'Chưa có dữ liệu.'}
-                                        </td>
+            <div className="table-container">
+                <table className="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Ngày nhập</th>
+                            <th>Mã hàng</th>
+                            <th>Tên hàng</th>
+                            <th>Số lô</th>
+                            <th>HSD</th>
+                            <th>ĐVT</th>
+                            <th>Quy cách</th>
+                            <th>SL Nhập</th>
+                            <th>SL Còn lại</th>
+                            <th>Ghi chú</th>
+                            <th>Nhiệt độ BQ</th>
+                            <th>Hãng sản xuất</th>
+                            <th>Nhóm Hàng</th>
+                            <th>Team</th>
+                        </tr>
+                    </thead>
+                    <tbody className="inventory-table-body">
+                        {/* --- TRƯỜNG HỢP 1: ĐANG LOADING --- */}
+                        {loading && !isSearching ? (
+                            <SkeletonTheme baseColor="#f3f3f3" highlightColor="#ecebeb">
+                                {renderSkeleton()}
+                            </SkeletonTheme>
+                        ) : (
+                            /* --- TRƯỜNG HỢP 2: CÓ DỮ LIỆU --- */
+                            dataToDisplay.length > 0 ? (
+                                dataToDisplay.map(lot => (
+                                    <tr 
+                                        key={lot.id} 
+                                        onClick={() => handleRowClick(lot.id)}
+                                        className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate, lot.subGroup)}`}
+                                    >
+                                        <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
+                                        <td data-label="Mã hàng"><strong><HighlightText text={lot.productId} highlight={searchTerm} /></strong></td>
+                                        <td data-label="Tên hàng"><HighlightText text={lot.productName} highlight={searchTerm} /></td>
+                                        <td data-label="Số lô"><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></td>
+                                        {/* --- THAY THẾ CỘT HSD BẰNG ĐOẠN NÀY --- */}
+                                            <td data-label="HSD">
+                                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                    {/* Ngày tháng */}
+                                                    <span style={{ marginBottom: '4px' }}>
+                                                        {lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}
+                                                    </span>
+                                                    
+                                                    {/* Thanh tuổi thọ (chỉ hiện nếu có HSD) */}
+                                                    {lot.expiryDate && (
+                                                        <div style={{ 
+                                                            width: '100%', 
+                                                            height: '6px', 
+                                                            backgroundColor: '#e9ecef', 
+                                                            borderRadius: '3px',
+                                                            overflow: 'hidden' 
+                                                        }}>
+                                                            <div style={{
+                                                                width: `${calculateLifePercentage(lot.expiryDate)}%`,
+                                                                height: '100%',
+                                                                borderRadius: '3px',
+                                                                // Logic màu sắc: >50% Xanh, >20% Vàng, <20% Đỏ
+                                                                backgroundColor: calculateLifePercentage(lot.expiryDate) > 50 
+                                                                    ? '#28a745' 
+                                                                    : (calculateLifePercentage(lot.expiryDate) > 20 ? '#ffc107' : '#dc3545'),
+                                                                transition: 'width 0.5s ease'
+                                                            }}></div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            {/* -------------------------------------- */}
+                                        <td data-label="ĐVT">{lot.unit}</td>
+                                        <td data-label="Quy cách">{lot.packaging}</td>
+                                        <td data-label="SL Nhập">{formatNumber(lot.quantityImported)}</td>
+                                        <td data-label="SL Còn lại">{formatNumber(lot.quantityRemaining)}</td>
+                                        <td data-label="Ghi chú">{lot.notes}</td>
+                                        <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
+                                        <td data-label="Hãng sản xuất">{lot.manufacturer}</td>
+                                        <td data-label="Nhóm Hàng">{lot.subGroup}</td>
+                                        <td data-label="Team"><TeamBadge team={lot.team} /></td>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    {!isSearching && (
-                        <div className="pagination-controls">
-                            <button onClick={prevPage} disabled={page <= 1 || loading}>
-                                <FiChevronLeft /> Trang Trước
-                            </button>
-                            <span>Trang {page}</span>
-                            <button onClick={nextPage} disabled={isLastPage || loading}>
-                                Trang Tiếp <FiChevronRight />
-                            </button>
-                        </div>
-                    )}
-                </>
+                                ))
+                            ) : (
+                                /* --- TRƯỜNG HỢP 3: KHÔNG CÓ DỮ LIỆU (EMPTY STATE) --- */
+                                <tr>
+                                    <td colSpan="14">
+                                        <EmptyState 
+                                            message={isSearching ? `Không tìm thấy kết quả cho "${searchTerm}"` : 'Chưa có dữ liệu tồn kho.'} 
+                                            isSearch={isSearching}
+                                        />
+                                    </td>
+                                </tr>
+                            )
+                        )}
+                    </tbody>
+                </table>
+            </div>
+            
+            {!isSearching && !loading && dataToDisplay.length > 0 && (
+                <div className="pagination-controls">
+                    <button onClick={prevPage} disabled={page <= 1}>
+                        <FiChevronLeft /> Trang Trước
+                    </button>
+                    <span>Trang {page}</span>
+                    <button onClick={nextPage} disabled={isLastPage}>
+                        Trang Tiếp <FiChevronRight />
+                    </button>
+                </div>
             )}
         </div>
     );
