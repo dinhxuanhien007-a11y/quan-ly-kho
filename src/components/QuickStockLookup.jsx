@@ -9,6 +9,7 @@ import styles from './QuickStockLookup.module.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import HighlightText from './HighlightText'; // <-- IMPORT COMPONENT HIGHLIGHT
+import ExpiryBadge from './ExpiryBadge'; // <-- THÊM DÒNG NÀY
 
 // Hàm hỗ trợ tìm kiếm thông minh
 const fuzzyNormalize = (str) => {
@@ -263,12 +264,22 @@ const QuickStockLookup = () => {
                             <h4>Tồn kho theo lô:</h4>
                             {selectedProductData.lots.length > 0 ? (
                                 selectedProductData.lots.map(lot => {
-                                const colorClass = getRowColorByExpiry(lot.expiryDate, selectedProductData.generalInfo.subGroup);
+                                    const colorClass = getRowColorByExpiry(lot.expiryDate, selectedProductData.generalInfo.subGroup);
                                 return (
                                     <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
                                     {/* --- HIGHLIGHT CHO SỐ LÔ --- */}
                                     <div><strong>Số lô:</strong><span><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></span></div>
-                                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</span></div>
+                                    <div style={{ alignItems: 'flex-start', marginTop: '4px' }}>
+                <strong style={{ marginTop: '2px' }}>HSD:</strong>
+                <div style={{ width: '180px' }}> {/* Cố định chiều rộng để thẳng hàng */}
+                    <ExpiryBadge 
+                        expiryDate={lot.expiryDate} 
+                        subGroup={selectedProductData.generalInfo.subGroup} 
+                        compact={true}       /* Hiển thị dạng gọn (1 dòng) */
+                        showProgressBar={false} /* Tắt thanh tiến trình cho đỡ rối mắt */
+                    />
+                </div>
+            </div>
                                     <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)}</span></div>
                                     {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
                                     </div>

@@ -13,6 +13,7 @@ import { formatNumber } from '../utils/numberUtils';
 import companyLogo from '../assets/logo.png';
 import { toast } from 'react-toastify';
 import HighlightText from '../components/HighlightText'; // <-- IMPORT COMPONENT HIGHLIGHT
+import ExpiryBadge from '../components/ExpiryBadge';
 
 const functionsAsia = getFunctions(app, 'asia-southeast1');
 
@@ -352,7 +353,12 @@ const MobileInventoryPage = () => {
                                             <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
                                                 {/* --- HIGHLIGHT SỐ LÔ --- */}
                                                 <div><strong>Số lô:</strong><span><HighlightText text={lot.lotNumber} highlight={searchTerm} /></span></div>
-                                                <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <strong>HSD:</strong>
+    <div style={{ textAlign: 'right', width: '60%' }}>
+        <ExpiryBadge expiryDate={lot.expiryDate} subGroup={selectedProductData.generalInfo.subGroup} compact={true} showProgressBar={false} />
+    </div>
+</div>
                                                 <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)}</span></div>
                                                 {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
                                             </div>

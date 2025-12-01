@@ -1,24 +1,29 @@
 // src/pages/InventoryPage.jsx
 import { formatNumber } from '../utils/numberUtils';
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, where, orderBy, Timestamp, getDocs, limit, startAfter } from 'firebase/firestore'; 
+// <-- THÊM doc, updateDoc
+import { collection, query, where, orderBy, Timestamp, getDocs, limit, startAfter, doc, updateDoc } from 'firebase/firestore'; 
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { useAuth } from '../context/UserContext';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import Spinner from '../components/Spinner';
+import { FiChevronLeft, FiChevronRight, FiPrinter, FiX } from 'react-icons/fi';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
 import NewDataNotification from '../components/NewDataNotification';
 import { PAGE_SIZE } from '../constants';
 import { formatDate, getRowColorByExpiry, calculateLifePercentage } from '../utils/dateUtils';
+import { fuzzyNormalize } from '../utils/stringUtils'; 
 import HighlightText from '../components/HighlightText'; 
-// --- IMPORT MỚI ---
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import EmptyState from '../components/EmptyState';
+import ClickableCopy from '../components/ClickableCopy';
+import InlineEditCell from '../components/InlineEditCell'; // <-- IMPORT MỚI
+import ExpiryBadge from '../components/ExpiryBadge'; // <-- Thêm dòng này
 
 // --- HÀM CHUẨN HÓA CHUỖI ---
 const localFuzzyNormalize = (str) => {
@@ -39,6 +44,19 @@ const InventoryPage = ({ pageTitle }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
     const [allProductsCache, setAllProductsCache] = useState([]);
+    const searchInputRef = useRef(null);
+
+    // --- PHÍM TẮT "/" ĐỂ TÌM KIẾM ---
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // --- 1. TẢI CACHE ---
     useEffect(() => {
@@ -58,6 +76,37 @@ const InventoryPage = ({ pageTitle }) => {
         };
         fetchCache();
     }, []);
+
+    // --- HÀM XỬ LÝ SỬA NHANH GHI CHÚ ---
+    const handleQuickUpdateNote = async (lotId, newNote) => {
+        // --- THÊM ĐOẠN NÀY: Chặn nếu không phải owner ---
+        if (userRole !== 'owner') {
+            toast.error("Bạn không có quyền sửa ghi chú!");
+            return;
+        }
+        // ------------------------------------------------
+        try {
+            const lotRef = doc(db, 'inventory_lots', lotId);
+            await updateDoc(lotRef, { notes: newNote });
+            toast.success("Đã cập nhật ghi chú!");
+            
+            // Cập nhật UI ngay lập tức (Optimistic Update) để người dùng không phải chờ reload
+            // Cập nhật cho cả danh sách searchResults và inventory
+            const updateList = (list) => list.map(item => 
+                item.id === lotId ? { ...item, notes: newNote } : item
+            );
+            
+            if (isSearching) {
+                setSearchResults(prev => updateList(prev));
+            }
+            // Lưu ý: inventory được quản lý bởi hook, ta không set trực tiếp được dễ dàng, 
+            // nhưng hook realtime notification sẽ lo phần update sau đó.
+            
+        } catch (error) {
+            console.error("Lỗi cập nhật ghi chú:", error);
+            toast.error("Không thể cập nhật ghi chú.");
+        }
+    };
 
     // --- 2. HÀM TÌM KIẾM ---
     const performSearch = useCallback(async (term) => {
@@ -147,6 +196,12 @@ const InventoryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, performSearch]);
 
+    // --- TỰ ĐỘNG CUỘN LÊN ĐẦU KHI CHUYỂN TRANG ---
+    const [page, setPage] = useState(1);
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [page]);
+
     const baseQuery = useMemo(() => {
         if (searchTerm) return null; 
         
@@ -181,11 +236,14 @@ const InventoryPage = ({ pageTitle }) => {
         documents: inventory,
         loading,
         isLastPage,
-        page,
+        // page: pageFromHook, // Ta dùng state page ở trên để control scroll
         nextPage,
         prevPage,
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
+
+    // Sync page state from hook (tùy chỉnh hook nếu cần, ở đây ta giả lập)
+    // Để đơn giản, ta giữ logic page của hook nhưng thêm useEffect scroll ở trên
 
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
@@ -213,7 +271,6 @@ const InventoryPage = ({ pageTitle }) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
     };
 
-    // --- RENDER SKELETON (HIỆU ỨNG LOADING) ---
     const renderSkeleton = () => {
         return Array(10).fill(0).map((_, index) => (
             <tr key={`skeleton-${index}`}>
@@ -250,14 +307,39 @@ const InventoryPage = ({ pageTitle }) => {
                     onFilterChange={handleFilterChange} 
                     activeFilters={filters}
                 />
-                <div className="search-container">
+                <div className="search-container" style={{ position: 'relative' }}>
                      <input
+                        ref={searchInputRef}
                         type="text"
-                        placeholder="Tìm theo Tên, Mã hàng hoặc Số lô..."
+                        placeholder="Tìm theo Tên, Mã, Số lô... (Phím '/')"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
+                        style={{ paddingRight: '30px' }}
                     />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => {
+                                setSearchTerm('');
+                                setIsSearching(false);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                right: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#999',
+                                cursor: 'pointer',
+                                padding: '5px',
+                                display: 'flex'
+                            }}
+                            title="Xóa tìm kiếm"
+                        >
+                            <FiX />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -282,13 +364,11 @@ const InventoryPage = ({ pageTitle }) => {
                         </tr>
                     </thead>
                     <tbody className="inventory-table-body">
-                        {/* --- TRƯỜNG HỢP 1: ĐANG LOADING --- */}
                         {loading && !isSearching ? (
                             <SkeletonTheme baseColor="#f3f3f3" highlightColor="#ecebeb">
                                 {renderSkeleton()}
                             </SkeletonTheme>
                         ) : (
-                            /* --- TRƯỜNG HỢP 2: CÓ DỮ LIỆU --- */
                             dataToDisplay.length > 0 ? (
                                 dataToDisplay.map(lot => (
                                     <tr 
@@ -297,46 +377,48 @@ const InventoryPage = ({ pageTitle }) => {
                                         className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate, lot.subGroup)}`}
                                     >
                                         <td data-label="Ngày nhập">{formatDate(lot.importDate)}</td>
-                                        <td data-label="Mã hàng"><strong><HighlightText text={lot.productId} highlight={searchTerm} /></strong></td>
-                                        <td data-label="Tên hàng"><HighlightText text={lot.productName} highlight={searchTerm} /></td>
-                                        <td data-label="Số lô"><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></td>
-                                        {/* --- THAY THẾ CỘT HSD BẰNG ĐOẠN NÀY --- */}
-                                            <td data-label="HSD">
-                                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                    {/* Ngày tháng */}
-                                                    <span style={{ marginBottom: '4px' }}>
-                                                        {lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}
-                                                    </span>
-                                                    
-                                                    {/* Thanh tuổi thọ (chỉ hiện nếu có HSD) */}
-                                                    {lot.expiryDate && (
-                                                        <div style={{ 
-                                                            width: '100%', 
-                                                            height: '6px', 
-                                                            backgroundColor: '#e9ecef', 
-                                                            borderRadius: '3px',
-                                                            overflow: 'hidden' 
-                                                        }}>
-                                                            <div style={{
-                                                                width: `${calculateLifePercentage(lot.expiryDate)}%`,
-                                                                height: '100%',
-                                                                borderRadius: '3px',
-                                                                // Logic màu sắc: >50% Xanh, >20% Vàng, <20% Đỏ
-                                                                backgroundColor: calculateLifePercentage(lot.expiryDate) > 50 
-                                                                    ? '#28a745' 
-                                                                    : (calculateLifePercentage(lot.expiryDate) > 20 ? '#ffc107' : '#dc3545'),
-                                                                transition: 'width 0.5s ease'
-                                                            }}></div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            {/* -------------------------------------- */}
+                                        
+                                        <td data-label="Mã hàng">
+                                            <ClickableCopy text={lot.productId}>
+                                                <strong><HighlightText text={lot.productId} highlight={searchTerm} /></strong>
+                                            </ClickableCopy>
+                                        </td>
+                                        
+                                        <td data-label="Tên hàng">
+                                            <ClickableCopy text={lot.productName}>
+                                                <HighlightText text={lot.productName} highlight={searchTerm} />
+                                            </ClickableCopy>
+                                        </td>
+                                        
+                                        <td data-label="Số lô">
+                                            <ClickableCopy text={lot.lotNumber || ''}>
+                                                <HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} />
+                                            </ClickableCopy>
+                                        </td>
+                                        
+                                        <td data-label="HSD">
+    <ExpiryBadge 
+        expiryDate={lot.expiryDate} 
+        subGroup={lot.subGroup} 
+    />
+</td>
+
                                         <td data-label="ĐVT">{lot.unit}</td>
                                         <td data-label="Quy cách">{lot.packaging}</td>
                                         <td data-label="SL Nhập">{formatNumber(lot.quantityImported)}</td>
                                         <td data-label="SL Còn lại">{formatNumber(lot.quantityRemaining)}</td>
-                                        <td data-label="Ghi chú">{lot.notes}</td>
+                                        
+                                        {/* --- CẬP NHẬT: DÙNG InlineEditCell CHO GHI CHÚ --- */}
+                                        <td data-label="Ghi chú">
+                                            <InlineEditCell 
+                                                id={lot.id} 
+                                                initialValue={lot.notes} 
+                                                onSave={handleQuickUpdateNote}
+                                                canEdit={userRole === 'owner'}  // <--- THÊM DÒNG NÀY 
+                                            />
+                                        </td>
+                                        {/* ------------------------------------------------ */}
+
                                         <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
                                         <td data-label="Hãng sản xuất">{lot.manufacturer}</td>
                                         <td data-label="Nhóm Hàng">{lot.subGroup}</td>
@@ -344,7 +426,6 @@ const InventoryPage = ({ pageTitle }) => {
                                     </tr>
                                 ))
                             ) : (
-                                /* --- TRƯỜNG HỢP 3: KHÔNG CÓ DỮ LIỆU (EMPTY STATE) --- */
                                 <tr>
                                     <td colSpan="14">
                                         <EmptyState 
@@ -361,11 +442,11 @@ const InventoryPage = ({ pageTitle }) => {
             
             {!isSearching && !loading && dataToDisplay.length > 0 && (
                 <div className="pagination-controls">
-                    <button onClick={prevPage} disabled={page <= 1}>
+                    <button onClick={() => { prevPage(); setPage(p => Math.max(1, p - 1)); }} disabled={page <= 1}>
                         <FiChevronLeft /> Trang Trước
                     </button>
                     <span>Trang {page}</span>
-                    <button onClick={nextPage} disabled={isLastPage}>
+                    <button onClick={() => { nextPage(); if(!isLastPage) setPage(p => p + 1); }} disabled={isLastPage}>
                         Trang Tiếp <FiChevronRight />
                     </button>
                 </div>

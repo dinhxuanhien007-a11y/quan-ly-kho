@@ -83,8 +83,8 @@
 .lotItem {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 10px 0;
+    gap: 8px; /* Tăng khoảng cách giữa các dòng lên một chút */
+    padding: 12px 0;
     border-bottom: 1px solid #eee;
 }
 

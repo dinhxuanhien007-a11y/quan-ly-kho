@@ -1577,3 +1577,16 @@ tbody tr.selected-row td {
 
 /* --- SKELETON LOADING (Cho chế độ Dark mode nếu có) --- */
 /* react-loading-skeleton tự xử lý tốt, nhưng ta có thể tweak thêm nếu cần */
+/* Trong file CSS của bạn */
+
+/* Đánh dấu hàng đang được mở rộng */
+.expanded-row-active {
+    background-color: #e6f7ff !important; /* Màu xanh nhạt nổi bật */
+    border-bottom: 2px solid #007bff; /* Thêm đường viền để tách biệt với hàng chi tiết */
+    font-weight: 600;
+}
+
+/* Đảm bảo hàng chi tiết (lot-details-row) luôn có màu nền sáng để dễ đọc */
+.lot-details-row {
+    background-color: #f7f9fb; /* Màu nền rất nhạt */
+}

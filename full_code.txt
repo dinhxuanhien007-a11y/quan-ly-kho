@@ -1140,6 +1140,59 @@ export default AdminLayout;
 
 
 
+--- FILE: D:\quan-ly-kho\src\components\ClickableCopy.jsx ---
+
+
+// src/components/ClickableCopy.jsx
+import React from 'react';
+import { toast } from 'react-toastify';
+import { FiCopy } from 'react-icons/fi';
+
+const ClickableCopy = ({ text, children }) => {
+    const handleCopy = (e) => {
+        // Quan trá»ng: NgÄƒn khÃ´ng cho sá»± kiá»‡n click lan ra ngoÃ i (trÃ¡nh kÃ­ch hoáº¡t má»Ÿ dÃ²ng chi tiáº¿t)
+        e.stopPropagation(); 
+
+        if (!text) return;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            toast.success(`ÄÃ£ sao chÃ©p: ${text}`, {
+                position: "bottom-center",
+                autoClose: 1000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: false,
+                draggable: false,
+            });
+        }).catch(err => {
+            console.error('Lá»—i sao chÃ©p:', err);
+        });
+    };
+
+    return (
+        <div 
+            onClick={handleCopy} 
+            style={{ 
+                cursor: 'copy', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '5px',
+                transition: 'color 0.2s'
+            }}
+            title="Báº¥m Ä‘á»ƒ sao chÃ©p"
+            className="clickable-copy-wrapper"
+        >
+            {children}
+            {/* Icon copy má», chá»‰ hiá»‡n rÃµ khi hover (xá»­ lÃ½ báº±ng CSS hoáº·c Ä‘á»ƒ má» máº·c Ä‘á»‹nh) */}
+            <FiCopy style={{ fontSize: '12px', opacity: 0.4 }} />
+        </div>
+    );
+};
+
+export default ClickableCopy;
+
+
+
 --- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.jsx ---
 
 
@@ -1302,72 +1355,307 @@ describe('Component: ConfirmationModal', () => {
 
 
 // src/components/CreateStocktakeModal.jsx
-import React, { useState } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { db } from '../firebaseConfig';
+import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import { z } from 'zod'; // <-- IMPORT ZOD
-import { TEAM_OPTIONS } from '../constants';
+import { SUBGROUPS_BY_TEAM } from '../constants';
+import { FiCheckSquare, FiSquare, FiFilter } from 'react-icons/fi';
 
-// <-- Äá»ŠNH NGHÄ¨A SCHEMA -->
-const stocktakeSchema = z.object({
-    sessionName: z.string().trim().min(1, { message: "Vui lÃ²ng Ä‘áº·t tÃªn cho phiÃªn kiá»ƒm kÃª." })
-});
+const CreateStocktakeModal = ({ onClose, onSuccess, userRole }) => {
+    const [sessionName, setSessionName] = useState(''); // <-- THÃŠM Láº I: State lÆ°u tÃªn phiÃªn
+    const [scope, setScope] = useState('all'); 
+    const [selectedTeam, setSelectedTeam] = useState('MED');
+    const [notes, setNotes] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
 
-const CreateStocktakeModal = ({ onClose, onCreate, isCreating }) => {
-    const [sessionName, setSessionName] = useState('');
-    const [scope, setScope] = useState('all');
+    // --- CÃC TÃ™Y CHá»ŒN Má»šI ---
+    const [excludeExpired, setExcludeExpired] = useState(false);
+    const [selectedSubGroups, setSelectedSubGroups] = useState([]);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        
-        // <-- Sá»¬ Dá»¤NG SCHEMA Äá»‚ XÃC THá»°C -->
-        const validationResult = stocktakeSchema.safeParse({ sessionName });
+    // Tá»± Ä‘á»™ng chá»n Team náº¿u user khÃ´ng pháº£i owner/admin
+    useEffect(() => {
+        if (userRole === 'med') setSelectedTeam('MED');
+        if (userRole === 'bio') setSelectedTeam('BIO');
+    }, [userRole]);
 
-        if (!validationResult.success) {
-            toast.warn(validationResult.error.issues[0].message);
+    const availableSubGroups = useMemo(() => {
+        if (scope === 'all') {
+            return [...SUBGROUPS_BY_TEAM.MED, ...SUBGROUPS_BY_TEAM.BIO];
+        }
+        return SUBGROUPS_BY_TEAM[selectedTeam] || [];
+    }, [scope, selectedTeam]);
+
+    useEffect(() => {
+        setSelectedSubGroups(availableSubGroups);
+    }, [availableSubGroups]);
+
+    const toggleSubGroup = (sg) => {
+        setSelectedSubGroups(prev => 
+            prev.includes(sg) ? prev.filter(item => item !== sg) : [...prev, sg]
+        );
+    };
+
+    const handleCreate = async () => {
+        // --- THÃŠM KIá»‚M TRA TÃŠN PHIÃŠN ---
+        if (!sessionName.trim()) {
+            toast.warn("Vui lÃ²ng nháº­p TÃªn phiÃªn kiá»ƒm kÃª.");
             return;
         }
-        
-        onCreate({ sessionName, scope });
+        if (scope === 'team' && !selectedTeam) {
+            toast.warn("Vui lÃ²ng chá»n Team.");
+            return;
+        }
+        if (selectedSubGroups.length === 0) {
+            toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t nhÃ³m hÃ ng.");
+            return;
+        }
+
+        setIsCreating(true);
+        try {
+            // 1. Táº¡o Query láº¥y dá»¯ liá»‡u
+            let q;
+            const lotsRef = collection(db, 'inventory_lots');
+            
+            if (scope === 'all') {
+                q = query(lotsRef, where('quantityRemaining', '>', 0));
+            } else {
+                q = query(lotsRef, where('team', '==', selectedTeam), where('quantityRemaining', '>', 0));
+            }
+
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) {
+                toast.info("KhÃ´ng cÃ³ dá»¯ liá»‡u tá»“n kho phÃ¹ há»£p Ä‘á»ƒ táº¡o phiÃªn kiá»ƒm kÃª.");
+                setIsCreating(false);
+                return;
+            }
+
+            // 2. Xá»¬ LÃ Gá»˜P LÃ” VÃ€ Lá»ŒC Dá»® LIá»†U
+            const lotAggregator = new Map();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                
+                // Lá»ŒC 1: Theo NhÃ³m hÃ ng
+                if (data.subGroup && !selectedSubGroups.includes(data.subGroup)) {
+                    return; 
+                }
+
+                // Lá»ŒC 2: Theo Háº¡n sá»­ dá»¥ng
+                if (excludeExpired && data.expiryDate) {
+                    const expDate = data.expiryDate.toDate();
+                    if (expDate < today) {
+                        return; // Bá» qua lÃ´ Ä‘Ã£ háº¿t háº¡n
+                    }
+                }
+
+                const lotNumberKey = data.lotNumber ? data.lotNumber.trim() : 'NO_LOT';
+                const uniqueKey = `${data.productId}_${lotNumberKey}`;
+
+                if (lotAggregator.has(uniqueKey)) {
+                    const existingItem = lotAggregator.get(uniqueKey);
+                    existingItem.systemQty += data.quantityRemaining;
+                } else {
+                    lotAggregator.set(uniqueKey, {
+                        productId: data.productId,
+                        productName: data.productName,
+                        lotNumber: data.lotNumber || '',
+                        expiryDate: data.expiryDate,
+                        unit: data.unit,
+                        packaging: data.packaging,
+                        storageTemp: data.storageTemp,
+                        manufacturer: data.manufacturer,
+                        subGroup: data.subGroup,
+                        team: data.team,
+                        systemQty: data.quantityRemaining,
+                        countedQty: null,
+                        notes: '',
+                        isNew: false
+                    });
+                }
+            });
+
+            const items = Array.from(lotAggregator.values());
+            items.sort((a, b) => a.productName.localeCompare(b.productName));
+
+            if (items.length === 0) {
+                toast.warn("KhÃ´ng tÃ¬m tháº¥y lÃ´ hÃ ng nÃ o thá»a mÃ£n Ä‘iá»u kiá»‡n lá»c.");
+                setIsCreating(false);
+                return;
+            }
+
+            // 3. LÆ°u phiÃªn kiá»ƒm kÃª vÃ o Firestore
+            const sessionRef = await addDoc(collection(db, 'stocktakes'), {
+                name: sessionName, // <-- Sá»¬A Lá»–I: ÄÃ£ lÆ°u tÃªn phiÃªn vÃ o DB
+                createdAt: serverTimestamp(),
+                createdBy: 'Admin',
+                status: 'in_progress', // <-- Sá»¬A Lá»–I: Äá»•i 'open' thÃ nh 'in_progress' Ä‘á»ƒ hiá»‡n mÃ u vÃ ng
+                scope: scope,
+                team: scope === 'team' ? selectedTeam : 'ALL',
+                notes: notes,
+                itemCount: items.length
+            });
+
+            const itemsCollectionRef = collection(db, 'stocktakes', sessionRef.id, 'items');
+            const batchPromises = items.map(item => addDoc(itemsCollectionRef, item));
+            await Promise.all(batchPromises);
+
+            toast.success(`ÄÃ£ táº¡o phiÃªn kiá»ƒm kÃª thÃ nh cÃ´ng! (${items.length} mÃ£/lÃ´)`);
+            
+            if (onSuccess && typeof onSuccess === 'function') {
+                onSuccess(); 
+            }
+            onClose();
+
+        } catch (error) {
+            console.error("Lá»—i táº¡o phiÃªn kiá»ƒm kÃª:", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi táº¡o phiÃªn.");
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     return (
         <div className="modal-backdrop">
-            <div className="modal-content">
-                <h2>Táº¡o PhiÃªn Kiá»ƒm KÃª Má»›i</h2>
-                <form onSubmit={handleSubmit}>
+            <div className="modal-content" style={{ maxWidth: '600px' }}>
+                <h2>Táº¡o Phiáº¿u Kiá»ƒm KÃª Má»›i</h2>
+                
+                <div className="form-section">
+                    {/* --- THÃŠM Láº I: Ã” NHáº¬P TÃŠN PHIÃŠN --- */}
                     <div className="form-group">
-                        <label>TÃªn PhiÃªn Kiá»ƒm KÃª (*)</label>
-                        <input
-                            type="text"
-                            value={sessionName}
-                            onChange={(e) => setSessionName(e.target.value)}
-                            placeholder="VÃ­ dá»¥: Kiá»ƒm kÃª cuá»‘i nÄƒm 2025"
-                            required
+                        <label>TÃªn PhiÃªn Kiá»ƒm KÃª (*):</label>
+                        <input 
+                            type="text" 
+                            value={sessionName} 
+                            onChange={(e) => setSessionName(e.target.value)} 
+                            placeholder="VÃ­ dá»¥: Kiá»ƒm kÃª MED thÃ¡ng 12/2025"
+                            autoFocus
                         />
                     </div>
+
+                    {/* 1. Chá»n Pháº¡m vi */}
                     <div className="form-group">
-                        <label>Pháº¡m vi kiá»ƒm kÃª</label>
-                        <select value={scope} onChange={(e) => setScope(e.target.value)}>
-    <option value="all">ToÃ n bá»™ kho</option>
-    {TEAM_OPTIONS.map(team => (
-        <option key={team} value={team}>Chá»‰ Team {team}</option>
-    ))}
-</select>
+                        <label>Pháº¡m vi kiá»ƒm kÃª:</label>
+                        <div style={{ display: 'flex', gap: '20px', marginBottom: '10px' }}>
+                            <label style={{ cursor: 'pointer' }}>
+                                <input 
+                                    type="radio" 
+                                    name="scope" 
+                                    checked={scope === 'all'} 
+                                    onChange={() => setScope('all')}
+                                    disabled={userRole !== 'owner' && userRole !== 'admin'}
+                                /> ToÃ n Kho
+                            </label>
+                            <label style={{ cursor: 'pointer' }}>
+                                <input 
+                                    type="radio" 
+                                    name="scope" 
+                                    checked={scope === 'team'} 
+                                    onChange={() => setScope('team')} 
+                                /> Theo Team
+                            </label>
+                        </div>
                     </div>
-                    <div className="modal-actions">
-                        <button type="button" onClick={onClose} className="btn-secondary" disabled={isCreating}>Há»§y</button>
-                        <button type="submit" className="btn-primary" disabled={isCreating}>
-                            {isCreating ? 'Äang táº¡o...' : 'Báº¯t Äáº§u'}
-                        </button>
+
+                    {/* 2. Chá»n Team */}
+                    {scope === 'team' && (
+                        <div className="form-group">
+                            <label>Chá»n Team:</label>
+                            <select 
+                                value={selectedTeam} 
+                                onChange={(e) => setSelectedTeam(e.target.value)}
+                                disabled={userRole === 'med' || userRole === 'bio'}
+                            >
+                                <option value="MED">MED</option>
+                                <option value="BIO">BIO</option>
+                            </select>
+                        </div>
+                    )}
+
+                    {/* 3. TÃ¹y chá»n lá»c */}
+                    <div className="form-group" style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
+                        <label style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <FiFilter /> TÃ¹y chá»n lá»c nÃ¢ng cao:
+                        </label>
+                        
+                        <div style={{ marginTop: '10px' }}>
+                            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={excludeExpired} 
+                                    onChange={(e) => setExcludeExpired(e.target.checked)} 
+                                />
+                                <span>Loáº¡i bá» hÃ ng Ä‘Ã£ háº¿t háº¡n sá»­ dá»¥ng (Expired)</span>
+                            </label>
+                        </div>
+
+                        <div style={{ marginTop: '15px' }}>
+                            <label style={{ marginBottom: '5px', display: 'block' }}>Chá»n NhÃ³m hÃ ng cáº§n kiá»ƒm:</label>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: '1fr 1fr', 
+                                gap: '8px', 
+                                maxHeight: '150px', 
+                                overflowY: 'auto',
+                                border: '1px solid #ddd',
+                                padding: '10px',
+                                borderRadius: '4px',
+                                backgroundColor: 'white'
+                            }}>
+                                {availableSubGroups.map(sg => (
+                                    <div key={sg} onClick={() => toggleSubGroup(sg)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px' }}>
+                                        {selectedSubGroups.includes(sg) 
+                                            ? <FiCheckSquare color="#007bff" /> 
+                                            : <FiSquare color="#ccc" />
+                                        }
+                                        <span>{sg}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ marginTop: '5px', fontSize: '12px', color: '#666', textAlign: 'right' }}>
+                                <span 
+                                    style={{ cursor: 'pointer', color: '#007bff', marginRight: '10px' }}
+                                    onClick={() => setSelectedSubGroups(availableSubGroups)}
+                                >
+                                    Chá»n táº¥t cáº£
+                                </span>
+                                <span 
+                                    style={{ cursor: 'pointer', color: '#dc3545' }}
+                                    onClick={() => setSelectedSubGroups([])}
+                                >
+                                    Bá» chá»n
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                </form>
+
+                    <div className="form-group">
+                        <label>Ghi chÃº phiÃªn:</label>
+                        <textarea 
+                            rows="2" 
+                            value={notes} 
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Ghi chÃº thÃªm..."
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div className="modal-actions">
+                    <button onClick={onClose} className="btn-secondary" disabled={isCreating}>Há»§y bá»</button>
+                    <button onClick={handleCreate} className="btn-primary" disabled={isCreating}>
+                        {isCreating ? 'Äang táº¡o...' : 'Báº¯t Ä‘áº§u Kiá»ƒm KÃª'}
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
 
 export default CreateStocktakeModal;
-
 
 
 
@@ -2619,6 +2907,28 @@ export default EditUserRoleModal;
 
 
 
+--- FILE: D:\quan-ly-kho\src\components\EmptyState.jsx ---
+
+
+// src/components/EmptyState.jsx
+import React from 'react';
+import { FiInbox, FiSearch } from 'react-icons/fi';
+
+const EmptyState = ({ message, isSearch = false }) => {
+    return (
+        <div className="empty-state-wrapper">
+            <div className="empty-state-icon">
+                {isSearch ? <FiSearch /> : <FiInbox />}
+            </div>
+            <p className="empty-state-text">{message || 'KhÃ´ng cÃ³ dá»¯ liá»‡u'}</p>
+        </div>
+    );
+};
+
+export default EmptyState;
+
+
+
 --- FILE: D:\quan-ly-kho\src\components\ErrorBoundary.jsx ---
 
 
@@ -2665,6 +2975,78 @@ class ErrorBoundary extends React.Component {
 
 export default ErrorBoundary;
 
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\ExpiryBadge.jsx ---
+
+
+// src/components/ExpiryBadge.jsx
+import React from 'react';
+import { formatDate, getRelativeTimeFromNow, calculateLifePercentage, getRowColorByExpiry } from '../utils/dateUtils';
+import { FiClock, FiAlertCircle } from 'react-icons/fi';
+
+const ExpiryBadge = ({ expiryDate, subGroup, showProgressBar = true, compact = false }) => {
+    if (!expiryDate) return <span style={{color: '#999', fontStyle: 'italic'}}>(KhÃ´ng cÃ³ HSD)</span>;
+
+    const formattedDate = formatDate(expiryDate);
+    const relativeTime = getRelativeTimeFromNow(expiryDate);
+    const colorClass = getRowColorByExpiry(expiryDate, subGroup);
+    const lifePercentage = calculateLifePercentage(expiryDate);
+
+    // XÃ¡c Ä‘á»‹nh mÃ u chá»¯ dá»±a trÃªn class tráº£ vá» tá»« utils
+    let textColor = '#333';
+    let icon = <FiClock style={{marginRight: '4px'}} />;
+    
+    if (colorClass.includes('expired')) {
+        textColor = '#dc3545'; // Äá» Ä‘áº­m
+        icon = <FiAlertCircle style={{marginRight: '4px'}} />;
+    } else if (colorClass.includes('red')) {
+        textColor = '#c82333';
+    } else if (colorClass.includes('orange')) {
+        textColor = '#d66907'; // Cam Ä‘áº­m
+    } else if (colorClass.includes('yellow')) {
+        textColor = '#856404'; // VÃ ng nÃ¢u
+    } else {
+        textColor = '#28a745'; // Xanh lÃ¡ (An toÃ n)
+    }
+
+    if (compact) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', fontSize: '12px' }}>
+                <span style={{ fontWeight: 'bold' }}>{formattedDate}</span>
+                <span style={{ color: textColor, fontSize: '11px' }}>{relativeTime}</span>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            {/* DÃ²ng 1: NgÃ y thÃ¡ng + Icon */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                <span style={{ fontWeight: '600' }}>{formattedDate}</span>
+                <span style={{ fontSize: '11px', color: textColor, display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
+                    {icon} {relativeTime}
+                </span>
+            </div>
+
+            {/* DÃ²ng 2: Thanh tiáº¿n trÃ¬nh tuá»•i thá» */}
+            {showProgressBar && (
+                <div style={{ width: '100%', height: '4px', backgroundColor: '#e9ecef', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{
+                        width: `${lifePercentage}%`,
+                        height: '100%',
+                        borderRadius: '2px',
+                        backgroundColor: lifePercentage > 50 ? '#28a745' : (lifePercentage > 20 ? '#ffc107' : '#dc3545'),
+                        transition: 'width 0.5s ease'
+                    }}></div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default React.memo(ExpiryBadge);
 
 
 
@@ -3299,24 +3681,44 @@ export default FloatingToolsModal;
 import React from 'react';
 
 const HighlightText = ({ text = '', highlight = '' }) => {
-    if (!highlight.trim()) {
+    // Náº¿u khÃ´ng cÃ³ text hoáº·c khÃ´ng cÃ³ tá»« khÃ³a tÃ¬m kiáº¿m, tráº£ vá» text gá»‘c
+    if (!highlight || !highlight.trim()) {
         return <span>{text}</span>;
     }
+    
+    // Chuyá»ƒn Ä‘á»•i text Ä‘áº§u vÃ o thÃ nh chuá»—i Ä‘á»ƒ trÃ¡nh lá»—i náº¿u lÃ  sá»‘
+    const strText = String(text);
 
-    const regex = new RegExp(`(${highlight})`, 'gi');
-    const parts = text.split(regex);
+    // Escape cÃ¡c kÃ½ tá»± Ä‘áº·c biá»‡t trong regex Ä‘á»ƒ trÃ¡nh lá»—i (vÃ­ dá»¥ dáº¥u +, *, ?)
+    const escapeRegExp = (string) => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
 
-    return (
-        <span>
-            {parts.map((part, i) =>
-                regex.test(part) ? (
-                    <strong key={i} style={{ backgroundColor: '#fffbe6' }}>{part}</strong>
-                ) : (
-                    <span key={i}>{part}</span>
-                )
-            )}
-        </span>
-    );
+    try {
+        // Táº¡o biá»ƒu thá»©c chÃ­nh quy: tÃ¬m tá»« khÃ³a, khÃ´ng phÃ¢n biá»‡t hoa thÆ°á»ng
+        const regex = new RegExp(`(${escapeRegExp(highlight.trim())})`, 'gi');
+        
+        // TÃ¡ch chuá»—i thÃ nh cÃ¡c pháº§n dá»±a trÃªn tá»« khÃ³a
+        const parts = strText.split(regex);
+
+        return (
+            <span>
+                {parts.map((part, i) => 
+                    // Kiá»ƒm tra náº¿u pháº§n nÃ y khá»›p vá»›i tá»« khÃ³a (khÃ´ng phÃ¢n biá»‡t hoa thÆ°á»ng)
+                    regex.test(part) ? (
+                        <mark key={i} style={{ backgroundColor: '#ffeb3b', color: '#000', fontWeight: 'bold', padding: '0 2px', borderRadius: '2px' }}>
+                            {part}
+                        </mark>
+                    ) : (
+                        <span key={i}>{part}</span>
+                    )
+                )}
+            </span>
+        );
+    } catch (e) {
+        // Náº¿u cÃ³ lá»—i regex (hiáº¿m gáº·p), tráº£ vá» text gá»‘c
+        return <span>{strText}</span>;
+    }
 };
 
 export default HighlightText;
@@ -3400,6 +3802,226 @@ const ImportSlipCounter = () => {
 };
 
 export default ImportSlipCounter;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\InlineEditCell.jsx ---
+
+
+// src/components/InlineEditCell.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { FiEdit, FiCheck, FiX } from 'react-icons/fi'; // <-- THÃŠM ICON Má»šI (náº¿u chÆ°a cÃ³)
+import { toast } from 'react-toastify';
+import styles from './InlineEditCell.module.css';
+
+// Nháº­n prop canEdit tá»« InventoryPage
+const InlineEditCell = ({ initialValue, onSave, id, canEdit = false, customStyle = {} }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [value, setValue] = useState(initialValue);
+    const inputRef = useRef(null);
+    
+    // --- STATE Má»šI: Quáº£n lÃ½ tráº¡ng thÃ¡i hover ---
+    const [isHovered, setIsHovered] = useState(false); 
+    // ------------------------------------------
+
+    useEffect(() => {
+        setValue(initialValue);
+    }, [initialValue]);
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isEditing]);
+
+    // --- THAY THáº¾ handleDoubleClick Báº°NG handleClickEdit ---
+    const handleClickEdit = (e) => {
+        e.stopPropagation(); // NgÄƒn chá»n dÃ²ng
+        if (canEdit) {
+            setIsEditing(true);
+        }
+    };
+
+    const handleSave = () => {
+        setIsEditing(false);
+        if (value !== initialValue) {
+            onSave(id, value);
+        }
+    };
+    
+    // ThÃªm hÃ m há»§y bá» chá»‰nh sá»­a
+    const handleCancel = () => {
+        setIsEditing(false);
+        setValue(initialValue); // Quay vá» giÃ¡ trá»‹ cÅ©
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSave();
+        } else if (e.key === 'Escape') {
+            handleCancel();
+        }
+    };
+
+    // THÃŠM HÃ€M NÃ€Y VÃ€O ÄÃ‚Y
+    const handleChange = (e) => {
+        setValue(e.target.value);
+    };
+    
+    // --- Cháº¿ Ä‘á»™ CHá»ˆNH Sá»¬A (Editing Mode) ---
+    if (isEditing) {
+    return (
+        <div className={styles.editWrapper} onClick={(e) => e.stopPropagation()}>
+            <input
+                type="text"
+                value={value}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                ref={inputRef}
+                className={styles.editInput}
+            />
+            
+            <div className={styles.actionButtons}>
+                {/* Thay button text 'LÆ°u' báº±ng icon âœ“ */}
+                <button 
+                    onClick={handleSave} 
+                    className={styles.saveButton} 
+                    title="LÆ°u (Enter)"
+                >
+                    âœ“
+                </button>
+                
+                {/* Thay button text 'Há»§y' báº±ng icon âœ• */}
+                <button 
+                    onClick={handleCancel} 
+                    className={styles.cancelButton} 
+                    title="Há»§y (Esc)"
+                >
+                    âœ•
+                </button>
+            </div>
+        </div>
+    );
+}
+    
+    // --- Cháº¿ Ä‘á»™ XEM (Viewing Mode) ---
+    return (
+        <div 
+            onMouseEnter={() => setIsHovered(true)} // Báº­t tráº¡ng thÃ¡i hover
+            onMouseLeave={() => setIsHovered(false)} // Táº¯t tráº¡ng thÃ¡i hover
+            onClick={(e) => e.stopPropagation()} // NgÄƒn chá»n dÃ²ng khi click vÃ o ná»™i dung
+            title={canEdit ? "Click vÃ o biá»ƒu tÆ°á»£ng Ä‘á»ƒ sá»­a nhanh" : "Chá»‰ Owner má»›i cÃ³ quyá»n sá»­a"}
+            style={{ 
+                cursor: canEdit ? 'default' : 'default', // Äáº·t default cursor
+                minHeight: '20px', 
+                padding: '5px',
+                border: '1px solid transparent',
+                borderRadius: '4px',
+                transition: 'background 0.2s',
+                position: 'relative', // Quan trá»ng: Ä‘á»ƒ Ä‘áº·t icon tuyá»‡t Ä‘á»‘i
+                // ---> THÃŠM DÃ’NG NÃ€Y Äá»‚ ÃP Dá»¤NG STYLE TÃ™Y CHá»ˆNH <---
+                ...customStyle
+            }}
+            className={canEdit ? "inline-edit-cell" : ""}
+        >
+            {/* 1. HIá»‚N THá»Š Ná»˜I DUNG/TRá»NG */}
+            {value ? (
+                value
+            ) : (
+                canEdit ? <span style={{ color: '#ccc', fontStyle: 'italic' }}>(Trá»‘ng)</span> : null
+            )}
+
+            {/* 2. HIá»‚N THá»Š ICON Sá»¬A KHI HOVER VÃ€ CÃ“ QUYá»€N */}
+            {canEdit && isHovered && (
+                <button 
+                    onClick={handleClickEdit} 
+                    title="Sá»­a ghi chÃº"
+                    style={{ 
+                        position: 'absolute', 
+                        top: '50%', 
+                        right: '5px', // Äáº·t á»Ÿ gÃ³c trÃªn bÃªn pháº£i
+                        transform: 'translateY(-50%)',
+                        background: '#e9ecef', 
+                        border: '1px solid #ccc',
+                        borderRadius: '3px',
+                        padding: '2px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <FiEdit size={12} color="#495057" />
+                </button>
+            )}
+        </div>
+    );
+};
+
+export default InlineEditCell;
+
+
+
+--- FILE: D:\quan-ly-kho\src\components\InlineEditCell.module.css ---
+
+
+/* src/components/InlineEditCell.module.css */
+
+/* THÃŠM CÃC CLASS CÃ’N THIáº¾U NÃ€Y VÃ€O Äáº¦U FILE */
+.editWrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Khoáº£ng cÃ¡ch giá»¯a input vÃ  cÃ¡c nÃºt */
+    padding: 0;
+    min-width: 150px; /* Äáº£m báº£o Ã´ input cÃ³ Ä‘á»§ khÃ´ng gian */
+}
+
+.editInput {
+    padding: 3px 5px;
+    border: 1px solid #007bff; /* Viá»n xanh khi chá»‰nh sá»­a */
+    border-radius: 4px;
+    flex-grow: 1; /* Cho phÃ©p input chiáº¿m háº¿t khÃ´ng gian */
+    min-width: 0; /* Cho phÃ©p input thu nhá» khi cáº§n */
+}
+/* ---------------------------------------------------- */
+
+/* Äá»‹nh hÃ¬nh chung cho cÃ¡c nÃºt hÃ nh Ä‘á»™ng */
+.actionButtons {
+    display: flex;
+    gap: 5px; 
+    margin-left: 5px;
+}
+
+.actionButtons button {
+    border: none;
+    padding: 2px 6px; 
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2em; 
+    font-weight: bold;
+    line-height: 1; 
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+/* 1. Style cho nÃºt LÆ¯U */
+.saveButton {
+    background-color: #28a745; /* MÃ u xanh lÃ¡ cÃ¢y Ä‘áº­m */
+    color: white; 
+}
+
+.saveButton:hover {
+    background-color: #218838; 
+}
+
+/* 2. Style cho nÃºt Há»¦Y */
+.cancelButton {
+    background-color: #dc3545; /* MÃ u Ä‘á» Ä‘áº­m */
+    color: white; 
+}
+
+.cancelButton:hover {
+    background-color: #c82333; 
+}
 
 
 
@@ -4218,126 +4840,200 @@ export default ProductAutocomplete;
 
 
 // src/components/QuickStockLookup.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { FiSearch, FiAlertCircle } from 'react-icons/fi';
+import { collection, query, where, getDocs, doc, getDoc, documentId, limit } from 'firebase/firestore';
+import { FiSearch, FiAlertCircle, FiBox, FiLayers, FiArrowLeft } from 'react-icons/fi';
 import Spinner from './Spinner';
 import styles from './QuickStockLookup.module.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
+import HighlightText from './HighlightText'; // <-- IMPORT COMPONENT HIGHLIGHT
+import ExpiryBadge from './ExpiryBadge'; // <-- THÃŠM DÃ’NG NÃ€Y
+
+// HÃ m há»— trá»£ tÃ¬m kiáº¿m thÃ´ng minh
+const fuzzyNormalize = (str) => {
+    if (!str) return '';
+    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+};
 
 const QuickStockLookup = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [productData, setProductData] = useState(null); 
+  const [candidates, setCandidates] = useState([]);
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [allProductsCache, setAllProductsCache] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // --- Táº¢I CACHE KHI MOUNT ---
+  useEffect(() => {
+        const fetchAllProducts = async () => {
+            const q = query(collection(db, 'products'));
+            const snapshot = await getDocs(q);
+            const cache = snapshot.docs.map(doc => ({
+                id: doc.id,
+                productName: doc.data().productName || '',
+                normName: fuzzyNormalize(doc.data().productName || ''),
+                normId: fuzzyNormalize(doc.id)
+            }));
+            setAllProductsCache(cache);
+        };
+        fetchAllProducts();
+  }, []);
+
+  // --- HÃ€M TÃŒM KIáº¾M á»¨NG VIÃŠN ---
   const performSearch = useCallback(async (term) => {
     if (!term) {
-      setProductData(null);
+      setCandidates([]);
+      setSelectedProductData(null);
       return;
     }
     setLoading(true);
+    setSelectedProductData(null);
+
     try {
-      const trimmedTerm = term.trim().toUpperCase();
-
-      const lotsByProductIdQuery = query(
-        collection(db, 'inventory_lots'),
-        where('productId', '==', trimmedTerm)
-      );
-
-      const lotsByLotNumberQuery = query(
-        collection(db, 'inventory_lots'),
-        where('lotNumber', '==', trimmedTerm)
-      );
-
-      const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
-        getDocs(lotsByProductIdQuery),
-        getDocs(lotsByLotNumberQuery)
-      ]);
-
-      let lots = [
-        ...byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      ];
-
-      const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
+      const rawTerm = term.trim().toUpperCase();
+      const searchTerms = [rawTerm];
       
-      if (uniqueLots.length > 0) {
-        const productId = uniqueLots[0].productId;
-        const productDocRef = doc(db, 'products', productId);
-        const productSnap = await getDoc(productDocRef);
-        const productInfo = productSnap.exists() ? productSnap.data() : null;
-
-        const lotAggregator = new Map();
-        for (const lot of uniqueLots) {
-            if (lot.quantityRemaining <= 0) continue;
-
-            const lotKey = lot.lotNumber;
-            if (lotAggregator.has(lotKey)) {
-                const existingLot = lotAggregator.get(lotKey);
-                existingLot.quantityRemaining += lot.quantityRemaining;
-            } else {
-                lotAggregator.set(lotKey, { ...lot });
-            }
-        }
-
-        const aggregatedLots = Array.from(lotAggregator.values());
-        
-        const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
-
-        if (productInfo) {
-          setProductData({
-            generalInfo: { ...productInfo, productId: productId },
-            // --- Báº®T Äáº¦U THAY Äá»”I LOGIC Sáº®P Xáº¾P ---
-            lots: aggregatedLots.sort((a, b) => {
-                // Xá»­ lÃ½ trÆ°á»ng há»£p khÃ´ng cÃ³ HSD (Ä‘Æ°a xuá»‘ng cuá»‘i)
-                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
-                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
-
-                // 1. Æ¯u tiÃªn sáº¯p xáº¿p theo HSD tÄƒng dáº§n (date gáº§n nháº¥t lÃªn trÆ°á»›c)
-                if (dateA !== dateB) {
-                    return dateA - dateB;
-                }
-
-                // 2. Náº¿u HSD báº±ng nhau, Æ°u tiÃªn sáº¯p xáº¿p theo sá»‘ lÆ°á»£ng tá»“n tÄƒng dáº§n (sá»‘ lÆ°á»£ng Ã­t hÆ¡n lÃªn trÆ°á»›c)
-                return a.quantityRemaining - b.quantityRemaining;
-            }),
-            // --- Káº¾T THÃšC THAY Äá»”I ---
-            totalRemaining: totalRemaining
-          });
-        } else {
-          setProductData(null);
-        }
-      } else {
-        const productDocRef = doc(db, 'products', trimmedTerm);
-        const productSnap = await getDoc(productDocRef);
-
-        if (productSnap.exists()) {
-          setProductData({
-            generalInfo: { ...productSnap.data(), productId: trimmedTerm },
-            lots: [],
-            totalRemaining: 0
-          });
-        } else {
-          setProductData(null);
-        }
+      if (!rawTerm.includes('-') && rawTerm.length > 2) {
+          searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
+      }
+      if (rawTerm.includes('-')) {
+          searchTerms.push(rawTerm.replace(/-/g, ''));
       }
 
+      const lotsRef = collection(db, 'inventory_lots');
+      const queryPromises = [];
+
+      searchTerms.forEach(t => {
+          queryPromises.push(getDocs(query(lotsRef, where('productId', '>=', t), where('productId', '<=', t + '\uf8ff'), limit(10))));
+          if (t === rawTerm) {
+              queryPromises.push(getDocs(query(lotsRef, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(10))));
+          }
+      });
+
+      const snapshots = await Promise.all(queryPromises);
+      const resultMap = new Map();
+
+      // 1. TÃŒM TRONG CACHE
+      const searchKey = fuzzyNormalize(term);
+      const matchedProducts = allProductsCache.filter(p => 
+          p.normName.includes(searchKey) || p.normId.includes(searchKey)
+      ).slice(0, 15);
+
+      matchedProducts.forEach(p => {
+          const uniqueKey = `PROD_${p.id}`;
+          resultMap.set(uniqueKey, {
+              key: uniqueKey,
+              type: 'product',
+              value: p.id,
+              subText: p.productName,
+              queryId: p.id
+          });
+      });
+
+      // 2. TÃŒM TRONG FIRESTORE
+      snapshots.forEach(snap => {
+          snap.docs.forEach(doc => {
+              const data = doc.data();
+              const isLotMatch = searchTerms[0] === data.lotNumber;
+              const uniqueKey = isLotMatch 
+                  ? `LOT_${data.lotNumber}_${data.productId}` 
+                  : `PROD_${data.productId}`;
+
+              if (isLotMatch) {
+                  resultMap.set(uniqueKey, {
+                      key: uniqueKey,
+                      type: 'lot',
+                      value: data.lotNumber,
+                      subText: `MÃ£: ${data.productId}`,
+                      queryId: data.productId 
+                  });
+              } else if (!resultMap.has(uniqueKey)) {
+                  resultMap.set(uniqueKey, {
+                      key: uniqueKey,
+                      type: 'product',
+                      value: data.productId,
+                      subText: data.productName,
+                      queryId: data.productId
+                  });
+              }
+          });
+      });
+
+      setCandidates(Array.from(resultMap.values()));
+
     } catch (error) {
-      console.error("Lá»—i tra cá»©u tá»“n kho:", error);
-      setProductData(null);
+      console.error("Lá»—i tra cá»©u:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allProductsCache]);
+
+  // --- HÃ€M XEM CHI TIáº¾T ---
+  const handleSelectCandidate = async (candidate) => {
+      setLoading(true);
+      try {
+          const productId = candidate.queryId;
+          const productDocRef = doc(db, 'products', productId);
+          const productSnap = await getDoc(productDocRef);
+          const productInfo = productSnap.exists() ? productSnap.data() : null;
+
+          if (!productInfo) {
+              setLoading(false);
+              return;
+          }
+
+          const lotsQuery = query(collection(db, 'inventory_lots'), where('productId', '==', productId), where('quantityRemaining', '>', 0));
+          const lotsSnap = await getDocs(lotsQuery);
+          const lots = lotsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+          const lotAggregator = new Map();
+          for (const lot of lots) {
+              if (lot.productId !== productId) continue;
+
+              const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)';
+              if (lotAggregator.has(lotKey)) {
+                  const existingLot = lotAggregator.get(lotKey);
+                  existingLot.quantityRemaining += lot.quantityRemaining;
+                  if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                      existingLot.expiryDate = lot.expiryDate;
+                  }
+              } else {
+                  lotAggregator.set(lotKey, { ...lot });
+              }
+          }
+          const aggregatedLots = Array.from(lotAggregator.values());
+          const totalRemaining = aggregatedLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+          setSelectedProductData({
+              generalInfo: { ...productInfo, productId: productId },
+              lots: aggregatedLots.sort((a, b) => {
+                  const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                  const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+                  if (dateA !== dateB) return dateA - dateB;
+                  return a.quantityRemaining - b.quantityRemaining;
+              }),
+              totalRemaining: totalRemaining
+          });
+      } catch (error) {
+          console.error("Lá»—i táº£i chi tiáº¿t:", error);
+      } finally {
+          setLoading(false);
+      }
+  };
 
   useEffect(() => {
     const debounce = setTimeout(() => {
-      performSearch(searchTerm);
+      if (searchTerm) performSearch(searchTerm);
+      else { setCandidates([]); setSelectedProductData(null); }
     }, 500); 
     return () => clearTimeout(debounce);
   }, [searchTerm, performSearch]);
+
+  const handleBack = () => {
+      setSelectedProductData(null);
+  };
 
   return (
     <div className={styles.container}>
@@ -4346,7 +5042,7 @@ const QuickStockLookup = () => {
           type="text" 
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          placeholder="Nháº­p MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..."
+          placeholder="TÃªn, MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..."
           autoFocus
         />
         <FiSearch />
@@ -4355,78 +5051,96 @@ const QuickStockLookup = () => {
       <div className={styles.resultsContainer}>
         {loading ? (
           <Spinner />
-        ) : productData ? (
-          <>
-            <div className={styles.generalInfoGrid}>
-              <div className={styles.gridItem}>
-                <strong>MÃ£ hÃ ng:</strong>
-                <p>{productData.generalInfo.productId}</p>
-              </div>
-              <div className={styles.gridItem}>
-                <strong>TÃªn hÃ ng:</strong>
-                <p>{productData.generalInfo.productName}</p>
-              </div>
-              <div className={styles.gridItem}>
-                <strong>ÄVT:</strong>
-                <p>{productData.generalInfo.unit}</p>
-              </div>
-              <div className={styles.gridItem}>
-                <strong>Quy cÃ¡ch:</strong>
-                <p>{productData.generalInfo.packaging}</p>
-              </div>
-              <div className={styles.gridItem}>
-                <strong>Nhiá»‡t Ä‘á»™ BQ:</strong>
-                <p>{productData.generalInfo.storageTemp}</p>
-              </div>
-              <div className={styles.gridItem}>
-                <strong>HÃ£ng SX:</strong>
-                <p>{productData.generalInfo.manufacturer}</p>
-              </div>
-              <div className={styles.gridItem}>
-                <strong>Team:</strong>
-                <p>{productData.generalInfo.team}</p>
-              </div>
-              {/* --- THÃŠM Má»šI Táº I ÄÃ‚Y --- */}
-<div className={styles.gridItem}>
-    <strong>NhÃ³m hÃ ng:</strong>
-    <p>{productData.generalInfo.subGroup}</p>
-</div>
-{/* ------------------------- */}
-              <div className={styles.gridItem} style={{gridColumn: '1 / -1'}}>
-                <strong>Tá»•ng tá»“n:</strong>
-                <p style={{color: 'green', fontSize: '1.2rem', fontWeight: 'bold'}}>{formatNumber(productData.totalRemaining)} {productData.generalInfo.unit}</p>
-              </div>
-            </div>
-
-            <div className={styles.lotList}>
-  <h4>Tá»“n kho theo lÃ´:</h4>
-  {productData.lots.length > 0 ? (
-    productData.lots.map(lot => {
-      // 2. TÃ­nh toÃ¡n class mÃ u sáº¯c dá»±a trÃªn HSD vÃ  NhÃ³m hÃ ng
-      const colorClass = getRowColorByExpiry(lot.expiryDate, productData.generalInfo.subGroup);
-      
-      return (
-        // 3. ThÃªm styles[colorClass] vÃ o className
-        <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
-          <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</span></div>
-          <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</span></div>
-          <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
-          {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
-        </div>
-      );
-    })
-  ) : (
-                <div className={styles.noResults}>
-                  <p>KhÃ´ng cÃ³ lÃ´ hÃ ng nÃ o cÃ²n tá»“n kho.</p>
-                </div>
-              )}
-            </div>
-          </>
         ) : (
-          <div className={styles.noResults}>
-            <FiAlertCircle />
-            <p>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£ nÃ o.</p>
-          </div>
+            <>
+                {/* 1. LIST Gá»¢I Ã */}
+                {!selectedProductData && candidates.length > 0 && (
+                    <div className={styles.candidatesList}>
+                        {candidates.map(item => (
+                            <div 
+                                key={item.key} 
+                                className={styles.candidateItem}
+                                onClick={() => handleSelectCandidate(item)}
+                            >
+                                <div className={styles.iconWrapper} style={{backgroundColor: item.type === 'product' ? '#e7f3ff' : '#e6fffa'}}>
+                                    {item.type === 'product' ? <FiBox color="#007bff"/> : <FiLayers color="#28a745"/>}
+                                </div>
+                                <div className={styles.textWrapper}>
+                                    {/* --- HIGHLIGHT CHO DANH SÃCH Gá»¢I Ã --- */}
+                                    <strong><HighlightText text={item.value} highlight={searchTerm} /></strong>
+                                    <span><HighlightText text={item.subText} highlight={searchTerm} /></span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* 2. CHI TIáº¾T Sáº¢N PHáº¨M */}
+                {selectedProductData && (
+                    <div>
+                        <button onClick={handleBack} className="btn-link" style={{marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px', padding: 0, cursor: 'pointer', background: 'none', border: 'none', color: '#007bff'}}>
+                            <FiArrowLeft /> Quay láº¡i káº¿t quáº£
+                        </button>
+                        
+                        <div className={styles.generalInfoGrid}>
+                            {/* --- HIGHLIGHT CHO THÃ”NG TIN CHUNG --- */}
+                            <div className={styles.gridItem}><strong>MÃ£ hÃ ng:</strong><p><HighlightText text={selectedProductData.generalInfo.productId} highlight={searchTerm} /></p></div>
+                            <div className={styles.gridItem}><strong>TÃªn hÃ ng:</strong><p><HighlightText text={selectedProductData.generalInfo.productName} highlight={searchTerm} /></p></div>
+                            <div className={styles.gridItem}><strong>ÄVT:</strong><p>{selectedProductData.generalInfo.unit}</p></div>
+                            <div className={styles.gridItem}><strong>Quy cÃ¡ch:</strong><p>{selectedProductData.generalInfo.packaging}</p></div>
+                            <div className={styles.gridItem}><strong>Nhiá»‡t Ä‘á»™ BQ:</strong><p>{selectedProductData.generalInfo.storageTemp}</p></div>
+                            <div className={styles.gridItem}><strong>HÃ£ng SX:</strong><p>{selectedProductData.generalInfo.manufacturer}</p></div>
+                            <div className={styles.gridItem}><strong>Team:</strong><p>{selectedProductData.generalInfo.team}</p></div>
+                            <div className={styles.gridItem}><strong>NhÃ³m hÃ ng:</strong><p>{selectedProductData.generalInfo.subGroup}</p></div>
+                            
+                            <div className={styles.gridItem} style={{gridColumn: '1 / -1', borderTop: '1px dashed #eee', paddingTop: '10px', marginTop: '5px'}}>
+                                <strong>Tá»•ng tá»“n:</strong>
+                                <p style={{color: 'green', fontSize: '1.2rem', fontWeight: 'bold'}}>
+                                    {formatNumber(selectedProductData.totalRemaining)} {selectedProductData.generalInfo.unit}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className={styles.lotList}>
+                            <h4>Tá»“n kho theo lÃ´:</h4>
+                            {selectedProductData.lots.length > 0 ? (
+                                selectedProductData.lots.map(lot => {
+                                    const colorClass = getRowColorByExpiry(lot.expiryDate, selectedProductData.generalInfo.subGroup);
+                                return (
+                                    <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
+                                    {/* --- HIGHLIGHT CHO Sá» LÃ” --- */}
+                                    <div><strong>Sá»‘ lÃ´:</strong><span><HighlightText text={lot.lotNumber || '(KhÃ´ng cÃ³)'} highlight={searchTerm} /></span></div>
+                                    <div style={{ alignItems: 'flex-start', marginTop: '4px' }}>
+                <strong style={{ marginTop: '2px' }}>HSD:</strong>
+                <div style={{ width: '180px' }}> {/* Cá»‘ Ä‘á»‹nh chiá»u rá»™ng Ä‘á»ƒ tháº³ng hÃ ng */}
+                    <ExpiryBadge 
+                        expiryDate={lot.expiryDate} 
+                        subGroup={selectedProductData.generalInfo.subGroup} 
+                        compact={true}       /* Hiá»ƒn thá»‹ dáº¡ng gá»n (1 dÃ²ng) */
+                        showProgressBar={false} /* Táº¯t thanh tiáº¿n trÃ¬nh cho Ä‘á»¡ rá»‘i máº¯t */
+                    />
+                </div>
+            </div>
+                                    <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)}</span></div>
+                                    {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
+                                    </div>
+                                );
+                                })
+                            ) : (
+                                <div className={styles.noResults}><p>Háº¿t hÃ ng.</p></div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* 3. KHÃ”NG CÃ“ Káº¾T QUáº¢ */}
+                {!selectedProductData && candidates.length === 0 && searchTerm && (
+                    <div className={styles.noResults}>
+                        <FiAlertCircle />
+                        <p>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£ nÃ o.</p>
+                    </div>
+                )}
+            </>
         )}
       </div>
     </div>
@@ -4434,7 +5148,6 @@ const QuickStockLookup = () => {
 };
 
 export default QuickStockLookup;
-
 
 
 
@@ -4526,8 +5239,8 @@ export default QuickStockLookup;
 .lotItem {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 10px 0;
+    gap: 8px; /* TÄƒng khoáº£ng cÃ¡ch giá»¯a cÃ¡c dÃ²ng lÃªn má»™t chÃºt */
+    padding: 12px 0;
     border-bottom: 1px solid #eee;
 }
 
@@ -4603,6 +5316,50 @@ export default QuickStockLookup;
 }
 .near-expiry-yellow strong { color: #856404 !important; }
 .near-expiry-yellow span { color: #856404 !important; }
+
+.candidatesList {
+    display: flex;
+    flex-direction: column;
+}
+
+.candidateItem {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.candidateItem:hover {
+    background-color: #f8f9fa;
+}
+
+.iconWrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 18px;
+}
+
+.textWrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.textWrapper strong {
+    font-size: 15px;
+    color: #333;
+}
+
+.textWrapper span {
+    font-size: 12px;
+    color: #666;
+}
 
 
 
@@ -5562,6 +6319,50 @@ export default ViewImportSlipModal;
 
 
 
+--- FILE: D:\quan-ly-kho\src\context\ThemeContext.jsx ---
+
+
+// src/context/ThemeContext.jsx
+
+import React, { createContext, useState, useEffect, useContext } from 'react';
+
+const ThemeContext = createContext();
+
+export const ThemeProvider = ({ children }) => {
+    // Kiá»ƒm tra xem trong mÃ¡y Ä‘Ã£ lÆ°u cháº¿ Ä‘á»™ dark chÆ°a
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem('app-theme');
+        return savedTheme === 'dark';
+    });
+
+    const toggleTheme = () => {
+        setIsDarkMode(prev => !prev);
+    };
+
+    // Má»—i khi biáº¿n isDarkMode thay Ä‘á»•i, ta cáº­p nháº­t class cho tháº» <body>
+    useEffect(() => {
+        const body = document.body;
+        if (isDarkMode) {
+            body.classList.add('dark-mode');
+            localStorage.setItem('app-theme', 'dark');
+        } else {
+            body.classList.remove('dark-mode');
+            localStorage.setItem('app-theme', 'light');
+        }
+    }, [isDarkMode]);
+
+    return (
+        <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+};
+
+// Hook Ä‘á»ƒ cÃ¡c file khÃ¡c gá»i dÃ¹ng dá»… dÃ ng
+export const useTheme = () => useContext(ThemeContext);
+
+
+
 --- FILE: D:\quan-ly-kho\src\context\UserContext.jsx ---
 
 
@@ -5627,6 +6428,7 @@ export const useAuth = () => {
 --- FILE: D:\quan-ly-kho\src\hooks\useFirestorePagination.js ---
 
 
+// src/hooks/useFirestorePagination.js
 import { useState, useEffect, useCallback } from 'react';
 import { getDocs, query, startAfter, limit } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -5639,6 +6441,13 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
     const [isLastPage, setIsLastPage] = useState(false);
 
     const fetchData = useCallback(async (targetPage, currentCursorHistory = [null]) => {
+        // --- Sá»¬A Lá»–I: Kiá»ƒm tra náº¿u baseQuery lÃ  null thÃ¬ khÃ´ng lÃ m gÃ¬ cáº£ ---
+        if (!baseQuery) {
+            setLoading(false);
+            return;
+        }
+        // ------------------------------------------------------------------
+
         setLoading(true);
         try {
             const cursor = currentCursorHistory[targetPage - 1];
@@ -5666,14 +6475,14 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
             }
         } catch (error) {
             console.error("Lá»—i khi phÃ¢n trang Firestore: ", error);
-            toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u trang.");
+            // CÃ³ thá»ƒ bá» toast nÃ y náº¿u muá»‘n im láº·ng khi lá»—i, hoáº·c giá»¯ láº¡i Ä‘á»ƒ debug
+            // toast.error("KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u trang."); 
             setDocuments([]);
         } finally {
             setLoading(false);
         }
     }, [baseQuery, pageSize]);
 
-    // HÃ€M Má»šI: Reset láº¡i tráº¡ng thÃ¡i vÃ  táº£i láº¡i trang Ä‘áº§u
     const reset = useCallback(() => {
         setPage(1);
         setCursorHistory([null]);
@@ -7523,25 +8332,40 @@ export default ImportListPage;
 
 // src/pages/InventoryPage.jsx
 import { formatNumber } from '../utils/numberUtils';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+// <-- THÃŠM doc, updateDoc
+import { collection, query, where, orderBy, Timestamp, getDocs, limit, startAfter, doc, updateDoc } from 'firebase/firestore'; 
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight, FiPrinter } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiPrinter, FiX } from 'react-icons/fi';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
-import { useRealtimeNotification } from '../hooks/useRealtimeNotification'; // <-- THÃŠM DÃ’NG NÃ€Y
-import NewDataNotification from '../components/NewDataNotification'; // <-- THÃŠM DÃ’NG NÃ€Y
+import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
+import NewDataNotification from '../components/NewDataNotification';
 import { PAGE_SIZE } from '../constants';
+import { formatDate, getRowColorByExpiry, calculateLifePercentage } from '../utils/dateUtils';
+import { fuzzyNormalize } from '../utils/stringUtils'; 
+import HighlightText from '../components/HighlightText'; 
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import EmptyState from '../components/EmptyState';
+import ClickableCopy from '../components/ClickableCopy';
+import InlineEditCell from '../components/InlineEditCell'; // <-- IMPORT Má»šI
+import ExpiryBadge from '../components/ExpiryBadge'; // <-- ThÃªm dÃ²ng nÃ y
 
-// <-- THAY Äá»”I 1: Import thÃªm hÃ m getRowColorByExpiry
-import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
-
-// <-- THAY Äá»”I 2: XÃ³a toÃ n bá»™ hÃ m getRowColorByExpiry á»Ÿ Ä‘Ã¢y
+// --- HÃ€M CHUáº¨N HÃ“A CHUá»–I ---
+const localFuzzyNormalize = (str) => {
+    if (!str) return '';
+    return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/\s+/g, ""); 
+};
 
 const InventoryPage = ({ pageTitle }) => {
     const { role: userRole } = useAuth();
@@ -7549,84 +8373,226 @@ const InventoryPage = ({ pageTitle }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRowId, setSelectedRowId] = useState(null);
 
- // src/pages/InventoryPage.jsx
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [allProductsCache, setAllProductsCache] = useState([]);
+    const searchInputRef = useRef(null);
 
-const baseQuery = useMemo(() => {
-    const baseCollection = collection(db, "inventory_lots");
-    let constraints = [where("quantityRemaining", ">", 0)];
+    // --- PHÃM Táº®T "/" Äá»‚ TÃŒM KIáº¾M ---
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
-    // --- Logic lá»c theo vai trÃ² vÃ  cÃ¡c bá»™ lá»c khÃ¡c (giá»¯ nguyÃªn) ---
-    if (userRole === 'med') {
-        constraints.push(where("team", "==", "MED"));
-    } else if (userRole === 'bio') {
-        constraints.push(where("team", "==", "BIO"));
-    }
+    // --- 1. Táº¢I CACHE ---
+    useEffect(() => {
+        const fetchCache = async () => {
+            try {
+                const q = query(collection(db, 'products'));
+                const snapshot = await getDocs(q);
+                const cache = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    normName: localFuzzyNormalize(doc.data().productName || ''),
+                    normId: localFuzzyNormalize(doc.id)
+                }));
+                setAllProductsCache(cache);
+            } catch (err) {
+                console.error("Lá»—i táº£i cache sáº£n pháº©m:", err);
+            }
+        };
+        fetchCache();
+    }, []);
 
-    if (filters.team !== 'all') {
-        constraints.push(where("team", "==", filters.team));
-    }
-    if (filters.subGroup && filters.subGroup !== 'all') {
-        constraints.push(where("subGroup", "==", filters.subGroup));
-    }
+    // --- HÃ€M Xá»¬ LÃ Sá»¬A NHANH GHI CHÃš ---
+    const handleQuickUpdateNote = async (lotId, newNote) => {
+        // --- THÃŠM ÄOáº N NÃ€Y: Cháº·n náº¿u khÃ´ng pháº£i owner ---
+        if (userRole !== 'owner') {
+            toast.error("Báº¡n khÃ´ng cÃ³ quyá»n sá»­a ghi chÃº!");
+            return;
+        }
+        // ------------------------------------------------
+        try {
+            const lotRef = doc(db, 'inventory_lots', lotId);
+            await updateDoc(lotRef, { notes: newNote });
+            toast.success("ÄÃ£ cáº­p nháº­t ghi chÃº!");
+            
+            // Cáº­p nháº­t UI ngay láº­p tá»©c (Optimistic Update) Ä‘á»ƒ ngÆ°á»i dÃ¹ng khÃ´ng pháº£i chá» reload
+            // Cáº­p nháº­t cho cáº£ danh sÃ¡ch searchResults vÃ  inventory
+            const updateList = (list) => list.map(item => 
+                item.id === lotId ? { ...item, notes: newNote } : item
+            );
+            
+            if (isSearching) {
+                setSearchResults(prev => updateList(prev));
+            }
+            // LÆ°u Ã½: inventory Ä‘Æ°á»£c quáº£n lÃ½ bá»Ÿi hook, ta khÃ´ng set trá»±c tiáº¿p Ä‘Æ°á»£c dá»… dÃ ng, 
+            // nhÆ°ng hook realtime notification sáº½ lo pháº§n update sau Ä‘Ã³.
+            
+        } catch (error) {
+            console.error("Lá»—i cáº­p nháº­t ghi chÃº:", error);
+            toast.error("KhÃ´ng thá»ƒ cáº­p nháº­t ghi chÃº.");
+        }
+    };
 
-    // --- Logic sáº¯p xáº¿p Ä‘Ã£ Ä‘Æ°á»£c sá»­a lá»—i ---
-    if (filters.dateStatus === 'expired') {
-        constraints.push(where("expiryDate", "<", Timestamp.now()));
-        constraints.push(orderBy("expiryDate", "desc"));
-        constraints.push(orderBy("productId", "asc")); 
-    } else if (filters.dateStatus === 'near_expiry') {
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 210);
-        constraints.push(where("expiryDate", ">=", Timestamp.now()));
-        constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
-        constraints.push(orderBy("expiryDate", "asc")); 
-        constraints.push(orderBy("quantityRemaining", "asc")); // Sá»­a á»Ÿ Ä‘Ã¢y
-    } else if (searchTerm) {
-        const upperSearchTerm = searchTerm.toUpperCase();
-        constraints.push(where("productId", ">=", upperSearchTerm));
-        constraints.push(where("productId", "<=", upperSearchTerm + '\uf8ff'));
+    // --- 2. HÃ€M TÃŒM KIáº¾M ---
+    const performSearch = useCallback(async (term) => {
+        if (!term) {
+            setIsSearching(false);
+            setSearchResults([]);
+            return;
+        }
+        
+        setIsSearching(true); 
 
-        // Sá»¬A Lá»–I Táº I ÄÃ‚Y: ThÃªm quy táº¯c sáº¯p xáº¿p FEFO khi tÃ¬m kiáº¿m
-        constraints.push(orderBy("productId", "asc"), orderBy("expiryDate", "asc"), orderBy("quantityRemaining", "asc"));
+        try {
+            const rawTerm = term.trim().toUpperCase();
+            const searchKey = localFuzzyNormalize(term);
+            const matchedProducts = allProductsCache.filter(p => 
+                p.normName.includes(searchKey) || p.normId.includes(searchKey)
+            );
+            const productIdsFromCache = matchedProducts.map(p => p.id);
 
-    } else {
-        // Sáº¯p xáº¿p máº·c Ä‘á»‹nh Má»šI: Theo HSD gáº§n nháº¥t, sau Ä‘Ã³ lÃ  SL tá»“n Ã­t hÆ¡n lÃªn trÆ°á»›c
-        constraints.push(orderBy("productId", "asc"), orderBy("importDate", "asc"));
-    }
+            const lotsRef = collection(db, "inventory_lots");
+            const constraints = [where("quantityRemaining", ">", 0)];
 
-    return query(baseCollection, ...constraints);
-}, [userRole, filters, searchTerm]);
+            if (userRole === 'med') constraints.push(where("team", "==", "MED"));
+            else if (userRole === 'bio') constraints.push(where("team", "in", ["BIO", "Spare Part"]));
+
+            if (filters.team !== 'all') constraints.push(where("team", "==", filters.team));
+            if (filters.subGroup && filters.subGroup !== 'all') constraints.push(where("subGroup", "==", filters.subGroup));
+
+            const queryPromises = [];
+
+            if (productIdsFromCache.length > 0) {
+                const chunks = [];
+                const idsToQuery = productIdsFromCache.slice(0, 60); 
+                while (idsToQuery.length > 0) chunks.push(idsToQuery.splice(0, 30));
+                
+                chunks.forEach(chunk => {
+                    queryPromises.push(getDocs(query(lotsRef, ...constraints, where('productId', 'in', chunk))));
+                });
+            }
+
+            const searchTerms = [rawTerm];
+            if (!rawTerm.includes('-') && rawTerm.length > 2) searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
+            if (rawTerm.includes('-')) searchTerms.push(rawTerm.replace(/-/g, ''));
+
+            searchTerms.forEach(t => {
+                queryPromises.push(getDocs(query(lotsRef, ...constraints, where('productId', '>=', t), where('productId', '<=', t + '\uf8ff'), limit(50))));
+                if (t === rawTerm) {
+                    queryPromises.push(getDocs(query(lotsRef, ...constraints, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(50))));
+                }
+            });
+
+            const snapshots = await Promise.all(queryPromises);
+            const mergedMap = new Map();
+            snapshots.forEach(snap => {
+                snap.docs.forEach(doc => {
+                    mergedMap.set(doc.id, { id: doc.id, ...doc.data() });
+                });
+            });
+
+            const results = Array.from(mergedMap.values());
+            results.sort((a, b) => {
+                if (a.productId === rawTerm && b.productId !== rawTerm) return -1;
+                if (b.productId === rawTerm && a.productId !== rawTerm) return 1;
+                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+                if (dateA !== dateB) return dateA - dateB;
+                return a.quantityRemaining - b.quantityRemaining;
+            });
+
+            setSearchResults(results);
+
+        } catch (error) {
+            console.error("Lá»—i tÃ¬m kiáº¿m:", error);
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi tÃ¬m kiáº¿m.");
+        }
+    }, [userRole, filters, allProductsCache]);
+
+    useEffect(() => {
+        const debounce = setTimeout(() => {
+            if (searchTerm) {
+                performSearch(searchTerm);
+            } else {
+                setIsSearching(false);
+                setSearchResults([]);
+            }
+        }, 500);
+        return () => clearTimeout(debounce);
+    }, [searchTerm, performSearch]);
+
+    // --- Tá»° Äá»˜NG CUá»˜N LÃŠN Äáº¦U KHI CHUYá»‚N TRANG ---
+    const [page, setPage] = useState(1);
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [page]);
+
+    const baseQuery = useMemo(() => {
+        if (searchTerm) return null; 
+        
+        const baseCollection = collection(db, "inventory_lots");
+        let constraints = [where("quantityRemaining", ">", 0)];
+
+        if (userRole === 'med') constraints.push(where("team", "==", "MED"));
+        else if (userRole === 'bio') constraints.push(where("team", "==", "BIO"));
+        
+        if (filters.team !== 'all') constraints.push(where("team", "==", filters.team));
+        if (filters.subGroup && filters.subGroup !== 'all') constraints.push(where("subGroup", "==", filters.subGroup));
+        
+        if (filters.dateStatus === 'expired') {
+            constraints.push(where("expiryDate", "<", Timestamp.now()));
+            constraints.push(orderBy("expiryDate", "desc"));
+            constraints.push(orderBy("productId", "asc")); 
+        } else if (filters.dateStatus === 'near_expiry') {
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 210);
+            constraints.push(where("expiryDate", ">=", Timestamp.now()));
+            constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+            constraints.push(orderBy("expiryDate", "asc")); 
+            constraints.push(orderBy("quantityRemaining", "asc"));
+        } else {
+            constraints.push(orderBy("productId", "asc"), orderBy("importDate", "asc"));
+        }
+
+        return query(baseCollection, ...constraints);
+    }, [userRole, filters, searchTerm]);
 
     const {
         documents: inventory,
         loading,
         isLastPage,
-        page,
+        // page: pageFromHook, // Ta dÃ¹ng state page á»Ÿ trÃªn Ä‘á»ƒ control scroll
         nextPage,
         prevPage,
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
+    // Sync page state from hook (tÃ¹y chá»‰nh hook náº¿u cáº§n, á»Ÿ Ä‘Ã¢y ta giáº£ láº­p)
+    // Äá»ƒ Ä‘Æ¡n giáº£n, ta giá»¯ logic page cá»§a hook nhÆ°ng thÃªm useEffect scroll á»Ÿ trÃªn
+
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
-    // src/pages/InventoryPage.jsx
+    const dataToDisplay = useMemo(() => {
+        if (isSearching) return searchResults;
+        if (filters.dateStatus === 'near_expiry') {
+            return inventory.filter(lot => {
+                const colorClass = getRowColorByExpiry(lot.expiryDate, lot.subGroup);
+                return colorClass.includes('near-expiry') || colorClass.includes('expired');
+            });
+        }
+        return inventory;
+    }, [isSearching, searchResults, inventory, filters.dateStatus]);
 
-const filteredInventory = useMemo(() => {
-    if (filters.dateStatus !== 'near_expiry') {
-        return inventory; // Tráº£ vá» danh sÃ¡ch gá»‘c náº¿u khÃ´ng lá»c cáº­n date
-    }
-    // Lá»c láº¡i danh sÃ¡ch Ä‘Ã£ láº¥y vá» tá»« server
-    return inventory.filter(lot => {
-        const colorClass = getRowColorByExpiry(lot.expiryDate, lot.subGroup);
-        // Chá»‰ giá»¯ láº¡i nhá»¯ng item nÃ o thá»±c sá»± cÃ³ mÃ u cáº£nh bÃ¡o
-        return colorClass.includes('near-expiry') || colorClass.includes('expired');
-    });
-}, [inventory, filters.dateStatus]);
-
-    // <-- THÃŠM HÃ€M Xá»¬ LÃ REFRESH NÃ€Y
     const handleRefresh = () => {
-      dismissNewData();
-      reset();
+        dismissNewData();
+        reset();
     };
 
     const handleFilterChange = (filterName, value) => {
@@ -7635,6 +8601,27 @@ const filteredInventory = useMemo(() => {
 
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
+    };
+
+    const renderSkeleton = () => {
+        return Array(10).fill(0).map((_, index) => (
+            <tr key={`skeleton-${index}`}>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={100} /></td>
+                <td><Skeleton width={200} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={50} /></td>
+                <td><Skeleton width={120} /></td>
+                <td><Skeleton width={50} /></td>
+                <td><Skeleton width={50} /></td>
+                <td><Skeleton width={100} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={100} /></td>
+                <td><Skeleton width={80} /></td>
+                <td><Skeleton width={50} /></td>
+            </tr>
+        ));
     };
 
     return (
@@ -7652,83 +8639,155 @@ const filteredInventory = useMemo(() => {
                     onFilterChange={handleFilterChange} 
                     activeFilters={filters}
                 />
-                <div className="search-container">
+                <div className="search-container" style={{ position: 'relative' }}>
                      <input
+                        ref={searchInputRef}
                         type="text"
-                        placeholder="TÃ¬m theo MÃ£ hÃ ng..."
+                        placeholder="TÃ¬m theo TÃªn, MÃ£, Sá»‘ lÃ´... (PhÃ­m '/')"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
+                        style={{ paddingRight: '30px' }}
                     />
+                    {searchTerm && (
+                        <button 
+                            onClick={() => {
+                                setSearchTerm('');
+                                setIsSearching(false);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                right: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#999',
+                                cursor: 'pointer',
+                                padding: '5px',
+                                display: 'flex'
+                            }}
+                            title="XÃ³a tÃ¬m kiáº¿m"
+                        >
+                            <FiX />
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {loading ? <Spinner /> : (
-                <>
-                    <div className="table-container">
-                        <table className="inventory-table">
-                            <thead>
-                                <tr>
-                                    <th>NgÃ y nháº­p</th>
-                                    <th>MÃ£ hÃ ng</th>
-                                    <th>TÃªn hÃ ng</th>
-                                    <th>Sá»‘ lÃ´</th>
-                                    <th>HSD</th>
-                                    <th>ÄVT</th>
-                                    <th>Quy cÃ¡ch</th>
-                                    <th>SL Nháº­p</th>
-                                    <th>SL CÃ²n láº¡i</th>
-                                    <th>Ghi chÃº</th>
-                                    <th>Nhiá»‡t Ä‘á»™ BQ</th>
-                                    <th>HÃ£ng sáº£n xuáº¥t</th>
-                                    <th>NhÃ³m HÃ ng</th>
-                                    <th>Team</th>
-                                </tr>
-                            </thead>
-                            <tbody className="inventory-table-body">
-    {filteredInventory.map(lot => (
+            <div className="table-container">
+                <table className="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>NgÃ y nháº­p</th>
+                            <th>MÃ£ hÃ ng</th>
+                            <th>TÃªn hÃ ng</th>
+                            <th>Sá»‘ lÃ´</th>
+                            <th>HSD</th>
+                            <th>ÄVT</th>
+                            <th>Quy cÃ¡ch</th>
+                            <th>SL Nháº­p</th>
+                            <th>SL CÃ²n láº¡i</th>
+                            <th>Ghi chÃº</th>
+                            <th>Nhiá»‡t Ä‘á»™ BQ</th>
+                            <th>HÃ£ng sáº£n xuáº¥t</th>
+                            <th>NhÃ³m HÃ ng</th>
+                            <th>Team</th>
+                        </tr>
+                    </thead>
+                    <tbody className="inventory-table-body">
+                        {loading && !isSearching ? (
+                            <SkeletonTheme baseColor="#f3f3f3" highlightColor="#ecebeb">
+                                {renderSkeleton()}
+                            </SkeletonTheme>
+                        ) : (
+                            dataToDisplay.length > 0 ? (
+                                dataToDisplay.map(lot => (
                                     <tr 
                                         key={lot.id} 
                                         onClick={() => handleRowClick(lot.id)}
                                         className={`${selectedRowId === lot.id ? 'selected-row' : ''} ${getRowColorByExpiry(lot.expiryDate, lot.subGroup)}`}
                                     >
                                         <td data-label="NgÃ y nháº­p">{formatDate(lot.importDate)}</td>
-                                        <td data-label="MÃ£ hÃ ng">{lot.productId}</td>
-                                        <td data-label="TÃªn hÃ ng">{lot.productName}</td>
-                                        <td data-label="Sá»‘ lÃ´">{lot.lotNumber || '(KhÃ´ng cÃ³)'}</td>
-                                        <td data-label="HSD">{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
+                                        
+                                        <td data-label="MÃ£ hÃ ng">
+                                            <ClickableCopy text={lot.productId}>
+                                                <strong><HighlightText text={lot.productId} highlight={searchTerm} /></strong>
+                                            </ClickableCopy>
+                                        </td>
+                                        
+                                        <td data-label="TÃªn hÃ ng">
+                                            <ClickableCopy text={lot.productName}>
+                                                <HighlightText text={lot.productName} highlight={searchTerm} />
+                                            </ClickableCopy>
+                                        </td>
+                                        
+                                        <td data-label="Sá»‘ lÃ´">
+                                            <ClickableCopy text={lot.lotNumber || ''}>
+                                                <HighlightText text={lot.lotNumber || '(KhÃ´ng cÃ³)'} highlight={searchTerm} />
+                                            </ClickableCopy>
+                                        </td>
+                                        
+                                        <td data-label="HSD">
+    <ExpiryBadge 
+        expiryDate={lot.expiryDate} 
+        subGroup={lot.subGroup} 
+    />
+</td>
+
                                         <td data-label="ÄVT">{lot.unit}</td>
                                         <td data-label="Quy cÃ¡ch">{lot.packaging}</td>
                                         <td data-label="SL Nháº­p">{formatNumber(lot.quantityImported)}</td>
                                         <td data-label="SL CÃ²n láº¡i">{formatNumber(lot.quantityRemaining)}</td>
-                                        <td data-label="Ghi chÃº">{lot.notes}</td>
+                                        
+                                        {/* --- Cáº¬P NHáº¬T: DÃ™NG InlineEditCell CHO GHI CHÃš --- */}
+                                        <td data-label="Ghi chÃº">
+                                            <InlineEditCell 
+                                                id={lot.id} 
+                                                initialValue={lot.notes} 
+                                                onSave={handleQuickUpdateNote}
+                                                canEdit={userRole === 'owner'}  // <--- THÃŠM DÃ’NG NÃ€Y 
+                                            />
+                                        </td>
+                                        {/* ------------------------------------------------ */}
+
                                         <td data-label="Nhiá»‡t Ä‘á»™ BQ"><TempBadge temperature={lot.storageTemp} /></td>
                                         <td data-label="HÃ£ng sáº£n xuáº¥t">{lot.manufacturer}</td>
                                         <td data-label="NhÃ³m HÃ ng">{lot.subGroup}</td>
                                         <td data-label="Team"><TeamBadge team={lot.team} /></td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-             
-                    <div className="pagination-controls">
-                        <button onClick={prevPage} disabled={page <= 1 || loading}>
-                            <FiChevronLeft /> Trang TrÆ°á»›c
-                        </button>
-                        <span>Trang {page}</span>
-                        <button onClick={nextPage} disabled={isLastPage || loading}>
-                            Trang Tiáº¿p <FiChevronRight />
-                        </button>
-                    </div>
-                </>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="14">
+                                        <EmptyState 
+                                            message={isSearching ? `KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£ cho "${searchTerm}"` : 'ChÆ°a cÃ³ dá»¯ liá»‡u tá»“n kho.'} 
+                                            isSearch={isSearching}
+                                        />
+                                    </td>
+                                </tr>
+                            )
+                        )}
+                    </tbody>
+                </table>
+            </div>
+            
+            {!isSearching && !loading && dataToDisplay.length > 0 && (
+                <div className="pagination-controls">
+                    <button onClick={() => { prevPage(); setPage(p => Math.max(1, p - 1)); }} disabled={page <= 1}>
+                        <FiChevronLeft /> Trang TrÆ°á»›c
+                    </button>
+                    <span>Trang {page}</span>
+                    <button onClick={() => { nextPage(); if(!isLastPage) setPage(p => p + 1); }} disabled={isLastPage}>
+                        Trang Tiáº¿p <FiChevronRight />
+                    </button>
+                </div>
             )}
         </div>
     );
 };
 
 export default InventoryPage;
-
 
 
 
@@ -7752,8 +8811,10 @@ import {
     Timestamp,
     doc,
     getDoc,
-    onSnapshot
+    onSnapshot,
+    updateDoc
 } from 'firebase/firestore';
+import InlineEditCell from '../components/InlineEditCell'; // <-- Báº®T BUá»˜C
 import NewDataNotification from '../components/NewDataNotification';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
@@ -7764,10 +8825,12 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
-import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+import { formatDate, getRowColorByExpiry, calculateLifePercentage } from '../utils/dateUtils'; // <-- Bá»• sung calculateLifePercentage
 import HighlightText from '../components/HighlightText';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
+import { fuzzyNormalize } from '../utils/stringUtils';
+import ExpiryBadge from '../components/ExpiryBadge'; // <-- ThÃªm dÃ²ng nÃ y
 
 const PAGE_SIZE = 15;
 
@@ -7815,11 +8878,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
     });
     
     const [hasNewData, setHasNewData] = useState(false);
-    
-    // Äá»•i ref nÃ y Ä‘á»ƒ theo dÃµi thay Ä‘á»•i cá»§a products
-    // LÆ°u Ã½: ChÃºng ta dÃ¹ng snapshot listener trá»±c tiáº¿p, nÃªn ref nÃ y cÃ³ thá»ƒ khÃ´ng cáº§n thiáº¿t 
-    // náº¿u logic refresh dá»±a trÃªn snapshot metadata. 
-    // Tuy nhiÃªn, Ä‘á»ƒ giá»¯ logic cÅ© hoáº¡t Ä‘á»™ng, ta sáº½ giá»¯ láº¡i.
     const lastSeenSnapshotRef = useRef(null); 
 
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
@@ -7827,11 +8885,33 @@ const InventorySummaryPage = ({ pageTitle }) => {
     
     const [isExporting, setIsExporting] = useState(false);
 
-    // --- Tá»I Æ¯U HÃ“A 1: Query trá»±c tiáº¿p tá»« 'products' ---
+    const [allProductsCache, setAllProductsCache] = useState([]);
+
+    // --- 1. Táº¢I CACHE (Cháº¡y 1 láº§n) ---
+    useEffect(() => {
+        const fetchCache = async () => {
+            try {
+                const q = query(collection(db, 'products'));
+                const snapshot = await getDocs(q);
+                const cache = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    productName: doc.data().productName || '',
+                    team: doc.data().team,
+                    normName: fuzzyNormalize(doc.data().productName || ''),
+                    normId: fuzzyNormalize(doc.id)
+                }));
+                setAllProductsCache(cache);
+            } catch (err) {
+                console.error("Lá»—i táº£i cache:", err);
+            }
+        };
+        fetchCache();
+    }, []);
+
+    // --- QUERY CHÃNH (PHÃ‚N TRANG) ---
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
-            // THAY Äá»”I QUAN TRá»ŒNG: Äá»c tá»« 'products'
             const baseCollectionRef = collection(db, "products");
             let queryConstraints = [];
 
@@ -7850,8 +8930,11 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(where("subGroup", "==", filters.subGroup));
             }
 
+            // --- Sá»¬A Äá»”I: Bá»Ž Lá»ŒC DB Äá»‚ TRÃNH Lá»–I ---
+            // ChÃºng ta sáº½ lá»c totalRemaining > 0 á»Ÿ Client-side bÃªn dÆ°á»›i
+            // ---------------------------------------
+
             // 3. Lá»c theo Date & Sáº¯p xáº¿p
-            // LÆ°u Ã½: TrÆ°á»ng nearestExpiryDate giá» Ä‘Ã£ cÃ³ trong products nhá» script Ä‘á»“ng bá»™
             if (filters.dateStatus === 'expired') {
                 queryConstraints.push(where("nearestExpiryDate", "<", Timestamp.now()));
                 queryConstraints.push(orderBy("nearestExpiryDate", "desc"));
@@ -7864,7 +8947,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(orderBy("nearestExpiryDate", "asc"));
                 queryConstraints.push(orderBy(documentId(), "asc"));
             } else {
-                // Máº·c Ä‘á»‹nh sáº¯p xáº¿p theo ID (MÃ£ hÃ ng)
                 queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
@@ -7886,17 +8968,19 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 return;
             }
             
-            // Láº¥y dá»¯ liá»‡u trá»±c tiáº¿p, khÃ´ng cáº§n map thÃªm
-            const summaryDocs = mainSnapshot.docs.map(doc => ({ 
+            let summaryDocs = mainSnapshot.docs.map(doc => ({ 
                 id: doc.id, 
                 ...doc.data(),
-                // Äáº£m báº£o cÃ³ giÃ¡ trá»‹ máº·c Ä‘á»‹nh náº¿u dá»¯ liá»‡u cÅ© chÆ°a chuáº©n
                 totalRemaining: doc.data().totalRemaining ?? 0,
                 nearestExpiryDate: doc.data().nearestExpiryDate ?? null
             }));
+
+            // --- Sá»¬A Äá»”I: Lá»ŒC CLIENT-SIDE AN TOÃ€N ---
+            // LuÃ´n lá»c bá» hÃ ng cÃ³ tá»“n kho <= 0 trÆ°á»›c khi hiá»ƒn thá»‹
+            summaryDocs = summaryDocs.filter(item => item.totalRemaining > 0);
+            // ----------------------------------------
             
             setSummaries(summaryDocs);
-
             setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
             setIsLastPage(mainSnapshot.docs.length < PAGE_SIZE);
 
@@ -7912,48 +8996,73 @@ const InventorySummaryPage = ({ pageTitle }) => {
         }
     }, [filters, userRole]);
 
-    // --- Tá»I Æ¯U HÃ“A 2: TÃ¬m kiáº¿m gá»n nháº¹ hÆ¡n ---
+    // --- 2. HÃ€M TÃŒM KIáº¾M THÃ”NG MINH ---
     const performSearch = useCallback(async (term) => {
         if (!term) return;
         setLoading(true);
+        
         try {
-            const upperTerm = term.toUpperCase();
+            const rawTerm = term.trim().toUpperCase();
             let foundProductIds = new Set();
 
-            // CÃ¡ch 1: TÃ¬m theo ID (MÃ£ hÃ ng) trong products
-            // LÆ°u Ã½: Firestore khÃ´ng há»— trá»£ tÃ¬m 'contains' (chá»©a), chá»‰ cÃ³ 'startsWith'
-            const productsRef = collection(db, "products");
-            const idQuery = query(
-                productsRef, 
-                where(documentId(), ">=", upperTerm), 
-                where(documentId(), "<=", upperTerm + '\uf8ff'),
-                limit(30)
-            );
-            const idSnapshot = await getDocs(idQuery);
-            idSnapshot.forEach(doc => foundProductIds.add(doc.id));
+            // A. TÃŒM TRONG CACHE (TÃªn hÃ ng & MÃ£ hÃ ng fuzzy)
+            const searchKey = fuzzyNormalize(term);
+            const cachedMatches = allProductsCache.filter(p => {
+                const isAllowed = 
+                    (userRole === 'owner' || userRole === 'admin') ||
+                    (userRole === 'med' && p.team === 'MED') ||
+                    (userRole === 'bio' && (p.team === 'BIO' || p.team === 'Spare Part'));
+                
+                if (!isAllowed) return false;
+                return p.normName.includes(searchKey) || p.normId.includes(searchKey);
+            });
+            cachedMatches.forEach(p => foundProductIds.add(p.id));
 
-            // CÃ¡ch 2: TÃ¬m theo Sá»‘ lÃ´ trong inventory_lots -> suy ra MÃ£ hÃ ng
-            // Chá»‰ tÃ¬m náº¿u CÃ¡ch 1 tráº£ vá» Ã­t káº¿t quáº£ Ä‘á»ƒ tá»‘i Æ°u
-            if (foundProductIds.size < 5) {
-                const lotsRef = collection(db, "inventory_lots");
-                const lotQuery = query(lotsRef, where("lotNumber", "==", term), limit(20));
-                const lotSnapshot = await getDocs(lotQuery);
-                lotSnapshot.forEach(doc => foundProductIds.add(doc.data().productId));
+            // B. TÃŒM TRONG FIRESTORE (Smart ID & Sá»‘ lÃ´)
+            const searchTerms = [rawTerm];
+            if (!rawTerm.includes('-') && rawTerm.length > 2) {
+                searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
             }
+            if (rawTerm.includes('-')) {
+                searchTerms.push(rawTerm.replace(/-/g, ''));
+            }
+
+            const promises = [];
+            const lotsRef = collection(db, 'inventory_lots');
+            const productsRef = collection(db, 'products');
+
+            let lotQueryBase = lotsRef;
+            if (userRole === 'med') lotQueryBase = query(lotsRef, where('team', '==', 'MED'));
+            else if (userRole === 'bio') lotQueryBase = query(lotsRef, where('team', 'in', ['BIO', 'Spare Part']));
+
+            searchTerms.forEach(t => {
+                // 1. TÃ¬m MÃ£ hÃ ng (Prefix)
+                promises.push(getDocs(query(productsRef, where(documentId(), '>=', t), where(documentId(), '<=', t + '\uf8ff'), limit(20))));
+                
+                // 2. TÃ¬m Sá»‘ lÃ´ (Prefix) -> Suy ra MÃ£ hÃ ng
+                if (t === rawTerm) {
+                    promises.push(getDocs(query(lotQueryBase, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(20))));
+                }
+            });
+
+            const snapshots = await Promise.all(promises);
+
+            snapshots.forEach(snap => {
+                snap.docs.forEach(doc => {
+                    const id = doc.ref.parent.id === 'products' ? doc.id : doc.data().productId;
+                    foundProductIds.add(id);
+                });
+            });
 
             if (foundProductIds.size === 0) {
                 setSummaries([]);
                 setIsLastPage(true);
             } else {
-                // Lá»c láº¡i theo Role vÃ  Team (Client-side filtering cho Ä‘Æ¡n giáº£n vÃ¬ sá»‘ lÆ°á»£ng Ã­t)
                 let ids = Array.from(foundProductIds);
-                
-                // Fetch chi tiáº¿t cÃ¡c sáº£n pháº©m tÃ¬m Ä‘Æ°á»£c
-                // Firestore 'in' query giá»›i háº¡n 30 items
+                ids = ids.slice(0, 50);
+
                 const chunks = [];
-                while (ids.length > 0) {
-                    chunks.push(ids.splice(0, 30));
-                }
+                while (ids.length > 0) chunks.push(ids.splice(0, 30));
 
                 let finalResults = [];
                 for (const chunkIds of chunks) {
@@ -7961,33 +9070,46 @@ const InventorySummaryPage = ({ pageTitle }) => {
                     const snap = await getDocs(q);
                     snap.forEach(doc => {
                         const data = doc.data();
-                        // Kiá»ƒm tra quyá»n xem user cÃ³ Ä‘Æ°á»£c tháº¥y sáº£n pháº©m nÃ y khÃ´ng
+                        // --- Sá»¬A Äá»”I: CHá»ˆ THÃŠM Náº¾U Tá»”N KHO > 0 ---
+                        const totalRem = data.totalRemaining ?? 0;
+                        
                         const isAllowed = 
-                            (userRole === 'owner' || userRole === 'admin') ||
+                            ((userRole === 'owner' || userRole === 'admin') ||
                             (userRole === 'med' && data.team === 'MED') ||
-                            (userRole === 'bio' && data.team === 'BIO');
+                            (userRole === 'bio' && (data.team === 'BIO' || data.team === 'Spare Part'))) &&
+                            totalRem > 0; // <-- KIá»‚M TRA Tá»’N KHO Táº I ÄÃ‚Y
                         
                         if (isAllowed) {
                             finalResults.push({ 
                                 id: doc.id, 
                                 ...data,
-                                totalRemaining: data.totalRemaining ?? 0,
+                                totalRemaining: totalRem,
                                 nearestExpiryDate: data.nearestExpiryDate ?? null
                             });
                         }
+                        // -----------------------------------------
                     });
                 }
                 
+                finalResults.sort((a, b) => {
+                    const idA = a.id.toUpperCase();
+                    const idB = b.id.toUpperCase();
+                    if (idA === rawTerm) return -1;
+                    if (idB === rawTerm) return 1;
+                    return idA.localeCompare(idB);
+                });
+
                 setSummaries(finalResults);
-                setIsLastPage(true); // TÃ¬m kiáº¿m thÃ¬ khÃ´ng phÃ¢n trang tiáº¿p
+                setIsLastPage(true);
             }
 
         } catch (error) {
             console.error("Lá»—i khi tÃ¬m kiáº¿m:", error);
+            toast.error("Lá»—i khi tÃ¬m kiáº¿m.");
         } finally {
             setLoading(false);
         }
-    }, [userRole]);
+    }, [userRole, allProductsCache]);
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -8002,24 +9124,17 @@ const InventorySummaryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, filters, fetchData, performSearch]);
     
-    // --- Tá»I Æ¯U HÃ“A 3: Realtime Listener trÃªn 'product_summaries' hoáº·c 'products' ---
-    // Äá»ƒ trÃ¡nh tá»‘n kÃ©m, ta váº«n láº¯ng nghe 'product_summaries' vÃ¬ nÃ³ chá»‰ thay Ä‘á»•i khi tá»“n kho Ä‘á»•i.
-    // (Cloud Function váº«n update summary song song vá»›i products)
-    // Biáº¿n cá» Ä‘á»ƒ kiá»ƒm tra xem cÃ³ pháº£i láº§n load Ä‘áº§u tiÃªn khÃ´ng
+    // --- CÃC PHáº¦N CÃ’N Láº I GIá»® NGUYÃŠN ---
     const isFirstRun = useRef(true);
 
     useEffect(() => {
         const q = query(collection(db, "product_summaries"), orderBy("lastUpdatedAt", "desc"), limit(1));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            // 1. Náº¿u lÃ  láº§n cháº¡y Ä‘áº§u tiÃªn (vá»«a vÃ o trang), ta bá» qua khÃ´ng thÃ´ng bÃ¡o
             if (isFirstRun.current) {
                 isFirstRun.current = false;
                 return;
             }
-
             if (snapshot.empty) return;
-            
-            // 2. Tá»« láº§n thá»© 2 trá»Ÿ Ä‘i, náº¿u cÃ³ thay Ä‘á»•i má»›i bÃ¡o
             if (!snapshot.metadata.hasPendingWrites) {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added" || change.type === "modified") {
@@ -8081,24 +9196,34 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 where("quantityRemaining", ">", 0)
             );
             const lotsSnapshot = await getDocs(lotsQuery);
-            const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const allLots = lotsSnapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            }));
 
+            // --- ÄOáº N CODE ÄÃƒ Sá»¬A: Tá»”NG Há»¢P LÃ” HÃ€NG VÃ€ CHá»ŒN ID LOT Gáº¦N NHáº¤T Äá»‚ Sá»¬A NOTES ---
             const lotAggregator = new Map();
             for (const lot of allLots) {
                 const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)';
+                
                 if (lotAggregator.has(lotKey)) {
                     const existingLot = lotAggregator.get(lotKey);
                     existingLot.quantityRemaining += lot.quantityRemaining;
+                    
+                    // Logic FEFO: Chá»n lÃ´ cÃ³ HSD gáº§n nháº¥t Ä‘á»ƒ hiá»ƒn thá»‹ ID vÃ  Notes
                     if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
                         existingLot.expiryDate = lot.expiryDate;
+                        existingLot.id = lot.id; // **QUAN TRá»ŒNG: Láº¥y ID cá»§a lÃ´ gáº§n nháº¥t Ä‘á»ƒ edit**
+                        existingLot.notes = lot.notes; // **Láº¥y Notes cá»§a lÃ´ gáº§n nháº¥t**
                     }
                 } else {
+                    // Táº¡o entry má»›i, sá»­ dá»¥ng ID vÃ  Notes cá»§a lÃ´ hÃ ng nÃ y
                     lotAggregator.set(lotKey, { ...lot });
                 }
             }
             const aggregatedLots = Array.from(lotAggregator.values());
+            // --- Káº¾T THÃšC ÄOáº N CODE ÄÃƒ Sá»¬A ---
 
-            // Logic sáº¯p xáº¿p an toÃ n (ÄÃ£ sá»­a tá»« trÆ°á»›c)
             aggregatedLots.sort((a, b) => {
                 const getTime = (dateObj) => {
                     if (!dateObj) return Infinity;
@@ -8149,6 +9274,43 @@ const InventorySummaryPage = ({ pageTitle }) => {
             setIsExporting(false);
         }
     };
+
+    // --- HÃ€M Má»šI: Cáº¬P NHáº¬T GHI CHÃš NHANH CHO LÃ” HÃ€NG ---
+const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
+    try {
+        const lotRef = doc(db, 'inventory_lots', lotId);
+        await updateDoc(lotRef, {
+            notes: newValue,
+            lastUpdatedAt: Timestamp.now() // Cáº­p nháº­t thá»i gian thay Ä‘á»•i
+        });
+        toast.success("Cáº­p nháº­t Ghi chÃº thÃ nh cÃ´ng!");
+
+        // Cáº­p nháº­t state cá»¥c bá»™ Ä‘á»ƒ giao diá»‡n pháº£n há»“i ngay láº­p tá»©c
+        setLotDetails(prev => {
+            // Láº·p qua táº¥t cáº£ product id
+            for (const productId in prev) {
+                const updatedLots = prev[productId].map(lot => {
+                    // TÃ¬m lot cÃ³ id trÃ¹ng vÃ  cáº­p nháº­t notes
+                    if (lot.id === lotId) {
+                        return { ...lot, notes: newValue };
+                    }
+                    return lot;
+                });
+                // Náº¿u tÃ¬m tháº¥y, tráº£ vá» state Ä‘Ã£ cáº­p nháº­t
+                if (updatedLots.some(lot => lot.id === lotId)) {
+                    return { ...prev, [productId]: updatedLots };
+                }
+            }
+            // Náº¿u khÃ´ng tÃ¬m tháº¥y (trÆ°á»ng há»£p hiáº¿m), tráº£ vá» state cÅ©
+            return prev;
+        });
+
+    } catch (error) {
+        console.error("Lá»—i khi cáº­p nháº­t ghi chÃº:", error);
+        toast.error("Lá»—i khi cáº­p nháº­t Ghi chÃº.");
+    }
+}, []);
+// ---------------------------------------------------
     
     const ALLOWED_EXPORT_ROLES = ['owner']; 
     const canExport = ALLOWED_EXPORT_ROLES.includes(userRole);
@@ -8196,7 +9358,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 <div className="search-container" style={{ flexGrow: 1, maxWidth: '400px' }}>
                     <input
                         type="text"
-                        placeholder="TÃ¬m theo MÃ£ hÃ ng..."
+                        placeholder="TÃ¬m theo TÃªn, MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..." // Cáº­p nháº­t Placeholder
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
@@ -8251,10 +9413,10 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                 {filteredSummaries.map(product => (
                                     <React.Fragment key={product.id}>
                                         <tr 
-                                            onClick={() => toggleRow(product.id)} 
-                                            style={{cursor: 'pointer'}}
-                                            className={getRowColorByExpiry(product.nearestExpiryDate, product.subGroup)}
-                                        >
+    onClick={() => toggleRow(product.id)} 
+    style={{cursor: 'pointer'}}
+    className={`${getRowColorByExpiry(product.nearestExpiryDate, product.subGroup)} ${expandedRows[product.id] ? 'expanded-row-active' : ''}`}
+>
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
                                             <td data-label="MÃ£ hÃ ng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
                                             <td data-label="TÃªn hÃ ng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
@@ -8280,14 +9442,95 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                                         ) : (
                                                             (lotDetails[product.id] && lotDetails[product.id].length > 0) ? (
                                                                 <>
-                                                                    <h4>Chi tiáº¿t cÃ¡c lÃ´ hÃ ng (FEFO):</h4>
+                                                                    <h4>
+    Chi tiáº¿t cÃ¡c lÃ´ hÃ ng 
+    <span style={{ 
+        fontWeight: 'bold', 
+        color: '#007bff', // MÃ u xanh ná»•i báº­t
+        marginLeft: '5px' 
+    }}>
+        (FEFO)
+    </span>
+    :
+</h4>
                                                                     <ul>
-                                                                        {lotDetails[product.id].map(lot => (
-                                                                            <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`}>
-                                                                                <span>LÃ´: <strong>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</strong></span>
-                                                                                <span>HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}</strong></span>
-                                                                                <span>Tá»“n: <strong>{formatNumber(lot.quantityRemaining)}</strong></span>
-                                                                            </li>
+                                                                        {lotDetails[product.id].map((lot, index) => ( // <-- Sá»¬A Lá»–I 1: ThÃªm (lot, index)
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <li 
+                                                                    key={`${lot.lotNumber || 'NoLot'}-${index}`} // <-- Sá»¬A Lá»–I 2: Key duy nháº¥t
+                                                                    className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`} 
+                                                                    style={{ 
+Â  Â  alignItems: 'center', 
+Â  Â  justifyContent: 'flex-start' 
+}}>
+Â  Â  
+    {/* DÃ’NG Má»šI: ÄÃNH Sá» THá»¨ Tá»° Æ¯U TIÃŠN FEFO */}
+    <span style={{ fontWeight: 'bold', marginRight: '20px', color: '#007bff', minWidth: '30px', textAlign: 'left' }}>
+        #{index + 1}
+    </span>
+    
+    {/* Cá»™t Sá»‘ LÃ´ */}
+    <span style={{ minWidth: '150px' }}>
+        LÃ´: <strong><HighlightText text={lot.lotNumber || '(KhÃ´ng cÃ³)'} highlight={searchTerm} /></strong>
+    </span>
+
+    {/* Cá»™t HSD - Thay tháº¿ code cÅ© */}
+<div style={{ minWidth: '160px', marginRight: '20px' }}>
+    <ExpiryBadge 
+        expiryDate={lot.expiryDate} 
+        subGroup={product.subGroup} // LÆ°u Ã½: Láº¥y subGroup tá»« product cha
+        showProgressBar={true}
+    />
+</div>
+
+    {/* Cá»™t Tá»“n kho */}
+    <span style={{ marginRight: '20px' }}>
+        Tá»“n: <strong>{formatNumber(lot.quantityRemaining)}</strong>
+    </span>
+    
+    {/* KHá»I 2: GHI CHÃš (Äáº©y sang MÃ©p Pháº£i) */}
+<div style={{ 
+    marginLeft: 'auto', 
+    minWidth: '120px', 
+    maxWidth: '250px', 
+    display: 'flex', 
+    justifyContent: 'flex-end',
+    alignItems: 'center'
+}}>
+    {/* --- BÆ°á»›c 1: Táº¡o biáº¿n kiá»ƒm tra xem cÃ³ ghi chÃº hay khÃ´ng --- */}
+    {(() => {
+        const hasNote = lot.notes && lot.notes.trim().length > 0;
+
+        return (
+            <InlineEditCell 
+                id={lot.id} 
+                initialValue={lot.notes} 
+                onSave={handleQuickUpdateNote} 
+                canEdit={userRole === 'owner'}
+                // --- BÆ°á»›c 2: Ãp dá»¥ng style dá»±a trÃªn biáº¿n hasNote ---
+                customStyle={{ 
+                    fontSize: '0.85em',
+                    padding: '4px 12px',
+                    minHeight: 'auto',
+                    textAlign: 'center', // Canh giá»¯a chá»¯ trong nÃºt
+                    width: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    borderRadius: '15px',
+                    
+                    // Náº¾U CÃ“ GHI CHÃš -> HIá»†N MÃ€U VÃ€NG
+                    // Náº¾U KHÃ”NG -> TRONG SUá»T
+                    backgroundColor: hasNote ? '#fff3cd' : 'transparent',
+                    color:           hasNote ? '#856404' : '#adb5bd', // MÃ u nÃ¢u Ä‘áº­m náº¿u cÃ³, mÃ u xÃ¡m nháº¡t náº¿u khÃ´ng
+                    border:          hasNote ? '1px solid #ffeeba' : '1px solid transparent',
+                    fontWeight:      hasNote ? 'bold' : 'normal',
+                    boxShadow:       hasNote ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
+                }} 
+            />
+        );
+    })()}
+</div>
+</li>
                                                                         ))}
                                                                     </ul>
                                                                 </>
@@ -8302,6 +9545,7 @@ const InventorySummaryPage = ({ pageTitle }) => {
                             </tbody>
                         </table>
                     </div>
+                    
                     {!searchTerm && (
                         <div className="pagination-controls">
                             <button onClick={handlePrevPage} disabled={page <= 1}>
@@ -8395,15 +9639,28 @@ const LotTracePage = () => {
 
       exportsSnapshot.forEach((doc) => {
         const ticket = doc.data();
-        const exportedItem = ticket.items.find((item) => item.lotNumber === lotNumber.trim());
-        if (exportedItem) {
+        
+        // --- Sá»¬A Äá»”I Táº I ÄÃ‚Y: Thay vÃ¬ .find(), ta dÃ¹ng .filter() vÃ  .reduce() Ä‘á»ƒ cá»™ng tá»•ng ---
+        
+        // 1. TÃ¬m Táº¤T Cáº¢ cÃ¡c item trong phiáº¿u nÃ y trÃ¹ng vá»›i sá»‘ lÃ´ Ä‘ang tÃ¬m
+        const matchingItems = ticket.items.filter((item) => item.lotNumber === lotNumber.trim());
+        
+        // 2. Náº¿u cÃ³ Ã­t nháº¥t 1 item trÃ¹ng khá»›p
+        if (matchingItems.length > 0) {
+          // 3. Cá»™ng dá»“n sá»‘ lÆ°á»£ng cá»§a táº¥t cáº£ cÃ¡c item Ä‘Ã³ láº¡i
+          const totalQuantityForLot = matchingItems.reduce((sum, item) => {
+             const qty = Number(item.quantityToExport || item.quantityExported || 0);
+             return sum + qty;
+          }, 0);
+
           history.push({
             ticketId: doc.id,
             exportDate: ticket.createdAt,
             customer: ticket.customer,
-            quantityExported: exportedItem.quantityToExport || exportedItem.quantityExported || 0,
+            quantityExported: totalQuantityForLot, // Sá»­ dá»¥ng tá»•ng Ä‘Ã£ cá»™ng dá»“n
           });
         }
+        // --- Káº¾T THÃšC Sá»¬A Äá»”I ---
       });
       setExportHistory(history);
       
@@ -8636,185 +9893,271 @@ export default LotTracePage;
 --- FILE: D:\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
 
 
+// src/pages/MobileInventoryPage.jsx
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-// --- THAY Äá»”I 1: Import thÃªm 'app' tá»« config vÃ  'httpsCallable' tá»« functions ---
 import { db, app } from '../firebaseConfig'; 
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, documentId, limit } from 'firebase/firestore';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiSearch, FiAlertCircle, FiMic } from 'react-icons/fi';
+import { FiSearch, FiAlertCircle, FiMic, FiBox, FiLayers, FiArrowLeft } from 'react-icons/fi';
 import styles from '../styles/MobileInventoryPage.module.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import companyLogo from '../assets/logo.png';
 import { toast } from 'react-toastify';
+import HighlightText from '../components/HighlightText'; // <-- IMPORT COMPONENT HIGHLIGHT
+import ExpiryBadge from '../components/ExpiryBadge';
 
-// --- THAY Äá»”I 2: Táº¡o má»™t káº¿t ná»‘i riÃªng Ä‘áº¿n server ChÃ¢u Ã ---
 const functionsAsia = getFunctions(app, 'asia-southeast1');
+
+// Chuyá»ƒn Ä‘á»•i chuá»—i: XÃ³a dáº¥u, xÃ³a khoáº£ng tráº¯ng, vá» chá»¯ thÆ°á»ng
+const fuzzyNormalize = (str) => {
+    if (!str) return '';
+    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+};
 
 const MobileInventoryPage = () => {
     const { role: userRole } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
-    const [productData, setProductData] = useState(null);
+    
+    const [candidates, setCandidates] = useState([]); 
+    const [selectedProductData, setSelectedProductData] = useState(null); 
+    const [allProductsCache, setAllProductsCache] = useState([]);
+    
     const [loading, setLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
     
-    // CÃ¡c Ref Ä‘á»ƒ quáº£n lÃ½ viá»‡c ghi Ã¢m
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
+    // --- Táº¢I CACHE KHI MOUNT ---
+    useEffect(() => {
+        const fetchAllProducts = async () => {
+            try {
+                const q = query(collection(db, 'products'));
+                const snapshot = await getDocs(q);
+                
+                const cache = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        productName: data.productName || '',
+                        team: data.team,
+                        normName: fuzzyNormalize(data.productName),
+                        normId: fuzzyNormalize(doc.id)
+                    };
+                });
+                setAllProductsCache(cache);
+            } catch (error) {
+                console.error("Lá»—i táº£i cache sáº£n pháº©m:", error);
+            }
+        };
+        fetchAllProducts();
+    }, []);
+
+    // --- HÃ€M TÃŒM KIáº¾M á»¨NG VIÃŠN ---
     const performSearch = useCallback(async (term) => {
         if (!term) {
-            setProductData(null);
+            setCandidates([]);
+            setSelectedProductData(null);
             return;
         }
         setLoading(true);
+        setSelectedProductData(null); 
+
         try {
-            const trimmedTerm = term.trim().toUpperCase();
+            const rawTerm = term.trim().toUpperCase();
+            const searchTerms = [rawTerm];
+            if (!rawTerm.includes('-') && rawTerm.length > 2) {
+                searchTerms.push(rawTerm.slice(0, 2) + '-' + rawTerm.slice(2));
+            }
+            if (rawTerm.includes('-')) {
+                searchTerms.push(rawTerm.replace(/-/g, ''));
+            }
+
             let baseQuery = collection(db, 'inventory_lots');
-            if (userRole === 'med') {
-                baseQuery = query(baseQuery, where('team', '==', 'MED'));
-            } else if (userRole === 'bio') {
-                baseQuery = query(baseQuery, where('team', 'in', ['BIO', 'Spare Part']));
-            }
-            const lotsByProductIdQuery = query(baseQuery, where('productId', '==', trimmedTerm));
-            const lotsByLotNumberQuery = query(baseQuery, where('lotNumber', '==', trimmedTerm));
-            const [byProductIdSnap, byLotNumberSnap] = await Promise.all([
-                getDocs(lotsByProductIdQuery),
-                getDocs(lotsByLotNumberQuery)
-            ]);
-            let lots = [
-                ...byProductIdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-                ...byLotNumberSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-            ];
-            const uniqueLots = Array.from(new Map(lots.map(item => [item.id, item])).values());
-            // Äoáº¡n code má»›i Ä‘á»ƒ thay tháº¿
-if (uniqueLots.length > 0) {
-    const productId = uniqueLots[0].productId;
-    const productDocRef = doc(db, 'products', productId);
-    const productSnap = await getDoc(productDocRef);
-    const productInfo = productSnap.exists() ? productSnap.data() : null;
+            if (userRole === 'med') baseQuery = query(baseQuery, where('team', '==', 'MED'));
+            else if (userRole === 'bio') baseQuery = query(baseQuery, where('team', 'in', ['BIO', 'Spare Part']));
 
-    if (productInfo) {
-        // Báº®T Äáº¦U LOGIC Má»šI: Gá»™p cÃ¡c lÃ´ cÃ³ cÃ¹ng sá»‘ lÃ´
-        const lotAggregator = new Map();
-        for (const lot of uniqueLots) {
-            if (lot.quantityRemaining <= 0) continue;
-
-            const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)'; // DÃ¹ng '(KhÃ´ng cÃ³)' lÃ m key náº¿u lotNumber lÃ  null
-            if (lotAggregator.has(lotKey)) {
-                const existingLot = lotAggregator.get(lotKey);
-                existingLot.quantityRemaining += lot.quantityRemaining;
-                // Æ¯u tiÃªn giá»¯ láº¡i HSD ngáº¯n nháº¥t
-                if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
-                    existingLot.expiryDate = lot.expiryDate;
+            const queryPromises = [];
+            searchTerms.forEach(t => {
+                queryPromises.push(getDocs(query(baseQuery, where('productId', '>=', t), where('productId', '<=', t + '\uf8ff'), limit(5))));
+                if (t === rawTerm) {
+                    queryPromises.push(getDocs(query(baseQuery, where('lotNumber', '>=', t), where('lotNumber', '<=', t + '\uf8ff'), limit(10))));
                 }
-            } else {
-                lotAggregator.set(lotKey, { ...lot });
-            }
-        }
-        const aggregatedLots = Array.from(lotAggregator.values());
-        // Káº¾T THÃšC LOGIC Má»šI
+            });
 
-        const totalRemaining = uniqueLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+            const snapshots = await Promise.all(queryPromises);
+            const resultMap = new Map();
 
-        setProductData({
-            generalInfo: { ...productInfo, productId: productId },
-            // THAY Äá»”I LOGIC Sáº®P Xáº¾P Táº I ÄÃ‚Y
-            lots: aggregatedLots.sort((a, b) => {
-                // Xá»­ lÃ½ trÆ°á»ng há»£p khÃ´ng cÃ³ HSD (Ä‘Æ°a xuá»‘ng cuá»‘i)
-                const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
-                const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+            // TÃ¬m Cache
+            const searchKey = fuzzyNormalize(term);
+            const matchedProducts = allProductsCache.filter(p => {
+                const isAllowed = 
+                    (userRole === 'owner' || userRole === 'admin') ||
+                    (userRole === 'med' && p.team === 'MED') ||
+                    (userRole === 'bio' && (p.team === 'BIO' || p.team === 'Spare Part'));
+                
+                if (!isAllowed) return false;
+                return p.normName.includes(searchKey) || p.normId.includes(searchKey);
+            }).slice(0, 15);
 
-                // 1. Æ¯u tiÃªn sáº¯p xáº¿p theo HSD tÄƒng dáº§n (date gáº§n nháº¥t lÃªn trÆ°á»›c)
-                if (dateA !== dateB) {
-                    return dateA - dateB;
-                }
+            matchedProducts.forEach(p => {
+                const uniqueKey = `PROD_${p.id}`;
+                resultMap.set(uniqueKey, {
+                    key: uniqueKey,
+                    type: 'product',
+                    value: p.id,
+                    subText: p.productName,
+                    queryId: p.id,
+                    lotNumberQuery: null
+                });
+            });
 
-                // 2. Náº¿u HSD báº±ng nhau, Æ°u tiÃªn sáº¯p xáº¿p theo sá»‘ lÆ°á»£ng tá»“n tÄƒng dáº§n (sá»‘ lÆ°á»£ng Ã­t hÆ¡n lÃªn trÆ°á»›c)
-                return a.quantityRemaining - b.quantityRemaining;
-            }),
-            totalRemaining: totalRemaining
-        });
-    } else {
-        setProductData(null);
-    }
-}
+            // TÃ¬m Firestore
+            snapshots.forEach(snap => {
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const isLotMatch = searchTerms[0] === data.lotNumber; 
+                    const uniqueKey = isLotMatch 
+                        ? `LOT_${data.lotNumber}_${data.productId}` 
+                        : `PROD_${data.productId}`;
+
+                    if (isLotMatch) {
+                        resultMap.set(uniqueKey, {
+                            key: uniqueKey,
+                            type: 'lot',
+                            value: data.lotNumber,
+                            subText: `Thuá»™c mÃ£: ${data.productId}`,
+                            queryId: data.productId,
+                            lotNumberQuery: data.lotNumber
+                        });
+                    } else if (!resultMap.has(uniqueKey)) {
+                         resultMap.set(uniqueKey, {
+                            key: uniqueKey,
+                            type: 'product',
+                            value: data.productId,
+                            subText: data.productName,
+                            queryId: data.productId,
+                            lotNumberQuery: null
+                        });
+                    }
+                });
+            });
+
+            setCandidates(Array.from(resultMap.values()));
+
         } catch (error) {
-            console.error("Lá»—i tra cá»©u tá»“n kho:", error);
-            setProductData(null);
+            console.error("Lá»—i tÃ¬m kiáº¿m:", error);
+            toast.error("Lá»—i khi tÃ¬m kiáº¿m.");
         } finally {
             setLoading(false);
         }
-    }, [userRole]);
+    }, [userRole, allProductsCache]);
+
+    // --- HÃ€M XEM CHI TIáº¾T ---
+    const handleSelectCandidate = async (candidate) => {
+        setLoading(true);
+        try {
+            const productId = candidate.queryId;
+            const productDocRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productDocRef);
+            const productInfo = productSnap.exists() ? productSnap.data() : null;
+
+            if (!productInfo) {
+                toast.warn("KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin sáº£n pháº©m nÃ y.");
+                setLoading(false);
+                return;
+            }
+
+            const lotsRef = collection(db, 'inventory_lots');
+            const q = query(lotsRef, where('productId', '==', productId), where('quantityRemaining', '>', 0));
+            const lotsSnap = await getDocs(q);
+            
+            const lots = lotsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            const lotAggregator = new Map();
+            for (const lot of lots) {
+                if (lot.productId !== productId) continue;
+
+                const lotKey = lot.lotNumber || '(KhÃ´ng cÃ³)';
+                if (lotAggregator.has(lotKey)) {
+                    const existingLot = lotAggregator.get(lotKey);
+                    existingLot.quantityRemaining += lot.quantityRemaining;
+                    if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
+                        existingLot.expiryDate = lot.expiryDate;
+                    }
+                } else {
+                    lotAggregator.set(lotKey, { ...lot });
+                }
+            }
+            const aggregatedLots = Array.from(lotAggregator.values());
+            const totalRemaining = aggregatedLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
+
+            setSelectedProductData({
+                generalInfo: { ...productInfo, productId: productId },
+                lots: aggregatedLots.sort((a, b) => {
+                    const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                    const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+                    if (dateA !== dateB) return dateA - dateB;
+                    return a.quantityRemaining - b.quantityRemaining;
+                }),
+                totalRemaining: totalRemaining
+            });
+
+        } catch (error) {
+            console.error("Lá»—i táº£i chi tiáº¿t:", error);
+            toast.error("KhÃ´ng thá»ƒ táº£i chi tiáº¿t.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const debounce = setTimeout(() => {
-            performSearch(searchTerm);
+            if (searchTerm) performSearch(searchTerm);
+            else setCandidates([]);
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchTerm, performSearch]);
 
     const handleVoiceSearch = async () => {
-        if (isListening) {
-            mediaRecorderRef.current?.stop();
-            setIsListening(false);
-            return;
-        }
-
+        if (isListening) { mediaRecorderRef.current?.stop(); setIsListening(false); return; }
         try {
-            // Xin quyá»n truy cáº­p micro
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
-            // Báº¯t Ä‘áº§u ghi Ã¢m
             mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm; codecs=opus' });
-            audioChunksRef.current = []; // XÃ³a cÃ¡c máº©u ghi Ã¢m cÅ©
-
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                audioChunksRef.current.push(event.data);
-            };
-
-            // Xá»­ lÃ½ khi káº¿t thÃºc ghi Ã¢m
+            audioChunksRef.current = [];
+            mediaRecorderRef.current.ondataavailable = (event) => audioChunksRef.current.push(event.data);
             mediaRecorderRef.current.onstop = async () => {
-                stream.getTracks().forEach(track => track.stop()); // Táº¯t micro
+                stream.getTracks().forEach(track => track.stop());
                 toast.info("Äang xá»­ lÃ½ Ã¢m thanh...");
-
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm; codecs=opus' });
-                
-                // Chuyá»ƒn file Ã¢m thanh thÃ nh chuá»—i base64
                 const reader = new FileReader();
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = async () => {
                     const base64Audio = reader.result.split(',')[1];
-                    
                     try {
-                        // --- THAY Äá»”I 3: Gá»i hÃ m báº±ng káº¿t ná»‘i Ä‘áº¿n server ChÃ¢u Ã ---
                         const transcribe = httpsCallable(functionsAsia, 'transcribeAudio');
                         const result = await transcribe({ audioData: base64Audio });
-                        
                         const transcript = result.data.transcript;
                         if (transcript) {
                             setSearchTerm(transcript.replace(/\s+/g, ''));
+                            setSelectedProductData(null); 
                             toast.success("ÄÃ£ nháº­n dáº¡ng!");
-                        } else {
-                            toast.warn("KhÃ´ng nghe rÃµ, vui lÃ²ng thá»­ láº¡i.");
-                        }
-                    } catch (error) {
-                        console.error("Lá»—i khi gá»i Cloud Function:", error);
-                        toast.error("Lá»—i mÃ¡y chá»§ khi xá»­ lÃ½ giá»ng nÃ³i.");
-                    }
+                        } else { toast.warn("KhÃ´ng nghe rÃµ."); }
+                    } catch (error) { console.error(error); toast.error("Lá»—i mÃ¡y chá»§."); }
                 };
             };
-
             mediaRecorderRef.current.start();
             setIsListening(true);
             toast.info("ðŸŽ¤ NÃ³i ngay...");
+        } catch (err) { console.error(err); toast.error("Lá»—i micro."); }
+    };
 
-        } catch (err) {
-            console.error("Lá»—i khi truy cáº­p micro:", err);
-            toast.error("KhÃ´ng thá»ƒ truy cáº­p micro. Vui lÃ²ng cáº¥p quyá»n.");
-        }
+    const handleBackToList = () => {
+        setSelectedProductData(null);
     };
 
     return (
@@ -8824,72 +10167,113 @@ if (uniqueLots.length > 0) {
                 <h2>Tra cá»©u tá»“n kho</h2>
             </div>
             
-            <div className={styles.searchBox}>
-                <input 
-                    type="text" 
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    placeholder="TÃ¬m MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..."
-                    autoFocus
-                />
-                <FiSearch className={styles.searchIcon} />
-                <button
-                    onClick={handleVoiceSearch}
-                    className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}
-                    title="TÃ¬m kiáº¿m báº±ng giá»ng nÃ³i"
-                >
-                    <FiMic />
-                </button>
-            </div>
-            
-            {loading ? (
-                <Spinner />
-            ) : productData ? (
-                <div className={styles.resultsContainer}>
-                    <div className={styles.generalInfoCard}>
-                        <h3>ThÃ´ng tin chung</h3>
-                        <div className={styles.infoGrid}>
-                            <div><strong>MÃ£ hÃ ng:</strong><span>{productData.generalInfo.productId}</span></div>
-                            <div><strong>TÃªn hÃ ng:</strong><span>{productData.generalInfo.productName}</span></div>
-                            <div><strong>ÄVT:</strong><span>{productData.generalInfo.unit}</span></div>
-                            <div><strong>Quy cÃ¡ch:</strong><span>{productData.generalInfo.packaging}</span></div>
-                            <div><strong>Nhiá»‡t Ä‘á»™ BQ:</strong><span>{productData.generalInfo.storageTemp}</span></div>
-                            <div><strong>HÃ£ng SX:</strong><span>{productData.generalInfo.manufacturer}</span></div>
-                            <div><strong>Team:</strong><span>{productData.generalInfo.team}</span></div>
-                            <div><strong>NhÃ³m hÃ ng:</strong><span>{productData.generalInfo.subGroup}</span></div>
-                        </div>
-                        <div className={styles.totalInfo}>
-                            <strong>Tá»•ng tá»“n:</strong>
-                            <span>{formatNumber(productData.totalRemaining)} {productData.generalInfo.unit}</span>
-                        </div>
-                    </div>
-                    <div className={styles.lotListCard}>
-    <h3>Tá»“n kho theo lÃ´</h3>
-    {productData.lots.length > 0 ? (
-        productData.lots.map(lot => {
-            // 2. TÃ­nh toÃ¡n mÃ u sáº¯c
-            const colorClass = getRowColorByExpiry(lot.expiryDate, productData.generalInfo.subGroup);
+            {!selectedProductData && (
+                <div className={styles.searchBox}>
+                    <input 
+                        type="text" 
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Nháº­p MÃ£ hÃ ng hoáº·c Sá»‘ lÃ´..."
+                        autoFocus
+                    />
+                    <FiSearch className={styles.searchIcon} />
+                    <button onClick={handleVoiceSearch} className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}>
+                        <FiMic />
+                    </button>
+                </div>
+            )}
 
-            return (
-                // 3. Ãp dá»¥ng class mÃ u vÃ o tháº» div
-                <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
-                    <div><strong>Sá»‘ lÃ´:</strong><span>{lot.lotNumber}</span></div>
-                    <div><strong>HSD:</strong><span>{lot.expiryDate ? formatDate(lot.expiryDate) : 'N/A'}</span></div>
-                    <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)} {productData.generalInfo.unit}</span></div>
-                    {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
-                </div>
-            );
-        })
-    ) : (
-                            <p className={styles.emptyMessage}>KhÃ´ng cÃ³ lÃ´ hÃ ng nÃ o cÃ²n tá»“n kho.</p>
-                        )}
-                    </div>
-                </div>
-            ) : (
-                <div className={styles.noResults}> 
-                    <FiAlertCircle />
-                    <p>{searchTerm ? 'KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£.' : 'Vui lÃ²ng nháº­p tá»« khÃ³a Ä‘á»ƒ tÃ¬m kiáº¿m.'}</p>
-                </div>
+            {loading ? <Spinner /> : (
+                <>
+                    {/* TRÆ¯á»œNG Há»¢P 1: HIá»‚N THá»Š DANH SÃCH Gá»¢I Ã */}
+                    {!selectedProductData && candidates.length > 0 && (
+                        <div className={styles.resultsContainer}>
+                            <p style={{fontSize: '13px', color: '#666', margin: '0 0 10px 5px'}}>TÃ¬m tháº¥y {candidates.length} káº¿t quáº£:</p>
+                            {candidates.map(item => (
+                                <div 
+                                    key={item.key} 
+                                    className={styles.generalInfoCard} 
+                                    style={{marginBottom: '10px', cursor: 'pointer', borderLeft: item.type === 'product' ? '5px solid #007bff' : '5px solid #28a745'}}
+                                    onClick={() => handleSelectCandidate(item)}
+                                >
+                                    <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+                                        <div style={{fontSize: '24px', color: item.type === 'product' ? '#007bff' : '#28a745'}}>
+                                            {item.type === 'product' ? <FiBox /> : <FiLayers />}
+                                        </div>
+                                        <div>
+                                            <h3 style={{margin: '0 0 5px 0', fontSize: '16px', color: '#333'}}>
+                                                {/* --- HIGHLIGHT Gá»¢I Ã MOBILE --- */}
+                                                <HighlightText text={item.value} highlight={searchTerm} />
+                                            </h3>
+                                            <p style={{margin: 0, fontSize: '13px', color: '#666'}}>
+                                                <HighlightText text={item.subText} highlight={searchTerm} />
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* TRÆ¯á»œNG Há»¢P 2: HIá»‚N THá»Š CHI TIáº¾T Sáº¢N PHáº¨M */}
+                    {selectedProductData && (
+                        <div className={styles.resultsContainer}>
+                            <button onClick={handleBackToList} className="btn-secondary" style={{marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px', width: 'fit-content'}}>
+                                <FiArrowLeft /> Quay láº¡i danh sÃ¡ch
+                            </button>
+
+                            <div className={styles.generalInfoCard}>
+                                <h3><HighlightText text={selectedProductData.generalInfo.productName} highlight={searchTerm} /></h3>
+                                <div className={styles.infoGrid}>
+                                    <div><strong>MÃ£ hÃ ng:</strong><span><HighlightText text={selectedProductData.generalInfo.productId} highlight={searchTerm} /></span></div>
+                                    <div><strong>ÄVT:</strong><span>{selectedProductData.generalInfo.unit}</span></div>
+                                    <div><strong>Quy cÃ¡ch:</strong><span>{selectedProductData.generalInfo.packaging}</span></div>
+                                    <div><strong>Nhiá»‡t Ä‘á»™ BQ:</strong><span>{selectedProductData.generalInfo.storageTemp}</span></div>
+                                    <div><strong>HÃ£ng SX:</strong><span>{selectedProductData.generalInfo.manufacturer}</span></div>
+                                    <div><strong>Team:</strong><span>{selectedProductData.generalInfo.team}</span></div>
+                                    <div><strong>NhÃ³m hÃ ng:</strong><span>{selectedProductData.generalInfo.subGroup}</span></div>
+                                </div>
+                                <div className={styles.totalInfo}>
+                                    <strong>Tá»•ng tá»“n:</strong>
+                                    <span>{formatNumber(selectedProductData.totalRemaining)} {selectedProductData.generalInfo.unit}</span>
+                                </div>
+                            </div>
+
+                            <div className={styles.lotListCard}>
+                                <h3>Chi tiáº¿t lÃ´ (FEFO)</h3>
+                                {selectedProductData.lots.length > 0 ? (
+                                    selectedProductData.lots.map(lot => {
+                                        const colorClass = getRowColorByExpiry(lot.expiryDate, selectedProductData.generalInfo.subGroup);
+                                        return (
+                                            <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
+                                                {/* --- HIGHLIGHT Sá» LÃ” --- */}
+                                                <div><strong>Sá»‘ lÃ´:</strong><span><HighlightText text={lot.lotNumber} highlight={searchTerm} /></span></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <strong>HSD:</strong>
+    <div style={{ textAlign: 'right', width: '60%' }}>
+        <ExpiryBadge expiryDate={lot.expiryDate} subGroup={selectedProductData.generalInfo.subGroup} compact={true} showProgressBar={false} />
+    </div>
+</div>
+                                                <div><strong>Tá»“n:</strong><span>{formatNumber(lot.quantityRemaining)}</span></div>
+                                                {lot.notes && <div><strong>Ghi chÃº:</strong><span>{lot.notes}</span></div>}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className={styles.emptyMessage}>KhÃ´ng cÃ³ tá»“n kho.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TRÆ¯á»œNG Há»¢P 3: KHÃ”NG TÃŒM THáº¤Y */}
+                    {!selectedProductData && candidates.length === 0 && searchTerm && (
+                        <div className={styles.noResults}> 
+                            <FiAlertCircle />
+                            <p>KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£ nÃ o phÃ¹ há»£p.</p>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
@@ -11838,8 +13222,10 @@ import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
+import { useAuth } from '../context/UserContext';
 
 const StocktakeListPage = () => {
+    const { role } = useAuth();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
@@ -11977,8 +13363,14 @@ useEffect(() => {
             />
 
             {isCreateModalOpen && (
-                <CreateStocktakeModal onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateStocktake} isCreating={isCreating} />
-            )}
+    <CreateStocktakeModal 
+        onClose={() => setIsCreateModalOpen(false)} 
+        // THAY onCreate={handleCreateStocktake} Báº°NG onSuccess={handleRefresh}
+        onSuccess={handleRefresh} 
+        // Truyá»n thÃªm userRole Ä‘á»ƒ Modal tá»± chá»n Team
+        userRole={role} // (Giáº£ sá»­ báº¡n Ä‘Ã£ láº¥y 'const { role } = useAuth();' á»Ÿ trÃªn)
+    />
+)}
             <div className="page-header">
                 <h1>Danh sÃ¡ch PhiÃªn Kiá»ƒm KÃª Kho</h1>
                 <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">Táº¡o PhiÃªn Má»›i</button>
@@ -14467,20 +15859,42 @@ export default useStocktakeStore;
   border-radius: 8px;
   width: 500px;
   max-width: 90%;
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
+  
+  /* --- CÃC DÃ’NG QUAN TRá»ŒNG Cáº¦N CÃ“ --- */
+  display: flex;          /* Sá»­ dá»¥ng Flexbox */
+  flex-direction: column; /* Xáº¿p theo chiá»u dá»c */
+  max-height: 90vh;       /* Giá»›i háº¡n chiá»u cao tá»‘i Ä‘a lÃ  90% chiá»u cao mÃ n hÃ¬nh */
+  position: relative;     /* Äá»ƒ xá»­ lÃ½ vá»‹ trÃ­ */
 }
 
+/* ThÃªm Ä‘oáº¡n nÃ y Ä‘á»ƒ xá»­ lÃ½ pháº§n Form á»Ÿ giá»¯a Modal */
+.modal-content .form-section {
+  overflow-y: auto;       /* Tá»± Ä‘á»™ng hiá»‡n thanh cuá»™n náº¿u ná»™i dung dÃ i */
+  flex-grow: 1;           /* Cho phÃ©p pháº§n nÃ y giÃ£n ra chiáº¿m chá»— trá»‘ng */
+  margin-bottom: 10px;    /* Táº¡o khoáº£ng cÃ¡ch vá»›i nÃºt báº¥m bÃªn dÆ°á»›i */
+  
+  /* Giá»¯ láº¡i style cÅ© náº¿u cÃ³, nhÆ°ng Ä‘áº£m báº£o overflow-y lÃ  auto */
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Äáº£m báº£o tiÃªu Ä‘á» luÃ´n hiá»ƒn thá»‹, khÃ´ng bá»‹ co láº¡i */
 .modal-content h2 {
   margin-top: 0;
+  flex-shrink: 0; 
 }
 
+/* Äáº£m báº£o khu vá»±c nÃºt báº¥m luÃ´n hiá»ƒn thá»‹ á»Ÿ Ä‘Ã¡y vÃ  khÃ´ng bá»‹ che */
 .modal-actions {
   display: grid; 
-  grid-template-columns: 1fr 1fr 1fr; 
+  grid-template-columns: 1fr 1fr; /* Chia Ä‘á»u 2 nÃºt (hoáº·c 1fr 1fr 1fr tÃ¹y code cÅ©) */
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 0; 
+  flex-shrink: 0; /* Quan trá»ng: KhÃ´ng Ä‘á»ƒ pháº§n nÃ y bá»‹ co láº¡i hoáº·c Ä‘áº©y ra ngoÃ i */
+  padding-top: 10px;
+  border-top: 1px solid #eee; /* ThÃªm Ä‘Æ°á»ng káº» má» ngÄƒn cÃ¡ch cho Ä‘áº¹p */
 }
 
 /* THÃŠM KHá»I MÃƒ NÃ€Y VÃ€O */
@@ -15792,6 +17206,51 @@ tbody tr.selected-row td {
   }
 }
 
+/* ThÃªm vÃ o cuá»‘i file src/styles/AdminLayout.css */
+
+/* --- EMPTY STATE (Tráº¡ng thÃ¡i trá»‘ng) --- */
+.empty-state-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #adb5bd; /* MÃ u xÃ¡m nháº¡t */
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-state-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+/* --- SKELETON LOADING (Cho cháº¿ Ä‘á»™ Dark mode náº¿u cÃ³) --- */
+/* react-loading-skeleton tá»± xá»­ lÃ½ tá»‘t, nhÆ°ng ta cÃ³ thá»ƒ tweak thÃªm náº¿u cáº§n */
+/* Trong file CSS cá»§a báº¡n */
+
+/* ÄÃ¡nh dáº¥u hÃ ng Ä‘ang Ä‘Æ°á»£c má»Ÿ rá»™ng */
+.expanded-row-active {
+    background-color: #e6f7ff !important; /* MÃ u xanh nháº¡t ná»•i báº­t */
+    border-bottom: 2px solid #007bff; /* ThÃªm Ä‘Æ°á»ng viá»n Ä‘á»ƒ tÃ¡ch biá»‡t vá»›i hÃ ng chi tiáº¿t */
+    font-weight: 600;
+}
+
+/* Äáº£m báº£o hÃ ng chi tiáº¿t (lot-details-row) luÃ´n cÃ³ mÃ u ná»n sÃ¡ng Ä‘á»ƒ dá»… Ä‘á»c */
+.lot-details-row {
+    background-color: #f7f9fb; /* MÃ u ná»n ráº¥t nháº¡t */
+}
+
 
 
 --- FILE: D:\quan-ly-kho\src\styles\Dashboard.css ---
@@ -16954,6 +18413,92 @@ export const getExpiryStatusPrefix = (expiryDate, subGroup) => {
   return '';
 };
 
+/**
+ * TÃ­nh pháº§n trÄƒm tuá»•i thá» cÃ²n láº¡i cá»§a sáº£n pháº©m.
+ * Giáº£ Ä‘á»‹nh: Má»‘c so sÃ¡nh lÃ  1 nÄƒm (365 ngÃ y) Ä‘á»ƒ hiá»ƒn thá»‹ trá»±c quan.
+ * - Náº¿u cÃ²n > 365 ngÃ y: Full cÃ¢y (100%)
+ * - Náº¿u Ä‘Ã£ háº¿t háº¡n: 0%
+ */
+export const calculateLifePercentage = (expiryDate) => {
+    if (!expiryDate) return 0;
+    
+    // Chuyá»ƒn Ä‘á»•i Firestore Timestamp hoáº·c String sang Date object
+    let exp;
+    if (expiryDate.toDate) {
+        exp = expiryDate.toDate();
+    } else if (expiryDate instanceof Date) {
+        exp = expiryDate;
+    } else {
+        // TrÆ°á»ng há»£p chuá»—i hoáº·c null
+        return 0;
+    }
+
+    const now = new Date();
+    // TÃ­nh sá»‘ ngÃ y cÃ²n láº¡i: (HSD - HÃ´m nay) / (ms * giÃ¢y * phÃºt * giá»)
+    const daysLeft = (exp - now) / (1000 * 60 * 60 * 24);
+
+    if (daysLeft <= 0) return 0; // ÄÃ£ háº¿t háº¡n
+
+    // Quy Æ°á»›c: Thanh hiá»ƒn thá»‹ tá»‘i Ä‘a cho 365 ngÃ y (1 nÄƒm)
+    // Báº¡n cÃ³ thá»ƒ tÄƒng sá»‘ nÃ y lÃªn 730 (2 nÄƒm) tÃ¹y Ä‘áº·c thÃ¹ hÃ ng hÃ³a
+    const standardLifeSpan = 365; 
+
+    let percent = (daysLeft / standardLifeSpan) * 100;
+    
+    // Giá»›i háº¡n trong khoáº£ng 0 - 100
+    return Math.min(100, Math.max(0, percent));
+};
+
+/**
+ * --- HÃ€M Má»šI ---
+ * Tráº£ vá» chuá»—i mÃ´ táº£ thá»i gian cÃ²n láº¡i.
+ * VÃ­ dá»¥: "QuÃ¡ háº¡n 5 ngÃ y", "HÃ´m nay háº¿t háº¡n", "CÃ²n 20 ngÃ y", "CÃ²n 5 thÃ¡ng".
+ */
+export const getRelativeTimeFromNow = (expiryDate) => {
+    if (!expiryDate) return '';
+
+    let exp;
+    if (expiryDate.toDate) {
+        exp = expiryDate.toDate();
+    } else if (expiryDate instanceof Date) {
+        exp = expiryDate;
+    } else {
+        return '';
+    }
+
+    // Reset giá» vá» 0 Ä‘á»ƒ so sÃ¡nh chÃ­nh xÃ¡c theo ngÃ y
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    exp.setHours(0, 0, 0, 0);
+
+    const diffTime = exp.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        return `QuÃ¡ háº¡n ${Math.abs(diffDays)} ngÃ y`;
+    }
+    if (diffDays === 0) {
+        return `Háº¿t háº¡n hÃ´m nay`;
+    }
+    if (diffDays <= 30) {
+        return `CÃ²n ${diffDays} ngÃ y`;
+    }
+    if (diffDays <= 60) {
+        return `CÃ²n ~1 thÃ¡ng`; // Hoáº·c tÃ­nh chÃ­nh xÃ¡c tuáº§n náº¿u muá»‘n
+    }
+    
+    // TÃ­nh theo thÃ¡ng náº¿u lá»›n hÆ¡n 60 ngÃ y
+    const months = Math.floor(diffDays / 30);
+    const remainingDays = diffDays % 30;
+    
+    if (months < 12) {
+        return `CÃ²n ${months} thÃ¡ng${remainingDays > 5 ? '+' : ''}`;
+    }
+    
+    const years = (months / 12).toFixed(1);
+    return `CÃ²n ${years} nÄƒm`;
+};
+
 
 
 --- FILE: D:\quan-ly-kho\src\utils\dateUtils.test.js ---
@@ -17690,6 +19235,22 @@ export const getConversionFactor = (packagingStr) => {
     }
     
     return 1;
+};
+
+/**
+ * --- HÃ€M Má»šI ---
+ * Chuáº©n hÃ³a chuá»—i Ä‘á»ƒ tÃ¬m kiáº¿m má» (Fuzzy Search):
+ * - Vá» chá»¯ thÆ°á»ng
+ * - Bá» dáº¥u tiáº¿ng Viá»‡t
+ * - Bá» toÃ n bá»™ khoáº£ng tráº¯ng
+ */
+export const fuzzyNormalize = (str) => {
+    if (!str) return '';
+    return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Bá» dáº¥u
+        .replace(/\s+/g, ""); // Bá» khoáº£ng tráº¯ng
 };
 
 

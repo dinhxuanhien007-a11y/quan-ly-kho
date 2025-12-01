@@ -145,3 +145,53 @@ export const calculateLifePercentage = (expiryDate) => {
     // Giới hạn trong khoảng 0 - 100
     return Math.min(100, Math.max(0, percent));
 };
+
+/**
+ * --- HÀM MỚI ---
+ * Trả về chuỗi mô tả thời gian còn lại.
+ * Ví dụ: "Quá hạn 5 ngày", "Hôm nay hết hạn", "Còn 20 ngày", "Còn 5 tháng".
+ */
+export const getRelativeTimeFromNow = (expiryDate) => {
+    if (!expiryDate) return '';
+
+    let exp;
+    if (expiryDate.toDate) {
+        exp = expiryDate.toDate();
+    } else if (expiryDate instanceof Date) {
+        exp = expiryDate;
+    } else {
+        return '';
+    }
+
+    // Reset giờ về 0 để so sánh chính xác theo ngày
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    exp.setHours(0, 0, 0, 0);
+
+    const diffTime = exp.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        return `Quá hạn ${Math.abs(diffDays)} ngày`;
+    }
+    if (diffDays === 0) {
+        return `Hết hạn hôm nay`;
+    }
+    if (diffDays <= 30) {
+        return `Còn ${diffDays} ngày`;
+    }
+    if (diffDays <= 60) {
+        return `Còn ~1 tháng`; // Hoặc tính chính xác tuần nếu muốn
+    }
+    
+    // Tính theo tháng nếu lớn hơn 60 ngày
+    const months = Math.floor(diffDays / 30);
+    const remainingDays = diffDays % 30;
+    
+    if (months < 12) {
+        return `Còn ${months} tháng${remainingDays > 5 ? '+' : ''}`;
+    }
+    
+    const years = (months / 12).toFixed(1);
+    return `Còn ${years} năm`;
+};

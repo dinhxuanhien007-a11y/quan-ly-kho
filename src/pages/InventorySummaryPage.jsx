@@ -15,8 +15,10 @@ import {
     Timestamp,
     doc,
     getDoc,
-    onSnapshot
+    onSnapshot,
+    updateDoc
 } from 'firebase/firestore';
+import InlineEditCell from '../components/InlineEditCell'; // <-- BẮT BUỘC
 import NewDataNotification from '../components/NewDataNotification';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
@@ -32,6 +34,7 @@ import HighlightText from '../components/HighlightText';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
 import { fuzzyNormalize } from '../utils/stringUtils';
+import ExpiryBadge from '../components/ExpiryBadge'; // <-- Thêm dòng này
 
 const PAGE_SIZE = 15;
 
@@ -397,22 +400,33 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 where("quantityRemaining", ">", 0)
             );
             const lotsSnapshot = await getDocs(lotsQuery);
-            const allLots = lotsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const allLots = lotsSnapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data() 
+            }));
 
+            // --- ĐOẠN CODE ĐÃ SỬA: TỔNG HỢP LÔ HÀNG VÀ CHỌN ID LOT GẦN NHẤT ĐỂ SỬA NOTES ---
             const lotAggregator = new Map();
             for (const lot of allLots) {
                 const lotKey = lot.lotNumber || '(Không có)';
+                
                 if (lotAggregator.has(lotKey)) {
                     const existingLot = lotAggregator.get(lotKey);
                     existingLot.quantityRemaining += lot.quantityRemaining;
+                    
+                    // Logic FEFO: Chọn lô có HSD gần nhất để hiển thị ID và Notes
                     if (lot.expiryDate && (!existingLot.expiryDate || lot.expiryDate.toDate() < existingLot.expiryDate.toDate())) {
                         existingLot.expiryDate = lot.expiryDate;
+                        existingLot.id = lot.id; // **QUAN TRỌNG: Lấy ID của lô gần nhất để edit**
+                        existingLot.notes = lot.notes; // **Lấy Notes của lô gần nhất**
                     }
                 } else {
+                    // Tạo entry mới, sử dụng ID và Notes của lô hàng này
                     lotAggregator.set(lotKey, { ...lot });
                 }
             }
             const aggregatedLots = Array.from(lotAggregator.values());
+            // --- KẾT THÚC ĐOẠN CODE ĐÃ SỬA ---
 
             aggregatedLots.sort((a, b) => {
                 const getTime = (dateObj) => {
@@ -464,6 +478,43 @@ const InventorySummaryPage = ({ pageTitle }) => {
             setIsExporting(false);
         }
     };
+
+    // --- HÀM MỚI: CẬP NHẬT GHI CHÚ NHANH CHO LÔ HÀNG ---
+const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
+    try {
+        const lotRef = doc(db, 'inventory_lots', lotId);
+        await updateDoc(lotRef, {
+            notes: newValue,
+            lastUpdatedAt: Timestamp.now() // Cập nhật thời gian thay đổi
+        });
+        toast.success("Cập nhật Ghi chú thành công!");
+
+        // Cập nhật state cục bộ để giao diện phản hồi ngay lập tức
+        setLotDetails(prev => {
+            // Lặp qua tất cả product id
+            for (const productId in prev) {
+                const updatedLots = prev[productId].map(lot => {
+                    // Tìm lot có id trùng và cập nhật notes
+                    if (lot.id === lotId) {
+                        return { ...lot, notes: newValue };
+                    }
+                    return lot;
+                });
+                // Nếu tìm thấy, trả về state đã cập nhật
+                if (updatedLots.some(lot => lot.id === lotId)) {
+                    return { ...prev, [productId]: updatedLots };
+                }
+            }
+            // Nếu không tìm thấy (trường hợp hiếm), trả về state cũ
+            return prev;
+        });
+
+    } catch (error) {
+        console.error("Lỗi khi cập nhật ghi chú:", error);
+        toast.error("Lỗi khi cập nhật Ghi chú.");
+    }
+}, []);
+// ---------------------------------------------------
     
     const ALLOWED_EXPORT_ROLES = ['owner']; 
     const canExport = ALLOWED_EXPORT_ROLES.includes(userRole);
@@ -566,10 +617,10 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                 {filteredSummaries.map(product => (
                                     <React.Fragment key={product.id}>
                                         <tr 
-                                            onClick={() => toggleRow(product.id)} 
-                                            style={{cursor: 'pointer'}}
-                                            className={getRowColorByExpiry(product.nearestExpiryDate, product.subGroup)}
-                                        >
+    onClick={() => toggleRow(product.id)} 
+    style={{cursor: 'pointer'}}
+    className={`${getRowColorByExpiry(product.nearestExpiryDate, product.subGroup)} ${expandedRows[product.id] ? 'expanded-row-active' : ''}`}
+>
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
                                             <td data-label="Mã hàng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
                                             <td data-label="Tên hàng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
@@ -595,51 +646,95 @@ const InventorySummaryPage = ({ pageTitle }) => {
                                                         ) : (
                                                             (lotDetails[product.id] && lotDetails[product.id].length > 0) ? (
                                                                 <>
-                                                                    <h4>Chi tiết các lô hàng (FEFO):</h4>
+                                                                    <h4>
+    Chi tiết các lô hàng 
+    <span style={{ 
+        fontWeight: 'bold', 
+        color: '#007bff', // Màu xanh nổi bật
+        marginLeft: '5px' 
+    }}>
+        (FEFO)
+    </span>
+    :
+</h4>
                                                                     <ul>
-                                                                        {lotDetails[product.id].map(lot => (
-                                                                            <li key={lot.id} className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`} style={{ alignItems: 'center' }}>
-                                                                                
-                                                                                {/* Cột Số Lô */}
-                                                                                <span style={{ minWidth: '150px' }}>
-                                                                                    Lô: <strong><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></strong>
-                                                                                </span>
+                                                                        {lotDetails[product.id].map((lot, index) => ( // <-- SỬA LỖI 1: Thêm (lot, index)
+                                                                            <li 
+                                                                    key={`${lot.lotNumber || 'NoLot'}-${index}`} // <-- SỬA LỖI 2: Key duy nhất
+                                                                    className={`lot-item ${getLotItemColorClass(lot.expiryDate, product.subGroup)}`} 
+                                                                    style={{ 
+    alignItems: 'center', 
+    justifyContent: 'flex-start' 
+}}>
+    
+    {/* DÒNG MỚI: ĐÁNH SỐ THỨ TỰ ƯU TIÊN FEFO */}
+    <span style={{ fontWeight: 'bold', marginRight: '20px', color: '#007bff', minWidth: '30px', textAlign: 'left' }}>
+        #{index + 1}
+    </span>
+    
+    {/* Cột Số Lô */}
+    <span style={{ minWidth: '150px' }}>
+        Lô: <strong><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></strong>
+    </span>
 
-                                                                                {/* --- CẬP NHẬT: CỘT HSD CÓ THANH TUỔI THỌ --- */}
-                                                                                <div style={{ display: 'flex', flexDirection: 'column', minWidth: '140px', marginRight: '20px' }}>
-                                                                                    <span style={{ fontSize: '14px' }}>
-                                                                                        HSD: <strong>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</strong>
-                                                                                    </span>
-                                                                                    
-                                                                                    {/* Thanh tuổi thọ */}
-                                                                                    {lot.expiryDate && (
-                                                                                        <div style={{ 
-                                                                                            width: '100%', 
-                                                                                            height: '5px', 
-                                                                                            backgroundColor: 'rgba(0,0,0,0.1)', /* Màu nền mờ để nổi trên mọi màu background */
-                                                                                            borderRadius: '3px',
-                                                                                            marginTop: '4px',
-                                                                                            overflow: 'hidden'
-                                                                                        }}>
-                                                                                            <div style={{
-                                                                                                width: `${calculateLifePercentage(lot.expiryDate)}%`,
-                                                                                                height: '100%',
-                                                                                                borderRadius: '3px',
-                                                                                                backgroundColor: calculateLifePercentage(lot.expiryDate) > 50 
-                                                                                                    ? '#28a745' 
-                                                                                                    : (calculateLifePercentage(lot.expiryDate) > 20 ? '#ffc107' : '#dc3545'),
-                                                                                                transition: 'width 0.5s ease'
-                                                                                            }}></div>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                                {/* ------------------------------------------- */}
+    {/* Cột HSD - Thay thế code cũ */}
+<div style={{ minWidth: '160px', marginRight: '20px' }}>
+    <ExpiryBadge 
+        expiryDate={lot.expiryDate} 
+        subGroup={product.subGroup} // Lưu ý: Lấy subGroup từ product cha
+        showProgressBar={true}
+    />
+</div>
 
-                                                                                {/* Cột Tồn kho */}
-                                                                                <span>
-                                                                                    Tồn: <strong>{formatNumber(lot.quantityRemaining)}</strong>
-                                                                                </span>
-                                                                            </li>
+    {/* Cột Tồn kho */}
+    <span style={{ marginRight: '20px' }}>
+        Tồn: <strong>{formatNumber(lot.quantityRemaining)}</strong>
+    </span>
+    
+    {/* KHỐI 2: GHI CHÚ (Đẩy sang Mép Phải) */}
+<div style={{ 
+    marginLeft: 'auto', 
+    minWidth: '120px', 
+    maxWidth: '250px', 
+    display: 'flex', 
+    justifyContent: 'flex-end',
+    alignItems: 'center'
+}}>
+    {/* --- Bước 1: Tạo biến kiểm tra xem có ghi chú hay không --- */}
+    {(() => {
+        const hasNote = lot.notes && lot.notes.trim().length > 0;
+
+        return (
+            <InlineEditCell 
+                id={lot.id} 
+                initialValue={lot.notes} 
+                onSave={handleQuickUpdateNote} 
+                canEdit={userRole === 'owner'}
+                // --- Bước 2: Áp dụng style dựa trên biến hasNote ---
+                customStyle={{ 
+                    fontSize: '0.85em',
+                    padding: '4px 12px',
+                    minHeight: 'auto',
+                    textAlign: 'center', // Canh giữa chữ trong nút
+                    width: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    borderRadius: '15px',
+                    
+                    // NẾU CÓ GHI CHÚ -> HIỆN MÀU VÀNG
+                    // NẾU KHÔNG -> TRONG SUỐT
+                    backgroundColor: hasNote ? '#fff3cd' : 'transparent',
+                    color:           hasNote ? '#856404' : '#adb5bd', // Màu nâu đậm nếu có, màu xám nhạt nếu không
+                    border:          hasNote ? '1px solid #ffeeba' : '1px solid transparent',
+                    fontWeight:      hasNote ? 'bold' : 'normal',
+                    boxShadow:       hasNote ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
+                }} 
+            />
+        );
+    })()}
+</div>
+</li>
                                                                         ))}
                                                                     </ul>
                                                                 </>
