@@ -120,7 +120,37 @@ const QuickStockLookup = () => {
           });
       });
 
-      setCandidates(Array.from(resultMap.values()));
+      // --- BẮT ĐẦU SỬA: Tách biến và thêm logic tự động chọn ---
+      
+      // 1. Tạo biến danh sách kết quả thay vì setCandidates ngay
+      const results = Array.from(resultMap.values());
+
+      // 2. Chuẩn hóa từ khóa tìm kiếm (bỏ khoảng trắng, dấu gạch ngang, chữ thường)
+      // Biến rawTerm đã có sẵn ở đầu hàm performSearch
+      const cleanInput = rawTerm.toLowerCase().replace(/-/g, '');
+
+      // 3. Tìm kết quả trùng khớp chính xác
+      const exactMatch = results.find(item => {
+          // Lấy giá trị hiển thị (value) và ID gốc (queryId) để so sánh
+          const val = (item.value || '').toLowerCase().replace(/-/g, ''); 
+          const qId = (item.queryId || '').toLowerCase().replace(/-/g, ''); 
+          
+          // So sánh: Trùng với giá trị hiển thị (Số lô/Mã hàng) HOẶC trùng với Mã hàng gốc
+          return val === cleanInput || qId === cleanInput;
+      });
+
+      // 4. Nếu tìm thấy chính xác -> Chọn luôn và dừng hàm
+      if (exactMatch) {
+          handleSelectCandidate(exactMatch);
+          setCandidates([]); // Xóa danh sách gợi ý để giao diện sạch sẽ
+          setLoading(false);
+          return; 
+      }
+      
+      // 5. Nếu không trùng chính xác thì mới hiển thị danh sách
+      setCandidates(results);
+
+      // --- KẾT THÚC SỬA ---
 
     } catch (error) {
       console.error("Lỗi tra cứu:", error);

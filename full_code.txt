@@ -16142,6 +16142,12 @@ tr.near-expiry-orange td { background-color: #ffe8cc !important; color: #5a5a5a 
 tr.near-expiry-red td { background-color: #f8d7da !important; color: #5a5a5a !important; }
 tr.expired-black td { background-color: #212529 !important; color: #fff !important; }
 
+/* ThÃªm Ä‘iá»ƒm nháº¥n á»Ÿ Ä‘áº§u dÃ²ng Ä‘á»ƒ ngÆ°á»i dÃ¹ng dá»… nháº­n biáº¿t */
+tr.near-expiry-yellow td:first-child { border-left: 5px solid #ffc107; }
+tr.near-expiry-orange td:first-child { border-left: 5px solid #fd7e14; }
+tr.near-expiry-red td:first-child    { border-left: 5px solid #dc3545; }
+tr.expired-black td:first-child      { border-left: 5px solid #343a40; }
+
 /* In Ä‘áº­m chá»¯ cho cÃ¡c dÃ²ng cáº£nh bÃ¡o */
 tr.near-expiry-yellow td,
 tr.near-expiry-orange td,

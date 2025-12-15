@@ -152,7 +152,37 @@ const MobileInventoryPage = () => {
                 });
             });
 
-            setCandidates(Array.from(resultMap.values()));
+            // --- BẮT ĐẦU SỬA: Logic tự động chọn cho Mobile ---
+
+            // 1. Tạo biến danh sách kết quả
+            const results = Array.from(resultMap.values());
+
+            // 2. Chuẩn hóa từ khóa (rawTerm có sẵn ở trên)
+            const cleanInput = rawTerm.toLowerCase().replace(/-/g, '');
+
+            // 3. Tìm kết quả trùng khớp
+            const exactMatch = results.find(item => {
+                const val = (item.value || '').toLowerCase().replace(/-/g, '');
+                const qId = (item.queryId || '').toLowerCase().replace(/-/g, '');
+                // Mobile có thêm lotNumberQuery để check
+                const lot = (item.lotNumberQuery || '').toLowerCase().replace(/-/g, ''); 
+
+                // So sánh: Trùng giá trị hiển thị OR Mã hàng OR Số lô cụ thể
+                return val === cleanInput || qId === cleanInput || lot === cleanInput;
+            });
+
+            // 4. Nếu tìm thấy chính xác -> Chọn ngay
+            if (exactMatch) {
+                handleSelectCandidate(exactMatch);
+                setCandidates([]); 
+                setLoading(false);
+                return; // Dừng hàm tại đây
+            }
+
+            // 5. Nếu không thì hiển thị danh sách như cũ
+            setCandidates(results); 
+
+            // --- KẾT THÚC SỬA ---
 
         } catch (error) {
             console.error("Lỗi tìm kiếm:", error);
