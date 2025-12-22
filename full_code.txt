@@ -4961,7 +4961,37 @@ const QuickStockLookup = () => {
           });
       });
 
-      setCandidates(Array.from(resultMap.values()));
+      // --- Báº®T Äáº¦U Sá»¬A: TÃ¡ch biáº¿n vÃ  thÃªm logic tá»± Ä‘á»™ng chá»n ---
+      
+      // 1. Táº¡o biáº¿n danh sÃ¡ch káº¿t quáº£ thay vÃ¬ setCandidates ngay
+      const results = Array.from(resultMap.values());
+
+      // 2. Chuáº©n hÃ³a tá»« khÃ³a tÃ¬m kiáº¿m (bá» khoáº£ng tráº¯ng, dáº¥u gáº¡ch ngang, chá»¯ thÆ°á»ng)
+      // Biáº¿n rawTerm Ä‘Ã£ cÃ³ sáºµn á»Ÿ Ä‘áº§u hÃ m performSearch
+      const cleanInput = rawTerm.toLowerCase().replace(/-/g, '');
+
+      // 3. TÃ¬m káº¿t quáº£ trÃ¹ng khá»›p chÃ­nh xÃ¡c
+      const exactMatch = results.find(item => {
+          // Láº¥y giÃ¡ trá»‹ hiá»ƒn thá»‹ (value) vÃ  ID gá»‘c (queryId) Ä‘á»ƒ so sÃ¡nh
+          const val = (item.value || '').toLowerCase().replace(/-/g, ''); 
+          const qId = (item.queryId || '').toLowerCase().replace(/-/g, ''); 
+          
+          // So sÃ¡nh: TrÃ¹ng vá»›i giÃ¡ trá»‹ hiá»ƒn thá»‹ (Sá»‘ lÃ´/MÃ£ hÃ ng) HOáº¶C trÃ¹ng vá»›i MÃ£ hÃ ng gá»‘c
+          return val === cleanInput || qId === cleanInput;
+      });
+
+      // 4. Náº¿u tÃ¬m tháº¥y chÃ­nh xÃ¡c -> Chá»n luÃ´n vÃ  dá»«ng hÃ m
+      if (exactMatch) {
+          handleSelectCandidate(exactMatch);
+          setCandidates([]); // XÃ³a danh sÃ¡ch gá»£i Ã½ Ä‘á»ƒ giao diá»‡n sáº¡ch sáº½
+          setLoading(false);
+          return; 
+      }
+      
+      // 5. Náº¿u khÃ´ng trÃ¹ng chÃ­nh xÃ¡c thÃ¬ má»›i hiá»ƒn thá»‹ danh sÃ¡ch
+      setCandidates(results);
+
+      // --- Káº¾T THÃšC Sá»¬A ---
 
     } catch (error) {
       console.error("Lá»—i tra cá»©u:", error);
@@ -10047,7 +10077,37 @@ const MobileInventoryPage = () => {
                 });
             });
 
-            setCandidates(Array.from(resultMap.values()));
+            // --- Báº®T Äáº¦U Sá»¬A: Logic tá»± Ä‘á»™ng chá»n cho Mobile ---
+
+            // 1. Táº¡o biáº¿n danh sÃ¡ch káº¿t quáº£
+            const results = Array.from(resultMap.values());
+
+            // 2. Chuáº©n hÃ³a tá»« khÃ³a (rawTerm cÃ³ sáºµn á»Ÿ trÃªn)
+            const cleanInput = rawTerm.toLowerCase().replace(/-/g, '');
+
+            // 3. TÃ¬m káº¿t quáº£ trÃ¹ng khá»›p
+            const exactMatch = results.find(item => {
+                const val = (item.value || '').toLowerCase().replace(/-/g, '');
+                const qId = (item.queryId || '').toLowerCase().replace(/-/g, '');
+                // Mobile cÃ³ thÃªm lotNumberQuery Ä‘á»ƒ check
+                const lot = (item.lotNumberQuery || '').toLowerCase().replace(/-/g, ''); 
+
+                // So sÃ¡nh: TrÃ¹ng giÃ¡ trá»‹ hiá»ƒn thá»‹ OR MÃ£ hÃ ng OR Sá»‘ lÃ´ cá»¥ thá»ƒ
+                return val === cleanInput || qId === cleanInput || lot === cleanInput;
+            });
+
+            // 4. Náº¿u tÃ¬m tháº¥y chÃ­nh xÃ¡c -> Chá»n ngay
+            if (exactMatch) {
+                handleSelectCandidate(exactMatch);
+                setCandidates([]); 
+                setLoading(false);
+                return; // Dá»«ng hÃ m táº¡i Ä‘Ã¢y
+            }
+
+            // 5. Náº¿u khÃ´ng thÃ¬ hiá»ƒn thá»‹ danh sÃ¡ch nhÆ° cÅ©
+            setCandidates(results); 
+
+            // --- Káº¾T THÃšC Sá»¬A ---
 
         } catch (error) {
             console.error("Lá»—i tÃ¬m kiáº¿m:", error);

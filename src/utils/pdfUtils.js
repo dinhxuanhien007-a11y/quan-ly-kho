@@ -136,12 +136,43 @@ export const exportImportSlipToPDF = async (slip) => {
     doc.save(`PhieuNhapKho_${slip.id}.pdf`);
 };
 
-// --- HÀM XUẤT PHIẾU XUẤT (ĐÃ NÂNG CẤP) ---
+// --- HÀM XUẤT PHIẾU XUẤT (ĐÃ SỬA LỖI GỘP DÒNG) ---
 export const exportExportSlipToPDF = async (slip) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
 
-    const enrichedItems = await getProductDetailsForItems(slip.items);
+    // 1. Lấy thông tin chi tiết (ĐVT, Quy cách...) cho từng item
+    const rawItems = await getProductDetailsForItems(slip.items);
+
+    // === BẮT ĐẦU SỬA ĐỔI: GỘP CÁC DÒNG CÙNG MÃ + CÙNG SỐ LÔ ===
+    const aggregator = new Map();
+
+    for (const item of rawItems) {
+        // Tạo key duy nhất: Mã hàng + Số lô
+        // (Nếu lotNumber null/undefined thì dùng chuỗi rỗng để tránh lỗi)
+        const safeLotNumber = item.lotNumber ? item.lotNumber.trim() : '';
+        const key = `${item.productId}-${safeLotNumber}`;
+        
+        // Lấy số lượng (xử lý các tên biến khác nhau có thể có)
+        const quantity = Number(item.quantity || item.quantityToExport || item.quantityExported || 0);
+
+        if (aggregator.has(key)) {
+            // Nếu đã có trong Map -> Cộng dồn số lượng
+            const existingItem = aggregator.get(key);
+            existingItem.totalQuantity += quantity;
+        } else {
+            // Nếu chưa có -> Thêm mới vào Map
+            // Lưu ý: Tạo trường mới totalQuantity để chứa tổng
+            aggregator.set(key, { 
+                ...item, 
+                totalQuantity: quantity 
+            });
+        }
+    }
+
+    // Chuyển Map thành Mảng để in ra PDF
+    const aggregatedItems = Array.from(aggregator.values());
+    // === KẾT THÚC SỬA ĐỔI ===
 
     doc.setFontSize(18);
     doc.setFont('Roboto-Regular', 'bold');
@@ -153,7 +184,6 @@ export const exportExportSlipToPDF = async (slip) => {
     doc.text(`Ngày lập phiếu: ${slipDate}`, 14, 30);
     doc.text(`Mã phiếu: ${slip.id}`, 283, 30, { align: 'right' });
 
-    // Yêu cầu 4: Tô đậm tên đối tác
     doc.setFont('Roboto-Regular', 'normal');
     doc.text(`Khách hàng: `, 14, 36);
     doc.setFont('Roboto-Regular', 'bold');
@@ -163,17 +193,22 @@ export const exportExportSlipToPDF = async (slip) => {
     doc.text(`Ghi chú: ${slip.description || 'Không có'}`, 14, 42);
 
     const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Số lượng', 'Ghi chú', 'Nhiệt độ BQ']];
-    const body = enrichedItems.map(item => [
-        item.productId, item.productName, item.lotNumber, item.expiryDate,
-        item.unit, item.specification,
-        formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0),
-        item.notes || '', item.storageTemp
+    
+    // Sử dụng aggregatedItems thay vì enrichedItems (rawItems)
+    const body = aggregatedItems.map(item => [
+        item.productId, 
+        item.productName, 
+        item.lotNumber, 
+        item.expiryDate,
+        item.unit, 
+        item.specification,
+        formatNumber(item.totalQuantity), // Sử dụng số lượng đã cộng dồn
+        item.notes || '', 
+        item.storageTemp
     ]);
 
-    // File: src/utils/pdfUtils.js (bên trong hàm exportExportSlipToPDF)
-
     autoTable(doc, {
-        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 }, // <-- THAY ĐỔI Ở ĐÂY
+        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 },
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
         columnStyles: {
@@ -195,9 +230,6 @@ export const exportExportSlipToPDF = async (slip) => {
         }
     });
     
-    // Yêu cầu 5: Loại bỏ phần ký tên
-    // Không thêm code cho phần ký tên nữa
-
     doc.save(`PhieuXuatKho_${slip.id}.pdf`);
 };
 
