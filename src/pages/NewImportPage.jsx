@@ -9,7 +9,7 @@ import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
 import AddNewLotModal from '../components/AddNewLotModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
-import { FiInfo, FiXCircle } from 'react-icons/fi';
+import { FiInfo, FiXCircle, FiUpload } from 'react-icons/fi'; 
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useImportSlipStore from '../stores/importSlipStore';
@@ -98,6 +98,68 @@ const importSlipSchema = z.object({
     items: z.array(importItemSchema).min(1, "Phiếu nhập phải có ít nhất một mặt hàng hợp lệ.")
 });
 
+// =============================================
+// HÀM ĐỌC PACKING LIST PDF CỦA BECTON DICKINSON
+// =============================================
+const parseBDPackingList = async (file) => {
+    // Đọc file PDF dưới dạng ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Dùng pdfjsLib để đọc text từ PDF
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+    }
+    
+    // Regex trích xuất từng dòng hàng trong PDF BD
+    // Format: [ProductID] [Description] [Qty] [UoM] [Batch] [DD/MM/YYYY]
+    const lineRegex = /\b(\d{6})\b[\s\S]*?(\d+)\s+(?:EA|SP|KT|BX)\s+(\w+)\s+(\d{2}\/\d{2}\/\d{4})/g;
+    
+    const rawItems = [];
+    let match;
+    
+    while ((match = lineRegex.exec(fullText)) !== null) {
+        const productId = match[1].trim();
+        const quantity = parseInt(match[2], 10);
+        const lotNumber = match[3].trim();
+        const expiryDate = match[4].trim(); // DD/MM/YYYY
+        
+        if (productId && quantity > 0 && lotNumber && expiryDate) {
+            rawItems.push({ productId, quantity, lotNumber, expiryDate });
+        }
+    }
+    
+    // Bước 1: Gộp các dòng cùng mã hàng + cùng lot + cùng HSD
+    const aggregatedMap = new Map();
+    for (const item of rawItems) {
+        const key = `${item.productId}-${item.lotNumber}-${item.expiryDate}`;
+        if (aggregatedMap.has(key)) {
+            aggregatedMap.get(key).quantity += item.quantity;
+        } else {
+            aggregatedMap.set(key, { ...item });
+        }
+    }
+    
+    // Bước 2: Sắp xếp — cùng mã hàng nằm cạnh nhau, trong cùng mã thì theo lot
+    const sortedItems = Array.from(aggregatedMap.values()).sort((a, b) => {
+        if (a.productId !== b.productId) {
+            return a.productId.localeCompare(b.productId);
+        }
+        return a.lotNumber.localeCompare(b.lotNumber);
+    });
+    
+    return sortedItems;
+};
+
 
 const NewImportPage = () => {
     const {
@@ -112,6 +174,8 @@ const NewImportPage = () => {
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
+    const [isParsingPDF, setIsParsingPDF] = useState(false);
+    const pdfInputRef = useRef(null);
 
     const productInputRefs = useRef([]);
     const lotNumberInputRefs = useRef([]);
@@ -342,6 +406,150 @@ const NewImportPage = () => {
         setNewProductModal({ isOpen: false, productId: '', index: -1 });
     };
 
+    const handlePDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lòng chọn file PDF hợp lệ.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Đang đọc Packing List...");
+
+    try {
+        const parsedItems = await parseBDPackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("Không tìm thấy dữ liệu hàng hóa trong file PDF này.");
+            return;
+        }
+
+        // Tra cứu từng mã hàng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) {
+                productMap[snap.id] = snap.data();
+            }
+        });
+
+        // Tạo danh sách items đầy đủ trước
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+    const productData = productMap[parsed.productId];
+
+    // Kiểm tra lot đã tồn tại trong Firestore chưa
+    let lotStatus = 'declared';
+    let existingLotInfo = null;
+
+    if (productData) {
+        const lotQuery = query(
+            collection(db, 'inventory_lots'),
+            where('productId', '==', parsed.productId),
+            where('lotNumber', '==', parsed.lotNumber)
+        );
+        const lotSnapshot = await getDocs(lotQuery);
+
+        if (!lotSnapshot.empty) {
+            // Lô đã tồn tại — cộng dồn tồn kho từ tất cả các doc
+            let totalRemaining = 0;
+            let expiryDate = null;
+            lotSnapshot.forEach(d => {
+                totalRemaining += d.data().quantityRemaining || 0;
+                if (!expiryDate && d.data().expiryDate) {
+                    expiryDate = d.data().expiryDate;
+                }
+            });
+            lotStatus = 'exists';
+            existingLotInfo = {
+                quantityRemaining: totalRemaining,
+                expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+            };
+        }
+    }
+
+    if (productData) {
+        newItems.push({
+            id: Date.now() + Math.random(),
+            productId: parsed.productId,
+            productName: productData.productName || '',
+            unit: productData.unit || '',
+            packaging: productData.packaging || '',
+            storageTemp: productData.storageTemp || '',
+            team: productData.team || '',
+            manufacturer: productData.manufacturer || '',
+            subGroup: productData.subGroup || '',
+            conversionFactor: productData.conversionFactor || 1,
+            lotNumber: parsed.lotNumber,
+            expiryDate: parsed.expiryDate,
+            quantity: parsed.quantity,
+            notes: '',
+            productNotFound: false,
+            lotStatus: lotStatus,           // ✅ đúng trạng thái
+            existingLotInfo: existingLotInfo // ✅ có thông tin nếu lô cũ
+        });
+    } else {
+        notFoundIds.add(parsed.productId);
+        newItems.push({
+            id: Date.now() + Math.random(),
+            productId: parsed.productId,
+            productName: '',
+            unit: '',
+            packaging: '',
+            storageTemp: '',
+            team: '',
+            manufacturer: '',
+            subGroup: '',
+            conversionFactor: 1,
+            lotNumber: parsed.lotNumber,
+            expiryDate: parsed.expiryDate,
+            quantity: parsed.quantity,
+            notes: '',
+            productNotFound: true,
+            lotStatus: 'declared',
+            existingLotInfo: null
+        });
+    }
+}
+
+        // ✅ CÁCH MỚI: Dùng store action để set toàn bộ items 1 lần
+        // thay vì addNewItemRow + updateItem từng dòng gây ra dòng trống
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        // Thông báo kết quả
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `⚠️ Đọc PDF thành công! Có ${notFoundIds.size} mã hàng chưa tồn tại: ${[...notFoundIds].join(', ')}. Vui lòng kiểm tra các dòng được đánh dấu vàng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `✅ Đọc PDF thành công! Đã nhập ${parsedItems.length} dòng hàng. Vui lòng điều chỉnh số lượng theo đơn vị quy đổi.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lỗi khi đọc PDF:", error);
+        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+    } finally {
+        setIsParsingPDF(false);
+        if (pdfInputRef.current) pdfInputRef.current.value = '';
+    }
+};
+
     const handleSaveSlip = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -502,6 +710,51 @@ const NewImportPage = () => {
                 </div>
             </div>
 
+            {/* ===== NÚT IMPORT TỪ PACKING LIST PDF ===== */}
+<div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    margin: '15px 0',
+    padding: '12px 16px',
+    backgroundColor: '#e8f4fd',
+    borderRadius: '8px',
+    border: '1px solid #b3d7f5'
+}}>
+    <FiUpload style={{ fontSize: '20px', color: '#007bff', flexShrink: 0 }} />
+    <span style={{ fontSize: '14px', color: '#004085', flex: 1 }}>
+        <strong>Import từ Packing List BD:</strong> Tải file PDF lên để tự động điền dữ liệu
+    </span>
+    <input
+        ref={pdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handlePDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-input"
+    />
+    <label
+        htmlFor="pdf-upload-input"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#007bff',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Đang đọc...' : 'Chọn file PDF'}
+    </label>
+</div>
+{/* ===== KẾT THÚC NÚT IMPORT ===== */}
+
             <h2>Chi tiết hàng hóa</h2>
             <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 1fr 0.5fr' }}>
                 <div className="grid-header">Mã hàng (*)</div>
@@ -518,8 +771,13 @@ const NewImportPage = () => {
 
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
-                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <ProductAutocomplete
+                        <div className="grid-cell" style={{ 
+    flexDirection: 'column', 
+    alignItems: 'flex-start',
+    backgroundColor: item.productNotFound ? '#fff3cd' : 'transparent',
+    borderRadius: '4px'
+}}>
+    <ProductAutocomplete
                                 ref={el => productInputRefs.current[index] = el}
                                 value={item.productId}
                                 onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
