@@ -30,3 +30,5 @@ scripts/serviceAccountKey.json
 
 # Firebase Admin SDK key
 serviceAccountKey.json
+backups/
+full_code.txt

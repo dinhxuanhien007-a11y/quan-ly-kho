@@ -125,7 +125,7 @@ const MobileInventoryPage = () => {
             snapshots.forEach(snap => {
                 snap.docs.forEach(doc => {
                     const data = doc.data();
-                    const isLotMatch = searchTerms[0] === data.lotNumber; 
+const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase(); 
                     const uniqueKey = isLotMatch 
                         ? `LOT_${data.lotNumber}_${data.productId}` 
                         : `PROD_${data.productId}`;

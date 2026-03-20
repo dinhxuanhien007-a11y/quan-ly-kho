@@ -41,7 +41,6 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
     }, [slip]); // Chỉ chạy lại logic này khi dữ liệu `slip` thay đổi
     // === KẾT THÚC PHẦN DÁN ===
 
-    console.log("Dữ liệu Phiếu Xuất được truyền vào Modal:", slip);
     
     const handleExportPDF = async () => {
         toast.info("Đang tạo file PDF...");

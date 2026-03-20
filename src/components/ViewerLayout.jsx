@@ -1,6 +1,6 @@
 // src/components/ViewerLayout.jsx
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
@@ -23,9 +23,9 @@ const ViewerLayout = () => {
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
-    const toggleCalculator = () => {
-        setIsCalculatorVisible(prev => !prev);
-    };
+    const toggleCalculator = useCallback(() => {
+    setIsCalculatorVisible(prev => !prev);
+}, []); // [] nghĩa là hàm này chỉ tạo 1 lần duy nhất, không bao giờ thay đổi
     // =======================================================
 
     // === BƯỚC 2: ĐẶT useEffect Ở DƯỚI SAU KHI CÁC HÀM ĐÃ ĐƯỢC ĐỊNH NGHĨA ===

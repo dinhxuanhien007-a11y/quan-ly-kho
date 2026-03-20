@@ -16,6 +16,7 @@ import HighlightText from '../components/HighlightText';
 import StatCard from '../components/StatCard'; // Thêm StatCard
 
 // Component con PresenceIndicator (giữ nguyên)
+// ✅ CODE MỚI - tất cả đều bọc trong <span>
 const PresenceIndicator = ({ status }) => {
     if (!status) {
         return <span style={{ color: '#888', fontStyle: 'italic' }}>Chưa từng hoạt động</span>;
@@ -29,13 +30,13 @@ const PresenceIndicator = ({ status }) => {
     const now = new Date();
     const diffSeconds = Math.round((now - lastChanged) / 1000);
 
-    if (diffSeconds < 60) return "vài giây trước";
+    if (diffSeconds < 60) return <span style={{ color: '#888' }}>vài giây trước</span>;
     const diffMinutes = Math.round(diffSeconds / 60);
-    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+    if (diffMinutes < 60) return <span style={{ color: '#888' }}>{diffMinutes} phút trước</span>;
     const diffHours = Math.round(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffHours < 24) return <span style={{ color: '#888' }}>{diffHours} giờ trước</span>;
     const diffDays = Math.round(diffHours / 24);
-    return `${diffDays} ngày trước`;
+    return <span style={{ color: '#888' }}>{diffDays} ngày trước</span>;
 };
 
 // Component con UserStatus (giữ nguyên)

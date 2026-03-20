@@ -89,6 +89,7 @@ const StocktakeSessionPage = () => {
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
+    const [cursorHistory, setCursorHistory] = useState([]);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
@@ -375,55 +376,78 @@ const StocktakeSessionPage = () => {
 
     const isSessionInProgress = sessionData.status === 'in_progress';
 
-    const handleNextPage = async () => {
-        if (isLastPage) return;
-        setLoadingItems(true);
-        try {
-            const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-            let q = query(itemsCollectionRef, orderBy('productId'));
-            if (searchTerm) {
-                const upperSearchTerm = searchTerm.toUpperCase();
-                q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
-            }
-            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(nextPageQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
-            setItems(itemsList);
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setPage(p => p + 1);
-        } catch (error) {
-            toast.error("Lỗi khi tải trang tiếp theo.");
-        } finally {
-            setLoadingItems(false);
-        }
-    };
-
-    const handlePrevPage = async () => {
-        // Pagination về trang trước phức tạp hơn với cursor,
-        // tạm thời chỉ làm chức năng quay về trang đầu
+    // ✅ CODE MỚI — chỉ thêm dòng setCursorHistory
+const handleNextPage = async () => {
+    if (isLastPage) return;
+    setLoadingItems(true);
+    try {
         const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
         let q = query(itemsCollectionRef, orderBy('productId'));
-         if (searchTerm) {
+        if (searchTerm) {
             const upperSearchTerm = searchTerm.toUpperCase();
             q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
         }
-        const firstPageQuery = query(q, limit(PAGE_SIZE));
-        // Gọi lại logic fetch của useEffect
-        const fetchFirstPage = async () => {
-             setLoadingItems(true);
-             try {
-                const docSnapshots = await getDocs(firstPageQuery);
-                const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
-                setItems(itemsList);
-                setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-                setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-                setPage(1);
-             } catch(e) { toast.error("Lỗi khi tải lại trang đầu."); }
-             finally { setLoadingItems(false); }
+        const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+        const docSnapshots = await getDocs(nextPageQuery);
+        const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
+
+        // 👇 THÊM DÒNG NÀY: lưu cursor trang hiện tại vào lịch sử trước khi sang trang mới
+        setCursorHistory(prev => [...prev, lastVisible]);
+
+        setItems(itemsList);
+        setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+        setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+        setPage(p => p + 1);
+    } catch (error) {
+        toast.error("Lỗi khi tải trang tiếp theo.");
+    } finally {
+        setLoadingItems(false);
+    }
+};
+
+    // ✅ CODE MỚI hoàn toàn
+const handlePrevPage = async () => {
+    // Không làm gì nếu đang ở trang 1
+    if (page <= 1) return;
+
+    setLoadingItems(true);
+    try {
+        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+        let q = query(itemsCollectionRef, orderBy('productId'));
+        if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
         }
-        fetchFirstPage();
-    };
+
+        // Lấy cursor lịch sử ra — lấy cái cuối cùng (trang trước đó)
+        // Ví dụ: history = [cursorTrang1, cursorTrang2]
+        // Đang ở trang 3 → lấy cursorTrang2 ra để load trang 2
+        const newHistory = [...cursorHistory];          // copy mảng ra
+        const prevCursor = newHistory.pop();            // lấy cursor cuối ra khỏi mảng
+        setCursorHistory(newHistory);                   // lưu lại mảng đã bớt 1 phần tử
+
+        // Nếu có cursor thì load từ cursor đó, nếu không (về trang 1) thì load từ đầu
+        const prevPageQuery = prevCursor
+            ? query(q, startAfter(prevCursor), limit(PAGE_SIZE))
+            : query(q, limit(PAGE_SIZE));
+
+        const docSnapshots = await getDocs(prevPageQuery);
+        const itemsList = docSnapshots.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            countedQtyBeforeSubmit: doc.data().countedQty ?? null
+        }));
+
+        setItems(itemsList);
+        setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+        setIsLastPage(false); // Khi về trang trước thì chắc chắn chưa phải trang cuối
+        setPage(p => p - 1); // Giảm số trang đi 1
+    } catch (error) {
+        toast.error("Lỗi khi tải trang trước.");
+    } finally {
+        setLoadingItems(false);
+    }
+};
 
     // Dán vào file: src/pages/StocktakeSessionPage.jsx
 
@@ -540,19 +564,20 @@ const StocktakeSessionPage = () => {
                             </tbody>
                         </table>
                     </div>
-                    {!searchTerm && (
-                        <div className="pagination-controls">
-                            <button onClick={handlePrevPage}>
-                                <FiChevronLeft /> Trang Đầu
-                            </button>
-                             <span>Trang {page}</span>
-                            <button onClick={handleNextPage} disabled={isLastPage}>
-                                Trang Tiếp <FiChevronRight />
-                            </button>
-                        </div>
-                    )}
-                </>
-            )}
+                    
+{!searchTerm && (
+              <div className="pagination-controls">
+                  <button onClick={handlePrevPage} disabled={page <= 1 || loadingItems}>
+                      <FiChevronLeft /> Trang Trước
+                  </button>
+                  <span>Trang {page}</span>
+                  <button onClick={handleNextPage} disabled={isLastPage || loadingItems}>
+                      Trang Tiếp <FiChevronRight />
+                  </button>
+              </div>
+          )}
+          </>
+      )}
 
             {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
                 <div className="form-section" style={{marginTop: '20px'}}>
@@ -581,7 +606,7 @@ const StocktakeSessionPage = () => {
                             {sessionData.status !== 'adjusted' && (
                                  <div className="page-actions">
                                     <button onClick={promptForAdjust} className="btn-primary">Xác Nhận Điều Chỉnh Tồn Kho</button>
-                    _           </div>
+                               </div>
                              )}
                         </>
                     ) : <p>Không có chênh lệch nào được ghi nhận.</p>

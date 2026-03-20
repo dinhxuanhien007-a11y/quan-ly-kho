@@ -5994,7 +5994,7 @@ export default React.memo(TempBadge);
 
 // src/components/ViewerLayout.jsx
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
@@ -6017,9 +6017,9 @@ const ViewerLayout = () => {
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
-    const toggleCalculator = () => {
-        setIsCalculatorVisible(prev => !prev);
-    };
+    const toggleCalculator = useCallback(() => {
+    setIsCalculatorVisible(prev => !prev);
+}, []); // [] nghÄ©a lÃ  hÃ m nÃ y chá»‰ táº¡o 1 láº§n duy nháº¥t, khÃ´ng bao giá» thay Ä‘á»•i
     // =======================================================
 
     // === BÆ¯á»šC 2: Äáº¶T useEffect á»ž DÆ¯á»šI SAU KHI CÃC HÃ€M ÄÃƒ ÄÆ¯á»¢C Äá»ŠNH NGHÄ¨A ===
@@ -6165,7 +6165,6 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
     }, [slip]); // Chá»‰ cháº¡y láº¡i logic nÃ y khi dá»¯ liá»‡u `slip` thay Ä‘á»•i
     // === Káº¾T THÃšC PHáº¦N DÃN ===
 
-Â  Â  console.log("Dá»¯ liá»‡u Phiáº¿u Xuáº¥t Ä‘Æ°á»£c truyá»n vÃ o Modal:", slip);
 Â  Â  
 Â  Â  const handleExportPDF = async () => {
 Â  Â  Â  Â  toast.info("Äang táº¡o file PDF...");
@@ -8001,7 +8000,6 @@ const handleConfirmImport = async (slipToConfirm) => {
             return acc;
         }, {});
         
-        console.log("PRODUCT DETAILS MAP:", productDetailsMap); // Xem map cÃ³ Ä‘áº§y Ä‘á»§ khÃ´ng
         // === BÆ¯á»šC 2: Táº O LÃ” HÃ€NG Vá»šI subGroup ===
         for (const item of slip.items) {
             // Chuáº©n hÃ³a key cá»§a item Ä‘á»ƒ tra cá»©u
@@ -8010,10 +8008,6 @@ const handleConfirmImport = async (slipToConfirm) => {
             
             // Láº¥y subGroup vÃ  Ä‘áº£m báº£o nÃ³ lÃ  chuá»—i, náº¿u khÃ´ng cÃ³ thÃ¬ lÃ  chuá»—i rá»—ng
             const subGroupValue = productDetails.subGroup || ''; 
-
-            console.log(`Processing item: ${item.productId}, Key: ${itemKey}`);
-            console.log("Product Details Found:", productDetails);
-            console.log("SubGroup Value:", subGroupValue);
             
             // Xá»­ lÃ½ HSD
             let expiryTimestamp = null;
@@ -10050,7 +10044,7 @@ const MobileInventoryPage = () => {
             snapshots.forEach(snap => {
                 snap.docs.forEach(doc => {
                     const data = doc.data();
-                    const isLotMatch = searchTerms[0] === data.lotNumber; 
+const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase(); 
                     const uniqueKey = isLotMatch 
                         ? `LOT_${data.lotNumber}_${data.productId}` 
                         : `PROD_${data.productId}`;
@@ -13611,6 +13605,7 @@ const StocktakeSessionPage = () => {
 Â  Â  const [lastVisible, setLastVisible] = useState(null);
 Â  Â  const [page, setPage] = useState(1);
 Â  Â  const [isLastPage, setIsLastPage] = useState(false);
+    const [cursorHistory, setCursorHistory] = useState([]);
 Â  Â  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
 Â  Â  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
@@ -13897,55 +13892,78 @@ const StocktakeSessionPage = () => {
 
 Â  Â  const isSessionInProgress = sessionData.status === 'in_progress';
 
-Â  Â  const handleNextPage = async () => {
-        if (isLastPage) return;
-        setLoadingItems(true);
-        try {
-            const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-            let q = query(itemsCollectionRef, orderBy('productId'));
-            if (searchTerm) {
-                const upperSearchTerm = searchTerm.toUpperCase();
-                q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
-            }
-            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-            const docSnapshots = await getDocs(nextPageQuery);
-            const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
-            setItems(itemsList);
-            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-            setPage(p => p + 1);
-        } catch (error) {
-            toast.error("Lá»—i khi táº£i trang tiáº¿p theo.");
-        } finally {
-            setLoadingItems(false);
-        }
-    };
-
-    const handlePrevPage = async () => {
-        // Pagination vá» trang trÆ°á»›c phá»©c táº¡p hÆ¡n vá»›i cursor,
-        // táº¡m thá»i chá»‰ lÃ m chá»©c nÄƒng quay vá» trang Ä‘áº§u
+Â  Â  // âœ… CODE Má»šI â€” chá»‰ thÃªm dÃ²ng setCursorHistory
+const handleNextPage = async () => {
+    if (isLastPage) return;
+    setLoadingItems(true);
+    try {
         const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
         let q = query(itemsCollectionRef, orderBy('productId'));
-         if (searchTerm) {
+        if (searchTerm) {
             const upperSearchTerm = searchTerm.toUpperCase();
             q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
         }
-        const firstPageQuery = query(q, limit(PAGE_SIZE));
-        // Gá»i láº¡i logic fetch cá»§a useEffect
-        const fetchFirstPage = async () => {
-             setLoadingItems(true);
-             try {
-                const docSnapshots = await getDocs(firstPageQuery);
-                const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
-                setItems(itemsList);
-                setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-                setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-                setPage(1);
-             } catch(e) { toast.error("Lá»—i khi táº£i láº¡i trang Ä‘áº§u."); }
-             finally { setLoadingItems(false); }
+        const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+        const docSnapshots = await getDocs(nextPageQuery);
+        const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
+
+        // ðŸ‘‡ THÃŠM DÃ’NG NÃ€Y: lÆ°u cursor trang hiá»‡n táº¡i vÃ o lá»‹ch sá»­ trÆ°á»›c khi sang trang má»›i
+        setCursorHistory(prev => [...prev, lastVisible]);
+
+        setItems(itemsList);
+        setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+        setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+        setPage(p => p + 1);
+    } catch (error) {
+        toast.error("Lá»—i khi táº£i trang tiáº¿p theo.");
+    } finally {
+        setLoadingItems(false);
+    }
+};
+
+    // âœ… CODE Má»šI hoÃ n toÃ n
+const handlePrevPage = async () => {
+    // KhÃ´ng lÃ m gÃ¬ náº¿u Ä‘ang á»Ÿ trang 1
+    if (page <= 1) return;
+
+    setLoadingItems(true);
+    try {
+        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+        let q = query(itemsCollectionRef, orderBy('productId'));
+        if (searchTerm) {
+            const upperSearchTerm = searchTerm.toUpperCase();
+            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
         }
-        fetchFirstPage();
-    };
+
+        // Láº¥y cursor lá»‹ch sá»­ ra â€” láº¥y cÃ¡i cuá»‘i cÃ¹ng (trang trÆ°á»›c Ä‘Ã³)
+        // VÃ­ dá»¥: history = [cursorTrang1, cursorTrang2]
+        // Äang á»Ÿ trang 3 â†’ láº¥y cursorTrang2 ra Ä‘á»ƒ load trang 2
+        const newHistory = [...cursorHistory];          // copy máº£ng ra
+        const prevCursor = newHistory.pop();            // láº¥y cursor cuá»‘i ra khá»i máº£ng
+        setCursorHistory(newHistory);                   // lÆ°u láº¡i máº£ng Ä‘Ã£ bá»›t 1 pháº§n tá»­
+
+        // Náº¿u cÃ³ cursor thÃ¬ load tá»« cursor Ä‘Ã³, náº¿u khÃ´ng (vá» trang 1) thÃ¬ load tá»« Ä‘áº§u
+        const prevPageQuery = prevCursor
+            ? query(q, startAfter(prevCursor), limit(PAGE_SIZE))
+            : query(q, limit(PAGE_SIZE));
+
+        const docSnapshots = await getDocs(prevPageQuery);
+        const itemsList = docSnapshots.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            countedQtyBeforeSubmit: doc.data().countedQty ?? null
+        }));
+
+        setItems(itemsList);
+        setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+        setIsLastPage(false); // Khi vá» trang trÆ°á»›c thÃ¬ cháº¯c cháº¯n chÆ°a pháº£i trang cuá»‘i
+        setPage(p => p - 1); // Giáº£m sá»‘ trang Ä‘i 1
+    } catch (error) {
+        toast.error("Lá»—i khi táº£i trang trÆ°á»›c.");
+    } finally {
+        setLoadingItems(false);
+    }
+};
 
     // DÃ¡n vÃ o file: src/pages/StocktakeSessionPage.jsx
 
@@ -14062,19 +14080,20 @@ const StocktakeSessionPage = () => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tbody>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </table>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {!searchTerm && (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="pagination-controls">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={handlePrevPage}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiChevronLeft /> Trang Äáº§u
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </button>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <span>Trang {page}</span>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={handleNextPage} disabled={isLastPage}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Trang Tiáº¿p <FiChevronRight />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </button>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  )}
-Â  Â  Â  Â  Â  Â  Â  Â  </>
-Â  Â  Â  Â  Â  Â  )}
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
+{!searchTerm && (
+              <div className="pagination-controls">
+                  <button onClick={handlePrevPage} disabled={page <= 1 || loadingItems}>
+                      <FiChevronLeft /> Trang TrÆ°á»›c
+                  </button>
+                  <span>Trang {page}</span>
+                  <button onClick={handleNextPage} disabled={isLastPage || loadingItems}>
+                      Trang Tiáº¿p <FiChevronRight />
+                  </button>
+              </div>
+          )}
+          </>
+      )}
 
 Â  Â  Â  Â  Â  Â  {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
 Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-section" style={{marginTop: '20px'}}>
@@ -14103,7 +14122,7 @@ const StocktakeSessionPage = () => {
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {sessionData.status !== 'adjusted' && (
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <div className="page-actions">
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={promptForAdjust} className="btn-primary">XÃ¡c Nháº­n Äiá»u Chá»‰nh Tá»“n Kho</button>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  _ Â  Â  Â  Â  Â  </div>
+Â  Â  Â  Â  Â  Â  Â  Â  Â  Â   Â  Â  Â  Â  Â  </div>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â )}
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </>
 Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : <p>KhÃ´ng cÃ³ chÃªnh lá»‡ch nÃ o Ä‘Æ°á»£c ghi nháº­n.</p>
@@ -14139,6 +14158,7 @@ import HighlightText from '../components/HighlightText';
 import StatCard from '../components/StatCard'; // ThÃªm StatCard
 
 // Component con PresenceIndicator (giá»¯ nguyÃªn)
+// âœ… CODE Má»šI - táº¥t cáº£ Ä‘á»u bá»c trong <span>
 const PresenceIndicator = ({ status }) => {
     if (!status) {
         return <span style={{ color: '#888', fontStyle: 'italic' }}>ChÆ°a tá»«ng hoáº¡t Ä‘á»™ng</span>;
@@ -14152,13 +14172,13 @@ const PresenceIndicator = ({ status }) => {
     const now = new Date();
     const diffSeconds = Math.round((now - lastChanged) / 1000);
 
-    if (diffSeconds < 60) return "vÃ i giÃ¢y trÆ°á»›c";
+    if (diffSeconds < 60) return <span style={{ color: '#888' }}>vÃ i giÃ¢y trÆ°á»›c</span>;
     const diffMinutes = Math.round(diffSeconds / 60);
-    if (diffMinutes < 60) return `${diffMinutes} phÃºt trÆ°á»›c`;
+    if (diffMinutes < 60) return <span style={{ color: '#888' }}>{diffMinutes} phÃºt trÆ°á»›c</span>;
     const diffHours = Math.round(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} giá» trÆ°á»›c`;
+    if (diffHours < 24) return <span style={{ color: '#888' }}>{diffHours} giá» trÆ°á»›c</span>;
     const diffDays = Math.round(diffHours / 24);
-    return `${diffDays} ngÃ y trÆ°á»›c`;
+    return <span style={{ color: '#888' }}>{diffDays} ngÃ y trÆ°á»›c</span>;
 };
 
 // Component con UserStatus (giá»¯ nguyÃªn)
@@ -19007,12 +19027,43 @@ export const exportImportSlipToPDF = async (slip) => {
     doc.save(`PhieuNhapKho_${slip.id}.pdf`);
 };
 
-// --- HÃ€M XUáº¤T PHIáº¾U XUáº¤T (ÄÃƒ NÃ‚NG Cáº¤P) ---
+// --- HÃ€M XUáº¤T PHIáº¾U XUáº¤T (ÄÃƒ Sá»¬A Lá»–I Gá»˜P DÃ’NG) ---
 export const exportExportSlipToPDF = async (slip) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
 
-    const enrichedItems = await getProductDetailsForItems(slip.items);
+    // 1. Láº¥y thÃ´ng tin chi tiáº¿t (ÄVT, Quy cÃ¡ch...) cho tá»«ng item
+    const rawItems = await getProductDetailsForItems(slip.items);
+
+    // === Báº®T Äáº¦U Sá»¬A Äá»”I: Gá»˜P CÃC DÃ’NG CÃ™NG MÃƒ + CÃ™NG Sá» LÃ” ===
+    const aggregator = new Map();
+
+    for (const item of rawItems) {
+        // Táº¡o key duy nháº¥t: MÃ£ hÃ ng + Sá»‘ lÃ´
+        // (Náº¿u lotNumber null/undefined thÃ¬ dÃ¹ng chuá»—i rá»—ng Ä‘á»ƒ trÃ¡nh lá»—i)
+        const safeLotNumber = item.lotNumber ? item.lotNumber.trim() : '';
+        const key = `${item.productId}-${safeLotNumber}`;
+        
+        // Láº¥y sá»‘ lÆ°á»£ng (xá»­ lÃ½ cÃ¡c tÃªn biáº¿n khÃ¡c nhau cÃ³ thá»ƒ cÃ³)
+        const quantity = Number(item.quantity || item.quantityToExport || item.quantityExported || 0);
+
+        if (aggregator.has(key)) {
+            // Náº¿u Ä‘Ã£ cÃ³ trong Map -> Cá»™ng dá»“n sá»‘ lÆ°á»£ng
+            const existingItem = aggregator.get(key);
+            existingItem.totalQuantity += quantity;
+        } else {
+            // Náº¿u chÆ°a cÃ³ -> ThÃªm má»›i vÃ o Map
+            // LÆ°u Ã½: Táº¡o trÆ°á»ng má»›i totalQuantity Ä‘á»ƒ chá»©a tá»•ng
+            aggregator.set(key, { 
+                ...item, 
+                totalQuantity: quantity 
+            });
+        }
+    }
+
+    // Chuyá»ƒn Map thÃ nh Máº£ng Ä‘á»ƒ in ra PDF
+    const aggregatedItems = Array.from(aggregator.values());
+    // === Káº¾T THÃšC Sá»¬A Äá»”I ===
 
     doc.setFontSize(18);
     doc.setFont('Roboto-Regular', 'bold');
@@ -19024,7 +19075,6 @@ export const exportExportSlipToPDF = async (slip) => {
     doc.text(`NgÃ y láº­p phiáº¿u: ${slipDate}`, 14, 30);
     doc.text(`MÃ£ phiáº¿u: ${slip.id}`, 283, 30, { align: 'right' });
 
-    // YÃªu cáº§u 4: TÃ´ Ä‘áº­m tÃªn Ä‘á»‘i tÃ¡c
     doc.setFont('Roboto-Regular', 'normal');
     doc.text(`KhÃ¡ch hÃ ng: `, 14, 36);
     doc.setFont('Roboto-Regular', 'bold');
@@ -19034,17 +19084,22 @@ export const exportExportSlipToPDF = async (slip) => {
     doc.text(`Ghi chÃº: ${slip.description || 'KhÃ´ng cÃ³'}`, 14, 42);
 
     const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Sá»‘ lÆ°á»£ng', 'Ghi chÃº', 'Nhiá»‡t Ä‘á»™ BQ']];
-    const body = enrichedItems.map(item => [
-        item.productId, item.productName, item.lotNumber, item.expiryDate,
-        item.unit, item.specification,
-        formatNumber(item.quantity || item.quantityToExport || item.quantityExported || 0),
-        item.notes || '', item.storageTemp
+    
+    // Sá»­ dá»¥ng aggregatedItems thay vÃ¬ enrichedItems (rawItems)
+    const body = aggregatedItems.map(item => [
+        item.productId, 
+        item.productName, 
+        item.lotNumber, 
+        item.expiryDate,
+        item.unit, 
+        item.specification,
+        formatNumber(item.totalQuantity), // Sá»­ dá»¥ng sá»‘ lÆ°á»£ng Ä‘Ã£ cá»™ng dá»“n
+        item.notes || '', 
+        item.storageTemp
     ]);
 
-    // File: src/utils/pdfUtils.js (bÃªn trong hÃ m exportExportSlipToPDF)
-
     autoTable(doc, {
-        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 }, // <-- THAY Äá»”I á»ž ÄÃ‚Y
+        head, body, startY: 50, theme: 'grid', margin: { left: 1, right: 1 },
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
         columnStyles: {
@@ -19066,9 +19121,6 @@ export const exportExportSlipToPDF = async (slip) => {
         }
     });
     
-    // YÃªu cáº§u 5: Loáº¡i bá» pháº§n kÃ½ tÃªn
-    // KhÃ´ng thÃªm code cho pháº§n kÃ½ tÃªn ná»¯a
-
     doc.save(`PhieuXuatKho_${slip.id}.pdf`);
 };
 
