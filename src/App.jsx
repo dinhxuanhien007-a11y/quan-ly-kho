@@ -12,6 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import AccessDenied from './components/AccessDenied'; // <-- Import trang mới tạo
+import { ThemeProvider } from './context/ThemeContext';
 
 // Import login styles để dùng cho wrapper
 import loginStyles from './components/LoginPage.module.css';
@@ -51,28 +52,31 @@ const AppRoutes = () => {
   );
 };
 
+// ✅ CODE MỚI — bọc ThemeProvider ngoài cùng
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-          closeButton={false} 
-        />
-        <ErrorBoundary>
-          <AppRoutes />
-        </ErrorBoundary>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            closeButton={false} 
+          />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

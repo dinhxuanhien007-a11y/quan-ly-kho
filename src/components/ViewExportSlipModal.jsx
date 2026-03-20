@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import Modal from 'react-modal';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
-import { FiX, FiPrinter } from 'react-icons/fi';
+import { FiX, FiPrinter, FiCopy } from 'react-icons/fi';
 import { exportExportSlipToPDF } from '../utils/pdfUtils';
 import { toast } from 'react-toastify';
 
@@ -41,6 +41,75 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
     }, [slip]); // Chỉ chạy lại logic này khi dữ liệu `slip` thay đổi
     // === KẾT THÚC PHẦN DÁN ===
 
+    const handleCopyZaloText = () => {
+    // 1. Dòng tiêu đề
+    const separator = '━━━━━━━━━━━━━━━━━━━━';
+    let text = `📋 PHIẾU XUẤT KHO\n${separator}\n`;
+
+    // 2. Khách hàng
+    text += `👤 ${slip.customer || 'Không có'}\n`;
+
+    // 3. Ghi chú phiếu — chỉ hiển thị nếu có
+    if (slip.description && slip.description.trim() !== '' && slip.description !== 'Không có') {
+        text += `📝 ${slip.description}\n`;
+    }
+
+    text += `${separator}\n`;
+
+    // 4. Danh sách mặt hàng — dùng aggregatedItems đã gộp sẵn
+    aggregatedItems.forEach((item, index) => {
+        const hsd = renderExpiryDate(item.expiryDate);
+        const qty = formatNumber(item.quantity);
+        const unit = item.unit || '';
+
+        text += `[${index + 1}] ${item.productId} · Lot: ${item.lotNumber || 'N/A'}\n`;
+        text += `    HSD: ${hsd} · ${qty} ${unit}\n`;
+
+        // Ghi chú từng mặt hàng — chỉ hiển thị nếu có
+        if (item.notes && item.notes.trim() !== '') {
+            text += `    ⚠️ ${item.notes}\n`;
+        }
+
+        // Thêm dòng trống giữa các mặt hàng (trừ mặt hàng cuối)
+        if (index < aggregatedItems.length - 1) {
+            text += '\n';
+        }
+    });
+
+    text += `${separator}\n`;
+
+    // 5. Tổng xuất theo từng đơn vị
+    const unitTotals = {};
+    aggregatedItems.forEach(item => {
+        const unit = item.unit || 'N/A';
+        const qty = Number(item.quantity || 0);
+        unitTotals[unit] = (unitTotals[unit] || 0) + qty;
+    });
+    const totalText = Object.entries(unitTotals)
+        .map(([unit, qty]) => `${formatNumber(qty)} ${unit}`)
+        .join(' · ');
+
+    // 6. Đếm số mã hàng unique và số lô
+    const uniqueProductIds = new Set(aggregatedItems.map(item => item.productId));
+    const totalLots = aggregatedItems.length;
+    const totalProducts = uniqueProductIds.size;
+
+    let summaryText = '';
+    if (totalProducts === totalLots) {
+        // Mỗi mã hàng chỉ có 1 lot
+        summaryText = `${totalProducts} mã hàng`;
+    } else {
+        // Có mã hàng với nhiều lot
+        summaryText = `${totalProducts} mã hàng (${totalLots} lô)`;
+    }
+
+    text += `📦 Tổng xuất: ${totalText} · ${summaryText}`;
+
+    // 7. Copy vào clipboard
+    navigator.clipboard.writeText(text)
+        .then(() => toast.success('Đã copy text! Paste vào Zalo là xong 👍'))
+        .catch(() => toast.error('Không thể copy. Vui lòng thử lại.'));
+};
     
     const handleExportPDF = async () => {
         toast.info("Đang tạo file PDF...");
@@ -117,12 +186,26 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
                 </div>
             </div>
             <div className="modal-footer">
-                <button onClick={handleExportPDF} className="btn-primary">
-                    <FiPrinter style={{ marginRight: '5px' }} />
-                    Xuất PDF
-                </button>
-                <button onClick={onClose} className="btn-secondary">Đóng</button>
-            </div>
+    <button onClick={handleCopyZaloText} className="btn-success" style={{
+        backgroundColor: '#0068ff',
+        color: 'white',
+        border: 'none',
+        padding: '10px 15px',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px'
+    }}>
+        <FiCopy />
+        Copy Zalo
+    </button>
+    <button onClick={handleExportPDF} className="btn-primary">
+        <FiPrinter style={{ marginRight: '5px' }} />
+        Xuất PDF
+    </button>
+    <button onClick={onClose} className="btn-secondary">Đóng</button>
+</div>
         </Modal>
     );
 };

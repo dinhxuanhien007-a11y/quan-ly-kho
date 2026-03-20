@@ -1,10 +1,43 @@
 :root {
   --header-height: 60px;
   --primary-color: #007bff;
-  --text-color: #333;
-  --bg-color: #f8f9fa;
-  --border-color: #dee2e6;
   --transition-speed: 0.3s ease;
+
+  --text-color: #333333;
+  --text-secondary: #555555;
+  --bg-color: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-hover: #f1f1f1;
+  --border-color: #dee2e6;
+  --card-bg: #ffffff;
+  --table-header-bg: #f8f9fa;
+  --table-stripe-bg: #f8f9fa;
+  --input-bg: #ffffff;
+  --input-border: #cccccc;
+  --navbar-bg: #ffffff;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode {
+  --text-color: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --bg-color: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-hover: #0f3460;
+  --border-color: #444466;
+  --card-bg: #16213e;
+  --table-header-bg: #0f3460;
+  --table-stripe-bg: #1a1a2e;
+  --input-bg: #16213e;
+  --input-border: #444466;
+  --navbar-bg: #16213e;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* --- BỐ CỤC LAYOUT NGANG MỚI --- */
@@ -18,7 +51,7 @@
 .top-navbar {
   height: var(--header-height);
   width: 100%;
-  background-color: #ffffff;
+  background-color: var(--navbar-bg);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -73,6 +106,7 @@
   flex-grow: 1;
   padding: 20px;
   background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .page-header {
@@ -87,8 +121,8 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--card-bg);
+  box-shadow: var(--shadow);
 }
 
 .products-table th,
@@ -101,16 +135,17 @@
 }
 
 .products-table th {
-  background-color: var(--bg-color);
+  background-color: var(--table-header-bg);
   font-weight: bold;
+  color: var(--text-color);
 }
 
 .products-table tbody tr:nth-of-type(even) {
-  background-color: #f8f9fa;
+  background-color: var(--table-stripe-bg);
 }
 
 .products-table tbody tr:hover {
-  background-color: #e9ecef;
+  background-color: var(--bg-hover);
 }
 
 /* src/styles/AdminLayout.css */
@@ -194,7 +229,7 @@
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 20px;
   border-radius: 8px;
   width: 500px;
@@ -304,11 +339,12 @@
 .btn-view:hover { background-color: #e8f6f8; }
 
 .form-section {
-  background-color: #fff;
+  background-color: var(--card-bg);
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
+  color: var(--text-color);
 }
 
 .form-row {
@@ -321,6 +357,7 @@
 }
 
 /* Phiên bản sửa lỗi - Gộp chung input, select, và textarea */
+/* THAY BẰNG */
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group input[type="email"],
@@ -329,14 +366,16 @@
 .form-group textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--input-border);
   border-radius: 4px;
   box-sizing: border-box;
   font-family: inherit;
   font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
 }
 .form-group select {
-  background-color: white;
+  background-color: var(--input-bg);
 }
 
 .page-actions {
@@ -1595,4 +1634,134 @@ tbody tr.selected-row td {
 /* Đảm bảo hàng chi tiết (lot-details-row) luôn có màu nền sáng để dễ đọc */
 .lot-details-row {
     background-color: #f7f9fb; /* Màu nền rất nhạt */
+}
+
+/* ============================================================
+   DARK MODE — các element đặc biệt
+   ============================================================ */
+
+body.dark-mode .inventory-table th,
+body.dark-mode .inventory-table td {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .inventory-table th {
+    background-color: var(--table-header-bg) !important;
+}
+
+body.dark-mode .inventory-table tbody tr:hover td {
+    background-color: var(--bg-hover) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .modal-content,
+body.dark-mode .modal {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+body.dark-mode .modal-content .form-section {
+    background-color: var(--bg-secondary);
+}
+
+body.dark-mode .modal-actions {
+    border-top-color: var(--border-color);
+}
+
+body.dark-mode .btn-secondary {
+    background-color: #444466;
+    color: #e0e0e0;
+    border-color: #666688;
+}
+
+body.dark-mode .btn-secondary:hover {
+    background-color: #555577;
+}
+
+body.dark-mode .dropdown-content {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .dropdown-content button {
+    color: var(--text-color);
+}
+
+body.dark-mode .dropdown-content button:hover {
+    background-color: var(--bg-hover);
+}
+
+body.dark-mode .search-input {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--input-border);
+}
+
+body.dark-mode .filter-group button {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .filter-group button:hover {
+    background-color: var(--bg-hover);
+}
+
+body.dark-mode .card {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+body.dark-mode .lot-details-container {
+    background-color: var(--bg-secondary);
+}
+
+body.dark-mode .lot-details-container li {
+    background-color: var(--bg-hover);
+    color: var(--text-color);
+}
+
+body.dark-mode .compact-info-grid {
+    border-color: var(--border-color);
+}
+
+body.dark-mode .item-details-grid,
+body.dark-mode .item-details-grid-edit {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* === MÀU SẮC HSD TRONG DARK MODE === */
+body.dark-mode tr.near-expiry-yellow td {
+    background-color: #3d3000 !important;
+    color: #fde68a !important;
+}
+body.dark-mode tr.near-expiry-yellow td:first-child {
+    border-left: 5px solid #fbbf24;
+}
+
+body.dark-mode tr.near-expiry-orange td {
+    background-color: #431a07 !important;
+    color: #fed7aa !important;
+}
+body.dark-mode tr.near-expiry-orange td:first-child {
+    border-left: 5px solid #fb923c;
+}
+
+body.dark-mode tr.near-expiry-red td {
+    background-color: #4a0000 !important;
+    color: #fca5a5 !important;
+}
+body.dark-mode tr.near-expiry-red td:first-child {
+    border-left: 5px solid #f87171;
+}
+
+body.dark-mode tr.expired-black td {
+    background-color: #2d1b69 !important;
+    color: #ddd6fe !important;
+}
+body.dark-mode tr.expired-black td:first-child {
+    border-left: 5px solid #a78bfa;
 }

@@ -12,10 +12,13 @@ import {
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 import { useAuth } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
+import { MdDarkMode, MdLightMode } from 'react-icons/md';
 
 const Navbar = () => {
     const navigate = useNavigate();
     const { role } = useAuth();
+    const { theme, toggleTheme } = useTheme();
 
     const handleLogout = async () => {
         try {
@@ -108,6 +111,28 @@ const Navbar = () => {
                     </NavLink>
                 </li>
                 
+                {/* Nút Dark Mode */}
+                <li>
+                    <button
+                        onClick={toggleTheme}
+                        title={theme === 'light' ? 'Chuyển Dark Mode' : 'Chuyển Light Mode'}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '10px',
+                            borderRadius: '8px',
+                            color: 'inherit',
+                            fontSize: '24px'
+                        }}
+                    >
+                        {theme === 'light' ? <MdDarkMode /> : <MdLightMode />}
+                    </button>
+                </li>
+
                 {/* Nút đăng xuất */}
                 <li>
                     <a href="#" onClick={handleLogout} title="Đăng xuất">

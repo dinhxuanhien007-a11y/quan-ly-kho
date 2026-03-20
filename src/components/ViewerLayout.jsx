@@ -11,9 +11,12 @@ import { MdCalculate } from 'react-icons/md';
 import MobileInventoryPage from '../pages/MobileInventoryPage';
 import companyLogo from '../assets/logo.png';
 import { usePresence } from '../hooks/usePresence';
+import { useTheme } from '../context/ThemeContext';
+import { MdDarkMode, MdLightMode } from 'react-icons/md';
 
 const ViewerLayout = () => {
     const { role, user } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     usePresence();
 
     const isMobile = useResponsive();
@@ -102,8 +105,25 @@ const ViewerLayout = () => {
                 </div>
 
                 <div className="viewer-header-right">
-                    {/* Có thể thêm nút đăng xuất ở đây nếu cần */}
-                </div>
+    <button
+        onClick={toggleTheme}
+        title={theme === 'light' ? 'Chuyển Dark Mode' : 'Chuyển Light Mode'}
+        style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '10px',
+            borderRadius: '8px',
+            color: 'inherit',
+            fontSize: '24px'
+        }}
+    >
+        {theme === 'light' ? <MdDarkMode /> : <MdLightMode />}
+    </button>
+</div>
             </div>
 
             <div className="viewer-main-content">
