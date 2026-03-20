@@ -102,16 +102,16 @@ const importSlipSchema = z.object({
 // HÀM ĐỌC PACKING LIST PDF CỦA BECTON DICKINSON
 // =============================================
 const parseBDPackingList = async (file) => {
-    // Đọc file PDF dưới dạng ArrayBuffer
+    // ✅ Import trực tiếp từ package thay vì dùng CDN
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
     const arrayBuffer = await file.arrayBuffer();
-    
-    // Dùng pdfjsLib để đọc text từ PDF
-    const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    
+
     let fullText = '';
     for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
@@ -119,26 +119,24 @@ const parseBDPackingList = async (file) => {
         const pageText = textContent.items.map(item => item.str).join(' ');
         fullText += pageText + '\n';
     }
-    
-    // Regex trích xuất từng dòng hàng trong PDF BD
-    // Format: [ProductID] [Description] [Qty] [UoM] [Batch] [DD/MM/YYYY]
+
     const lineRegex = /\b(\d{6})\b[\s\S]*?(\d+)\s+(?:EA|SP|KT|BX)\s+(\w+)\s+(\d{2}\/\d{2}\/\d{4})/g;
-    
+
     const rawItems = [];
     let match;
-    
+
     while ((match = lineRegex.exec(fullText)) !== null) {
         const productId = match[1].trim();
         const quantity = parseInt(match[2], 10);
         const lotNumber = match[3].trim();
-        const expiryDate = match[4].trim(); // DD/MM/YYYY
-        
+        const expiryDate = match[4].trim();
+
         if (productId && quantity > 0 && lotNumber && expiryDate) {
             rawItems.push({ productId, quantity, lotNumber, expiryDate });
         }
     }
-    
-    // Bước 1: Gộp các dòng cùng mã hàng + cùng lot + cùng HSD
+
+    // Gộp các dòng cùng mã hàng + lot + HSD
     const aggregatedMap = new Map();
     for (const item of rawItems) {
         const key = `${item.productId}-${item.lotNumber}-${item.expiryDate}`;
@@ -148,15 +146,15 @@ const parseBDPackingList = async (file) => {
             aggregatedMap.set(key, { ...item });
         }
     }
-    
-    // Bước 2: Sắp xếp — cùng mã hàng nằm cạnh nhau, trong cùng mã thì theo lot
+
+    // Sắp xếp — cùng mã hàng nằm cạnh nhau
     const sortedItems = Array.from(aggregatedMap.values()).sort((a, b) => {
         if (a.productId !== b.productId) {
             return a.productId.localeCompare(b.productId);
         }
         return a.lotNumber.localeCompare(b.lotNumber);
     });
-    
+
     return sortedItems;
 };
 
