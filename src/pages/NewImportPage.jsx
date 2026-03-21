@@ -158,6 +158,245 @@ const parseBDPackingList = async (file) => {
     return sortedItems;
 };
 
+// =============================================
+// HÀM ĐỌC PACKING LIST PDF CỦA ICU MEDICAL
+// =============================================
+const parseICUPackingList = async (file) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + ' ';
+    }
+
+    // Map tên tháng tiếng Anh → số
+    const monthMap = {
+        'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04',
+        'MAY': '05', 'JUN': '06', 'JUL': '07', 'AUG': '08',
+        'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'
+    };
+
+    // Hàm chuyển "30-JUN-2028" → "30/06/2028"
+    const convertICUDate = (dateStr) => {
+        const match = dateStr.match(/(\d{2})-([A-Z]{3})-(\d{4})/);
+        if (!match) return null;
+        const [, day, mon, year] = match;
+        const month = monthMap[mon];
+        if (!month) return null;
+        return `${day}/${month}/${year}`;
+    };
+
+    // Regex trích xuất từng dòng hàng ICU
+    // Format mỗi dòng: [N)] [ITEM CODE] [LOT]/ [DD-MON-YYYY] ... [Qty Per UOM] ...
+    // Ví dụ: "1) 4619PG 6142088/ 30-JUN-2028 PRO-VENT... 200 2800 14 38.10"
+    // Format mỗi dòng ICU:
+// [N)] [ITEM CODE] [LOT]/ [DD-MON-YYYY] [description...] [Qty Per UOM] [Qty EA] [Qty Case] [Net Weight]
+// Ví dụ: "1) 4041E 6132032/ 30-APR-2028 LINE DRAW... 200 8000 40"
+// Ta cần: Qty EA = số thứ 2 sau HSD (8000), không phải số thứ 1 (200)
+const lineRegex = /(\d+)\)\s+([A-Z0-9]+)\s+(\d+)\s*\/\s*(\d{2}-[A-Z]{3}-\d{4})/g;
+
+const rawItems = [];
+let match;
+
+while ((match = lineRegex.exec(fullText)) !== null) {
+    const productId = match[2].trim();
+    const lotNumber = match[3].trim();
+    const expiryRaw = match[4].trim();
+
+    if (!productId || /^\d+$/.test(productId)) continue;
+
+    const expiryDate = convertICUDate(expiryRaw);
+    if (!expiryDate) continue;
+
+    // Lấy phần text SAU vị trí match để tìm số lượng
+    const afterMatch = fullText.slice(match.index + match[0].length, match.index + match[0].length + 300);
+
+    // Tìm pattern: [200] [QtyEA] [QtyCase]
+    // Qty Per UOM luôn là 200, theo sau là Qty EA rồi Qty Case
+    // Dùng regex tìm "200 [số] [số]" — bỏ qua Order No và Packing No
+    // Order No dạng 7 chữ số (9229330), Packing No dạng M+số
+    // Ta chỉ lấy các số KHÔNG có chữ đứng trước và có độ dài hợp lý
+    const qtyPattern = /\b(200)\s+(\d{1,6})\s+(\d{1,3})\b/;
+    const qtyMatch = afterMatch.match(qtyPattern);
+
+    if (!qtyMatch) continue;
+
+    const qtyEA = parseInt(qtyMatch[2], 10);
+    if (isNaN(qtyEA) || qtyEA <= 0) continue;
+
+    rawItems.push({ productId, lotNumber, expiryDate, quantity: qtyEA });
+}
+
+    // Gộp các dòng cùng mã hàng + cùng lot + cùng HSD → cộng dồn số lượng
+    const aggregatedMap = new Map();
+    for (const item of rawItems) {
+        const key = `${item.productId}-${item.lotNumber}-${item.expiryDate}`;
+        if (aggregatedMap.has(key)) {
+            aggregatedMap.get(key).quantity += item.quantity;
+        } else {
+            aggregatedMap.set(key, { ...item });
+        }
+    }
+
+    // Sắp xếp: cùng mã hàng nằm cạnh nhau, trong cùng mã thì sort theo lot
+    const sortedItems = Array.from(aggregatedMap.values()).sort((a, b) => {
+        if (a.productId !== b.productId) {
+            return a.productId.localeCompare(b.productId);
+        }
+        return a.lotNumber.localeCompare(b.lotNumber);
+    });
+
+    return sortedItems;
+};
+
+// =============================================
+// HÀM ĐỌC PACKING LIST PDF CỦA SCHULKE
+// =============================================
+const parseSchulkePackingList = async (file) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    const allRows = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+
+        const pageWords = textContent.items
+            .filter(item => item.str.trim())
+            .map(item => ({
+                text: item.str.trim(),
+                x0: item.transform[4],
+                x1: item.transform[4] + item.width,
+                y: viewport.height - item.transform[5]
+            }));
+
+        const rowMap = new Map();
+        for (const w of pageWords) {
+            const yKey = Math.round(w.y);
+            let foundKey = null;
+            for (const ky of rowMap.keys()) {
+                if (Math.abs(ky - yKey) <= 3) { foundKey = ky; break; }
+            }
+            if (foundKey === null) { rowMap.set(yKey, []); foundKey = yKey; }
+            rowMap.get(foundKey).push(w);
+        }
+        for (const [y, words] of [...rowMap.entries()].sort((a, b) => a[0] - b[0])) {
+            allRows.push({ y, words: words.sort((a, b) => a.x0 - b.x0) });
+        }
+    }
+
+    // Tìm header row
+    const headerIdx = allRows.findIndex(r =>
+        r.words.some(w => w.text === 'Article') &&
+        r.words.some(w => w.text === 'Batch')
+    );
+    if (headerIdx === -1) return [];
+
+    // Tìm tọa độ các cột từ header rows (header có thể trải 2-3 dòng)
+    let batchHeader = null, expiryHeader = null, bottlesHeader = null, palletsHeader = null;
+    for (let i = headerIdx; i < Math.min(headerIdx + 4, allRows.length); i++) {
+        const row = allRows[i];
+        if (!batchHeader) batchHeader = row.words.find(w => w.text === 'Batch');
+        if (!expiryHeader) expiryHeader = row.words.find(w => w.text === 'Expiry');
+        if (!bottlesHeader) bottlesHeader = row.words.find(w => w.text === 'Bottles');
+        if (!palletsHeader) palletsHeader = row.words.find(w => w.text === 'Pallets');
+    }
+
+    if (!bottlesHeader) return [];
+
+    // Dùng x0 của Bottles header để phân biệt với cột Pallets
+    // Bottles x0 > Pallets x0 → chỉ lấy số có x0 >= Bottles x0 - 5
+    const BOTTLES_X_MIN = bottlesHeader.x0 - 5;
+    const BOTTLES_X_MAX = bottlesHeader.x1 + 10;
+    const BATCH_X = batchHeader ? batchHeader.x0 : 276;
+    const EXPIRY_X = expiryHeader ? expiryHeader.x0 : 310;
+
+    // Tìm Total row
+    const totalIdx = allRows.findIndex((r, i) =>
+        i > headerIdx && r.words.some(w => w.text === 'Total')
+    );
+    const endIdx = totalIdx === -1 ? allRows.length : totalIdx;
+    const dataRows = allRows.slice(headerIdx + 1, endIdx)
+        .filter(r => r.y > allRows[headerIdx].y + 10);
+
+    const normalizeDate = (raw) => {
+        const s = raw.replace(/\./g, '/');
+        const parts = s.split('/');
+        if (parts.length === 3) {
+            const [d, mo, y] = parts;
+            return `${d.padStart(2,'0')}/${mo.padStart(2,'0')}/${y}`;
+        }
+        return raw;
+    };
+
+    const itemMap = new Map();
+
+    for (const row of dataRows) {
+        // Article: số 5-8 chữ số ở cột đầu
+        const articleWord = row.words.find(w =>
+            w.x0 >= 50 && w.x0 <= 85 && /^\d{5,8}$/.test(w.text)
+        );
+        if (!articleWord) continue;
+
+        // No. of Bottles: số nguyên trong vùng x của cột Bottles
+        // Dùng range chính xác để không nhầm với cột Pallets
+        const bottlesWord = row.words.find(w =>
+            w.x0 >= BOTTLES_X_MIN && w.x0 <= BOTTLES_X_MAX && /^\d+$/.test(w.text)
+        );
+        if (!bottlesWord) continue;
+
+        // Batch: số 6+ chữ số gần cột Batch
+        // Nếu là "-" thì lotNumber = rỗng (hàng không có lot)
+        const batchWord = row.words.find(w =>
+            Math.abs(w.x0 - BATCH_X) <= 20
+        );
+        const lotNumber = (batchWord && /^\d{6,}$/.test(batchWord.text))
+            ? batchWord.text
+            : '';
+
+        // Expiry: ngày gần cột Expiry (có thể không có nếu batch="-")
+        const expiryWord = row.words.find(w =>
+            Math.abs(w.x0 - EXPIRY_X) <= 20 &&
+            /\d{1,2}[\/\.]\d{1,2}[\/\.](\d{2}|\d{4})/.test(w.text)
+        );
+        const expiryDate = expiryWord ? normalizeDate(expiryWord.text) : '';
+
+        const productId = articleWord.text;
+        const quantity = parseInt(bottlesWord.text, 10);
+        if (quantity <= 0) continue;
+
+        // Cộng dồn nếu cùng mã hàng + cùng lot
+        const key = `${productId}-${lotNumber}`;
+        if (itemMap.has(key)) {
+            itemMap.get(key).quantity += quantity;
+        } else {
+            itemMap.set(key, { productId, lotNumber, quantity, expiryDate });
+        }
+    }
+
+    return [...itemMap.values()].sort((a, b) => {
+        if (a.productId !== b.productId) return a.productId.localeCompare(b.productId);
+        return a.lotNumber.localeCompare(b.lotNumber);
+    });
+};
 
 const NewImportPage = () => {
     const {
@@ -174,6 +413,9 @@ const NewImportPage = () => {
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
     const [isParsingPDF, setIsParsingPDF] = useState(false);
     const pdfInputRef = useRef(null);
+    const icuPdfInputRef = useRef(null);
+    const pharmaPdfInputRef = useRef(null);
+    const schulkePdfInputRef = useRef(null);
 
     const productInputRefs = useRef([]);
     const lotNumberInputRefs = useRef([]);
@@ -548,6 +790,593 @@ const NewImportPage = () => {
     }
 };
 
+const handleICUPDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lòng chọn file PDF hợp lệ.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Đang đọc Packing List ICU Medical...");
+
+    try {
+        const parsedItems = await parseICUPackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("Không tìm thấy dữ liệu hàng hóa trong file PDF này.");
+            return;
+        }
+
+        // Tra cứu từng mã hàng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) productMap[snap.id] = snap.data();
+        });
+
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+            const productData = productMap[parsed.productId];
+
+            // Kiểm tra lot đã tồn tại chưa
+            let lotStatus = 'declared';
+            let existingLotInfo = null;
+
+            if (productData) {
+                const lotQuery = query(
+                    collection(db, 'inventory_lots'),
+                    where('productId', '==', parsed.productId),
+                    where('lotNumber', '==', parsed.lotNumber)
+                );
+                const lotSnapshot = await getDocs(lotQuery);
+
+                if (!lotSnapshot.empty) {
+                    let totalRemaining = 0;
+                    let expiryDate = null;
+                    lotSnapshot.forEach(d => {
+                        totalRemaining += d.data().quantityRemaining || 0;
+                        if (!expiryDate && d.data().expiryDate) {
+                            expiryDate = d.data().expiryDate;
+                        }
+                    });
+                    lotStatus = 'exists';
+                    existingLotInfo = {
+                        quantityRemaining: totalRemaining,
+                        expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+                    };
+                }
+            }
+
+            if (productData) {
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: productData.productName || '',
+                    unit: productData.unit || '',
+                    packaging: productData.packaging || '',
+                    storageTemp: productData.storageTemp || '',
+                    team: productData.team || '',
+                    manufacturer: productData.manufacturer || '',
+                    subGroup: productData.subGroup || '',
+                    conversionFactor: productData.conversionFactor || 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: false,
+                    lotStatus,
+                    existingLotInfo
+                });
+            } else {
+                notFoundIds.add(parsed.productId);
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: '',
+                    unit: '',
+                    packaging: '',
+                    storageTemp: '',
+                    team: '',
+                    manufacturer: '',
+                    subGroup: '',
+                    conversionFactor: 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: true,
+                    lotStatus: 'declared',
+                    existingLotInfo: null
+                });
+            }
+        }
+
+        // Set toàn bộ items 1 lần
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `⚠️ Đọc PDF thành công! Có ${notFoundIds.size} mã hàng chưa tồn tại: ${[...notFoundIds].join(', ')}. Vui lòng kiểm tra các dòng màu vàng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `✅ Đọc PDF ICU Medical thành công! Đã nhập ${parsedItems.length} dòng hàng. Vui lòng điều chỉnh số lượng theo đơn vị quy đổi.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lỗi khi đọc PDF ICU:", error);
+        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+    } finally {
+        setIsParsingPDF(false);
+        if (icuPdfInputRef.current) icuPdfInputRef.current.value = '';
+    }
+};
+
+// =============================================
+// HÀM ĐỌC PACKING LIST PDF CỦA PHARMADESIGN
+// =============================================
+const parsePharmadesignPackingList = async (file) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    const allRows = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+
+        // Thu thập words với tọa độ
+        const pageWords = textContent.items
+            .filter(item => item.str.trim())
+            .map(item => ({
+                text: item.str.trim(),
+                x0: item.transform[4],
+                x1: item.transform[4] + item.width,
+                y: viewport.height - item.transform[5]
+            }));
+
+        fullText += textContent.items.map(i => i.str).join(' ') + ' ';
+
+        // Nhóm theo dòng (y gần nhau ≤ 3px)
+        const rowMap = new Map();
+        for (const w of pageWords) {
+            const yKey = Math.round(w.y);
+            let foundKey = null;
+            for (const ky of rowMap.keys()) {
+                if (Math.abs(ky - yKey) <= 3) { foundKey = ky; break; }
+            }
+            if (foundKey === null) { rowMap.set(yKey, []); foundKey = yKey; }
+            rowMap.get(foundKey).push(w);
+        }
+
+        for (const [y, words] of [...rowMap.entries()].sort((a, b) => a[0] - b[0])) {
+            allRows.push({ y, words: words.sort((a, b) => a.x0 - b.x0) });
+        }
+    }
+
+    // === BƯỚC 1: Parse Lot Info từ Remark ===
+    const lotExpMap = {};
+
+    // Format A: "Lot no. B2472.3 MFG 13- 01 -26 EXP 13- 01 -29"
+    const regA = /Lot\s+[Nn]o\.?\s*:?\s*(B[\w.]+)\s+MFG[\s\S]*?EXP\s+(\d{1,2})[\s\-]+(\d{1,2})[\s\-]+(\d{2,4})/g;
+    let m;
+    while ((m = regA.exec(fullText)) !== null) {
+        const lot = m[1].trim();
+        let [d, mo, y] = [m[2], m[3], m[4]];
+        if (y.length === 2) y = '20' + y;
+        lotExpMap[lot] = `${d.padStart(2,'0')}/${mo.padStart(2,'0')}/${y}`;
+    }
+    // Format B: "Lot No. : B2382.2 MFG. : 03/11/25 EXP. : 03/11/28"
+    const regB = /Lot\s+[Nn]o\.?\s*:?\s*(B[\w.]+)\s+MFG[.\s]+:?\s*[\d/\-\s]+EXP[.\s]+:?\s*(\d{1,2})[\/](\d{1,2})[\/](\d{2,4})/g;
+    while ((m = regB.exec(fullText)) !== null) {
+        const lot = m[1].trim();
+        let [d, mo, y] = [m[2], m[3], m[4]];
+        if (y.length === 2) y = '20' + y;
+        lotExpMap[lot] = `${d.padStart(2,'0')}/${mo.padStart(2,'0')}/${y}`;
+    }
+    if (Object.keys(lotExpMap).length === 0) return [];
+
+    // === BƯỚC 2: Tìm header và vùng bảng ===
+    const headerIdx = allRows.findIndex(r =>
+        r.words.some(w => w.text === 'ITEM') &&
+        r.words.some(w => w.text === 'DESCRIPTION')
+    );
+    const totalIdx = allRows.findIndex((r, i) =>
+        i > headerIdx &&
+        r.words.some(w => w.text === 'TOTAL') &&
+        r.words.some(w => /^\d/.test(w.text))
+    );
+    if (headerIdx === -1) return [];
+    const tableRows = allRows.slice(headerIdx + 1, totalIdx === -1 ? allRows.length : totalIdx);
+
+    // X tối thiểu của batch trong bảng (để loại batch trong phần Remark)
+    const batchHeader = allRows[headerIdx].words.find(w => w.text === 'BATCH');
+    const BATCH_X_MIN = batchHeader ? batchHeader.x0 - 20 : 250;
+
+    // === BƯỚC 3: Hàm lấy nhóm số đầu tiên sau batch ===
+    // Nhóm số = các số liên tiếp có khoảng cách x < 25px
+    const parseFirstNumberGroup = (numbersAfter) => {
+        if (!numbersAfter.length) return 0;
+        const group = [numbersAfter[0]];
+        for (let i = 1; i < numbersAfter.length; i++) {
+            const gap = numbersAfter[i].x0 - numbersAfter[i-1].x1;
+            if (gap > 25) break; // Sang cột khác → dừng
+            group.push(numbersAfter[i]);
+        }
+        const s = group.map(w => w.text).join('').replace(/,/g, '').replace(/\s/g, '');
+        const n = parseInt(s, 10);
+        return isNaN(n) ? 0 : n;
+    };
+
+    // === BƯỚC 4: Tìm anchors DL ===
+    const anchors = [];
+    for (const row of tableRows) {
+        const dlWord = row.words.find(w => w.x0 >= 40 && w.x0 <= 90 && /^DL\d+$/.test(w.text));
+        if (dlWord) anchors.push({ y: row.y, dl: dlWord.text });
+    }
+
+    // === BƯỚC 5: Chia blocks theo midpoint giữa 2 DL liên tiếp ===
+    const dlBlocks = anchors.map((anchor, i) => ({
+        dl: anchor.dl,
+        yStart: i > 0 ? Math.floor((anchors[i-1].y + anchor.y) / 2) : 0,
+        yEnd: i + 1 < anchors.length ? Math.floor((anchor.y + anchors[i+1].y) / 2) : 99999
+    }));
+
+    // === BƯỚC 6: Xử lý từng block ===
+    const itemResults = new Map(); // batch → {dl, qty}
+
+    for (const block of dlBlocks) {
+        const blockRows = tableRows.filter(r => r.y >= block.yStart && r.y < block.yEnd);
+        let currentBatch = null;
+        let pendingQty = 0; // Qty xuất hiện trước batch
+
+        for (const row of blockRows) {
+            // Lấy batch trong vùng bảng
+            const batchWord = row.words.find(w =>
+                w.x0 >= BATCH_X_MIN && /^B\d{4}/.test(w.text)
+            );
+
+            // Lấy các số sau batch (hoặc sau BATCH_X_MIN)
+            const xStart = batchWord ? batchWord.x1 : BATCH_X_MIN + 40;
+            const numbersAfter = row.words.filter(w =>
+                w.x0 >= xStart && /^[\d,]+$/.test(w.text)
+            );
+
+            if (batchWord) {
+                currentBatch = batchWord.text;
+                if (!itemResults.has(currentBatch)) {
+                    itemResults.set(currentBatch, { dl: block.dl, qty: 0 });
+                }
+                // Gán pending qty
+                itemResults.get(currentBatch).qty += pendingQty;
+                pendingQty = 0;
+                // Qty dòng này
+                if (numbersAfter.length > 0) {
+                    itemResults.get(currentBatch).qty += parseFirstNumberGroup(numbersAfter);
+                }
+            } else if (numbersAfter.length > 0) {
+                const qty = parseFirstNumberGroup(numbersAfter);
+                if (qty > 0) {
+                    if (currentBatch) {
+                        itemResults.get(currentBatch).qty += qty;
+                    } else {
+                        pendingQty += qty;
+                    }
+                }
+            }
+        }
+    }
+
+    // === BƯỚC 7: Tạo kết quả và sắp xếp ===
+    return [...itemResults.entries()]
+        .filter(([, data]) => data.qty > 0)
+        .map(([batch, data]) => ({
+            productId: data.dl,
+            lotNumber: batch,
+            quantity: data.qty,
+            expiryDate: lotExpMap[batch] || ''
+        }))
+        .sort((a, b) => {
+            if (a.productId !== b.productId) return a.productId.localeCompare(b.productId);
+            return a.lotNumber.localeCompare(b.lotNumber);
+        });
+};
+
+const handlePharmaPDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lòng chọn file PDF hợp lệ.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Đang đọc Packing List Pharmadesign...");
+
+    try {
+        const parsedItems = await parsePharmadesignPackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("Không tìm thấy dữ liệu hàng hóa. File có thể không đúng format Pharmadesign hoặc thiếu thông tin Lot/HSD trong phần Remark.");
+            return;
+        }
+
+        // Tra cứu mã hàng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) productMap[snap.id] = snap.data();
+        });
+
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+            const productData = productMap[parsed.productId];
+
+            // Kiểm tra lot đã tồn tại chưa
+            let lotStatus = 'declared';
+            let existingLotInfo = null;
+
+            if (productData) {
+                const lotQuery = query(
+                    collection(db, 'inventory_lots'),
+                    where('productId', '==', parsed.productId),
+                    where('lotNumber', '==', parsed.lotNumber)
+                );
+                const lotSnapshot = await getDocs(lotQuery);
+
+                if (!lotSnapshot.empty) {
+                    let totalRemaining = 0;
+                    let expiryDate = null;
+                    lotSnapshot.forEach(d => {
+                        totalRemaining += d.data().quantityRemaining || 0;
+                        if (!expiryDate && d.data().expiryDate) {
+                            expiryDate = d.data().expiryDate;
+                        }
+                    });
+                    lotStatus = 'exists';
+                    existingLotInfo = {
+                        quantityRemaining: totalRemaining,
+                        expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+                    };
+                }
+            }
+
+            if (productData) {
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: productData.productName || '',
+                    unit: productData.unit || '',
+                    packaging: productData.packaging || '',
+                    storageTemp: productData.storageTemp || '',
+                    team: productData.team || '',
+                    manufacturer: productData.manufacturer || '',
+                    subGroup: productData.subGroup || '',
+                    conversionFactor: productData.conversionFactor || 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: false,
+                    lotStatus,
+                    existingLotInfo
+                });
+            } else {
+                notFoundIds.add(parsed.productId);
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: '',
+                    unit: '',
+                    packaging: '',
+                    storageTemp: '',
+                    team: '',
+                    manufacturer: '',
+                    subGroup: '',
+                    conversionFactor: 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: true,
+                    lotStatus: 'declared',
+                    existingLotInfo: null
+                });
+            }
+        }
+
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `⚠️ Đọc PDF thành công! Có ${notFoundIds.size} mã hàng chưa tồn tại: ${[...notFoundIds].join(', ')}. Vui lòng kiểm tra các dòng màu vàng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `✅ Đọc PDF Pharmadesign thành công! Đã nhập ${parsedItems.length} dòng hàng. Vui lòng điều chỉnh số lượng theo đơn vị quy đổi.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lỗi khi đọc PDF Pharmadesign:", error);
+        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+    } finally {
+        setIsParsingPDF(false);
+        if (pharmaPdfInputRef.current) pharmaPdfInputRef.current.value = '';
+    }
+};
+
+const handleSchulkePDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lòng chọn file PDF hợp lệ.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Đang đọc Packing List Schulke...");
+
+    try {
+        const parsedItems = await parseSchulkePackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("Không tìm thấy dữ liệu hàng hóa. File có thể không đúng format Schulke.");
+            return;
+        }
+
+        // Tra cứu mã hàng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) productMap[snap.id] = snap.data();
+        });
+
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+            const productData = productMap[parsed.productId];
+
+            // Kiểm tra lot đã tồn tại chưa
+            let lotStatus = 'declared';
+            let existingLotInfo = null;
+
+            if (productData) {
+                const lotQuery = query(
+                    collection(db, 'inventory_lots'),
+                    where('productId', '==', parsed.productId),
+                    where('lotNumber', '==', parsed.lotNumber)
+                );
+                const lotSnapshot = await getDocs(lotQuery);
+                if (!lotSnapshot.empty) {
+                    let totalRemaining = 0;
+                    let expiryDate = null;
+                    lotSnapshot.forEach(d => {
+                        totalRemaining += d.data().quantityRemaining || 0;
+                        if (!expiryDate && d.data().expiryDate) expiryDate = d.data().expiryDate;
+                    });
+                    lotStatus = 'exists';
+                    existingLotInfo = {
+                        quantityRemaining: totalRemaining,
+                        expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+                    };
+                }
+            }
+
+            if (productData) {
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: productData.productName || '',
+                    unit: productData.unit || '',
+                    packaging: productData.packaging || '',
+                    storageTemp: productData.storageTemp || '',
+                    team: productData.team || '',
+                    manufacturer: productData.manufacturer || '',
+                    subGroup: productData.subGroup || '',
+                    conversionFactor: productData.conversionFactor || 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: false,
+                    lotStatus,
+                    existingLotInfo
+                });
+            } else {
+                notFoundIds.add(parsed.productId);
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: '',
+                    unit: '',
+                    packaging: '',
+                    storageTemp: '',
+                    team: '',
+                    manufacturer: '',
+                    subGroup: '',
+                    conversionFactor: 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: true,
+                    lotStatus: 'declared',
+                    existingLotInfo: null
+                });
+            }
+        }
+
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `⚠️ Đọc PDF thành công! Có ${notFoundIds.size} mã hàng chưa tồn tại: ${[...notFoundIds].join(', ')}. Vui lòng kiểm tra các dòng màu vàng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `✅ Đọc PDF Schulke thành công! Đã nhập ${parsedItems.length} dòng hàng. Vui lòng điều chỉnh số lượng theo đơn vị quy đổi.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lỗi khi đọc PDF Schulke:", error);
+        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+    } finally {
+        setIsParsingPDF(false);
+        if (schulkePdfInputRef.current) schulkePdfInputRef.current.value = '';
+    }
+};
+
     const handleSaveSlip = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -717,24 +1546,27 @@ const NewImportPage = () => {
     padding: '12px 16px',
     backgroundColor: '#e8f4fd',
     borderRadius: '8px',
-    border: '1px solid #b3d7f5'
+    border: '1px solid #b3d7f5',
+    flexWrap: 'wrap'
 }}>
     <FiUpload style={{ fontSize: '20px', color: '#007bff', flexShrink: 0 }} />
-    <span style={{ fontSize: '14px', color: '#004085', flex: 1 }}>
-        <strong>Import từ Packing List BD:</strong> Tải file PDF lên để tự động điền dữ liệu
+    <span style={{ fontSize: '14px', color: '#004085', flex: 1, minWidth: '200px' }}>
+        <strong>Import từ Packing List:</strong> Tải file PDF lên để tự động điền dữ liệu
     </span>
+
+    {/* Nút BD */}
     <input
         ref={pdfInputRef}
         type="file"
         accept=".pdf"
         onChange={handlePDFUpload}
         style={{ display: 'none' }}
-        id="pdf-upload-input"
+        id="pdf-upload-bd"
     />
     <label
-        htmlFor="pdf-upload-input"
+        htmlFor="pdf-upload-bd"
         style={{
-            backgroundColor: isParsingPDF ? '#6c757d' : '#007bff',
+            backgroundColor: isParsingPDF ? '#6c757d' : '#1565c0',
             color: 'white',
             padding: '8px 16px',
             borderRadius: '5px',
@@ -744,11 +1576,102 @@ const NewImportPage = () => {
             whiteSpace: 'nowrap',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
         }}
     >
         <FiUpload />
-        {isParsingPDF ? 'Đang đọc...' : 'Chọn file PDF'}
+        {isParsingPDF ? 'Đang đọc...' : 'Import BD'}
+    </label>
+
+    {/* Nút ICU Medical */}
+    <input
+        ref={icuPdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handleICUPDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-icu"
+    />
+    <label
+        htmlFor="pdf-upload-icu"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#2e7d32',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Đang đọc...' : 'Import ICU Medical'}
+    </label>
+
+    {/* Nút Pharmadesign */}
+    <input
+        ref={pharmaPdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handlePharmaPDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-pharma"
+    />
+    <label
+        htmlFor="pdf-upload-pharma"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#6a1b9a',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Đang đọc...' : 'Import Pharmadesign'}
+    </label>
+
+    {/* Nút Schulke */}
+    <input
+        ref={schulkePdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handleSchulkePDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-schulke"
+    />
+    <label
+        htmlFor="pdf-upload-schulke"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#c0392b',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Đang đọc...' : 'Import Schulke'}
     </label>
 </div>
 {/* ===== KẾT THÚC NÚT IMPORT ===== */}
