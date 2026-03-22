@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import { 
     FiGrid, FiArchive, FiFilePlus, FiFileMinus, FiClipboard, 
     FiFileText, FiShare2, FiCheckSquare, FiUsers, FiUpload, 
-    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook,
+    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook, FiGitMerge,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 import { useAuth } from '../context/UserContext';
@@ -17,7 +17,8 @@ import { MdDarkMode, MdLightMode } from 'react-icons/md';
 
 const Navbar = () => {
     const navigate = useNavigate();
-    const { role } = useAuth();
+    const { role, userData } = useAuth();
+    const canReconcile = role === 'owner' || (role === 'admin' && userData?.canReconcile === true);
     const { theme, toggleTheme } = useTheme();
 
     const handleLogout = async () => {
@@ -110,6 +111,14 @@ const Navbar = () => {
                         <FiUpload className="nav-icon" />
                     </NavLink>
                 </li>
+
+                {(role === 'owner' || (role === 'admin' && userData?.canReconcile)) && (
+    <li>
+        <NavLink to="/doi-chieu-ton-kho" title="Đối chiếu tồn kho">
+            <FiGitMerge className="nav-icon" />
+        </NavLink>
+    </li>
+)}
                 
                 {/* Nút Dark Mode */}
                 <li>

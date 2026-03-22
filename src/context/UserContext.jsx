@@ -3,13 +3,14 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import Spinner from '../components/Spinner'; // <-- THÊM IMPORT
+import Spinner from '../components/Spinner';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [role, setRole] = useState(null);
+    const [userData, setUserData] = useState(null); // ← THÊM
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -18,14 +19,18 @@ export const AuthProvider = ({ children }) => {
                 const userDocRef = doc(db, 'users', currentUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
-                    setRole(userDocSnap.data().role);
+                    const data = userDocSnap.data();
+                    setRole(data.role);
+                    setUserData(data); // ← THÊM
                 } else {
                     setRole(null);
+                    setUserData(null); // ← THÊM
                 }
                 setUser(currentUser);
             } else {
                 setUser(null);
                 setRole(null);
+                setUserData(null); // ← THÊM
             }
             setLoading(false);
         });
@@ -36,10 +41,10 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         role,
+        userData, // ← THÊM
         loading,
     };
 
-    // Khi đang xác thực, hiển thị spinner toàn trang
     if (loading) {
         return <Spinner />;
     }

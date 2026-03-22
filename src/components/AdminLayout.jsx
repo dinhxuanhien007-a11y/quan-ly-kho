@@ -27,6 +27,7 @@ import { FiGrid } from 'react-icons/fi';
 import SalesAnalyticsPage from '../pages/SalesAnalyticsPage';
 import ProductLedgerPage from '../pages/ProductLedgerPage';
 import { usePresence } from '../hooks/usePresence';
+import InventoryReconciliationPage from '../pages/InventoryReconciliationPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -85,6 +86,7 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/sales-analytics" element={<SalesAnalyticsPage />} />
           <Route path="/product-ledger" element={<ProductLedgerPage />} />
+          <Route path="/doi-chieu-ton-kho" element={<InventoryReconciliationPage />} />
         </Routes>
       </main>
 

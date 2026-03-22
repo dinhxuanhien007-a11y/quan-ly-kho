@@ -13,18 +13,18 @@ import { AuthProvider, useAuth } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import AccessDenied from './components/AccessDenied'; // <-- Import trang mới tạo
 import { ThemeProvider } from './context/ThemeContext';
+import InventoryReconciliationPage from './pages/InventoryReconciliationPage';
 
 // Import login styles để dùng cho wrapper
 import loginStyles from './components/LoginPage.module.css';
 
 const AppRoutes = () => {
-  const { user, role, loading } = useAuth();
+  const { user, role, userData, loading } = useAuth(); // ← thêm userData
 
   if (loading) {
-    return <div className="loading-screen">Đang tải...</div>; // Hoặc component Spinner của bạn
+    return <div className="loading-screen">Đang tải...</div>;
   }
 
-  // 1. Chưa đăng nhập -> Hiện trang Login
   if (!user) {
     return (
       <div className={loginStyles.loginPageWrapper}>
@@ -33,19 +33,17 @@ const AppRoutes = () => {
     );
   }
 
-  // 2. Đã đăng nhập nhưng KHÔNG CÓ QUYỀN (role rỗng hoặc null) -> Hiện trang Từ chối
   if (!role) {
     return <AccessDenied />;
   }
 
-  // 3. Có quyền -> Phân luồng
+  const canReconcile = role === 'owner' || (role === 'admin' && userData?.canReconcile === true);
+
   return (
     <Routes>
       {role === 'owner' ? (
-        // Nếu là owner -> AdminLayout
         <Route path="/*" element={<AdminLayout />} />
       ) : (
-        // Nếu là các role hợp lệ khác (med, bio, admin...) -> ViewerLayout
         <Route path="/*" element={<ViewerLayout />} />
       )}
     </Routes>
