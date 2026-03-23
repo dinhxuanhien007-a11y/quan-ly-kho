@@ -163,13 +163,49 @@ const openStockModal = async (productId) => {
             where('quantityRemaining', '>', 0)
         );
         const snap = await getDocs(q);
-        const lots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        lots.sort((a, b) => {
-            const da = a.expiryDate?.toDate?.() || new Date(9999,0,1);
-            const db2 = b.expiryDate?.toDate?.() || new Date(9999,0,1);
-            return da - db2;
+        const rawLots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+// ===== GỘP LOT TRÙNG =====
+const lotMap = new Map();
+
+for (const lot of rawLots) {
+    const lotNumber = (lot.lotNumber || '').trim();
+    const expiry = lot.expiryDate?.toDate?.() || null;
+
+    const expiryKey = expiry
+        ? `${expiry.getFullYear()}-${expiry.getMonth()}-${expiry.getDate()}`
+        : 'no-date';
+
+    const key = `${lotNumber}__${expiryKey}`;
+
+    if (lotMap.has(key)) {
+        const existing = lotMap.get(key);
+        existing.quantityRemaining += lot.quantityRemaining || 0;
+        existing.quantityAllocated += lot.quantityAllocated || 0;
+    } else {
+        lotMap.set(key, {
+            ...lot,
+            quantityRemaining: lot.quantityRemaining || 0,
+            quantityAllocated: lot.quantityAllocated || 0,
         });
-        setStockModal({ isOpen: true, productId, data: lots, loading: false });
+    }
+}
+
+const mergedLots = Array.from(lotMap.values());
+
+// sort theo HSD
+mergedLots.sort((a, b) => {
+    const da = a.expiryDate?.toDate?.() || new Date(9999,0,1);
+    const db = b.expiryDate?.toDate?.() || new Date(9999,0,1);
+    return da - db;
+});
+
+setStockModal({
+    isOpen: true,
+    productId,
+    data: mergedLots,
+    loading: false
+});
     } catch (e) {
         setStockModal({ isOpen: true, productId, data: [], loading: false });
     }

@@ -1,4 +1,4 @@
-﻿--- FILE: D:\quan-ly-kho\src\components\AccessDenied.jsx ---
+﻿--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AccessDenied.jsx ---
 
 
 import React from 'react';
@@ -46,7 +46,7 @@ export default AccessDenied;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
 
 
 // src/components/AddAllowedUserModal.jsx
@@ -120,7 +120,7 @@ export default AddAllowedUserModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AddNewLotModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewLotModal.jsx ---
 
 
 // src/components/AddNewLotModal.jsx
@@ -221,7 +221,7 @@ export default AddNewLotModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
 
 
 // src/components/AddNewProductAndLotModal.jsx
@@ -413,7 +413,7 @@ export default AddNewProductAndLotModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AddPartnerModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddPartnerModal.jsx ---
 
 
 // src/components/AddPartnerModal.jsx
@@ -508,7 +508,7 @@ export default AddPartnerModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AddProductModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddProductModal.jsx ---
 
 
 // src/components/AddProductModal.jsx
@@ -661,7 +661,7 @@ export default AddProductModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
 
 
 // src/components/AddUnlistedItemModal.jsx
@@ -820,7 +820,7 @@ export default AddUnlistedItemModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AddUserModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddUserModal.jsx ---
 
 
 // src/components/AddUserModal.jsx
@@ -941,7 +941,7 @@ export default AddUserModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\AdminLayout.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AdminLayout.jsx ---
 
 
 // src/components/AdminLayout.jsx
@@ -1069,7 +1069,7 @@ export default AdminLayout;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\Autocomplete.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Autocomplete.module.css ---
 
 
 /* src/components/Autocomplete.module.css */
@@ -1142,7 +1142,7 @@ export default AdminLayout;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ClickableCopy.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ClickableCopy.jsx ---
 
 
 // src/components/ClickableCopy.jsx
@@ -1195,7 +1195,7 @@ export default ClickableCopy;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ConfirmationModal.jsx ---
 
 
 // src/components/ConfirmationModal.jsx
@@ -1258,7 +1258,7 @@ export default React.memo(ConfirmationModal);
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
 
 
 // src/components/ConfirmationModal.test.jsx
@@ -1353,7 +1353,7 @@ describe('Component: ConfirmationModal', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
 
 
 // src/components/CreateStocktakeModal.jsx
@@ -1661,7 +1661,7 @@ export default CreateStocktakeModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\CustomerAutocomplete.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\CustomerAutocomplete.jsx ---
 
 
 // src/components/CustomerAutocomplete.jsx
@@ -1817,7 +1817,7 @@ export default CustomerAutocomplete;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\DateRangePresets.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\DateRangePresets.jsx ---
 
 
 // src/components/DateRangePresets.jsx
@@ -1899,7 +1899,7 @@ export default DateRangePresets;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\EditAllowedUserModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditAllowedUserModal.jsx ---
 
 
 // src/components/EditAllowedUserModal.jsx
@@ -1964,7 +1964,7 @@ export default EditAllowedUserModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
 
 
 // src/components/EditExportSlipModal.jsx
@@ -2343,7 +2343,7 @@ export default EditExportSlipModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
 
 
 // src/components/EditImportSlipModal.jsx
@@ -2633,7 +2633,7 @@ export default EditImportSlipModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\EditPartnerModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditPartnerModal.jsx ---
 
 
 // src/components/EditPartnerModal.jsx
@@ -2727,7 +2727,7 @@ export default EditPartnerModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\EditProductModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditProductModal.jsx ---
 
 
 // src/components/EditProductModal.jsx
@@ -2836,7 +2836,7 @@ export default EditProductModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
 
 
 // src/components/EditUserRoleModal.jsx
@@ -2909,7 +2909,7 @@ export default EditUserRoleModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\EmptyState.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EmptyState.jsx ---
 
 
 // src/components/EmptyState.jsx
@@ -2931,7 +2931,7 @@ export default EmptyState;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ErrorBoundary.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ErrorBoundary.jsx ---
 
 
 // src/components/ErrorBoundary.jsx
@@ -2980,7 +2980,7 @@ export default ErrorBoundary;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ExpiryBadge.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExpiryBadge.jsx ---
 
 
 // src/components/ExpiryBadge.jsx
@@ -3052,7 +3052,7 @@ export default React.memo(ExpiryBadge);
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ExpiryNotificationBanner.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExpiryNotificationBanner.jsx ---
 
 
 // src/components/ExpiryNotificationBanner.jsx
@@ -3138,7 +3138,7 @@ export default ExpiryNotificationBanner;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ExpiryPieChart.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExpiryPieChart.jsx ---
 
 
 import React from 'react';
@@ -3181,7 +3181,7 @@ export default ExpiryPieChart;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ExportSlipCounter.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExportSlipCounter.jsx ---
 
 
 // src/components/ExportSlipCounter.jsx
@@ -3219,7 +3219,7 @@ export default ExportSlipCounter;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\FloatingCalculator.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingCalculator.jsx ---
 
 
 // src/components/FloatingCalculator.jsx
@@ -3371,7 +3371,7 @@ export default FloatingCalculator;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\FloatingCalculator.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingCalculator.module.css ---
 
 
 /* src/components/FloatingCalculator.module.css */
@@ -3513,7 +3513,7 @@ export default FloatingCalculator;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
 
 
 // src/components/FloatingToolsModal.jsx
@@ -3582,7 +3582,7 @@ export default FloatingToolsModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\FloatingToolsModal.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingToolsModal.module.css ---
 
 
 /* src/components/FloatingToolsModal.module.css */
@@ -3676,7 +3676,7 @@ export default FloatingToolsModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\HighlightText.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\HighlightText.jsx ---
 
 
 // src/components/HighlightText.jsx
@@ -3727,7 +3727,7 @@ export default HighlightText;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\HomePage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\HomePage.jsx ---
 
 
 // src/components/HomePage.jsx
@@ -3768,7 +3768,7 @@ export default HomePage;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
 
 
 // src/components/ImportSlipCounter.jsx
@@ -3807,7 +3807,7 @@ export default ImportSlipCounter;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\InlineEditCell.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\InlineEditCell.jsx ---
 
 
 // src/components/InlineEditCell.jsx
@@ -3964,7 +3964,7 @@ export default InlineEditCell;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\InlineEditCell.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\InlineEditCell.module.css ---
 
 
 /* src/components/InlineEditCell.module.css */
@@ -4027,7 +4027,7 @@ export default InlineEditCell;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\InventoryFilters.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\InventoryFilters.jsx ---
 
 
 // src/components/InventoryFilters.jsx
@@ -4127,7 +4127,7 @@ export default React.memo(InventoryFilters);
 
 
 
---- FILE: D:\quan-ly-kho\src\components\LoginPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LoginPage.jsx ---
 
 
 // src/components/LoginPage.jsx
@@ -4206,7 +4206,7 @@ export default LoginPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\LoginPage.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LoginPage.module.css ---
 
 
 /* src/components/LoginPage.module.css */
@@ -4273,7 +4273,7 @@ export default LoginPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
 
 
 // src/components/LotJourneyExplorer.jsx
@@ -4387,7 +4387,7 @@ export default LotJourneyExplorer;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\Navbar.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Navbar.jsx ---
 
 
 // src/components/Navbar.jsx
@@ -4550,7 +4550,7 @@ export default React.memo(Navbar);
 
 
 
---- FILE: D:\quan-ly-kho\src\components\NewDataNotification.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\NewDataNotification.jsx ---
 
 
 // src/components/NewDataNotification.jsx
@@ -4574,7 +4574,7 @@ export default NewDataNotification;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\PartnerAutocomplete.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\PartnerAutocomplete.jsx ---
 
 
 // src/components/PartnerAutocomplete.jsx
@@ -4684,7 +4684,7 @@ export default PartnerAutocomplete;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ProductAutocomplete.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ProductAutocomplete.jsx ---
 
 
 // src/components/ProductAutocomplete.jsx
@@ -4872,7 +4872,7 @@ export default ProductAutocomplete;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\QuickStockLookup.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\QuickStockLookup.jsx ---
 
 
 // src/components/QuickStockLookup.jsx
@@ -5217,7 +5217,7 @@ export default QuickStockLookup;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\QuickStockLookup.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\QuickStockLookup.module.css ---
 
 
 /* src/components/QuickStockLookup.module.css */
@@ -5429,7 +5429,7 @@ export default QuickStockLookup;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\RecentActivityList.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\RecentActivityList.jsx ---
 
 
 import React from 'react';
@@ -5468,7 +5468,7 @@ export default RecentActivityList;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\Sidebar.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Sidebar.jsx ---
 
 
 // src/components/Sidebar.jsx
@@ -5554,7 +5554,7 @@ export default Sidebar;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\Spinner.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.jsx ---
 
 
 // src/components/Spinner.jsx
@@ -5583,7 +5583,7 @@ export default Spinner;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\Spinner.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.module.css ---
 
 
 /* src/components/Spinner.module.css */
@@ -5619,7 +5619,7 @@ export default Spinner;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\StatCard.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatCard.jsx ---
 
 
 import React from 'react';
@@ -5643,7 +5643,7 @@ export default StatCard;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\StatusBadge.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatusBadge.jsx ---
 
 
 // src/components/StatusBadge.jsx
@@ -5685,7 +5685,7 @@ export default React.memo(StatusBadge);
 
 
 
---- FILE: D:\quan-ly-kho\src\components\StatusBadge.test.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatusBadge.test.jsx ---
 
 
 // src/components/StatusBadge.test.jsx
@@ -5756,7 +5756,7 @@ describe('Component: StatusBadge', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\components\SupplierAutocomplete.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\SupplierAutocomplete.jsx ---
 
 
 // src/components/SupplierAutocomplete.jsx
@@ -5917,7 +5917,7 @@ export default SupplierAutocomplete;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\TeamBadge.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TeamBadge.jsx ---
 
 
 // src/components/TeamBadge.jsx
@@ -5948,7 +5948,7 @@ export default React.memo(TeamBadge);
 
 
 
---- FILE: D:\quan-ly-kho\src\components\TeamBarChart.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TeamBarChart.jsx ---
 
 
 // src/components/TeamBarChart.jsx
@@ -5996,7 +5996,7 @@ export default TeamBarChart;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\TempBadge.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TempBadge.jsx ---
 
 
 // src/components/TempBadge.jsx
@@ -6025,13 +6025,13 @@ export default React.memo(TempBadge);
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ViewerLayout.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewerLayout.jsx ---
 
 
 // src/components/ViewerLayout.jsx
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
 import { useAuth } from '../context/UserContext';
@@ -6043,9 +6043,16 @@ import companyLogo from '../assets/logo.png';
 import { usePresence } from '../hooks/usePresence';
 import { useTheme } from '../context/ThemeContext';
 import { MdDarkMode, MdLightMode } from 'react-icons/md';
+// THÃŠM 2 DÃ’NG NÃ€Y vÃ o pháº§n import
+import { Routes, Route } from 'react-router-dom';
+import InventoryReconciliationPage from '../pages/InventoryReconciliationPage';
+import { FiGitMerge } from 'react-icons/fi';
 
 const ViewerLayout = () => {
-    const { role, user } = useAuth();
+    const { role, user, userData } = useAuth();
+const location = useLocation();
+const navigate = useNavigate();
+const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     const { theme, toggleTheme } = useTheme();
     usePresence();
 
@@ -6112,22 +6119,34 @@ const ViewerLayout = () => {
         <div className="viewer-layout-container">
             <div className="viewer-header">
                 <div className="viewer-header-left">
-                    {role === 'owner' && (
-                        <Link to="/dashboard" className="btn-back">
-                            &larr; Quay láº¡i Trang Quáº£n Trá»‹
-                        </Link>
-                    )}
-                    {canViewDetail && (
-                         <div className="filter-group">
-                            <button onClick={() => setViewMode('summary')} className={`view-toggle-btn ${viewMode === 'summary' ? 'active' : ''}`}>
-                                Xem Tá»•ng Há»£p
-                            </button>
-                            <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
-                                Xem Chi Tiáº¿t
-                            </button>
-                         </div>
-                    )}
-                </div>
+    {role === 'owner' && (
+        <Link to="/dashboard" className="btn-back">
+            &larr; Quay láº¡i Trang Quáº£n Trá»‹
+        </Link>
+    )}
+
+    {/* Náº¿u Ä‘ang á»Ÿ trang Ä‘á»‘i chiáº¿u thÃ¬ hiá»‡n nÃºt quay láº¡i */}
+    {isReconcilePage ? (
+        <button
+            onClick={() => navigate('/view')}
+            className="btn-back"
+        >
+            &larr; Quay láº¡i Xem Kho
+        </button>
+    ) : (
+        /* Náº¿u Ä‘ang á»Ÿ trang kho thÃ¬ hiá»‡n 2 nÃºt cháº¿ Ä‘á»™ xem */
+        canViewDetail && (
+            <div className="filter-group">
+                <button onClick={() => setViewMode('summary')} className={`view-toggle-btn ${viewMode === 'summary' ? 'active' : ''}`}>
+                    Xem Tá»•ng Há»£p
+                </button>
+                <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
+                    Xem Chi Tiáº¿t
+                </button>
+            </div>
+        )
+    )}
+</div>
 
                 <div className="viewer-header-center">
                     <img src={companyLogo} alt="Logo CÃ´ng ty" className="header-logo" />
@@ -6135,6 +6154,16 @@ const ViewerLayout = () => {
                 </div>
 
                 <div className="viewer-header-right">
+
+{role === 'admin' && userData?.canReconcile && (
+    <Link 
+        to="/doi-chieu-ton-kho" 
+        style={{ marginRight: '8px', fontSize: '13px' }}
+        title="Äá»‘i chiáº¿u tá»“n kho"
+    >
+        <FiGitMerge style={{ fontSize: '22px' }} />
+    </Link>
+)}
     <button
         onClick={toggleTheme}
         title={theme === 'light' ? 'Chuyá»ƒn Dark Mode' : 'Chuyá»ƒn Light Mode'}
@@ -6156,12 +6185,15 @@ const ViewerLayout = () => {
 </div>
             </div>
 
-            <div className="viewer-main-content">
-                {(viewMode === 'detail' && canViewDetail) 
-                    ? <InventoryPage />
-                    : <InventorySummaryPage />
-                }
-            </div>
+<div className="viewer-main-content">
+    {isReconcilePage ? (
+        <InventoryReconciliationPage />
+    ) : (
+        (viewMode === 'detail' && canViewDetail) 
+            ? <InventoryPage />
+            : <InventorySummaryPage />
+    )}
+</div>
 
             <button className="floating-toggle-btn" onClick={toggleCalculator} title="Má»Ÿ mÃ¡y tÃ­nh (F2)">
                 <MdCalculate />
@@ -6175,7 +6207,7 @@ export default ViewerLayout;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
 
 
 // src/components/ViewExportSlipModal.jsx
@@ -6394,7 +6426,7 @@ export default ViewExportSlipModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
 
 
 // src/components/ViewImportSlipModal.jsx
@@ -6487,7 +6519,7 @@ export default ViewImportSlipModal;
 
 
 
---- FILE: D:\quan-ly-kho\src\context\ThemeContext.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\context\ThemeContext.jsx ---
 
 
 // src/context/ThemeContext.jsx
@@ -6497,7 +6529,6 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    // Kiá»ƒm tra xem trong mÃ¡y Ä‘Ã£ lÆ°u cháº¿ Ä‘á»™ dark chÆ°a
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('app-theme');
         return savedTheme === 'dark';
@@ -6507,7 +6538,6 @@ export const ThemeProvider = ({ children }) => {
         setIsDarkMode(prev => !prev);
     };
 
-    // Má»—i khi biáº¿n isDarkMode thay Ä‘á»•i, ta cáº­p nháº­t class cho tháº» <body>
     useEffect(() => {
         const body = document.body;
         if (isDarkMode) {
@@ -6519,19 +6549,21 @@ export const ThemeProvider = ({ children }) => {
         }
     }, [isDarkMode]);
 
+    // Export cáº£ isDarkMode láº«n theme Ä‘á»ƒ tÆ°Æ¡ng thÃ­ch vá»›i táº¥t cáº£ component
+    const theme = isDarkMode ? 'dark' : 'light';
+
     return (
-        <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+        <ThemeContext.Provider value={{ isDarkMode, theme, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );
 };
 
-// Hook Ä‘á»ƒ cÃ¡c file khÃ¡c gá»i dÃ¹ng dá»… dÃ ng
 export const useTheme = () => useContext(ThemeContext);
 
 
 
---- FILE: D:\quan-ly-kho\src\context\UserContext.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\context\UserContext.jsx ---
 
 
 // src/context/UserContext.jsx
@@ -6598,7 +6630,7 @@ export const useAuth = () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\hooks\useFirestorePagination.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useFirestorePagination.js ---
 
 
 // src/hooks/useFirestorePagination.js
@@ -6688,7 +6720,7 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
 
 
 // src/hooks/useFirestorePagination.test.js
@@ -6791,7 +6823,7 @@ describe('Hook: useFirestorePagination', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\hooks\usePresence.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\usePresence.js ---
 
 
 // src/hooks/usePresence.js
@@ -6850,7 +6882,7 @@ export const usePresence = () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\hooks\useProductLedger.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useProductLedger.js ---
 
 
 // src/hooks/useProductLedger.js
@@ -6929,7 +6961,7 @@ export const useProductLedger = () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\hooks\useRealtimeNotification.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useRealtimeNotification.js ---
 
 
 import { useState, useEffect, useRef } from 'react';
@@ -6994,7 +7026,7 @@ if (lastSeenTimestampRef.current && newestTimestamp && typeof newestTimestamp.to
 
 
 
---- FILE: D:\quan-ly-kho\src\hooks\useResponsive.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useResponsive.js ---
 
 
 import { useState, useEffect } from 'react';
@@ -7017,7 +7049,7 @@ export const useResponsive = () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\DashboardPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DashboardPage.jsx ---
 
 
 // src/pages/DashboardPage.jsx
@@ -7229,7 +7261,7 @@ export default DashboardPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\DataImportPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DataImportPage.jsx ---
 
 
 // src/pages/DataImportPage.jsx
@@ -7521,7 +7553,7 @@ export default DataImportPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\ExportListPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ExportListPage.jsx ---
 
 
 // src/pages/ExportListPage.jsx
@@ -7958,7 +7990,7 @@ return (
                     <table className="products-table list-page-table">
 <thead>
                 <tr>
-                    <th>NgÃ y táº¡o</th>
+                    <th>NgÃ y xuáº¥t</th>
                     <th>KhÃ¡ch hÃ ng / NÆ¡i nháº­n</th>
                     <th>Diá»…n giáº£i</th>
                     <th>Tráº¡ng thÃ¡i</th>
@@ -7968,7 +8000,7 @@ return (
                 <tbody>
 {exportSlips.length > 0 ? exportSlips.map(slip => (
                                 <tr key={slip.id}>
-                                    <td>{formatDate(slip.createdAt)}</td>
+                                    <td>{slip.exportDate ? slip.exportDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.customer}</td>
                                     <td>{slip.description}</td>
                                     <td><StatusBadge status={slip.status} /></td>
@@ -8029,7 +8061,7 @@ export default ExportListPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\ImportListPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ImportListPage.jsx ---
 
 
 // src/pages/ImportListPage.jsx
@@ -8428,7 +8460,7 @@ return (
                     <table className="products-table list-page-table">
 <thead>
                             <tr>
-                                <th>NgÃ y táº¡o</th>
+                                <th>NgÃ y nháº­p</th>
                                 <th>NhÃ  cung cáº¥p</th>
                                 <th>Diá»…n giáº£i</th>
                                 <th>Tráº¡ng thÃ¡i</th>
@@ -8438,7 +8470,7 @@ return (
                         <tbody>
 {importSlips.length > 0 ? importSlips.map(slip => (
                                 <tr key={slip.id}>
-                                   <td>{formatDate(slip.createdAt)}</td>
+                                   <td>{slip.importDate ? slip.importDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.supplierName}</td>
                                     <td>{slip.description}</td>
                                     <td><StatusBadge status={slip.status} /></td>
@@ -8495,7 +8527,7 @@ export default ImportListPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\InventoryPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventoryPage.jsx ---
 
 
 // src/pages/InventoryPage.jsx
@@ -8959,14 +8991,17 @@ export default InventoryPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\InventoryReconciliationPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventoryReconciliationPage.jsx ---
 
 
 // src/pages/InventoryReconciliationPage.jsx
+import { useState } from 'react';
 import React, { useMemo, useRef } from 'react';
 import useReconciliationStore from '../stores/reconciliationStore';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { formatDate } from '../utils/dateUtils';
+import { formatNumber } from '../utils/numberUtils';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
 import { FiUpload, FiDownload, FiRefreshCw, FiAlertCircle, FiXCircle } from 'react-icons/fi';
@@ -9113,6 +9148,30 @@ const TABS = [
 // COMPONENT CHÃNH
 // ============================================================
 const InventoryReconciliationPage = () => {
+    const [stockModal, setStockModal] = useState({ isOpen: false, productId: '', data: [] , loading: false });
+
+const openStockModal = async (productId) => {
+    setStockModal({ isOpen: true, productId, data: [], loading: true });
+    try {
+        const q = query(
+            collection(db, 'inventory_lots'),
+            where('productId', '==', productId.trim().toUpperCase()),
+            where('quantityRemaining', '>', 0)
+        );
+        const snap = await getDocs(q);
+        const lots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        lots.sort((a, b) => {
+            const da = a.expiryDate?.toDate?.() || new Date(9999,0,1);
+            const db2 = b.expiryDate?.toDate?.() || new Date(9999,0,1);
+            return da - db2;
+        });
+        setStockModal({ isOpen: true, productId, data: lots, loading: false });
+    } catch (e) {
+        setStockModal({ isOpen: true, productId, data: [], loading: false });
+    }
+};
+
+const closeStockModal = () => setStockModal({ isOpen: false, productId: '', data: [], loading: false });
     // â”€â”€ Store: giá»¯ nguyÃªn dá»¯ liá»‡u khi chuyá»ƒn trang â”€â”€
     const {
         webkhoLots, convMap, altCodeMap, missingMisaCodes, lastUpdated,
@@ -9444,6 +9503,84 @@ const InventoryReconciliationPage = () => {
                         </button>
                     )}
                 </div>
+                {/* MODAL XEM Tá»’N KHO NHANH */}
+{stockModal.isOpen && (
+    <div onClick={closeStockModal} style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+    }}>
+        <div onClick={e => e.stopPropagation()} style={{
+            background: 'var(--bg-color, #fff)', borderRadius: '12px',
+            padding: '24px', width: '600px', maxWidth: '90vw',
+            maxHeight: '80vh', overflowY: 'auto',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0 }}>Tá»“n kho: {stockModal.productId}</h3>
+                <button onClick={closeStockModal} style={{
+                    background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer'
+                }}>âœ•</button>
+            </div>
+
+            {stockModal.loading ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>Äang táº£i...</p>
+            ) : stockModal.data.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>KhÃ´ng cÃ³ tá»“n kho.</p>
+            ) : (
+                <>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
+                                <th style={{ padding: '8px' }}>Sá»‘ lÃ´</th>
+                                <th style={{ padding: '8px' }}>HSD</th>
+                                <th style={{ padding: '8px', textAlign: 'right' }}>Tá»“n thá»±c</th>
+                                <th style={{ padding: '8px', textAlign: 'right' }}>Äáº·t giá»¯</th>
+                                <th style={{ padding: '8px', textAlign: 'right' }}>Kháº£ dá»¥ng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stockModal.data.map(lot => {
+                                const allocated = lot.quantityAllocated || 0;
+                                const available = lot.quantityRemaining - allocated;
+                                return (
+                                    <tr key={lot.id} style={{ borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '8px' }}>{lot.lotNumber || '(KhÃ´ng cÃ³)'}</td>
+                                        <td style={{ padding: '8px' }}>
+                                            {lot.expiryDate ? formatDate(lot.expiryDate) : '(KhÃ´ng cÃ³)'}
+                                        </td>
+                                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
+                                            {formatNumber(lot.quantityRemaining)}
+                                        </td>
+                                        <td style={{ padding: '8px', textAlign: 'right', color: '#e67e22' }}>
+                                            {allocated > 0 ? formatNumber(allocated) : '-'}
+                                        </td>
+                                        <td style={{ padding: '8px', textAlign: 'right', color: 'green', fontWeight: 'bold' }}>
+                                            {formatNumber(available)}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        <tfoot>
+                            <tr style={{ borderTop: '2px solid #ddd', fontWeight: 'bold' }}>
+                                <td colSpan={2} style={{ padding: '8px' }}>Tá»•ng</td>
+                                <td style={{ padding: '8px', textAlign: 'right' }}>
+                                    {formatNumber(stockModal.data.reduce((s, l) => s + l.quantityRemaining, 0))}
+                                </td>
+                                <td style={{ padding: '8px', textAlign: 'right', color: '#e67e22' }}>
+                                    {formatNumber(stockModal.data.reduce((s, l) => s + (l.quantityAllocated || 0), 0))}
+                                </td>
+                                <td style={{ padding: '8px', textAlign: 'right', color: 'green' }}>
+                                    {formatNumber(stockModal.data.reduce((s, l) => s + (l.quantityRemaining - (l.quantityAllocated || 0)), 0))}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </>
+            )}
+        </div>
+    </div>
+)}
             </div>
 
             {/* Cáº¢NH BÃO LOT TRÃ™NG Sá» LÃ” NHÆ¯NG KHÃC HSD */}
@@ -9567,7 +9704,19 @@ const InventoryReconciliationPage = () => {
                                     const chenhColor = r.chenhWebkho > 0 ? '#e67e22' : r.chenhWebkho < 0 ? '#e74c3c' : 'inherit';
                                     return (
                                         <tr key={i} style={{ backgroundColor: rowBg }}>
-                                            <td style={tdStyle}><strong>{r.productId}</strong></td>
+                                            <td style={tdStyle}>
+    <button
+        onClick={() => openStockModal(r.productId)}
+        style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#007bff', textDecoration: 'underline', fontWeight: 'bold',
+            fontSize: 'inherit', padding: 0
+        }}
+        title="Báº¥m Ä‘á»ƒ xem tá»“n kho chi tiáº¿t"
+    >
+        {r.productId}
+    </button>
+</td>
                                             <td style={tdStyle}>{r.lotNumber}</td>
                                             <td style={tdStyle}>{r.hsdWebkho}</td>
                                             <td style={tdStyle}>{r.dvtWebkho}</td>
@@ -9627,7 +9776,7 @@ export default InventoryReconciliationPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
 // src/pages/InventorySummaryPage.jsx
@@ -10403,7 +10552,7 @@ export default InventorySummaryPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\LotTracePage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\LotTracePage.jsx ---
 
 
 // src/pages/LotTracePage.jsx
@@ -10726,7 +10875,7 @@ export default LotTracePage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
 
 
 // src/pages/MobileInventoryPage.jsx
@@ -11149,7 +11298,7 @@ export default MobileInventoryPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\NewExportPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
 // src/pages/NewExportPage.jsx (Thay tháº¿ toÃ n bá»™ ná»™i dung file)
@@ -11782,7 +11931,7 @@ export default NewExportPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\NewImportPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\NewImportPage.jsx ---
 
 
 // src/pages/NewImportPage.jsx
@@ -13630,7 +13779,7 @@ export default NewImportPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\PartnersPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\PartnersPage.jsx ---
 
 
 // src/pages/PartnersPage.jsx
@@ -13875,7 +14024,7 @@ export default PartnersPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\PartnersPage.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\PartnersPage.module.css ---
 
 
 /* src/pages/PartnersPage.module.css */
@@ -13895,7 +14044,7 @@ export default PartnersPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\PartnersPage.test.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\PartnersPage.test.jsx ---
 
 
 // src/pages/PartnersPage.test.jsx
@@ -13990,7 +14139,7 @@ describe('Page: PartnersPage', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\ProductLedgerPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ProductLedgerPage.jsx ---
 
 
 // src/pages/ProductLedgerPage.jsx
@@ -14512,7 +14661,7 @@ export default ProductLedgerPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\ProductsPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ProductsPage.jsx ---
 
 
 // src/pages/ProductsPage.jsx
@@ -14720,7 +14869,7 @@ export default ProductsPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\ProductsPage.test.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ProductsPage.test.jsx ---
 
 
 // src/pages/ProductsPage.test.jsx
@@ -14818,7 +14967,7 @@ describe('Page: ProductsPage', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\SalesAnalyticsPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\SalesAnalyticsPage.jsx ---
 
 
 // src/pages/SalesAnalyticsPage.jsx
@@ -15248,7 +15397,7 @@ export default SalesAnalyticsPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
 // src/pages/StocktakeListPage.jsx
@@ -15502,7 +15651,7 @@ export default StocktakeListPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
 
 
 // src/pages/StocktakeSessionPage.jsx
@@ -16176,7 +16325,7 @@ export default StocktakeSessionPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\pages\UsersPage.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\UsersPage.jsx ---
 
 
 // src/pages/UsersPage.jsx
@@ -16444,7 +16593,7 @@ export default UsersPage;
 
 
 
---- FILE: D:\quan-ly-kho\src\services\dashboardService.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\dashboardService.js ---
 
 
 // src/services/dashboardService.js
@@ -16830,18 +16979,22 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
     ]);
 
     // Xá»­ lÃ½ cÃ¡c láº§n nháº­p kho tá»« phiÃªÃº
-    importSnap.forEach(doc => {
-        const slip = doc.data();
-        slip.items.forEach(item => {
-            if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
-                transactions.push({
-                    date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'NHáº¬P',
-                    description: `Nháº­p tá»«: ${slip.supplierName}`, importQty: Number(item.quantity), exportQty: 0,
-                    lotNumber: item.lotNumber, expiryDate: item.expiryDate, expiryDateObject: parseDateString(item.expiryDate)
-                });
-            }
-        });
+    // THAY Báº°NG ÄOáº N NÃ€Y:
+importSnap.forEach(doc => {
+    const slip = doc.data();
+    slip.items.forEach(item => {
+        if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
+            const safeExpiryDate = item.expiryDate
+                ? (typeof item.expiryDate === 'string' ? item.expiryDate : formatDate(item.expiryDate))
+                : '';
+            transactions.push({
+                date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'NHáº¬P',
+                description: `Nháº­p tá»«: ${slip.supplierName}`, importQty: Number(item.quantity), exportQty: 0,
+                lotNumber: item.lotNumber, expiryDate: safeExpiryDate, expiryDateObject: parseDateString(item.expiryDate)
+            });
+        }
     });
+});
 
     // Xá»­ lÃ½ cÃ¡c láº§n nháº­p "Tá»“n (kho) Ä‘áº§u ká»³"
     tdkSnaps.forEach(snap => {
@@ -16860,20 +17013,24 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
     });
 
     // Xá»­ lÃ½ cÃ¡c láº§n xuáº¥t kho
-    exportSnap.forEach(doc => {
-        const slip = doc.data();
-        slip.items.forEach(item => {
-            if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
-                transactions.push({
-                    date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'XUáº¤T',
-                    description: `Xuáº¥t cho: ${slip.customer}`, importQty: 0,
-                    exportQty: Number(item.quantityToExport || item.quantityExported),
-                    lotNumber: item.lotNumber, expiryDate: item.expiryDate,
-                    expiryDateObject: parseDateString(item.expiryDate)
-                });
-            }
-        });
+    // THAY Báº°NG ÄOáº N NÃ€Y:
+exportSnap.forEach(doc => {
+    const slip = doc.data();
+    slip.items.forEach(item => {
+        if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
+            const safeExpiryDate = item.expiryDate
+                ? (typeof item.expiryDate === 'string' ? item.expiryDate : formatDate(item.expiryDate))
+                : '';
+            transactions.push({
+                date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'XUáº¤T',
+                description: `Xuáº¥t cho: ${slip.customer}`, importQty: 0,
+                exportQty: Number(item.quantityToExport || item.quantityExported),
+                lotNumber: item.lotNumber, expiryDate: safeExpiryDate,
+                expiryDateObject: parseDateString(item.expiryDate)
+            });
+        }
     });
+});
 
     // --- Báº®T Äáº¦U THÃŠM LOGIC Lá»ŒC Má»šI ---
     let finalTransactions = transactions;
@@ -16948,7 +17105,7 @@ export const getInventoryHistory = async (productId, days = 30) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\services\partnerService.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\partnerService.js ---
 
 
 // src/services/partnerService.js
@@ -16996,7 +17153,7 @@ export const deletePartner = async (partnerId) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\services\partnerService.test.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\partnerService.test.js ---
 
 
 // src/services/partnerService.test.js
@@ -17072,7 +17229,7 @@ describe('Service: partnerService', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\services\productService.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\productService.js ---
 
 
 // src/services/productService.js
@@ -17129,7 +17286,7 @@ export const deleteProduct = async (productId) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\services\productService.test.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\productService.test.js ---
 
 
 // src/services/productService.test.js
@@ -17202,7 +17359,7 @@ describe('Service: productService', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\services\stocktakeService.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\stocktakeService.js ---
 
 
 // src/services/stocktakeService.js
@@ -17257,7 +17414,7 @@ export const deleteStocktakeSession = async (sessionId) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\services\stocktakeService.test.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\stocktakeService.test.js ---
 
 
 // src/services/stocktakeService.test.js
@@ -17337,7 +17494,7 @@ describe('Service: stocktakeService', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\stores\exportSlipStore.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\exportSlipStore.js ---
 
 
 // src/stores/exportSlipStore.js
@@ -17539,7 +17696,7 @@ export default useExportSlipStore;
 
 
 
---- FILE: D:\quan-ly-kho\src\stores\importSlipStore.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\importSlipStore.js ---
 
 
 // src/stores/importSlipStore.js
@@ -17698,7 +17855,7 @@ export default useImportSlipStore;
 
 
 
---- FILE: D:\quan-ly-kho\src\stores\reconciliationStore.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\reconciliationStore.js ---
 
 
 // src/stores/reconciliationStore.js
@@ -17744,7 +17901,7 @@ export default useReconciliationStore;
 
 
 
---- FILE: D:\quan-ly-kho\src\stores\stocktakeStore.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\stocktakeStore.js ---
 
 
 // src/stores/stocktakeStore.js
@@ -17820,7 +17977,7 @@ export default useStocktakeStore;
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\AdminLayout.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\AdminLayout.css ---
 
 
 :root {
@@ -19593,7 +19750,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\Dashboard.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\Dashboard.css ---
 
 
 /* src/styles/Dashboard.css */
@@ -19754,7 +19911,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\DashboardPage.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\DashboardPage.module.css ---
 
 
 /* src/styles/DashboardPage.module.css */
@@ -19812,7 +19969,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\DataImportPage.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\DataImportPage.module.css ---
 
 
 /* src/styles/DataImportPage.module.css */
@@ -19938,7 +20095,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\ExpiryNotificationBanner.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\ExpiryNotificationBanner.css ---
 
 
 /* src/styles/ExpiryNotificationBanner.css */
@@ -20036,7 +20193,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\MobileInventoryPage.module.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\MobileInventoryPage.module.css ---
 
 
 /* src/styles/MobileInventoryPage.module.css */
@@ -20278,7 +20435,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\print.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\print.css ---
 
 
 /* src/styles/print.css (PhiÃªn báº£n cuá»‘i cÃ¹ng) */
@@ -20416,7 +20573,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\Responsive.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\Responsive.css ---
 
 
 /* src/styles/Responsive.css */
@@ -20435,7 +20592,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\styles\StocktakePage.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\StocktakePage.css ---
 
 
 /* src/styles/StocktakePage.css */
@@ -20572,7 +20729,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: D:\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
 
 
 // src/test/__mocks__/firebaseFirestore.js
@@ -20620,7 +20777,7 @@ export const documentId = vi.fn(() => 'mockDocumentId');
 
 
 
---- FILE: D:\quan-ly-kho\src\test\setup.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\test\setup.js ---
 
 
 // src/test/setup.js
@@ -20638,7 +20795,7 @@ afterEach(() => {
 
 
 
---- FILE: D:\quan-ly-kho\src\utils\dateUtils.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\dateUtils.js ---
 
 
 // src/utils/dateUtils.js
@@ -20646,6 +20803,8 @@ afterEach(() => {
 /**
  * Chuyá»ƒn Ä‘á»•i má»™t Ä‘á»‘i tÆ°á»£ng Firebase Timestamp hoáº·c Date thÃ nh chuá»—i dd/mm/yyyy.
  */
+import { SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
+
 export const formatDate = (dateOrTimestamp) => {
   let date;
   if (dateOrTimestamp && typeof dateOrTimestamp.toDate === 'function') {
@@ -20845,7 +21004,7 @@ export const getRelativeTimeFromNow = (expiryDate) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\utils\dateUtils.test.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\dateUtils.test.js ---
 
 
 import { describe, it, expect } from 'vitest';
@@ -20884,7 +21043,7 @@ describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
 
 
 
---- FILE: D:\quan-ly-kho\src\utils\excelExportUtils.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\excelExportUtils.js ---
 
 
 // src/utils/excelExportUtils.js
@@ -21070,7 +21229,7 @@ const addRowToSheet = (worksheet, product, productId, lot) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\utils\numberUtils.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\numberUtils.js ---
 
 
 // src/utils/numberUtils.js
@@ -21144,7 +21303,7 @@ export const calculateCaseCount = (quantity, factor, unit) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\utils\pdfUtils.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\pdfUtils.js ---
 
 
 // src/utils/pdfUtils.js
@@ -21549,7 +21708,7 @@ export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filt
 
 
 
---- FILE: D:\quan-ly-kho\src\utils\stringUtils.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\stringUtils.js ---
 
 
 // src/utils/stringUtils.js
@@ -21656,7 +21815,7 @@ export const fuzzyNormalize = (str) => {
 
 
 
---- FILE: D:\quan-ly-kho\src\App.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\App.jsx ---
 
 
 // src/App.jsx
@@ -21743,7 +21902,7 @@ export default App;
 
 
 
---- FILE: D:\quan-ly-kho\src\constants.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\constants.js ---
 
 
 /// src/constants.js
@@ -21796,7 +21955,7 @@ export const ALL_SUBGROUPS = [
 
 
 
---- FILE: D:\quan-ly-kho\src\firebaseConfig.js ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\firebaseConfig.js ---
 
 
 // src/firebaseConfig.js
@@ -21829,7 +21988,7 @@ export { db, auth, functions, app, rtdb }; // <-- THÃŠM rtdb VÃ€O EXPORT
 
 
 
---- FILE: D:\quan-ly-kho\src\index.css ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\index.css ---
 
 
 /* src/index.css */
@@ -21850,7 +22009,7 @@ body {
 
 
 
---- FILE: D:\quan-ly-kho\src\main.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\main.jsx ---
 
 
 // src/main.jsx
@@ -21886,7 +22045,7 @@ createRoot(document.getElementById('root')).render(
 
 
 
---- FILE: D:\quan-ly-kho\src\ThemeContext.jsx ---
+--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\ThemeContext.jsx ---
 
 
 // src/context/ThemeContext.jsx
