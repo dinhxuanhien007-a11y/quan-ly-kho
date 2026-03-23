@@ -1,7 +1,7 @@
 // src/components/ViewerLayout.jsx
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import InventoryPage from '../pages/InventoryPage';
 import InventorySummaryPage from '../pages/InventorySummaryPage';
 import { useAuth } from '../context/UserContext';
@@ -13,9 +13,16 @@ import companyLogo from '../assets/logo.png';
 import { usePresence } from '../hooks/usePresence';
 import { useTheme } from '../context/ThemeContext';
 import { MdDarkMode, MdLightMode } from 'react-icons/md';
+// THÊM 2 DÒNG NÀY vào phần import
+import { Routes, Route } from 'react-router-dom';
+import InventoryReconciliationPage from '../pages/InventoryReconciliationPage';
+import { FiGitMerge } from 'react-icons/fi';
 
 const ViewerLayout = () => {
-    const { role, user } = useAuth();
+    const { role, user, userData } = useAuth();
+const location = useLocation();
+const navigate = useNavigate();
+const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     const { theme, toggleTheme } = useTheme();
     usePresence();
 
@@ -82,22 +89,34 @@ const ViewerLayout = () => {
         <div className="viewer-layout-container">
             <div className="viewer-header">
                 <div className="viewer-header-left">
-                    {role === 'owner' && (
-                        <Link to="/dashboard" className="btn-back">
-                            &larr; Quay lại Trang Quản Trị
-                        </Link>
-                    )}
-                    {canViewDetail && (
-                         <div className="filter-group">
-                            <button onClick={() => setViewMode('summary')} className={`view-toggle-btn ${viewMode === 'summary' ? 'active' : ''}`}>
-                                Xem Tổng Hợp
-                            </button>
-                            <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
-                                Xem Chi Tiết
-                            </button>
-                         </div>
-                    )}
-                </div>
+    {role === 'owner' && (
+        <Link to="/dashboard" className="btn-back">
+            &larr; Quay lại Trang Quản Trị
+        </Link>
+    )}
+
+    {/* Nếu đang ở trang đối chiếu thì hiện nút quay lại */}
+    {isReconcilePage ? (
+        <button
+            onClick={() => navigate('/view')}
+            className="btn-back"
+        >
+            &larr; Quay lại Xem Kho
+        </button>
+    ) : (
+        /* Nếu đang ở trang kho thì hiện 2 nút chế độ xem */
+        canViewDetail && (
+            <div className="filter-group">
+                <button onClick={() => setViewMode('summary')} className={`view-toggle-btn ${viewMode === 'summary' ? 'active' : ''}`}>
+                    Xem Tổng Hợp
+                </button>
+                <button onClick={() => setViewMode('detail')} className={`view-toggle-btn ${viewMode === 'detail' ? 'active' : ''}`}>
+                    Xem Chi Tiết
+                </button>
+            </div>
+        )
+    )}
+</div>
 
                 <div className="viewer-header-center">
                     <img src={companyLogo} alt="Logo Công ty" className="header-logo" />
@@ -105,6 +124,16 @@ const ViewerLayout = () => {
                 </div>
 
                 <div className="viewer-header-right">
+
+{role === 'admin' && userData?.canReconcile && (
+    <Link 
+        to="/doi-chieu-ton-kho" 
+        style={{ marginRight: '8px', fontSize: '13px' }}
+        title="Đối chiếu tồn kho"
+    >
+        <FiGitMerge style={{ fontSize: '22px' }} />
+    </Link>
+)}
     <button
         onClick={toggleTheme}
         title={theme === 'light' ? 'Chuyển Dark Mode' : 'Chuyển Light Mode'}
@@ -126,12 +155,15 @@ const ViewerLayout = () => {
 </div>
             </div>
 
-            <div className="viewer-main-content">
-                {(viewMode === 'detail' && canViewDetail) 
-                    ? <InventoryPage />
-                    : <InventorySummaryPage />
-                }
-            </div>
+<div className="viewer-main-content">
+    {isReconcilePage ? (
+        <InventoryReconciliationPage />
+    ) : (
+        (viewMode === 'detail' && canViewDetail) 
+            ? <InventoryPage />
+            : <InventorySummaryPage />
+    )}
+</div>
 
             <button className="floating-toggle-btn" onClick={toggleCalculator} title="Mở máy tính (F2)">
                 <MdCalculate />
