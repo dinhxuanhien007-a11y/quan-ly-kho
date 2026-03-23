@@ -1,8 +1,11 @@
 // src/pages/InventoryReconciliationPage.jsx
+import { useState } from 'react';
 import React, { useMemo, useRef } from 'react';
 import useReconciliationStore from '../stores/reconciliationStore';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { formatDate } from '../utils/dateUtils';
+import { formatNumber } from '../utils/numberUtils';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
 import { FiUpload, FiDownload, FiRefreshCw, FiAlertCircle, FiXCircle } from 'react-icons/fi';
@@ -149,6 +152,30 @@ const TABS = [
 // COMPONENT CHÍNH
 // ============================================================
 const InventoryReconciliationPage = () => {
+    const [stockModal, setStockModal] = useState({ isOpen: false, productId: '', data: [] , loading: false });
+
+const openStockModal = async (productId) => {
+    setStockModal({ isOpen: true, productId, data: [], loading: true });
+    try {
+        const q = query(
+            collection(db, 'inventory_lots'),
+            where('productId', '==', productId.trim().toUpperCase()),
+            where('quantityRemaining', '>', 0)
+        );
+        const snap = await getDocs(q);
+        const lots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        lots.sort((a, b) => {
+            const da = a.expiryDate?.toDate?.() || new Date(9999,0,1);
+            const db2 = b.expiryDate?.toDate?.() || new Date(9999,0,1);
+            return da - db2;
+        });
+        setStockModal({ isOpen: true, productId, data: lots, loading: false });
+    } catch (e) {
+        setStockModal({ isOpen: true, productId, data: [], loading: false });
+    }
+};
+
+const closeStockModal = () => setStockModal({ isOpen: false, productId: '', data: [], loading: false });
     // ── Store: giữ nguyên dữ liệu khi chuyển trang ──
     const {
         webkhoLots, convMap, altCodeMap, missingMisaCodes, lastUpdated,
@@ -480,6 +507,84 @@ const InventoryReconciliationPage = () => {
                         </button>
                     )}
                 </div>
+                {/* MODAL XEM TỒN KHO NHANH */}
+{stockModal.isOpen && (
+    <div onClick={closeStockModal} style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+    }}>
+        <div onClick={e => e.stopPropagation()} style={{
+            background: 'var(--bg-color, #fff)', borderRadius: '12px',
+            padding: '24px', width: '600px', maxWidth: '90vw',
+            maxHeight: '80vh', overflowY: 'auto',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0 }}>Tồn kho: {stockModal.productId}</h3>
+                <button onClick={closeStockModal} style={{
+                    background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer'
+                }}>✕</button>
+            </div>
+
+            {stockModal.loading ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>Đang tải...</p>
+            ) : stockModal.data.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>Không có tồn kho.</p>
+            ) : (
+                <>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
+                                <th style={{ padding: '8px' }}>Số lô</th>
+                                <th style={{ padding: '8px' }}>HSD</th>
+                                <th style={{ padding: '8px', textAlign: 'right' }}>Tồn thực</th>
+                                <th style={{ padding: '8px', textAlign: 'right' }}>Đặt giữ</th>
+                                <th style={{ padding: '8px', textAlign: 'right' }}>Khả dụng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stockModal.data.map(lot => {
+                                const allocated = lot.quantityAllocated || 0;
+                                const available = lot.quantityRemaining - allocated;
+                                return (
+                                    <tr key={lot.id} style={{ borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '8px' }}>{lot.lotNumber || '(Không có)'}</td>
+                                        <td style={{ padding: '8px' }}>
+                                            {lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}
+                                        </td>
+                                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>
+                                            {formatNumber(lot.quantityRemaining)}
+                                        </td>
+                                        <td style={{ padding: '8px', textAlign: 'right', color: '#e67e22' }}>
+                                            {allocated > 0 ? formatNumber(allocated) : '-'}
+                                        </td>
+                                        <td style={{ padding: '8px', textAlign: 'right', color: 'green', fontWeight: 'bold' }}>
+                                            {formatNumber(available)}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        <tfoot>
+                            <tr style={{ borderTop: '2px solid #ddd', fontWeight: 'bold' }}>
+                                <td colSpan={2} style={{ padding: '8px' }}>Tổng</td>
+                                <td style={{ padding: '8px', textAlign: 'right' }}>
+                                    {formatNumber(stockModal.data.reduce((s, l) => s + l.quantityRemaining, 0))}
+                                </td>
+                                <td style={{ padding: '8px', textAlign: 'right', color: '#e67e22' }}>
+                                    {formatNumber(stockModal.data.reduce((s, l) => s + (l.quantityAllocated || 0), 0))}
+                                </td>
+                                <td style={{ padding: '8px', textAlign: 'right', color: 'green' }}>
+                                    {formatNumber(stockModal.data.reduce((s, l) => s + (l.quantityRemaining - (l.quantityAllocated || 0)), 0))}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </>
+            )}
+        </div>
+    </div>
+)}
             </div>
 
             {/* CẢNH BÁO LOT TRÙNG SỐ LÔ NHƯNG KHÁC HSD */}
@@ -603,7 +708,19 @@ const InventoryReconciliationPage = () => {
                                     const chenhColor = r.chenhWebkho > 0 ? '#e67e22' : r.chenhWebkho < 0 ? '#e74c3c' : 'inherit';
                                     return (
                                         <tr key={i} style={{ backgroundColor: rowBg }}>
-                                            <td style={tdStyle}><strong>{r.productId}</strong></td>
+                                            <td style={tdStyle}>
+    <button
+        onClick={() => openStockModal(r.productId)}
+        style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#007bff', textDecoration: 'underline', fontWeight: 'bold',
+            fontSize: 'inherit', padding: 0
+        }}
+        title="Bấm để xem tồn kho chi tiết"
+    >
+        {r.productId}
+    </button>
+</td>
                                             <td style={tdStyle}>{r.lotNumber}</td>
                                             <td style={tdStyle}>{r.hsdWebkho}</td>
                                             <td style={tdStyle}>{r.dvtWebkho}</td>
