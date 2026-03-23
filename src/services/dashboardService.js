@@ -381,18 +381,22 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
     ]);
 
     // Xử lý các lần nhập kho từ phiêú
-    importSnap.forEach(doc => {
-        const slip = doc.data();
-        slip.items.forEach(item => {
-            if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
-                transactions.push({
-                    date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'NHẬP',
-                    description: `Nhập từ: ${slip.supplierName}`, importQty: Number(item.quantity), exportQty: 0,
-                    lotNumber: item.lotNumber, expiryDate: item.expiryDate, expiryDateObject: parseDateString(item.expiryDate)
-                });
-            }
-        });
+    // THAY BẰNG ĐOẠN NÀY:
+importSnap.forEach(doc => {
+    const slip = doc.data();
+    slip.items.forEach(item => {
+        if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
+            const safeExpiryDate = item.expiryDate
+                ? (typeof item.expiryDate === 'string' ? item.expiryDate : formatDate(item.expiryDate))
+                : '';
+            transactions.push({
+                date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'NHẬP',
+                description: `Nhập từ: ${slip.supplierName}`, importQty: Number(item.quantity), exportQty: 0,
+                lotNumber: item.lotNumber, expiryDate: safeExpiryDate, expiryDateObject: parseDateString(item.expiryDate)
+            });
+        }
     });
+});
 
     // Xử lý các lần nhập "Tồn (kho) đầu kỳ"
     tdkSnaps.forEach(snap => {
@@ -411,20 +415,24 @@ export const getProductLedger = async (productId, lotNumberFilter, startDate, en
     });
 
     // Xử lý các lần xuất kho
-    exportSnap.forEach(doc => {
-        const slip = doc.data();
-        slip.items.forEach(item => {
-            if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
-                transactions.push({
-                    date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'XUẤT',
-                    description: `Xuất cho: ${slip.customer}`, importQty: 0,
-                    exportQty: Number(item.quantityToExport || item.quantityExported),
-                    lotNumber: item.lotNumber, expiryDate: item.expiryDate,
-                    expiryDateObject: parseDateString(item.expiryDate)
-                });
-            }
-        });
+    // THAY BẰNG ĐOẠN NÀY:
+exportSnap.forEach(doc => {
+    const slip = doc.data();
+    slip.items.forEach(item => {
+        if (item.productId === upperProductId && (!lotNumberFilter || item.lotNumber === lotNumberFilter)) {
+            const safeExpiryDate = item.expiryDate
+                ? (typeof item.expiryDate === 'string' ? item.expiryDate : formatDate(item.expiryDate))
+                : '';
+            transactions.push({
+                date: slip.createdAt.toDate(), docId: doc.id, isTicket: true, type: 'XUẤT',
+                description: `Xuất cho: ${slip.customer}`, importQty: 0,
+                exportQty: Number(item.quantityToExport || item.quantityExported),
+                lotNumber: item.lotNumber, expiryDate: safeExpiryDate,
+                expiryDateObject: parseDateString(item.expiryDate)
+            });
+        }
     });
+});
 
     // --- BẮT ĐẦU THÊM LOGIC LỌC MỚI ---
     let finalTransactions = transactions;

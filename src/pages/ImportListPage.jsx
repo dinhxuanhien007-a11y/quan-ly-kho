@@ -394,7 +394,7 @@ return (
                     <table className="products-table list-page-table">
 <thead>
                             <tr>
-                                <th>Ngày tạo</th>
+                                <th>Ngày nhập</th>
                                 <th>Nhà cung cấp</th>
                                 <th>Diễn giải</th>
                                 <th>Trạng thái</th>
@@ -404,7 +404,7 @@ return (
                         <tbody>
 {importSlips.length > 0 ? importSlips.map(slip => (
                                 <tr key={slip.id}>
-                                   <td>{formatDate(slip.createdAt)}</td>
+                                   <td>{slip.importDate ? slip.importDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.supplierName}</td>
                                     <td>{slip.description}</td>
                                     <td><StatusBadge status={slip.status} /></td>

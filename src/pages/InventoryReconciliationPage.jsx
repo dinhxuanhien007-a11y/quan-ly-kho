@@ -1,10 +1,11 @@
 // src/pages/InventoryReconciliationPage.jsx
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
+import useReconciliationStore from '../stores/reconciliationStore';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
-import { FiUpload, FiDownload, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
+import { FiUpload, FiDownload, FiRefreshCw, FiAlertCircle, FiXCircle } from 'react-icons/fi';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -109,17 +110,28 @@ function parseMisaExcel(arrayBuffer) {
         items.push({ ma, lo, hsdRaw: hsd, dvt, sl, lotKey: normLot(lo) });
     }
 
-    // Cộng dồn lot trùng (Misa đôi khi có 2 dòng cho cùng 1 lô)
+    // Cộng dồn lot trùng + phát hiện lot có 2 HSD khác nhau
     const merged = new Map();
+    const duplicateHsd = [];
+
     for (const item of items) {
         const key = `${item.ma}__${item.lotKey}`;
         if (merged.has(key)) {
-            merged.get(key).sl += item.sl;
+            const existing = merged.get(key);
+            existing.sl += item.sl;
+            const hsd1 = fmtDateDisplay(existing.hsdRaw);
+            const hsd2 = fmtDateDisplay(item.hsdRaw);
+            if (hsd1 && hsd2 && hsd1 !== hsd2) {
+                const alreadyWarned = duplicateHsd.some(d => d.ma === item.ma && d.lo === item.lo);
+                if (!alreadyWarned) {
+                    duplicateHsd.push({ ma: item.ma, lo: item.lo, hsd1, hsd2 });
+                }
+            }
         } else {
             merged.set(key, { ...item });
         }
     }
-    return [...merged.values()];
+    return { items: [...merged.values()], duplicateHsd };
 }
 
 // ============================================================
@@ -137,17 +149,20 @@ const TABS = [
 // COMPONENT CHÍNH
 // ============================================================
 const InventoryReconciliationPage = () => {
-    const [misaItems, setMisaItems]       = useState([]);    // data từ file Misa
-    const [webkhoLots, setWebkhoLots]     = useState([]);    // data từ Firestore
-    const [convMap, setConvMap]           = useState({});    // hệ số quy đổi
-    const [missingMisaCodes, setMissingMisaCodes] = useState(new Set()); // mã webapp thiếu trên Misa
-    const [altCodeMap, setAltCodeMap]     = useState({});    // mã khác cách viết
+    // ── Store: giữ nguyên dữ liệu khi chuyển trang ──
+    const {
+        webkhoLots, convMap, altCodeMap, missingMisaCodes, lastUpdated,
+        misaItems, misaFileName, duplicateHsdWarnings,
+        activeTab,
+        setWebkhoData, setMisaData, setActiveTab, reset,
+    } = useReconciliationStore();
 
-    const [isLoadingWebkho, setIsLoadingWebkho] = useState(false);
-    const [misaFileName, setMisaFileName]       = useState('');
-    const [activeTab, setActiveTab]             = useState('chenh');
-    const [search, setSearch]                   = useState('');
-    const [lastUpdated, setLastUpdated]         = useState(null);
+    // missingMisaCodes lưu array trong store → chuyển Set khi dùng
+    const missingMisaCodesSet = useMemo(() => new Set(missingMisaCodes), [missingMisaCodes]);
+
+    // State cục bộ (không cần giữ khi chuyển trang)
+    const [isLoadingWebkho, setIsLoadingWebkho] = React.useState(false);
+    const [search, setSearch]                   = React.useState('');
 
     const fileInputRef = useRef(null);
 
@@ -207,11 +222,7 @@ const InventoryReconciliationPage = () => {
                 }
             });
 
-            setWebkhoLots(finalLots);
-            setConvMap(newConvMap);
-            setAltCodeMap(newAltMap);
-            setMissingMisaCodes(newMissingSet);
-            setLastUpdated(new Date());
+            setWebkhoData(finalLots, newConvMap, newAltMap, [...newMissingSet]);
             toast.success(`Đã tải ${finalLots.length} lot từ WebKho!`);
         } catch (err) {
             console.error(err);
@@ -227,15 +238,17 @@ const InventoryReconciliationPage = () => {
     const handleMisaUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        setMisaFileName(file.name);
         try {
             const buf = await file.arrayBuffer();
-            const items = parseMisaExcel(buf);
-            setMisaItems(items);
+            const { items, duplicateHsd } = parseMisaExcel(buf);
+            setMisaData(items, file.name, duplicateHsd);
+            if (duplicateHsd.length > 0) {
+                toast.warn(`⚠️ Có ${duplicateHsd.length} lot trong Misa bị trùng số lô nhưng khác HSD!`);
+            }
             toast.success(`Đã đọc ${items.length} lot từ file Misa!`);
         } catch (err) {
             toast.error('Lỗi đọc file: ' + err.message);
-            setMisaItems([]);
+            setMisaData([], '', []);
         }
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -291,7 +304,7 @@ const InventoryReconciliationPage = () => {
             } else {
                 dvtMisa = ''; tonMisa = null; hsdMisa = '';
                 chenhWebkho = null; chenhMisa = null;
-                if (missingMisaCodes.has(lot.productId)) {
+                if (missingMisaCodesSet.has(lot.productId)) {
                     nhom = 'nomisa'; status = '🔴 Misa chưa có mã';
                 } else {
                     nhom = 'webkho'; status = '🟡 Chỉ có trên WebKho';
@@ -420,7 +433,7 @@ const InventoryReconciliationPage = () => {
                     <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '600' }}>Đối chiếu tồn kho WebKho vs Misa</h1>
                     {lastUpdated && (
                         <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                            Dữ liệu WebKho: {fmtDateDisplay(lastUpdated)} {lastUpdated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                            {(() => { const d = lastUpdated ? new Date(lastUpdated) : null; return d ? `Dữ liệu WebKho: ${fmtDateDisplay(d)} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : ''; })()}
                         </p>
                     )}
                 </div>
@@ -455,8 +468,58 @@ const InventoryReconciliationPage = () => {
                             Xuất Excel
                         </button>
                     )}
+
+                    {hasData && (
+                        <button
+                            onClick={() => { if (window.confirm('Xóa toàn bộ dữ liệu đối chiếu hiện tại?')) reset(); }}
+                            className="btn-secondary"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', backgroundColor: '#e74c3c', color: 'white', border: 'none' }}
+                        >
+                            <FiAlertCircle style={{ fontSize: '14px' }} />
+                            Hủy đối chiếu
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* CẢNH BÁO LOT TRÙNG SỐ LÔ NHƯNG KHÁC HSD */}
+            {duplicateHsdWarnings.length > 0 && (
+                <div style={{
+                    backgroundColor: '#fff8e1',
+                    border: '1px solid #f9a825',
+                    borderLeft: '4px solid #f9a825',
+                    borderRadius: '6px',
+                    padding: '12px 16px',
+                    marginBottom: '16px',
+                }}>
+                    <div style={{ fontWeight: '600', color: '#e65100', marginBottom: '8px', fontSize: '14px' }}>
+                        ⚠️ Phát hiện {duplicateHsdWarnings.length} lot trong Misa có cùng số lô nhưng khác HSD — cần kiểm tra lại trên Misa!
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                        <thead>
+                            <tr style={{ backgroundColor: '#fff3cd' }}>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>Mã hàng</th>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>Số lô</th>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>HSD dòng 1</th>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>HSD dòng 2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {duplicateHsdWarnings.map((w, i) => (
+                                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#fffde7' : '#fff8e1' }}>
+                                    <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>{w.ma}</td>
+                                    <td style={{ padding: '5px 10px', color: '#555' }}>{w.lo}</td>
+                                    <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd1}</td>
+                                    <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd2}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#795548' }}>
+                        💡 Số lượng tồn kho đã được cộng dồn lại — chỉ cần sửa HSD đúng trên Misa rồi xuất file mới để đối chiếu lại.
+                    </div>
+                </div>
+            )}
 
             {/* HƯỚNG DẪN NẾU CHƯA CÓ DỮ LIỆU */}
             {!hasData && (

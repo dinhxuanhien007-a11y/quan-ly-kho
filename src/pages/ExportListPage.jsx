@@ -432,7 +432,7 @@ return (
                     <table className="products-table list-page-table">
 <thead>
                 <tr>
-                    <th>Ngày tạo</th>
+                    <th>Ngày xuất</th>
                     <th>Khách hàng / Nơi nhận</th>
                     <th>Diễn giải</th>
                     <th>Trạng thái</th>
@@ -442,7 +442,7 @@ return (
                 <tbody>
 {exportSlips.length > 0 ? exportSlips.map(slip => (
                                 <tr key={slip.id}>
-                                    <td>{formatDate(slip.createdAt)}</td>
+                                    <td>{slip.exportDate ? slip.exportDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.customer}</td>
                                     <td>{slip.description}</td>
                                     <td><StatusBadge status={slip.status} /></td>

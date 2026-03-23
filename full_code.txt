@@ -973,6 +973,7 @@ import { FiGrid } from 'react-icons/fi';
 import SalesAnalyticsPage from '../pages/SalesAnalyticsPage';
 import ProductLedgerPage from '../pages/ProductLedgerPage';
 import { usePresence } from '../hooks/usePresence';
+import InventoryReconciliationPage from '../pages/InventoryReconciliationPage';
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -1031,6 +1032,7 @@ const AdminLayout = () => {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/sales-analytics" element={<SalesAnalyticsPage />} />
           <Route path="/product-ledger" element={<ProductLedgerPage />} />
+          <Route path="/doi-chieu-ton-kho" element={<InventoryReconciliationPage />} />
         </Routes>
       </main>
 
@@ -4398,14 +4400,18 @@ import { toast } from 'react-toastify';
 import { 
     FiGrid, FiArchive, FiFilePlus, FiFileMinus, FiClipboard, 
     FiFileText, FiShare2, FiCheckSquare, FiUsers, FiUpload, 
-    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook,
+    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook, FiGitMerge,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 import { useAuth } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
+import { MdDarkMode, MdLightMode } from 'react-icons/md';
 
 const Navbar = () => {
     const navigate = useNavigate();
-    const { role } = useAuth();
+    const { role, userData } = useAuth();
+    const canReconcile = role === 'owner' || (role === 'admin' && userData?.canReconcile === true);
+    const { theme, toggleTheme } = useTheme();
 
     const handleLogout = async () => {
         try {
@@ -4497,7 +4503,37 @@ const Navbar = () => {
                         <FiUpload className="nav-icon" />
                     </NavLink>
                 </li>
+
+                {(role === 'owner' || (role === 'admin' && userData?.canReconcile)) && (
+    <li>
+        <NavLink to="/doi-chieu-ton-kho" title="Äá»‘i chiáº¿u tá»“n kho">
+            <FiGitMerge className="nav-icon" />
+        </NavLink>
+    </li>
+)}
                 
+                {/* NÃºt Dark Mode */}
+                <li>
+                    <button
+                        onClick={toggleTheme}
+                        title={theme === 'light' ? 'Chuyá»ƒn Dark Mode' : 'Chuyá»ƒn Light Mode'}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '10px',
+                            borderRadius: '8px',
+                            color: 'inherit',
+                            fontSize: '24px'
+                        }}
+                    >
+                        {theme === 'light' ? <MdDarkMode /> : <MdLightMode />}
+                    </button>
+                </li>
+
                 {/* NÃºt Ä‘Äƒng xuáº¥t */}
                 <li>
                     <a href="#" onClick={handleLogout} title="ÄÄƒng xuáº¥t">
@@ -6005,9 +6041,12 @@ import { MdCalculate } from 'react-icons/md';
 import MobileInventoryPage from '../pages/MobileInventoryPage';
 import companyLogo from '../assets/logo.png';
 import { usePresence } from '../hooks/usePresence';
+import { useTheme } from '../context/ThemeContext';
+import { MdDarkMode, MdLightMode } from 'react-icons/md';
 
 const ViewerLayout = () => {
     const { role, user } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     usePresence();
 
     const isMobile = useResponsive();
@@ -6096,8 +6135,25 @@ const ViewerLayout = () => {
                 </div>
 
                 <div className="viewer-header-right">
-                    {/* CÃ³ thá»ƒ thÃªm nÃºt Ä‘Äƒng xuáº¥t á»Ÿ Ä‘Ã¢y náº¿u cáº§n */}
-                </div>
+    <button
+        onClick={toggleTheme}
+        title={theme === 'light' ? 'Chuyá»ƒn Dark Mode' : 'Chuyá»ƒn Light Mode'}
+        style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '10px',
+            borderRadius: '8px',
+            color: 'inherit',
+            fontSize: '24px'
+        }}
+    >
+        {theme === 'light' ? <MdDarkMode /> : <MdLightMode />}
+    </button>
+</div>
             </div>
 
             <div className="viewer-main-content">
@@ -6127,7 +6183,7 @@ import React, { useMemo } from 'react';
 import Modal from 'react-modal';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
-import { FiX, FiPrinter } from 'react-icons/fi';
+import { FiX, FiPrinter, FiCopy } from 'react-icons/fi';
 import { exportExportSlipToPDF } from '../utils/pdfUtils';
 import { toast } from 'react-toastify';
 
@@ -6165,6 +6221,75 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
     }, [slip]); // Chá»‰ cháº¡y láº¡i logic nÃ y khi dá»¯ liá»‡u `slip` thay Ä‘á»•i
     // === Káº¾T THÃšC PHáº¦N DÃN ===
 
+    const handleCopyZaloText = () => {
+    // 1. DÃ²ng tiÃªu Ä‘á»
+    const separator = 'â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”';
+    let text = `ðŸ“‹ PHIáº¾U XUáº¤T KHO\n${separator}\n`;
+
+    // 2. KhÃ¡ch hÃ ng
+    text += `ðŸ‘¤ ${slip.customer || 'KhÃ´ng cÃ³'}\n`;
+
+    // 3. Ghi chÃº phiáº¿u â€” chá»‰ hiá»ƒn thá»‹ náº¿u cÃ³
+    if (slip.description && slip.description.trim() !== '' && slip.description !== 'KhÃ´ng cÃ³') {
+        text += `ðŸ“ ${slip.description}\n`;
+    }
+
+    text += `${separator}\n`;
+
+    // 4. Danh sÃ¡ch máº·t hÃ ng â€” dÃ¹ng aggregatedItems Ä‘Ã£ gá»™p sáºµn
+    aggregatedItems.forEach((item, index) => {
+        const hsd = renderExpiryDate(item.expiryDate);
+        const qty = formatNumber(item.quantity);
+        const unit = item.unit || '';
+
+        text += `[${index + 1}] ${item.productId} Â· Lot: ${item.lotNumber || 'N/A'}\n`;
+        text += `    HSD: ${hsd} Â· ${qty} ${unit}\n`;
+
+        // Ghi chÃº tá»«ng máº·t hÃ ng â€” chá»‰ hiá»ƒn thá»‹ náº¿u cÃ³
+        if (item.notes && item.notes.trim() !== '') {
+            text += `    âš ï¸ ${item.notes}\n`;
+        }
+
+        // ThÃªm dÃ²ng trá»‘ng giá»¯a cÃ¡c máº·t hÃ ng (trá»« máº·t hÃ ng cuá»‘i)
+        if (index < aggregatedItems.length - 1) {
+            text += '\n';
+        }
+    });
+
+    text += `${separator}\n`;
+
+    // 5. Tá»•ng xuáº¥t theo tá»«ng Ä‘Æ¡n vá»‹
+    const unitTotals = {};
+    aggregatedItems.forEach(item => {
+        const unit = item.unit || 'N/A';
+        const qty = Number(item.quantity || 0);
+        unitTotals[unit] = (unitTotals[unit] || 0) + qty;
+    });
+    const totalText = Object.entries(unitTotals)
+        .map(([unit, qty]) => `${formatNumber(qty)} ${unit}`)
+        .join(' Â· ');
+
+    // 6. Äáº¿m sá»‘ mÃ£ hÃ ng unique vÃ  sá»‘ lÃ´
+    const uniqueProductIds = new Set(aggregatedItems.map(item => item.productId));
+    const totalLots = aggregatedItems.length;
+    const totalProducts = uniqueProductIds.size;
+
+    let summaryText = '';
+    if (totalProducts === totalLots) {
+        // Má»—i mÃ£ hÃ ng chá»‰ cÃ³ 1 lot
+        summaryText = `${totalProducts} mÃ£ hÃ ng`;
+    } else {
+        // CÃ³ mÃ£ hÃ ng vá»›i nhiá»u lot
+        summaryText = `${totalProducts} mÃ£ hÃ ng (${totalLots} lÃ´)`;
+    }
+
+    text += `ðŸ“¦ Tá»•ng xuáº¥t: ${totalText} Â· ${summaryText}`;
+
+    // 7. Copy vÃ o clipboard
+    navigator.clipboard.writeText(text)
+        .then(() => toast.success('ÄÃ£ copy text! Paste vÃ o Zalo lÃ  xong ðŸ‘'))
+        .catch(() => toast.error('KhÃ´ng thá»ƒ copy. Vui lÃ²ng thá»­ láº¡i.'));
+};
 Â  Â  
 Â  Â  const handleExportPDF = async () => {
 Â  Â  Â  Â  toast.info("Äang táº¡o file PDF...");
@@ -6241,12 +6366,26 @@ const ViewExportSlipModal = ({ slip, onClose }) => {
 Â  Â  Â  Â  Â  Â  Â  Â  </div>
 Â  Â  Â  Â  Â  Â  </div>
 Â  Â  Â  Â  Â  Â  <div className="modal-footer">
-Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={handleExportPDF} className="btn-primary">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <FiPrinter style={{ marginRight: '5px' }} />
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Xuáº¥t PDF
-Â  Â  Â  Â  Â  Â  Â  Â  </button>
-Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
-Â  Â  Â  Â  Â  Â  </div>
+    <button onClick={handleCopyZaloText} className="btn-success" style={{
+        backgroundColor: '#0068ff',
+        color: 'white',
+        border: 'none',
+        padding: '10px 15px',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px'
+    }}>
+        <FiCopy />
+        Copy Zalo
+    </button>
+    <button onClick={handleExportPDF} className="btn-primary">
+        <FiPrinter style={{ marginRight: '5px' }} />
+        Xuáº¥t PDF
+    </button>
+    <button onClick={onClose} className="btn-secondary">ÄÃ³ng</button>
+</div>
 Â  Â  Â  Â  </Modal>
 Â  Â  );
 };
@@ -6400,13 +6539,14 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import Spinner from '../components/Spinner'; // <-- THÃŠM IMPORT
+import Spinner from '../components/Spinner';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [role, setRole] = useState(null);
+    const [userData, setUserData] = useState(null); // â† THÃŠM
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -6415,14 +6555,18 @@ export const AuthProvider = ({ children }) => {
                 const userDocRef = doc(db, 'users', currentUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
-                    setRole(userDocSnap.data().role);
+                    const data = userDocSnap.data();
+                    setRole(data.role);
+                    setUserData(data); // â† THÃŠM
                 } else {
                     setRole(null);
+                    setUserData(null); // â† THÃŠM
                 }
                 setUser(currentUser);
             } else {
                 setUser(null);
                 setRole(null);
+                setUserData(null); // â† THÃŠM
             }
             setLoading(false);
         });
@@ -6433,10 +6577,10 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         role,
+        userData, // â† THÃŠM
         loading,
     };
 
-    // Khi Ä‘ang xÃ¡c thá»±c, hiá»ƒn thá»‹ spinner toÃ n trang
     if (loading) {
         return <Spinner />;
     }
@@ -8815,6 +8959,674 @@ export default InventoryPage;
 
 
 
+--- FILE: D:\quan-ly-kho\src\pages\InventoryReconciliationPage.jsx ---
+
+
+// src/pages/InventoryReconciliationPage.jsx
+import React, { useMemo, useRef } from 'react';
+import useReconciliationStore from '../stores/reconciliationStore';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import * as XLSX from 'xlsx';
+import { toast } from 'react-toastify';
+import { FiUpload, FiDownload, FiRefreshCw, FiAlertCircle, FiXCircle } from 'react-icons/fi';
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+function fmtNum(val) {
+    if (val === null || val === undefined || val === '') return '';
+    const n = Number(val);
+    if (isNaN(n)) return String(val);
+    if (n === Math.floor(n)) return n.toLocaleString('vi-VN');
+    const s = parseFloat(n.toPrecision(10)).toString();
+    return s.replace(/\.?0+$/, '');
+}
+
+function fmtChenh(val, unit) {
+    if (val === null || val === undefined || val === '') return '';
+    const n = Number(val);
+    if (isNaN(n) || n === 0) return '';
+    const sign = n > 0 ? '+' : '';
+    return `${sign}${fmtNum(Math.abs(n))}${unit ? ' ' + unit : ''}`;
+}
+
+function normLot(s) {
+    if (!s) return '';
+    return String(s).trim().toUpperCase().replace(/^0+/, '') || '';
+}
+
+function parseDate(v) {
+    if (!v) return null;
+    if (v instanceof Date) {
+        if (isNaN(v.getTime())) return null;
+        // TrÃ¡nh lá»‡ch timezone: dÃ¹ng UTC components
+        return new Date(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate());
+    }
+    if (typeof v === 'number') {
+        const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+        return isNaN(d.getTime()) ? null : d;
+    }
+    const s = String(v).trim();
+    const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m1) return new Date(+m1[3], +m1[2] - 1, +m1[1]);
+    const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m2) return new Date(+m2[1], +m2[2] - 1, +m2[3]);
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function isExpired(dateVal) {
+    const d = parseDate(dateVal);
+    if (!d) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+}
+
+function fmtDateDisplay(dateVal) {
+    const d = parseDate(dateVal);
+    if (!d) return '';
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// ============================================================
+// PARSE FILE EXCEL MISA
+// ============================================================
+function parseMisaExcel(arrayBuffer) {
+    const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+
+    let headerIdx = -1;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        const row = rows[i].map(c => String(c).trim());
+        if (row.some(c => c === 'MÃ£ hÃ ng') && row.some(c => c.includes('Sá»‘ lÃ´') || c.includes('lÃ´'))) {
+            headerIdx = i;
+            break;
+        }
+    }
+    if (headerIdx === -1) throw new Error('KhÃ´ng tÃ¬m tháº¥y header trong file Misa. Cáº§n cÃ³ cá»™t "MÃ£ hÃ ng" vÃ  "Sá»‘ lÃ´".');
+
+    const headers = rows[headerIdx].map(c => String(c).trim());
+    const idxMa    = headers.findIndex(h => h === 'MÃ£ hÃ ng');
+    const idxLo    = headers.findIndex(h => h.includes('Sá»‘ lÃ´') || h === 'LÃ´');
+    const idxHsd   = headers.findIndex(h => h.includes('Háº¡n') || h.includes('háº¡n'));
+    const idxDvt   = headers.findIndex(h => h === 'ÄVT' || h.includes('vá»‹ tÃ­nh'));
+    const idxSl    = headers.findIndex(h => h.includes('Cuá»‘i') || h.includes('Sá»‘ lÆ°á»£ng') || h.includes('Tá»“n'));
+
+    if (idxMa === -1 || idxLo === -1) throw new Error('File thiáº¿u cá»™t "MÃ£ hÃ ng" hoáº·c "Sá»‘ lÃ´".');
+
+    const items = [];
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+        const row = rows[i];
+        const ma = String(row[idxMa] || '').trim();
+        if (!ma || ma.toLowerCase().includes('mÃ£ kho') || ma.toLowerCase().includes('tá»•ng')) continue;
+
+        const lo  = String(row[idxLo] || '').trim();
+        const hsd = idxHsd >= 0 ? row[idxHsd] : null;
+        const dvt = idxDvt >= 0 ? String(row[idxDvt] || '').trim() : '';
+        const sl  = idxSl >= 0 ? Number(row[idxSl]) || 0 : 0;
+
+        if (isExpired(hsd)) continue;
+        if (sl <= 0) continue;
+
+        items.push({ ma, lo, hsdRaw: hsd, dvt, sl, lotKey: normLot(lo) });
+    }
+
+    // Cá»™ng dá»“n lot trÃ¹ng + phÃ¡t hiá»‡n lot cÃ³ 2 HSD khÃ¡c nhau
+    const merged = new Map();
+    const duplicateHsd = [];
+
+    for (const item of items) {
+        const key = `${item.ma}__${item.lotKey}`;
+        if (merged.has(key)) {
+            const existing = merged.get(key);
+            existing.sl += item.sl;
+            const hsd1 = fmtDateDisplay(existing.hsdRaw);
+            const hsd2 = fmtDateDisplay(item.hsdRaw);
+            if (hsd1 && hsd2 && hsd1 !== hsd2) {
+                const alreadyWarned = duplicateHsd.some(d => d.ma === item.ma && d.lo === item.lo);
+                if (!alreadyWarned) {
+                    duplicateHsd.push({ ma: item.ma, lo: item.lo, hsd1, hsd2 });
+                }
+            }
+        } else {
+            merged.set(key, { ...item });
+        }
+    }
+    return { items: [...merged.values()], duplicateHsd };
+}
+
+// ============================================================
+// TABS CONFIG
+// ============================================================
+const TABS = [
+    { key: 'chenh',    label: 'ChÃªnh lá»‡ch',     color: '#c0392b', bgColor: '#fff5f5' },
+    { key: 'khop',     label: 'Khá»›p',            color: '#27ae60', bgColor: '#f0fff4' },
+    { key: 'webkho',   label: 'Chá»‰ WebKho',      color: '#d68910', bgColor: '#fffde7' },
+    { key: 'misa',     label: 'Chá»‰ Misa',         color: '#ca6f1e', bgColor: '#fff3e0' },
+    { key: 'nomisa',   label: 'Misa thiáº¿u mÃ£',   color: '#922b21', bgColor: '#fdecea' },
+];
+
+// ============================================================
+// COMPONENT CHÃNH
+// ============================================================
+const InventoryReconciliationPage = () => {
+    // â”€â”€ Store: giá»¯ nguyÃªn dá»¯ liá»‡u khi chuyá»ƒn trang â”€â”€
+    const {
+        webkhoLots, convMap, altCodeMap, missingMisaCodes, lastUpdated,
+        misaItems, misaFileName, duplicateHsdWarnings,
+        activeTab,
+        setWebkhoData, setMisaData, setActiveTab, reset,
+    } = useReconciliationStore();
+
+    // missingMisaCodes lÆ°u array trong store â†’ chuyá»ƒn Set khi dÃ¹ng
+    const missingMisaCodesSet = useMemo(() => new Set(missingMisaCodes), [missingMisaCodes]);
+
+    // State cá»¥c bá»™ (khÃ´ng cáº§n giá»¯ khi chuyá»ƒn trang)
+    const [isLoadingWebkho, setIsLoadingWebkho] = React.useState(false);
+    const [search, setSearch]                   = React.useState('');
+
+    const fileInputRef = useRef(null);
+
+    // ============================================================
+    // LOAD Dá»® LIá»†U Tá»ª FIRESTORE
+    // ============================================================
+    const loadWebkhoData = async () => {
+        setIsLoadingWebkho(true);
+        toast.info('Äang táº£i dá»¯ liá»‡u WebKho...');
+        try {
+            // Load inventory_lots
+            const lotsSnap = await getDocs(collection(db, 'inventory_lots'));
+            const rawLots = [];
+            lotsSnap.forEach(doc => {
+                const d = doc.data();
+                if (!d.productId) return;
+                const lotNumber = d.lotNumber || '';
+                rawLots.push({
+                    productId: d.productId,
+                    lotNumber,
+                    expiryDate: d.expiryDate ? (d.expiryDate.toDate ? d.expiryDate.toDate() : d.expiryDate) : null,
+                    quantityRemaining: d.quantityRemaining || 0,
+                    unit: d.unit || '',
+                });
+            });
+
+            // Cá»™ng dá»“n cÃ¡c lot trÃ¹ng
+            const lotMap = new Map();
+            for (const lot of rawLots) {
+                if (isExpired(lot.expiryDate)) continue;
+                if (lot.quantityRemaining <= 0) continue;
+                const key = `${lot.productId}__${lot.lotNumber}`;
+                if (lotMap.has(key)) {
+                    lotMap.get(key).quantityRemaining += lot.quantityRemaining;
+                } else {
+                    lotMap.set(key, { ...lot, lotKey: normLot(lot.lotNumber) });
+                }
+            }
+            const finalLots = [...lotMap.values()];
+
+            // Load conversion factors tá»« products
+            const prodsSnap = await getDocs(collection(db, 'products'));
+            const newConvMap = {};
+            const newMissingSet = new Set();
+            const newAltMap = {};
+            prodsSnap.forEach(doc => {
+                const d = doc.data();
+                const id = doc.id;
+                if (d.misaConversionFactor != null) {
+                    newConvMap[id] = Number(d.misaConversionFactor) || 1;
+                }
+                if (d.misaCode && d.misaCode !== id) {
+                    newAltMap[id] = d.misaCode;
+                }
+                if (d.missingFromMisa === true) {
+                    newMissingSet.add(id);
+                }
+            });
+
+            setWebkhoData(finalLots, newConvMap, newAltMap, [...newMissingSet]);
+            toast.success(`ÄÃ£ táº£i ${finalLots.length} lot tá»« WebKho!`);
+        } catch (err) {
+            console.error(err);
+            toast.error('Lá»—i khi táº£i dá»¯ liá»‡u WebKho: ' + err.message);
+        } finally {
+            setIsLoadingWebkho(false);
+        }
+    };
+
+    // ============================================================
+    // UPLOAD FILE MISA
+    // ============================================================
+    const handleMisaUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const buf = await file.arrayBuffer();
+            const { items, duplicateHsd } = parseMisaExcel(buf);
+            setMisaData(items, file.name, duplicateHsd);
+            if (duplicateHsd.length > 0) {
+                toast.warn(`âš ï¸ CÃ³ ${duplicateHsd.length} lot trong Misa bá»‹ trÃ¹ng sá»‘ lÃ´ nhÆ°ng khÃ¡c HSD!`);
+            }
+            toast.success(`ÄÃ£ Ä‘á»c ${items.length} lot tá»« file Misa!`);
+        } catch (err) {
+            toast.error('Lá»—i Ä‘á»c file: ' + err.message);
+            setMisaData([], '', []);
+        }
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    // ============================================================
+    // Äá»I CHIáº¾U
+    // ============================================================
+    const { results, counts } = useMemo(() => {
+        if (!webkhoLots.length && !misaItems.length) {
+            return { results: [], counts: {} };
+        }
+
+        // Build Misa lookup: (maHang, lotKey) -> item
+        const misaLookup = new Map();
+        for (const item of misaItems) {
+            const key = `${item.ma}__${item.lotKey}`;
+            misaLookup.set(key, item);
+        }
+
+        // Build product name map
+        const results = [];
+
+        // Misa keys Ä‘Ã£ Ä‘Æ°á»£c match (Ä‘á»ƒ tÃ¬m "chá»‰ Misa")
+        const matchedMisaKeys = new Set();
+
+        // Xá»­ lÃ½ tá»«ng lot WebKho
+        for (const lot of webkhoLots) {
+            const misaCode = altCodeMap[lot.productId] || lot.productId;
+            const heySo = convMap[lot.productId] ?? 1;
+            const qtyWebkhoQd = lot.quantityRemaining * heySo;
+
+            const misaKey = `${misaCode}__${lot.lotKey}`;
+            const misaItem = misaLookup.get(misaKey);
+
+            let status, nhom, chenhWebkho, chenhMisa, dvtMisa, tonMisa, hsdMisa;
+
+            if (misaItem) {
+                matchedMisaKeys.add(misaKey);
+                dvtMisa = misaItem.dvt;
+                tonMisa = misaItem.sl;
+                hsdMisa = fmtDateDisplay(misaItem.hsdRaw);
+                const diff = qtyWebkhoQd - tonMisa;
+                chenhWebkho = diff / heySo; // quy ngÆ°á»£c vá» ÄVT WebKho
+                chenhMisa   = heySo !== 1 ? diff : null;
+
+                if (Math.abs(diff) < 0.001) {
+                    nhom = 'khop'; status = 'âœ… Khá»›p';
+                } else if (diff > 0) {
+                    nhom = 'chenh'; status = 'â¬†ï¸ WebKho cao hÆ¡n';
+                } else {
+                    nhom = 'chenh'; status = 'â¬‡ï¸ WebKho tháº¥p hÆ¡n';
+                }
+            } else {
+                dvtMisa = ''; tonMisa = null; hsdMisa = '';
+                chenhWebkho = null; chenhMisa = null;
+                if (missingMisaCodesSet.has(lot.productId)) {
+                    nhom = 'nomisa'; status = 'ðŸ”´ Misa chÆ°a cÃ³ mÃ£';
+                } else {
+                    nhom = 'webkho'; status = 'ðŸŸ¡ Chá»‰ cÃ³ trÃªn WebKho';
+                }
+            }
+
+            results.push({
+                nhom,
+                productId:   lot.productId,
+                lotNumber:   lot.lotNumber,
+                hsdWebkho:   fmtDateDisplay(lot.expiryDate),
+                dvtWebkho:   lot.unit,
+                tonWebkho:   lot.quantityRemaining,
+                heySo,
+                tonWebkhoQd: qtyWebkhoQd,
+                dvtMisa,
+                tonMisa,
+                hsdMisa,
+                chenhWebkho,
+                chenhMisa,
+                status,
+            });
+        }
+
+        // Lot chá»‰ cÃ³ trÃªn Misa (chÆ°a Ä‘Æ°á»£c match)
+        for (const item of misaItems) {
+            const key = `${item.ma}__${item.lotKey}`;
+            if (!matchedMisaKeys.has(key)) {
+                results.push({
+                    nhom:       'misa',
+                    productId:  item.ma,
+                    lotNumber:  item.lo,
+                    hsdWebkho:  '',
+                    dvtWebkho:  '',
+                    tonWebkho:  null,
+                    heySo:      null,
+                    tonWebkhoQd: null,
+                    dvtMisa:    item.dvt,
+                    tonMisa:    item.sl,
+                    hsdMisa:    fmtDateDisplay(item.hsdRaw),
+                    chenhWebkho: null,
+                    chenhMisa:  null,
+                    status:     'ðŸŸ  Chá»‰ cÃ³ trÃªn Misa',
+                });
+            }
+        }
+
+        // Äáº¿m theo nhÃ³m
+        const counts = {};
+        for (const r of results) {
+            counts[r.nhom] = (counts[r.nhom] || 0) + 1;
+        }
+
+        // Sort chÃªnh lá»‡ch theo |chÃªnh| giáº£m dáº§n
+        results.sort((a, b) => {
+            if (a.nhom !== b.nhom) return 0;
+            if (a.nhom === 'chenh') {
+                return Math.abs(b.chenhWebkho || 0) - Math.abs(a.chenhWebkho || 0);
+            }
+            return 0;
+        });
+
+        return { results, counts };
+    }, [webkhoLots, misaItems, convMap, altCodeMap, missingMisaCodes]);
+
+    // ============================================================
+    // Lá»ŒC THEO TAB + SEARCH
+    // ============================================================
+    const filtered = useMemo(() => {
+        let rows = results.filter(r => r.nhom === activeTab);
+        if (search.trim()) {
+            const q = search.trim().toLowerCase();
+            rows = rows.filter(r =>
+                r.productId.toLowerCase().includes(q) ||
+                (r.lotNumber || '').toLowerCase().includes(q)
+            );
+        }
+        return rows;
+    }, [results, activeTab, search]);
+
+    // ============================================================
+    // XUáº¤T EXCEL
+    // ============================================================
+    const handleExport = () => {
+        if (!results.length) { toast.warn('ChÆ°a cÃ³ dá»¯ liá»‡u Ä‘á»ƒ xuáº¥t.'); return; }
+        const wb = XLSX.utils.book_new();
+        const COLS = ['MÃ£ hÃ ng','Sá»‘ lot','HSD WebKho','ÄVT WebKho','Tá»“n WebKho',
+                      'Há»‡ sá»‘','Tá»“n WebKho (quy Ä‘á»•i)','ÄVT Misa','Tá»“n Misa','HSD Misa',
+                      'ChÃªnh (ÄVT WebKho)','ChÃªnh (ÄVT Misa)','Tráº¡ng thÃ¡i'];
+
+        const tabOrder = ['chenh','khop','webkho','misa','nomisa'];
+        const tabLabel = { chenh:'ChÃªnh lá»‡ch', khop:'Khá»›p', webkho:'Chá»‰ WebKho', misa:'Chá»‰ Misa', nomisa:'Misa thiáº¿u mÃ£' };
+
+        for (const tab of tabOrder) {
+            const rows = results.filter(r => r.nhom === tab);
+            if (!rows.length) continue;
+            const data = [COLS, ...rows.map(r => [
+                r.productId, r.lotNumber, r.hsdWebkho, r.dvtWebkho,
+                r.tonWebkho ?? '', r.heySo ?? '', r.tonWebkhoQd ?? '',
+                r.dvtMisa, r.tonMisa ?? '', r.hsdMisa,
+                r.chenhWebkho != null ? fmtChenh(r.chenhWebkho, r.dvtWebkho) : '',
+                r.chenhMisa   != null ? fmtChenh(r.chenhMisa,   r.dvtMisa)   : '',
+                r.status,
+            ])];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, tabLabel[tab]);
+        }
+
+        const now = new Date();
+        const stamp = `${now.getDate().toString().padStart(2,'0')}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getFullYear()}`;
+        XLSX.writeFile(wb, `doi_chieu_ton_kho_${stamp}.xlsx`);
+        toast.success('ÄÃ£ xuáº¥t file Excel!');
+    };
+
+    // ============================================================
+    // RENDER
+    // ============================================================
+    const hasData = webkhoLots.length > 0 || misaItems.length > 0;
+    const canReconcile = webkhoLots.length > 0 && misaItems.length > 0;
+
+    return (
+        <div style={{ padding: '20px' }}>
+            {/* HEADER */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                    <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '600' }}>Äá»‘i chiáº¿u tá»“n kho WebKho vs Misa</h1>
+                    {lastUpdated && (
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                            {(() => { const d = lastUpdated ? new Date(lastUpdated) : null; return d ? `Dá»¯ liá»‡u WebKho: ${fmtDateDisplay(d)} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : ''; })()}
+                        </p>
+                    )}
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                        onClick={loadWebkhoData}
+                        disabled={isLoadingWebkho}
+                        className="btn-primary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}
+                    >
+                        <FiRefreshCw style={{ fontSize: '14px', animation: isLoadingWebkho ? 'spin 1s linear infinite' : 'none' }} />
+                        {isLoadingWebkho ? 'Äang táº£i...' : webkhoLots.length ? 'Cáº­p nháº­t WebKho' : 'Táº£i dá»¯ liá»‡u WebKho'}
+                    </button>
+
+                    <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleMisaUpload} style={{ display: 'none' }} id="misa-upload" />
+                    <label
+                        htmlFor="misa-upload"
+                        className="btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer', padding: '10px 15px', borderRadius: '5px' }}
+                    >
+                        <FiUpload style={{ fontSize: '14px' }} />
+                        {misaFileName ? `Misa: ${misaFileName.length > 20 ? misaFileName.substring(0,20)+'...' : misaFileName}` : 'Upload file Misa'}
+                    </label>
+
+                    {canReconcile && (
+                        <button
+                            onClick={handleExport}
+                            className="btn-secondary"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', backgroundColor: '#2c7a4e', color: 'white', border: 'none' }}
+                        >
+                            <FiDownload style={{ fontSize: '14px' }} />
+                            Xuáº¥t Excel
+                        </button>
+                    )}
+
+                    {hasData && (
+                        <button
+                            onClick={() => { if (window.confirm('XÃ³a toÃ n bá»™ dá»¯ liá»‡u Ä‘á»‘i chiáº¿u hiá»‡n táº¡i?')) reset(); }}
+                            className="btn-secondary"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', backgroundColor: '#e74c3c', color: 'white', border: 'none' }}
+                        >
+                            <FiAlertCircle style={{ fontSize: '14px' }} />
+                            Há»§y Ä‘á»‘i chiáº¿u
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Cáº¢NH BÃO LOT TRÃ™NG Sá» LÃ” NHÆ¯NG KHÃC HSD */}
+            {duplicateHsdWarnings.length > 0 && (
+                <div style={{
+                    backgroundColor: '#fff8e1',
+                    border: '1px solid #f9a825',
+                    borderLeft: '4px solid #f9a825',
+                    borderRadius: '6px',
+                    padding: '12px 16px',
+                    marginBottom: '16px',
+                }}>
+                    <div style={{ fontWeight: '600', color: '#e65100', marginBottom: '8px', fontSize: '14px' }}>
+                        âš ï¸ PhÃ¡t hiá»‡n {duplicateHsdWarnings.length} lot trong Misa cÃ³ cÃ¹ng sá»‘ lÃ´ nhÆ°ng khÃ¡c HSD â€” cáº§n kiá»ƒm tra láº¡i trÃªn Misa!
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                        <thead>
+                            <tr style={{ backgroundColor: '#fff3cd' }}>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>MÃ£ hÃ ng</th>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>Sá»‘ lÃ´</th>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>HSD dÃ²ng 1</th>
+                                <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #f9a825' }}>HSD dÃ²ng 2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {duplicateHsdWarnings.map((w, i) => (
+                                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#fffde7' : '#fff8e1' }}>
+                                    <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>{w.ma}</td>
+                                    <td style={{ padding: '5px 10px', color: '#555' }}>{w.lo}</td>
+                                    <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd1}</td>
+                                    <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd2}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#795548' }}>
+                        ðŸ’¡ Sá»‘ lÆ°á»£ng tá»“n kho Ä‘Ã£ Ä‘Æ°á»£c cá»™ng dá»“n láº¡i â€” chá»‰ cáº§n sá»­a HSD Ä‘Ãºng trÃªn Misa rá»“i xuáº¥t file má»›i Ä‘á»ƒ Ä‘á»‘i chiáº¿u láº¡i.
+                    </div>
+                </div>
+            )}
+
+            {/* HÆ¯á»šNG DáºªN Náº¾U CHÆ¯A CÃ“ Dá»® LIá»†U */}
+            {!hasData && (
+                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '32px', textAlign: 'center' }}>
+                    <FiAlertCircle style={{ fontSize: '48px', color: 'var(--text-secondary)', marginBottom: '12px' }} />
+                    <h3 style={{ margin: '0 0 8px', color: 'var(--text-color)' }}>ChÆ°a cÃ³ dá»¯ liá»‡u</h3>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>
+                        BÆ°á»›c 1: Báº¥m <strong>Táº£i dá»¯ liá»‡u WebKho</strong> Ä‘á»ƒ láº¥y tá»“n kho hiá»‡n táº¡i<br />
+                        BÆ°á»›c 2: Táº£i file Excel tá»“n kho tá»« Misa vá» mÃ¡y<br />
+                        BÆ°á»›c 3: Báº¥m <strong>Upload file Misa</strong> Ä‘á»ƒ Ä‘á»‘i chiáº¿u
+                    </p>
+                </div>
+            )}
+
+            {/* Báº¢NG THá»NG KÃŠ */}
+            {canReconcile && (
+                <>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                        {TABS.map(tab => (
+                            <div
+                                key={tab.key}
+                                onClick={() => setActiveTab(tab.key)}
+                                style={{
+                                    padding: '10px 16px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    border: activeTab === tab.key ? `2px solid ${tab.color}` : '2px solid transparent',
+                                    backgroundColor: activeTab === tab.key ? tab.bgColor : 'var(--card-bg)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                    minWidth: '100px',
+                                    transition: 'all 0.15s ease',
+                                }}
+                            >
+                                <div style={{ fontSize: '22px', fontWeight: '700', color: tab.color }}>{counts[tab.key] || 0}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{tab.label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* SEARCH */}
+                    <div style={{ marginBottom: '12px' }}>
+                        <input
+                            type="text"
+                            placeholder="TÃ¬m theo mÃ£ hÃ ng hoáº·c sá»‘ lot..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            style={{
+                                padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--input-border)',
+                                backgroundColor: 'var(--input-bg)', color: 'var(--text-color)',
+                                fontSize: '14px', width: '300px', maxWidth: '100%',
+                            }}
+                        />
+                        <span style={{ marginLeft: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                            {filtered.length} káº¿t quáº£
+                        </span>
+                    </div>
+
+                    {/* Báº¢NG Káº¾T QUáº¢ */}
+                    <div style={{ overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <thead>
+                                <tr style={{ backgroundColor: 'var(--table-header-bg)', position: 'sticky', top: 0, zIndex: 1 }}>
+                                    {['MÃ£ hÃ ng','Sá»‘ lot','HSD WebKho','ÄVT WebKho','Tá»“n WebKho','Há»‡ sá»‘','Tá»“n (quy Ä‘á»•i)','ÄVT Misa','Tá»“n Misa','HSD Misa','ChÃªnh (ÄVT WebKho)','ChÃªnh (ÄVT Misa)','Tráº¡ng thÃ¡i'].map(h => (
+                                        <th key={h} style={{
+                                            padding: '10px 12px', textAlign: 'left', fontWeight: '600',
+                                            fontSize: '12px', color: 'var(--text-color)',
+                                            borderBottom: '2px solid var(--border-color)', whiteSpace: 'nowrap',
+                                        }}>{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={13} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                            KhÃ´ng cÃ³ dá»¯ liá»‡u
+                                        </td>
+                                    </tr>
+                                ) : filtered.map((r, i) => {
+                                    const rowBg = i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg)';
+                                    const chenhColor = r.chenhWebkho > 0 ? '#e67e22' : r.chenhWebkho < 0 ? '#e74c3c' : 'inherit';
+                                    return (
+                                        <tr key={i} style={{ backgroundColor: rowBg }}>
+                                            <td style={tdStyle}><strong>{r.productId}</strong></td>
+                                            <td style={tdStyle}>{r.lotNumber}</td>
+                                            <td style={tdStyle}>{r.hsdWebkho}</td>
+                                            <td style={tdStyle}>{r.dvtWebkho}</td>
+                                            <td style={{ ...tdStyle, textAlign: 'right' }}>{r.tonWebkho != null ? fmtNum(r.tonWebkho) : ''}</td>
+                                            <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-secondary)' }}>{r.heySo != null ? fmtNum(r.heySo) : ''}</td>
+                                            <td style={{ ...tdStyle, textAlign: 'right' }}>{r.tonWebkhoQd != null ? fmtNum(r.tonWebkhoQd) : ''}</td>
+                                            <td style={tdStyle}>{r.dvtMisa}</td>
+                                            <td style={{ ...tdStyle, textAlign: 'right' }}>{r.tonMisa != null ? fmtNum(r.tonMisa) : ''}</td>
+                                            <td style={tdStyle}>{r.hsdMisa}</td>
+                                            <td style={{ ...tdStyle, textAlign: 'right', fontWeight: '600', color: chenhColor }}>
+                                                {r.chenhWebkho != null ? fmtChenh(r.chenhWebkho, r.dvtWebkho) : ''}
+                                            </td>
+                                            <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--text-secondary)' }}>
+                                                {r.chenhMisa != null ? fmtChenh(r.chenhMisa, r.dvtMisa) : ''}
+                                            </td>
+                                            <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>{r.status}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
+
+            {/* CHá»ˆ CÃ“ 1 TRONG 2 */}
+            {(webkhoLots.length > 0 && !misaItems.length) && (
+                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '24px', textAlign: 'center' }}>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                        ÄÃ£ táº£i <strong>{webkhoLots.length} lot</strong> tá»« WebKho. HÃ£y upload file Misa Ä‘á»ƒ báº¯t Ä‘áº§u Ä‘á»‘i chiáº¿u.
+                    </p>
+                </div>
+            )}
+            {(!webkhoLots.length && misaItems.length > 0) && (
+                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '24px', textAlign: 'center' }}>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                        ÄÃ£ Ä‘á»c <strong>{misaItems.length} lot</strong> tá»« Misa. HÃ£y táº£i dá»¯ liá»‡u WebKho Ä‘á»ƒ báº¯t Ä‘áº§u Ä‘á»‘i chiáº¿u.
+                    </p>
+                </div>
+            )}
+
+            <style>{`
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            `}</style>
+        </div>
+    );
+};
+
+const tdStyle = {
+    padding: '9px 12px',
+    borderBottom: '1px solid var(--border-color)',
+    color: 'var(--text-color)',
+    whiteSpace: 'nowrap',
+};
+
+export default InventoryReconciliationPage;
+
+
+
 --- FILE: D:\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
@@ -10984,7 +11796,7 @@ import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
 import AddNewLotModal from '../components/AddNewLotModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
-import { FiInfo, FiXCircle } from 'react-icons/fi';
+import { FiInfo, FiXCircle, FiUpload } from 'react-icons/fi'; 
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useImportSlipStore from '../stores/importSlipStore';
@@ -11073,6 +11885,305 @@ const importSlipSchema = z.object({
     items: z.array(importItemSchema).min(1, "Phiáº¿u nháº­p pháº£i cÃ³ Ã­t nháº¥t má»™t máº·t hÃ ng há»£p lá»‡.")
 });
 
+// =============================================
+// HÃ€M Äá»ŒC PACKING LIST PDF Cá»¦A BECTON DICKINSON
+// =============================================
+const parseBDPackingList = async (file) => {
+    // âœ… Import trá»±c tiáº¿p tá»« package thay vÃ¬ dÃ¹ng CDN
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+    }
+
+    const lineRegex = /\b(\d{6})\b[\s\S]*?(\d+)\s+(?:EA|SP|KT|BX)\s+(\w+)\s+(\d{2}\/\d{2}\/\d{4})/g;
+
+    const rawItems = [];
+    let match;
+
+    while ((match = lineRegex.exec(fullText)) !== null) {
+        const productId = match[1].trim();
+        const quantity = parseInt(match[2], 10);
+        const lotNumber = match[3].trim();
+        const expiryDate = match[4].trim();
+
+        if (productId && quantity > 0 && lotNumber && expiryDate) {
+            rawItems.push({ productId, quantity, lotNumber, expiryDate });
+        }
+    }
+
+    // Gá»™p cÃ¡c dÃ²ng cÃ¹ng mÃ£ hÃ ng + lot + HSD
+    const aggregatedMap = new Map();
+    for (const item of rawItems) {
+        const key = `${item.productId}-${item.lotNumber}-${item.expiryDate}`;
+        if (aggregatedMap.has(key)) {
+            aggregatedMap.get(key).quantity += item.quantity;
+        } else {
+            aggregatedMap.set(key, { ...item });
+        }
+    }
+
+    // Sáº¯p xáº¿p â€” cÃ¹ng mÃ£ hÃ ng náº±m cáº¡nh nhau
+    const sortedItems = Array.from(aggregatedMap.values()).sort((a, b) => {
+        if (a.productId !== b.productId) {
+            return a.productId.localeCompare(b.productId);
+        }
+        return a.lotNumber.localeCompare(b.lotNumber);
+    });
+
+    return sortedItems;
+};
+
+// =============================================
+// HÃ€M Äá»ŒC PACKING LIST PDF Cá»¦A ICU MEDICAL
+// =============================================
+const parseICUPackingList = async (file) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + ' ';
+    }
+
+    // Map tÃªn thÃ¡ng tiáº¿ng Anh â†’ sá»‘
+    const monthMap = {
+        'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04',
+        'MAY': '05', 'JUN': '06', 'JUL': '07', 'AUG': '08',
+        'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'
+    };
+
+    // HÃ m chuyá»ƒn "30-JUN-2028" â†’ "30/06/2028"
+    const convertICUDate = (dateStr) => {
+        const match = dateStr.match(/(\d{2})-([A-Z]{3})-(\d{4})/);
+        if (!match) return null;
+        const [, day, mon, year] = match;
+        const month = monthMap[mon];
+        if (!month) return null;
+        return `${day}/${month}/${year}`;
+    };
+
+    // Regex trÃ­ch xuáº¥t tá»«ng dÃ²ng hÃ ng ICU
+    // Format má»—i dÃ²ng: [N)] [ITEM CODE] [LOT]/ [DD-MON-YYYY] ... [Qty Per UOM] ...
+    // VÃ­ dá»¥: "1) 4619PG 6142088/ 30-JUN-2028 PRO-VENT... 200 2800 14 38.10"
+    // Format má»—i dÃ²ng ICU:
+// [N)] [ITEM CODE] [LOT]/ [DD-MON-YYYY] [description...] [Qty Per UOM] [Qty EA] [Qty Case] [Net Weight]
+// VÃ­ dá»¥: "1) 4041E 6132032/ 30-APR-2028 LINE DRAW... 200 8000 40"
+// Ta cáº§n: Qty EA = sá»‘ thá»© 2 sau HSD (8000), khÃ´ng pháº£i sá»‘ thá»© 1 (200)
+const lineRegex = /(\d+)\)\s+([A-Z0-9]+)\s+(\d+)\s*\/\s*(\d{2}-[A-Z]{3}-\d{4})/g;
+
+const rawItems = [];
+let match;
+
+while ((match = lineRegex.exec(fullText)) !== null) {
+    const productId = match[2].trim();
+    const lotNumber = match[3].trim();
+    const expiryRaw = match[4].trim();
+
+    if (!productId || /^\d+$/.test(productId)) continue;
+
+    const expiryDate = convertICUDate(expiryRaw);
+    if (!expiryDate) continue;
+
+    // Láº¥y pháº§n text SAU vá»‹ trÃ­ match Ä‘á»ƒ tÃ¬m sá»‘ lÆ°á»£ng
+    const afterMatch = fullText.slice(match.index + match[0].length, match.index + match[0].length + 300);
+
+    // TÃ¬m pattern: [200] [QtyEA] [QtyCase]
+    // Qty Per UOM luÃ´n lÃ  200, theo sau lÃ  Qty EA rá»“i Qty Case
+    // DÃ¹ng regex tÃ¬m "200 [sá»‘] [sá»‘]" â€” bá» qua Order No vÃ  Packing No
+    // Order No dáº¡ng 7 chá»¯ sá»‘ (9229330), Packing No dáº¡ng M+sá»‘
+    // Ta chá»‰ láº¥y cÃ¡c sá»‘ KHÃ”NG cÃ³ chá»¯ Ä‘á»©ng trÆ°á»›c vÃ  cÃ³ Ä‘á»™ dÃ i há»£p lÃ½
+    const qtyPattern = /\b(200)\s+(\d{1,6})\s+(\d{1,3})\b/;
+    const qtyMatch = afterMatch.match(qtyPattern);
+
+    if (!qtyMatch) continue;
+
+    const qtyEA = parseInt(qtyMatch[2], 10);
+    if (isNaN(qtyEA) || qtyEA <= 0) continue;
+
+    rawItems.push({ productId, lotNumber, expiryDate, quantity: qtyEA });
+}
+
+    // Gá»™p cÃ¡c dÃ²ng cÃ¹ng mÃ£ hÃ ng + cÃ¹ng lot + cÃ¹ng HSD â†’ cá»™ng dá»“n sá»‘ lÆ°á»£ng
+    const aggregatedMap = new Map();
+    for (const item of rawItems) {
+        const key = `${item.productId}-${item.lotNumber}-${item.expiryDate}`;
+        if (aggregatedMap.has(key)) {
+            aggregatedMap.get(key).quantity += item.quantity;
+        } else {
+            aggregatedMap.set(key, { ...item });
+        }
+    }
+
+    // Sáº¯p xáº¿p: cÃ¹ng mÃ£ hÃ ng náº±m cáº¡nh nhau, trong cÃ¹ng mÃ£ thÃ¬ sort theo lot
+    const sortedItems = Array.from(aggregatedMap.values()).sort((a, b) => {
+        if (a.productId !== b.productId) {
+            return a.productId.localeCompare(b.productId);
+        }
+        return a.lotNumber.localeCompare(b.lotNumber);
+    });
+
+    return sortedItems;
+};
+
+// =============================================
+// HÃ€M Äá»ŒC PACKING LIST PDF Cá»¦A SCHULKE
+// =============================================
+const parseSchulkePackingList = async (file) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    const allRows = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+
+        const pageWords = textContent.items
+            .filter(item => item.str.trim())
+            .map(item => ({
+                text: item.str.trim(),
+                x0: item.transform[4],
+                x1: item.transform[4] + item.width,
+                y: viewport.height - item.transform[5]
+            }));
+
+        const rowMap = new Map();
+        for (const w of pageWords) {
+            const yKey = Math.round(w.y);
+            let foundKey = null;
+            for (const ky of rowMap.keys()) {
+                if (Math.abs(ky - yKey) <= 3) { foundKey = ky; break; }
+            }
+            if (foundKey === null) { rowMap.set(yKey, []); foundKey = yKey; }
+            rowMap.get(foundKey).push(w);
+        }
+        for (const [y, words] of [...rowMap.entries()].sort((a, b) => a[0] - b[0])) {
+            allRows.push({ y, words: words.sort((a, b) => a.x0 - b.x0) });
+        }
+    }
+
+    // TÃ¬m header row
+    const headerIdx = allRows.findIndex(r =>
+        r.words.some(w => w.text === 'Article') &&
+        r.words.some(w => w.text === 'Batch')
+    );
+    if (headerIdx === -1) return [];
+
+    // TÃ¬m tá»a Ä‘á»™ cÃ¡c cá»™t tá»« header rows (header cÃ³ thá»ƒ tráº£i 2-3 dÃ²ng)
+    let batchHeader = null, expiryHeader = null, bottlesHeader = null, palletsHeader = null;
+    for (let i = headerIdx; i < Math.min(headerIdx + 4, allRows.length); i++) {
+        const row = allRows[i];
+        if (!batchHeader) batchHeader = row.words.find(w => w.text === 'Batch');
+        if (!expiryHeader) expiryHeader = row.words.find(w => w.text === 'Expiry');
+        if (!bottlesHeader) bottlesHeader = row.words.find(w => w.text === 'Bottles');
+        if (!palletsHeader) palletsHeader = row.words.find(w => w.text === 'Pallets');
+    }
+
+    if (!bottlesHeader) return [];
+
+    // DÃ¹ng x0 cá»§a Bottles header Ä‘á»ƒ phÃ¢n biá»‡t vá»›i cá»™t Pallets
+    // Bottles x0 > Pallets x0 â†’ chá»‰ láº¥y sá»‘ cÃ³ x0 >= Bottles x0 - 5
+    const BOTTLES_X_MIN = bottlesHeader.x0 - 5;
+    const BOTTLES_X_MAX = bottlesHeader.x1 + 10;
+    const BATCH_X = batchHeader ? batchHeader.x0 : 276;
+    const EXPIRY_X = expiryHeader ? expiryHeader.x0 : 310;
+
+    // TÃ¬m Total row
+    const totalIdx = allRows.findIndex((r, i) =>
+        i > headerIdx && r.words.some(w => w.text === 'Total')
+    );
+    const endIdx = totalIdx === -1 ? allRows.length : totalIdx;
+    const dataRows = allRows.slice(headerIdx + 1, endIdx)
+        .filter(r => r.y > allRows[headerIdx].y + 10);
+
+    const normalizeDate = (raw) => {
+        const s = raw.replace(/\./g, '/');
+        const parts = s.split('/');
+        if (parts.length === 3) {
+            const [d, mo, y] = parts;
+            return `${d.padStart(2,'0')}/${mo.padStart(2,'0')}/${y}`;
+        }
+        return raw;
+    };
+
+    const itemMap = new Map();
+
+    for (const row of dataRows) {
+        // Article: sá»‘ 5-8 chá»¯ sá»‘ á»Ÿ cá»™t Ä‘áº§u
+        const articleWord = row.words.find(w =>
+            w.x0 >= 50 && w.x0 <= 85 && /^\d{5,8}$/.test(w.text)
+        );
+        if (!articleWord) continue;
+
+        // No. of Bottles: sá»‘ nguyÃªn trong vÃ¹ng x cá»§a cá»™t Bottles
+        // DÃ¹ng range chÃ­nh xÃ¡c Ä‘á»ƒ khÃ´ng nháº§m vá»›i cá»™t Pallets
+        const bottlesWord = row.words.find(w =>
+            w.x0 >= BOTTLES_X_MIN && w.x0 <= BOTTLES_X_MAX && /^\d+$/.test(w.text)
+        );
+        if (!bottlesWord) continue;
+
+        // Batch: sá»‘ 6+ chá»¯ sá»‘ gáº§n cá»™t Batch
+        // Náº¿u lÃ  "-" thÃ¬ lotNumber = rá»—ng (hÃ ng khÃ´ng cÃ³ lot)
+        const batchWord = row.words.find(w =>
+            Math.abs(w.x0 - BATCH_X) <= 20
+        );
+        const lotNumber = (batchWord && /^\d{6,}$/.test(batchWord.text))
+            ? batchWord.text
+            : '';
+
+        // Expiry: ngÃ y gáº§n cá»™t Expiry (cÃ³ thá»ƒ khÃ´ng cÃ³ náº¿u batch="-")
+        const expiryWord = row.words.find(w =>
+            Math.abs(w.x0 - EXPIRY_X) <= 20 &&
+            /\d{1,2}[\/\.]\d{1,2}[\/\.](\d{2}|\d{4})/.test(w.text)
+        );
+        const expiryDate = expiryWord ? normalizeDate(expiryWord.text) : '';
+
+        const productId = articleWord.text;
+        const quantity = parseInt(bottlesWord.text, 10);
+        if (quantity <= 0) continue;
+
+        // Cá»™ng dá»“n náº¿u cÃ¹ng mÃ£ hÃ ng + cÃ¹ng lot
+        const key = `${productId}-${lotNumber}`;
+        if (itemMap.has(key)) {
+            itemMap.get(key).quantity += quantity;
+        } else {
+            itemMap.set(key, { productId, lotNumber, quantity, expiryDate });
+        }
+    }
+
+    return [...itemMap.values()].sort((a, b) => {
+        if (a.productId !== b.productId) return a.productId.localeCompare(b.productId);
+        return a.lotNumber.localeCompare(b.lotNumber);
+    });
+};
 
 const NewImportPage = () => {
     const {
@@ -11087,6 +12198,11 @@ const NewImportPage = () => {
     const [newLotModal, setNewLotModal] = useState({ isOpen: false, index: -1 });
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
+    const [isParsingPDF, setIsParsingPDF] = useState(false);
+    const pdfInputRef = useRef(null);
+    const icuPdfInputRef = useRef(null);
+    const pharmaPdfInputRef = useRef(null);
+    const schulkePdfInputRef = useRef(null);
 
     const productInputRefs = useRef([]);
     const lotNumberInputRefs = useRef([]);
@@ -11317,6 +12433,737 @@ const NewImportPage = () => {
         setNewProductModal({ isOpen: false, productId: '', index: -1 });
     };
 
+    const handlePDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lÃ²ng chá»n file PDF há»£p lá»‡.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Äang Ä‘á»c Packing List...");
+
+    try {
+        const parsedItems = await parseBDPackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u hÃ ng hÃ³a trong file PDF nÃ y.");
+            return;
+        }
+
+        // Tra cá»©u tá»«ng mÃ£ hÃ ng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) {
+                productMap[snap.id] = snap.data();
+            }
+        });
+
+        // Táº¡o danh sÃ¡ch items Ä‘áº§y Ä‘á»§ trÆ°á»›c
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+    const productData = productMap[parsed.productId];
+
+    // Kiá»ƒm tra lot Ä‘Ã£ tá»“n táº¡i trong Firestore chÆ°a
+    let lotStatus = 'declared';
+    let existingLotInfo = null;
+
+    if (productData) {
+        const lotQuery = query(
+            collection(db, 'inventory_lots'),
+            where('productId', '==', parsed.productId),
+            where('lotNumber', '==', parsed.lotNumber)
+        );
+        const lotSnapshot = await getDocs(lotQuery);
+
+        if (!lotSnapshot.empty) {
+            // LÃ´ Ä‘Ã£ tá»“n táº¡i â€” cá»™ng dá»“n tá»“n kho tá»« táº¥t cáº£ cÃ¡c doc
+            let totalRemaining = 0;
+            let expiryDate = null;
+            lotSnapshot.forEach(d => {
+                totalRemaining += d.data().quantityRemaining || 0;
+                if (!expiryDate && d.data().expiryDate) {
+                    expiryDate = d.data().expiryDate;
+                }
+            });
+            lotStatus = 'exists';
+            existingLotInfo = {
+                quantityRemaining: totalRemaining,
+                expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+            };
+        }
+    }
+
+    if (productData) {
+        newItems.push({
+            id: Date.now() + Math.random(),
+            productId: parsed.productId,
+            productName: productData.productName || '',
+            unit: productData.unit || '',
+            packaging: productData.packaging || '',
+            storageTemp: productData.storageTemp || '',
+            team: productData.team || '',
+            manufacturer: productData.manufacturer || '',
+            subGroup: productData.subGroup || '',
+            conversionFactor: productData.conversionFactor || 1,
+            lotNumber: parsed.lotNumber,
+            expiryDate: parsed.expiryDate,
+            quantity: parsed.quantity,
+            notes: '',
+            productNotFound: false,
+            lotStatus: lotStatus,           // âœ… Ä‘Ãºng tráº¡ng thÃ¡i
+            existingLotInfo: existingLotInfo // âœ… cÃ³ thÃ´ng tin náº¿u lÃ´ cÅ©
+        });
+    } else {
+        notFoundIds.add(parsed.productId);
+        newItems.push({
+            id: Date.now() + Math.random(),
+            productId: parsed.productId,
+            productName: '',
+            unit: '',
+            packaging: '',
+            storageTemp: '',
+            team: '',
+            manufacturer: '',
+            subGroup: '',
+            conversionFactor: 1,
+            lotNumber: parsed.lotNumber,
+            expiryDate: parsed.expiryDate,
+            quantity: parsed.quantity,
+            notes: '',
+            productNotFound: true,
+            lotStatus: 'declared',
+            existingLotInfo: null
+        });
+    }
+}
+
+        // âœ… CÃCH Má»šI: DÃ¹ng store action Ä‘á»ƒ set toÃ n bá»™ items 1 láº§n
+        // thay vÃ¬ addNewItemRow + updateItem tá»«ng dÃ²ng gÃ¢y ra dÃ²ng trá»‘ng
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        // ThÃ´ng bÃ¡o káº¿t quáº£
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `âš ï¸ Äá»c PDF thÃ nh cÃ´ng! CÃ³ ${notFoundIds.size} mÃ£ hÃ ng chÆ°a tá»“n táº¡i: ${[...notFoundIds].join(', ')}. Vui lÃ²ng kiá»ƒm tra cÃ¡c dÃ²ng Ä‘Æ°á»£c Ä‘Ã¡nh dáº¥u vÃ ng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `âœ… Äá»c PDF thÃ nh cÃ´ng! ÄÃ£ nháº­p ${parsedItems.length} dÃ²ng hÃ ng. Vui lÃ²ng Ä‘iá»u chá»‰nh sá»‘ lÆ°á»£ng theo Ä‘Æ¡n vá»‹ quy Ä‘á»•i.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lá»—i khi Ä‘á»c PDF:", error);
+        toast.error("KhÃ´ng thá»ƒ Ä‘á»c file PDF. Vui lÃ²ng thá»­ láº¡i.");
+    } finally {
+        setIsParsingPDF(false);
+        if (pdfInputRef.current) pdfInputRef.current.value = '';
+    }
+};
+
+const handleICUPDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lÃ²ng chá»n file PDF há»£p lá»‡.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Äang Ä‘á»c Packing List ICU Medical...");
+
+    try {
+        const parsedItems = await parseICUPackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u hÃ ng hÃ³a trong file PDF nÃ y.");
+            return;
+        }
+
+        // Tra cá»©u tá»«ng mÃ£ hÃ ng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) productMap[snap.id] = snap.data();
+        });
+
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+            const productData = productMap[parsed.productId];
+
+            // Kiá»ƒm tra lot Ä‘Ã£ tá»“n táº¡i chÆ°a
+            let lotStatus = 'declared';
+            let existingLotInfo = null;
+
+            if (productData) {
+                const lotQuery = query(
+                    collection(db, 'inventory_lots'),
+                    where('productId', '==', parsed.productId),
+                    where('lotNumber', '==', parsed.lotNumber)
+                );
+                const lotSnapshot = await getDocs(lotQuery);
+
+                if (!lotSnapshot.empty) {
+                    let totalRemaining = 0;
+                    let expiryDate = null;
+                    lotSnapshot.forEach(d => {
+                        totalRemaining += d.data().quantityRemaining || 0;
+                        if (!expiryDate && d.data().expiryDate) {
+                            expiryDate = d.data().expiryDate;
+                        }
+                    });
+                    lotStatus = 'exists';
+                    existingLotInfo = {
+                        quantityRemaining: totalRemaining,
+                        expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+                    };
+                }
+            }
+
+            if (productData) {
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: productData.productName || '',
+                    unit: productData.unit || '',
+                    packaging: productData.packaging || '',
+                    storageTemp: productData.storageTemp || '',
+                    team: productData.team || '',
+                    manufacturer: productData.manufacturer || '',
+                    subGroup: productData.subGroup || '',
+                    conversionFactor: productData.conversionFactor || 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: false,
+                    lotStatus,
+                    existingLotInfo
+                });
+            } else {
+                notFoundIds.add(parsed.productId);
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: '',
+                    unit: '',
+                    packaging: '',
+                    storageTemp: '',
+                    team: '',
+                    manufacturer: '',
+                    subGroup: '',
+                    conversionFactor: 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: true,
+                    lotStatus: 'declared',
+                    existingLotInfo: null
+                });
+            }
+        }
+
+        // Set toÃ n bá»™ items 1 láº§n
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `âš ï¸ Äá»c PDF thÃ nh cÃ´ng! CÃ³ ${notFoundIds.size} mÃ£ hÃ ng chÆ°a tá»“n táº¡i: ${[...notFoundIds].join(', ')}. Vui lÃ²ng kiá»ƒm tra cÃ¡c dÃ²ng mÃ u vÃ ng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `âœ… Äá»c PDF ICU Medical thÃ nh cÃ´ng! ÄÃ£ nháº­p ${parsedItems.length} dÃ²ng hÃ ng. Vui lÃ²ng Ä‘iá»u chá»‰nh sá»‘ lÆ°á»£ng theo Ä‘Æ¡n vá»‹ quy Ä‘á»•i.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lá»—i khi Ä‘á»c PDF ICU:", error);
+        toast.error("KhÃ´ng thá»ƒ Ä‘á»c file PDF. Vui lÃ²ng thá»­ láº¡i.");
+    } finally {
+        setIsParsingPDF(false);
+        if (icuPdfInputRef.current) icuPdfInputRef.current.value = '';
+    }
+};
+
+// =============================================
+// HÃ€M Äá»ŒC PACKING LIST PDF Cá»¦A PHARMADESIGN
+// =============================================
+const parsePharmadesignPackingList = async (file) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    const allRows = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+
+        // Thu tháº­p words vá»›i tá»a Ä‘á»™
+        const pageWords = textContent.items
+            .filter(item => item.str.trim())
+            .map(item => ({
+                text: item.str.trim(),
+                x0: item.transform[4],
+                x1: item.transform[4] + item.width,
+                y: viewport.height - item.transform[5]
+            }));
+
+        fullText += textContent.items.map(i => i.str).join(' ') + ' ';
+
+        // NhÃ³m theo dÃ²ng (y gáº§n nhau â‰¤ 3px)
+        const rowMap = new Map();
+        for (const w of pageWords) {
+            const yKey = Math.round(w.y);
+            let foundKey = null;
+            for (const ky of rowMap.keys()) {
+                if (Math.abs(ky - yKey) <= 3) { foundKey = ky; break; }
+            }
+            if (foundKey === null) { rowMap.set(yKey, []); foundKey = yKey; }
+            rowMap.get(foundKey).push(w);
+        }
+
+        for (const [y, words] of [...rowMap.entries()].sort((a, b) => a[0] - b[0])) {
+            allRows.push({ y, words: words.sort((a, b) => a.x0 - b.x0) });
+        }
+    }
+
+    // === BÆ¯á»šC 1: Parse Lot Info tá»« Remark ===
+    const lotExpMap = {};
+
+    // Format A: "Lot no. B2472.3 MFG 13- 01 -26 EXP 13- 01 -29"
+    const regA = /Lot\s+[Nn]o\.?\s*:?\s*(B[\w.]+)\s+MFG[\s\S]*?EXP\s+(\d{1,2})[\s\-]+(\d{1,2})[\s\-]+(\d{2,4})/g;
+    let m;
+    while ((m = regA.exec(fullText)) !== null) {
+        const lot = m[1].trim();
+        let [d, mo, y] = [m[2], m[3], m[4]];
+        if (y.length === 2) y = '20' + y;
+        lotExpMap[lot] = `${d.padStart(2,'0')}/${mo.padStart(2,'0')}/${y}`;
+    }
+    // Format B: "Lot No. : B2382.2 MFG. : 03/11/25 EXP. : 03/11/28"
+    const regB = /Lot\s+[Nn]o\.?\s*:?\s*(B[\w.]+)\s+MFG[.\s]+:?\s*[\d/\-\s]+EXP[.\s]+:?\s*(\d{1,2})[\/](\d{1,2})[\/](\d{2,4})/g;
+    while ((m = regB.exec(fullText)) !== null) {
+        const lot = m[1].trim();
+        let [d, mo, y] = [m[2], m[3], m[4]];
+        if (y.length === 2) y = '20' + y;
+        lotExpMap[lot] = `${d.padStart(2,'0')}/${mo.padStart(2,'0')}/${y}`;
+    }
+    if (Object.keys(lotExpMap).length === 0) return [];
+
+    // === BÆ¯á»šC 2: TÃ¬m header vÃ  vÃ¹ng báº£ng ===
+    const headerIdx = allRows.findIndex(r =>
+        r.words.some(w => w.text === 'ITEM') &&
+        r.words.some(w => w.text === 'DESCRIPTION')
+    );
+    const totalIdx = allRows.findIndex((r, i) =>
+        i > headerIdx &&
+        r.words.some(w => w.text === 'TOTAL') &&
+        r.words.some(w => /^\d/.test(w.text))
+    );
+    if (headerIdx === -1) return [];
+    const tableRows = allRows.slice(headerIdx + 1, totalIdx === -1 ? allRows.length : totalIdx);
+
+    // X tá»‘i thiá»ƒu cá»§a batch trong báº£ng (Ä‘á»ƒ loáº¡i batch trong pháº§n Remark)
+    const batchHeader = allRows[headerIdx].words.find(w => w.text === 'BATCH');
+    const BATCH_X_MIN = batchHeader ? batchHeader.x0 - 20 : 250;
+
+    // === BÆ¯á»šC 3: HÃ m láº¥y nhÃ³m sá»‘ Ä‘áº§u tiÃªn sau batch ===
+    // NhÃ³m sá»‘ = cÃ¡c sá»‘ liÃªn tiáº¿p cÃ³ khoáº£ng cÃ¡ch x < 25px
+    const parseFirstNumberGroup = (numbersAfter) => {
+        if (!numbersAfter.length) return 0;
+        const group = [numbersAfter[0]];
+        for (let i = 1; i < numbersAfter.length; i++) {
+            const gap = numbersAfter[i].x0 - numbersAfter[i-1].x1;
+            if (gap > 25) break; // Sang cá»™t khÃ¡c â†’ dá»«ng
+            group.push(numbersAfter[i]);
+        }
+        const s = group.map(w => w.text).join('').replace(/,/g, '').replace(/\s/g, '');
+        const n = parseInt(s, 10);
+        return isNaN(n) ? 0 : n;
+    };
+
+    // === BÆ¯á»šC 4: TÃ¬m anchors DL ===
+    const anchors = [];
+    for (const row of tableRows) {
+        const dlWord = row.words.find(w => w.x0 >= 40 && w.x0 <= 90 && /^DL\d+$/.test(w.text));
+        if (dlWord) anchors.push({ y: row.y, dl: dlWord.text });
+    }
+
+    // === BÆ¯á»šC 5: Chia blocks theo midpoint giá»¯a 2 DL liÃªn tiáº¿p ===
+    const dlBlocks = anchors.map((anchor, i) => ({
+        dl: anchor.dl,
+        yStart: i > 0 ? Math.floor((anchors[i-1].y + anchor.y) / 2) : 0,
+        yEnd: i + 1 < anchors.length ? Math.floor((anchor.y + anchors[i+1].y) / 2) : 99999
+    }));
+
+    // === BÆ¯á»šC 6: Xá»­ lÃ½ tá»«ng block ===
+    const itemResults = new Map(); // batch â†’ {dl, qty}
+
+    for (const block of dlBlocks) {
+        const blockRows = tableRows.filter(r => r.y >= block.yStart && r.y < block.yEnd);
+        let currentBatch = null;
+        let pendingQty = 0; // Qty xuáº¥t hiá»‡n trÆ°á»›c batch
+
+        for (const row of blockRows) {
+            // Láº¥y batch trong vÃ¹ng báº£ng
+            const batchWord = row.words.find(w =>
+                w.x0 >= BATCH_X_MIN && /^B\d{4}/.test(w.text)
+            );
+
+            // Láº¥y cÃ¡c sá»‘ sau batch (hoáº·c sau BATCH_X_MIN)
+            const xStart = batchWord ? batchWord.x1 : BATCH_X_MIN + 40;
+            const numbersAfter = row.words.filter(w =>
+                w.x0 >= xStart && /^[\d,]+$/.test(w.text)
+            );
+
+            if (batchWord) {
+                currentBatch = batchWord.text;
+                if (!itemResults.has(currentBatch)) {
+                    itemResults.set(currentBatch, { dl: block.dl, qty: 0 });
+                }
+                // GÃ¡n pending qty
+                itemResults.get(currentBatch).qty += pendingQty;
+                pendingQty = 0;
+                // Qty dÃ²ng nÃ y
+                if (numbersAfter.length > 0) {
+                    itemResults.get(currentBatch).qty += parseFirstNumberGroup(numbersAfter);
+                }
+            } else if (numbersAfter.length > 0) {
+                const qty = parseFirstNumberGroup(numbersAfter);
+                if (qty > 0) {
+                    if (currentBatch) {
+                        itemResults.get(currentBatch).qty += qty;
+                    } else {
+                        pendingQty += qty;
+                    }
+                }
+            }
+        }
+    }
+
+    // === BÆ¯á»šC 7: Táº¡o káº¿t quáº£ vÃ  sáº¯p xáº¿p ===
+    return [...itemResults.entries()]
+        .filter(([, data]) => data.qty > 0)
+        .map(([batch, data]) => ({
+            productId: data.dl,
+            lotNumber: batch,
+            quantity: data.qty,
+            expiryDate: lotExpMap[batch] || ''
+        }))
+        .sort((a, b) => {
+            if (a.productId !== b.productId) return a.productId.localeCompare(b.productId);
+            return a.lotNumber.localeCompare(b.lotNumber);
+        });
+};
+
+const handlePharmaPDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lÃ²ng chá»n file PDF há»£p lá»‡.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Äang Ä‘á»c Packing List Pharmadesign...");
+
+    try {
+        const parsedItems = await parsePharmadesignPackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u hÃ ng hÃ³a. File cÃ³ thá»ƒ khÃ´ng Ä‘Ãºng format Pharmadesign hoáº·c thiáº¿u thÃ´ng tin Lot/HSD trong pháº§n Remark.");
+            return;
+        }
+
+        // Tra cá»©u mÃ£ hÃ ng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) productMap[snap.id] = snap.data();
+        });
+
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+            const productData = productMap[parsed.productId];
+
+            // Kiá»ƒm tra lot Ä‘Ã£ tá»“n táº¡i chÆ°a
+            let lotStatus = 'declared';
+            let existingLotInfo = null;
+
+            if (productData) {
+                const lotQuery = query(
+                    collection(db, 'inventory_lots'),
+                    where('productId', '==', parsed.productId),
+                    where('lotNumber', '==', parsed.lotNumber)
+                );
+                const lotSnapshot = await getDocs(lotQuery);
+
+                if (!lotSnapshot.empty) {
+                    let totalRemaining = 0;
+                    let expiryDate = null;
+                    lotSnapshot.forEach(d => {
+                        totalRemaining += d.data().quantityRemaining || 0;
+                        if (!expiryDate && d.data().expiryDate) {
+                            expiryDate = d.data().expiryDate;
+                        }
+                    });
+                    lotStatus = 'exists';
+                    existingLotInfo = {
+                        quantityRemaining: totalRemaining,
+                        expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+                    };
+                }
+            }
+
+            if (productData) {
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: productData.productName || '',
+                    unit: productData.unit || '',
+                    packaging: productData.packaging || '',
+                    storageTemp: productData.storageTemp || '',
+                    team: productData.team || '',
+                    manufacturer: productData.manufacturer || '',
+                    subGroup: productData.subGroup || '',
+                    conversionFactor: productData.conversionFactor || 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: false,
+                    lotStatus,
+                    existingLotInfo
+                });
+            } else {
+                notFoundIds.add(parsed.productId);
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: '',
+                    unit: '',
+                    packaging: '',
+                    storageTemp: '',
+                    team: '',
+                    manufacturer: '',
+                    subGroup: '',
+                    conversionFactor: 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: true,
+                    lotStatus: 'declared',
+                    existingLotInfo: null
+                });
+            }
+        }
+
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `âš ï¸ Äá»c PDF thÃ nh cÃ´ng! CÃ³ ${notFoundIds.size} mÃ£ hÃ ng chÆ°a tá»“n táº¡i: ${[...notFoundIds].join(', ')}. Vui lÃ²ng kiá»ƒm tra cÃ¡c dÃ²ng mÃ u vÃ ng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `âœ… Äá»c PDF Pharmadesign thÃ nh cÃ´ng! ÄÃ£ nháº­p ${parsedItems.length} dÃ²ng hÃ ng. Vui lÃ²ng Ä‘iá»u chá»‰nh sá»‘ lÆ°á»£ng theo Ä‘Æ¡n vá»‹ quy Ä‘á»•i.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lá»—i khi Ä‘á»c PDF Pharmadesign:", error);
+        toast.error("KhÃ´ng thá»ƒ Ä‘á»c file PDF. Vui lÃ²ng thá»­ láº¡i.");
+    } finally {
+        setIsParsingPDF(false);
+        if (pharmaPdfInputRef.current) pharmaPdfInputRef.current.value = '';
+    }
+};
+
+const handleSchulkePDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+        toast.warn("Vui lÃ²ng chá»n file PDF há»£p lá»‡.");
+        return;
+    }
+
+    setIsParsingPDF(true);
+    toast.info("Äang Ä‘á»c Packing List Schulke...");
+
+    try {
+        const parsedItems = await parseSchulkePackingList(file);
+
+        if (parsedItems.length === 0) {
+            toast.error("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u hÃ ng hÃ³a. File cÃ³ thá»ƒ khÃ´ng Ä‘Ãºng format Schulke.");
+            return;
+        }
+
+        // Tra cá»©u mÃ£ hÃ ng trong Firestore
+        const uniqueProductIds = [...new Set(parsedItems.map(i => i.productId))];
+        const productSnapshots = await Promise.all(
+            uniqueProductIds.map(id => getDoc(doc(db, 'products', id)))
+        );
+
+        const productMap = {};
+        productSnapshots.forEach(snap => {
+            if (snap.exists()) productMap[snap.id] = snap.data();
+        });
+
+        const newItems = [];
+        const notFoundIds = new Set();
+
+        for (const parsed of parsedItems) {
+            const productData = productMap[parsed.productId];
+
+            // Kiá»ƒm tra lot Ä‘Ã£ tá»“n táº¡i chÆ°a
+            let lotStatus = 'declared';
+            let existingLotInfo = null;
+
+            if (productData) {
+                const lotQuery = query(
+                    collection(db, 'inventory_lots'),
+                    where('productId', '==', parsed.productId),
+                    where('lotNumber', '==', parsed.lotNumber)
+                );
+                const lotSnapshot = await getDocs(lotQuery);
+                if (!lotSnapshot.empty) {
+                    let totalRemaining = 0;
+                    let expiryDate = null;
+                    lotSnapshot.forEach(d => {
+                        totalRemaining += d.data().quantityRemaining || 0;
+                        if (!expiryDate && d.data().expiryDate) expiryDate = d.data().expiryDate;
+                    });
+                    lotStatus = 'exists';
+                    existingLotInfo = {
+                        quantityRemaining: totalRemaining,
+                        expiryDate: expiryDate ? formatDate(expiryDate.toDate()) : parsed.expiryDate
+                    };
+                }
+            }
+
+            if (productData) {
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: productData.productName || '',
+                    unit: productData.unit || '',
+                    packaging: productData.packaging || '',
+                    storageTemp: productData.storageTemp || '',
+                    team: productData.team || '',
+                    manufacturer: productData.manufacturer || '',
+                    subGroup: productData.subGroup || '',
+                    conversionFactor: productData.conversionFactor || 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: false,
+                    lotStatus,
+                    existingLotInfo
+                });
+            } else {
+                notFoundIds.add(parsed.productId);
+                newItems.push({
+                    id: Date.now() + Math.random(),
+                    productId: parsed.productId,
+                    productName: '',
+                    unit: '',
+                    packaging: '',
+                    storageTemp: '',
+                    team: '',
+                    manufacturer: '',
+                    subGroup: '',
+                    conversionFactor: 1,
+                    lotNumber: parsed.lotNumber,
+                    expiryDate: parsed.expiryDate,
+                    quantity: parsed.quantity,
+                    notes: '',
+                    productNotFound: true,
+                    lotStatus: 'declared',
+                    existingLotInfo: null
+                });
+            }
+        }
+
+        useImportSlipStore.setState(state => ({
+            ...state,
+            supplierId: '',
+            supplierName: '',
+            description: '',
+            importDate: new Date().toISOString().split('T')[0],
+            items: newItems
+        }));
+
+        if (notFoundIds.size > 0) {
+            toast.warn(
+                `âš ï¸ Äá»c PDF thÃ nh cÃ´ng! CÃ³ ${notFoundIds.size} mÃ£ hÃ ng chÆ°a tá»“n táº¡i: ${[...notFoundIds].join(', ')}. Vui lÃ²ng kiá»ƒm tra cÃ¡c dÃ²ng mÃ u vÃ ng.`,
+                { autoClose: 8000 }
+            );
+        } else {
+            toast.success(
+                `âœ… Äá»c PDF Schulke thÃ nh cÃ´ng! ÄÃ£ nháº­p ${parsedItems.length} dÃ²ng hÃ ng. Vui lÃ²ng Ä‘iá»u chá»‰nh sá»‘ lÆ°á»£ng theo Ä‘Æ¡n vá»‹ quy Ä‘á»•i.`
+            );
+        }
+
+    } catch (error) {
+        console.error("Lá»—i khi Ä‘á»c PDF Schulke:", error);
+        toast.error("KhÃ´ng thá»ƒ Ä‘á»c file PDF. Vui lÃ²ng thá»­ láº¡i.");
+    } finally {
+        setIsParsingPDF(false);
+        if (schulkePdfInputRef.current) schulkePdfInputRef.current.value = '';
+    }
+};
+
     const handleSaveSlip = async () => {
         const slipData = getValidSlipData();
         if (!slipData) return;
@@ -11477,6 +13324,145 @@ const NewImportPage = () => {
                 </div>
             </div>
 
+            {/* ===== NÃšT IMPORT Tá»ª PACKING LIST PDF ===== */}
+<div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    margin: '15px 0',
+    padding: '12px 16px',
+    backgroundColor: '#e8f4fd',
+    borderRadius: '8px',
+    border: '1px solid #b3d7f5',
+    flexWrap: 'wrap'
+}}>
+    <FiUpload style={{ fontSize: '20px', color: '#007bff', flexShrink: 0 }} />
+    <span style={{ fontSize: '14px', color: '#004085', flex: 1, minWidth: '200px' }}>
+        <strong>Import tá»« Packing List:</strong> Táº£i file PDF lÃªn Ä‘á»ƒ tá»± Ä‘á»™ng Ä‘iá»n dá»¯ liá»‡u
+    </span>
+
+    {/* NÃºt BD */}
+    <input
+        ref={pdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handlePDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-bd"
+    />
+    <label
+        htmlFor="pdf-upload-bd"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#1565c0',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Äang Ä‘á»c...' : 'Import BD'}
+    </label>
+
+    {/* NÃºt ICU Medical */}
+    <input
+        ref={icuPdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handleICUPDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-icu"
+    />
+    <label
+        htmlFor="pdf-upload-icu"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#2e7d32',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Äang Ä‘á»c...' : 'Import ICU Medical'}
+    </label>
+
+    {/* NÃºt Pharmadesign */}
+    <input
+        ref={pharmaPdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handlePharmaPDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-pharma"
+    />
+    <label
+        htmlFor="pdf-upload-pharma"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#6a1b9a',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Äang Ä‘á»c...' : 'Import Pharmadesign'}
+    </label>
+
+    {/* NÃºt Schulke */}
+    <input
+        ref={schulkePdfInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={handleSchulkePDFUpload}
+        style={{ display: 'none' }}
+        id="pdf-upload-schulke"
+    />
+    <label
+        htmlFor="pdf-upload-schulke"
+        style={{
+            backgroundColor: isParsingPDF ? '#6c757d' : '#c0392b',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '5px',
+            cursor: isParsingPDF ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            pointerEvents: isParsingPDF ? 'none' : 'auto'
+        }}
+    >
+        <FiUpload />
+        {isParsingPDF ? 'Äang Ä‘á»c...' : 'Import Schulke'}
+    </label>
+</div>
+{/* ===== Káº¾T THÃšC NÃšT IMPORT ===== */}
+
             <h2>Chi tiáº¿t hÃ ng hÃ³a</h2>
             <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 1fr 0.5fr' }}>
                 <div className="grid-header">MÃ£ hÃ ng (*)</div>
@@ -11493,8 +13479,13 @@ const NewImportPage = () => {
 
                 {items.map((item, index) => (
                     <React.Fragment key={item.id}>
-                        <div className="grid-cell" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <ProductAutocomplete
+                        <div className="grid-cell" style={{ 
+    flexDirection: 'column', 
+    alignItems: 'flex-start',
+    backgroundColor: item.productNotFound ? '#fff3cd' : 'transparent',
+    borderRadius: '4px'
+}}>
+    <ProductAutocomplete
                                 ref={el => productInputRefs.current[index] = el}
                                 value={item.productId}
                                 onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
@@ -13546,112 +15537,101 @@ const CountInput = ({ item, onCountSubmit }) => {
     };
 
     return (
-        <input 
+        <input
             type="text"
-            placeholder="Nháº­p sá»‘ Ä‘áº¿m" 
+            placeholder="Nháº­p sá»‘ Ä‘áº¿m"
             value={countedQty ?? ''}
             onChange={e => updateItemCountInUI(id, e.target.value)}
             onBlur={e => onCountSubmit(id, e.target.value)}
-            onKeyDown={handleKeyDown} 
+            onKeyDown={handleKeyDown}
             disabled={!isSessionInProgress}
-            style={{ 
-                backgroundColor: isNew ? '#fff9e6' : 
-                    ((countedQty !== null && countedQty !== '') ? '#e6fffa' : '#fff') 
+            style={{
+                width: '90px',
+                backgroundColor: isNew ? '#fff9e6' :
+                    ((countedQty !== null && countedQty !== '') ? '#e6fffa' : '#fff')
             }}
         />
     );
 };
 
-// =================================================================
-// === Báº®T Äáº¦U HÃ€M HELPER Má»šI Äá»‚ TÃNH TOÃN BIá»‚U THá»¨C AN TOÃ€N ===
-// =================================================================
 /**
  * TÃ­nh toÃ¡n má»™t biá»ƒu thá»©c toÃ¡n há»c Ä‘Æ¡n giáº£n má»™t cÃ¡ch an toÃ n.
  * Há»— trá»£ cÃ¡c chuá»—i nhÆ° "300+200", "600-100".
- * @param {string} str - Chuá»—i biá»ƒu thá»©c Ä‘áº§u vÃ o.
- * @returns {number|NaN} - Káº¿t quáº£ tÃ­nh toÃ¡n hoáº·c NaN náº¿u khÃ´ng há»£p lá»‡.
  */
 const evaluateMathExpression = (str) => {
     try {
-        // Chá»‰ cho phÃ©p cÃ¡c kÃ½ tá»± sá»‘, +, -, vÃ  khoáº£ng tráº¯ng
         if (/[^0-9\s+\-]/.test(str)) {
             return NaN;
         }
-        // Thay tháº¿ nhiá»u dáº¥u -- thÃ nh +
         const sanitizedStr = str.replace(/--/g, '+');
-        
-        // Sá»­ dá»¥ng Function constructor Ä‘á»ƒ trÃ¡nh rá»§i ro báº£o máº­t cá»§a eval()
         return new Function(`return ${sanitizedStr}`)();
     } catch (error) {
         return NaN;
     }
 };
-// ===============================================================
-// === Káº¾T THÃšC HÃ€M HELPER Má»šI ===
-// ===============================================================
-
 
 const StocktakeSessionPage = () => {
     const { sessionId } = useParams();
-Â  Â  const navigate = useNavigate();
-Â  Â  const {
-Â  Â  Â  Â  sessionData, items, discrepancyItems, checkedItems, summaryStats, loading,
-Â  Â  Â  Â  initializeSession, setItems, setSummary, setSessionStatus,
-Â  Â  Â  Â  toggleCheckedItem, toggleAllCheckedItems, clearStore, updateItemCountInUI
-Â  Â  } = useStocktakeStore();
+    const navigate = useNavigate();
+    const {
+        sessionData, items, discrepancyItems, checkedItems, summaryStats, loading,
+        initializeSession, setItems, setSummary, setSessionStatus,
+        toggleCheckedItem, toggleAllCheckedItems, clearStore, updateItemCountInUI
+    } = useStocktakeStore();
 
-Â  Â  const [loadingItems, setLoadingItems] = useState(true);
-Â  Â  const [searchTerm, setSearchTerm] = useState('');
-Â  Â  const [lastVisible, setLastVisible] = useState(null);
-Â  Â  const [page, setPage] = useState(1);
-Â  Â  const [isLastPage, setIsLastPage] = useState(false);
+    const [loadingItems, setLoadingItems] = useState(true);
+    const [convMap, setConvMap] = useState({});
+    const [searchTerm, setSearchTerm] = useState('');
+    const [lastVisible, setLastVisible] = useState(null);
+    const [page, setPage] = useState(1);
+    const [isLastPage, setIsLastPage] = useState(false);
     const [cursorHistory, setCursorHistory] = useState([]);
-Â  Â  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
-Â  Â  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+    const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-Â  Â  const performCountUpdate = async (itemId, finalCount) => {
-Â  Â  Â  Â  updateItemCountInUI(itemId, finalCount);
-Â  Â  Â  Â  const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
-Â  Â  Â  Â  try {
-Â  Â  Â  Â  Â  Â  await updateDoc(itemRef, { countedQty: finalCount });
-Â  Â  Â  Â  Â  Â  await fetchStatsAndDiscrepancies();
-Â  Â  Â  Â  Â  Â  return true;
-Â  Â  Â  Â  } catch (error) {
-Â  Â  Â  Â  Â  Â  toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
-Â  Â  Â  Â  Â  Â  return false;
-Â  Â  Â  Â  }
-Â  Â  };
+    const performCountUpdate = async (itemId, finalCount) => {
+        updateItemCountInUI(itemId, finalCount);
+        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
+        try {
+            await updateDoc(itemRef, { countedQty: finalCount });
+            await fetchStatsAndDiscrepancies();
+            return true;
+        } catch (error) {
+            toast.error("Lá»—i: KhÃ´ng thá»ƒ lÆ°u sá»‘ lÆ°á»£ng.");
+            return false;
+        }
+    };
 
-Â  Â  const handleCountSubmit = (itemId, value) => {
-Â  Â  Â  Â  const item = useStocktakeStore.getState().items.find(i => i.id === itemId);
-Â  Â  Â  Â  if (!item) return;
-Â  Â  Â  Â  const prevCountedQty = item.countedQtyBeforeSubmit ?? 0;
-Â  Â  Â  Â  const rawValue = String(value).trim();
-Â  Â  Â  Â  if (rawValue === String(item.countedQtyBeforeSubmit ?? '')) return;
-Â  Â  Â  Â  if (rawValue === '') {
-Â  Â  Â  Â  Â  Â  performCountUpdate(itemId, null);
-Â  Â  Â  Â  Â  Â  return;
-Â  Â  Â  Â  }
-Â  Â  Â  Â  let finalCount = NaN;
-Â  Â  Â  Â  if (rawValue.startsWith('+')) {
-Â  Â  Â  Â  Â  Â  const addedValue = evaluateMathExpression(rawValue.substring(1));
-Â  Â  Â  Â  Â  Â  if (!isNaN(addedValue) && addedValue > 0) {
-Â  Â  Â  Â  Â  Â  Â  Â  finalCount = prevCountedQty + addedValue;
-Â  Â  Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  Â  Â  toast.warn("GiÃ¡ trá»‹ cá»™ng dá»“n khÃ´ng há»£p lá»‡.");
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  finalCount = evaluateMathExpression(rawValue);
-Â  Â  Â  Â  }
-Â  Â  Â  Â  if (isNaN(finalCount) || finalCount < 0) {
-Â  Â  Â  Â  Â  Â  toast.warn("GiÃ¡ trá»‹ nháº­p khÃ´ng há»£p lá»‡.");
-Â  Â  Â  Â  Â  Â  updateItemCountInUI(itemId, item.countedQtyBeforeSubmit ?? null);
-Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  performCountUpdate(itemId, finalCount);
-Â  Â  Â  Â  }
-Â  Â  };
+    const handleCountSubmit = (itemId, value) => {
+        const item = useStocktakeStore.getState().items.find(i => i.id === itemId);
+        if (!item) return;
+        const prevCountedQty = item.countedQtyBeforeSubmit ?? 0;
+        const rawValue = String(value).trim();
+        if (rawValue === String(item.countedQtyBeforeSubmit ?? '')) return;
+        if (rawValue === '') {
+            performCountUpdate(itemId, null);
+            return;
+        }
+        let finalCount = NaN;
+        if (rawValue.startsWith('+')) {
+            const addedValue = evaluateMathExpression(rawValue.substring(1));
+            if (!isNaN(addedValue) && addedValue > 0) {
+                finalCount = prevCountedQty + addedValue;
+            } else {
+                toast.warn("GiÃ¡ trá»‹ cá»™ng dá»“n khÃ´ng há»£p lá»‡.");
+            }
+        } else {
+            finalCount = evaluateMathExpression(rawValue);
+        }
+        if (isNaN(finalCount) || finalCount < 0) {
+            toast.warn("GiÃ¡ trá»‹ nháº­p khÃ´ng há»£p lá»‡.");
+            updateItemCountInUI(itemId, item.countedQtyBeforeSubmit ?? null);
+        } else {
+            performCountUpdate(itemId, finalCount);
+        }
+    };
 
-Â  Â  const fetchStatsAndDiscrepancies = useCallback(async () => {
+    const fetchStatsAndDiscrepancies = useCallback(async () => {
         if (!sessionId) return;
         const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
         const sessionRef = doc(db, 'stocktakes', sessionId);
@@ -13684,140 +15664,154 @@ const StocktakeSessionPage = () => {
         setSummary(newSummary, sortedDiscrepancies);
     }, [sessionId, setSummary]);
 
-Â  Â  useEffect(() => {
-Â  Â  Â  Â  const fetchSessionData = async () => {
-Â  Â  Â  Â  Â  Â  const docRef = doc(db, 'stocktakes', sessionId);
-Â  Â  Â  Â  Â  Â  const docSnap = await getDoc(docRef);
-Â  Â  Â  Â  Â  Â  if (docSnap.exists()) {
-Â  Â  Â  Â  Â  Â  Â  Â  await fetchStatsAndDiscrepancies();
-Â  Â  Â  Â  Â  Â  Â  Â  const storeState = useStocktakeStore.getState();
-Â  Â  Â  Â  Â  Â  Â  Â  initializeSession(
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  { id: docSnap.id, ...docSnap.data() },
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storeState.summaryStats,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  storeState.discrepancyItems
-Â  Â  Â  Â  Â  Â  Â  Â  );
-Â  Â  Â  Â  Â  Â  } else {
-Â  Â  Â  Â  Â  Â  Â  Â  toast.error("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
-Â  Â  Â  Â  Â  Â  Â  Â  navigate('/stocktakes');
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  };
-Â  Â  Â  Â  fetchSessionData();
-Â  Â  Â  Â  return () => {
-Â  Â  Â  Â  Â  Â  clearStore();
-Â  Â  Â  Â  }
-Â  Â  }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
+    useEffect(() => {
+        const fetchSessionData = async () => {
+            const docRef = doc(db, 'stocktakes', sessionId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                await fetchStatsAndDiscrepancies();
+                const storeState = useStocktakeStore.getState();
+                initializeSession(
+                    { id: docSnap.id, ...docSnap.data() },
+                    storeState.summaryStats,
+                    storeState.discrepancyItems
+                );
+            } else {
+                toast.error("KhÃ´ng tÃ¬m tháº¥y phiÃªn kiá»ƒm kÃª!");
+                navigate('/stocktakes');
+            }
+        };
+        fetchSessionData();
+        return () => {
+            clearStore();
+        };
+    }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
 
-Â  Â  // useEffect Má»šI: Chá»‰ dÃ¹ng Ä‘á»ƒ táº£i dá»¯ liá»‡u láº§n Ä‘áº§u tiÃªn
-Â  Â  useEffect(() => {
-Â  Â  Â  Â  const fetchInitialItems = async () => {
-Â  Â  Â  Â  Â  Â  if (!sessionId) return;
-Â  Â  Â  Â  Â  Â  setLoadingItems(true);
-Â  Â  Â  Â  Â  Â  try {
-Â  Â  Â  Â  Â  Â  Â  Â  const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
-Â  Â  Â  Â  Â  Â  Â  Â  const q = query(itemsRef, orderBy('productId'), limit(PAGE_SIZE));
-Â  Â  Â  Â  Â  Â  Â  Â  const docSnapshots = await getDocs(q);
-Â  Â  Â  Â  Â  Â  Â  Â  const itemsList = docSnapshots.docs.map(doc => ({
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null
-Â  Â  Â  Â  Â  Â  Â  Â  }));
-Â  Â  Â  Â  Â  Â  Â  Â  setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-Â  Â  Â  Â  Â  Â  Â  Â  setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-Â  Â  Â  Â  Â  Â  Â  Â  setItems(itemsList);
-Â  Â  Â  Â  Â  Â  } catch (error) {
+    // Load danh sÃ¡ch lÃ´ hÃ ng láº§n Ä‘áº§u
+    useEffect(() => {
+        const fetchInitialItems = async () => {
+            if (!sessionId) return;
+            setLoadingItems(true);
+            try {
+                const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+                const q = query(itemsRef, orderBy('productId'), limit(PAGE_SIZE));
+                const docSnapshots = await getDocs(q);
+                const itemsList = docSnapshots.docs.map(doc => ({
+                    id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null
+                }));
+                setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+                setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+                setItems(itemsList);
+            } catch (error) {
                 console.error("Lá»—i khi táº£i danh sÃ¡ch kiá»ƒm kÃª ban Ä‘áº§u: ", error);
-Â  Â  Â  Â  Â  Â  Â  Â  toast.error("Lá»—i khi táº£i danh sÃ¡ch kiá»ƒm kÃª.");
-Â  Â  Â  Â  Â  Â  } finally {
-Â  Â  Â  Â  Â  Â  Â  Â  setLoadingItems(false);
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  };
-Â  Â  Â  Â  fetchInitialItems();
-Â  Â  }, [sessionId]);
+                toast.error("Lá»—i khi táº£i danh sÃ¡ch kiá»ƒm kÃª.");
+            } finally {
+                setLoadingItems(false);
+            }
+        };
+        fetchInitialItems();
+    }, [sessionId]);
 
-    // HÃ€M Má»šI: Thay tháº¿ hÃ m handleSearch rá»—ng trÆ°á»›c Ä‘Ã³
-Â  Â  const handleSearch = async (e) => {
-Â  Â  Â  Â  const term = e.target.value;
-        setSearchTerm(term); // Cáº­p nháº­t state ngay khi gÃµ
+    // Load há»‡ sá»‘ quy Ä‘á»•i Misa tá»« products
+    useEffect(() => {
+        const loadConvMap = async () => {
+            try {
+                const prodsSnap = await getDocs(collection(db, 'products'));
+                const map = {};
+                prodsSnap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    const f = Number(d.misaConversionFactor);
+                    if (f && f !== 1) {
+                        map[docSnap.id] = { factor: f, misaUnit: d.misaUnit || '' };
+                    }
+                });
+                setConvMap(map);
+            } catch (e) {
+                console.error('convMap error:', e);
+            }
+        };
+        loadConvMap();
+    }, []);
 
-Â  Â  Â  Â  if (e.key !== 'Enter') return;
-
+    const handleSearch = async (e) => {
+        const term = e.target.value;
+        setSearchTerm(term);
+        if (e.key !== 'Enter') return;
         setLoadingItems(true);
-Â  Â  Â  Â  try {
-Â  Â  Â  Â  Â  Â  const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-Â  Â  Â  Â  Â  Â  let q = query(itemsCollectionRef, orderBy('productId'));
+        try {
+            const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+            let q = query(itemsCollectionRef, orderBy('productId'));
+            if (term.trim()) {
+                const upperSearchTerm = term.trim().toUpperCase();
+                q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+            }
+            const finalQuery = query(q, limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(finalQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                countedQtyBeforeSubmit: doc.data().countedQty ?? null
+            }));
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setItems(itemsList);
+            setPage(1);
+        } catch (error) {
+            console.error("Lá»—i khi tÃ¬m kiáº¿m váº­t tÆ°: ", error);
+            toast.error("KhÃ´ng thá»ƒ tÃ¬m kiáº¿m danh sÃ¡ch váº­t tÆ°.");
+        } finally {
+            setLoadingItems(false);
+        }
+    };
 
-Â  Â  Â  Â  Â  Â  if (term.trim()) {
-Â  Â  Â  Â  Â  Â  Â  Â  const upperSearchTerm = term.trim().toUpperCase();
-Â  Â  Â  Â  Â  Â  Â  Â  q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  
-Â  Â  Â  Â  Â  Â  const finalQuery = query(q, limit(PAGE_SIZE));
-Â  Â  Â  Â  Â  Â  const docSnapshots = await getDocs(finalQuery);
+    const handleFinalizeCount = async () => {
+        setConfirmModal({ isOpen: false });
+        const sessionRef = doc(db, 'stocktakes', sessionId);
+        await updateDoc(sessionRef, { status: 'completed' });
+        setSessionStatus('completed');
+        toast.success("ÄÃ£ hoÃ n táº¥t phiÃªn kiá»ƒm kÃª!");
+    };
 
-Â  Â  Â  Â  Â  Â  const itemsList = docSnapshots.docs.map(doc => ({
-Â  Â  Â  Â  Â  Â  Â  Â  id: doc.id,
-Â  Â  Â  Â  Â  Â  Â  Â  ...doc.data(),
-Â  Â  Â  Â  Â  Â  Â  Â  countedQtyBeforeSubmit: doc.data().countedQty ?? null
-Â  Â  Â  Â  Â  Â  }));
+    const promptForFinalize = () => {
+        const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
+        let message = "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.";
+        if (uncountedItems > 0) {
+            message = `Cáº¢NH BÃO: Váº«n cÃ²n ${uncountedItems} mÃ£ hÃ ng chÆ°a Ä‘Æ°á»£c Ä‘áº¿m. Náº¿u báº¡n hoÃ n táº¥t, sá»‘ lÆ°á»£ng cá»§a chÃºng sáº½ Ä‘Æ°á»£c coi lÃ  0. ` + message;
+        }
+        setConfirmModal({
+            isOpen: true,
+            title: "HoÃ n táº¥t phiÃªn kiá»ƒm kÃª?",
+            message: message,
+            onConfirm: handleFinalizeCount,
+            confirmText: "Váº«n hoÃ n táº¥t"
+        });
+    };
 
-Â  Â  Â  Â  Â  Â  setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-Â  Â  Â  Â  Â  Â  setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-Â  Â  Â  Â  Â  Â  setItems(itemsList);
-Â  Â  Â  Â  Â  Â  setPage(1);
-Â  Â  Â  Â  } catch (error) {
-Â  Â  Â  Â  Â  Â  console.error("Lá»—i khi tÃ¬m kiáº¿m váº­t tÆ°: ", error);
-Â  Â  Â  Â  Â  Â  toast.error("KhÃ´ng thá»ƒ tÃ¬m kiáº¿m danh sÃ¡ch váº­t tÆ°.");
-Â  Â  Â  Â  } finally {
-Â  Â  Â  Â  Â  Â  setLoadingItems(false);
-Â  Â  Â  Â  }
-Â  Â  };
-
-Â  Â  const handleFinalizeCount = async () => {
-Â  Â  Â  Â  setConfirmModal({ isOpen: false });
-Â  Â  Â  Â  const sessionRef = doc(db, 'stocktakes', sessionId);
-Â  Â  Â  Â  await updateDoc(sessionRef, { status: 'completed' });
-Â  Â  Â  Â  setSessionStatus('completed');
-Â  Â  Â  Â  toast.success("ÄÃ£ hoÃ n táº¥t phiÃªn kiá»ƒm kÃª!");
-Â  Â  };
-
-Â  Â  const promptForFinalize = () => {
-Â  Â  Â  Â  const uncountedItems = summaryStats.totalItems - summaryStats.countedItems;
-Â  Â  Â  Â  let message = "Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n hoÃ n táº¥t vÃ  khÃ³a phiÃªn kiá»ƒm kÃª nÃ y? Sau khi hoÃ n táº¥t, báº¡n cÃ³ thá»ƒ xá»­ lÃ½ chÃªnh lá»‡ch.";
-Â  Â  Â  Â  if (uncountedItems > 0) {
-Â  Â  Â  Â  Â  Â  message = `Cáº¢NH BÃO: Váº«n cÃ²n ${uncountedItems} mÃ£ hÃ ng chÆ°a Ä‘Æ°á»£c Ä‘áº¿m. Náº¿u báº¡n hoÃ n táº¥t, sá»‘ lÆ°á»£ng cá»§a chÃºng sáº½ Ä‘Æ°á»£c coi lÃ  0. ` + message;
-Â  Â  Â  Â  }
-Â  Â  Â  Â  setConfirmModal({
-Â  Â  Â  Â  Â  Â  isOpen: true,
-Â  Â  Â  Â  Â  Â  title: "HoÃ n táº¥t phiÃªn kiá»ƒm kÃª?",
-Â  Â  Â  Â  Â  Â  message: message,
-Â  Â  Â  Â  Â  Â  onConfirm: handleFinalizeCount,
-Â  Â  Â  Â  Â  Â  confirmText: "Váº«n hoÃ n táº¥t"
-Â  Â  Â  Â  });
-Â  Â  };
-
-Â  Â  const handleAddUnlistedItem = async (newItem) => {
-Â  Â  Â  Â  const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
-Â  Â  Â  Â  try {
-Â  Â  Â  Â  Â  Â  const docRef = doc(itemsRef, newItem.lotId);
-Â  Â  Â  Â  Â  Â  await setDoc(docRef, newItem);
-Â  Â  Â  Â  Â  Â  toast.success("ÄÃ£ thÃªm máº·t hÃ ng má»›i vÃ o phiÃªn kiá»ƒm kÃª.");
-            // Táº£i láº¡i trang Ä‘áº§u tiÃªn sau khi thÃªm
-Â  Â  Â  Â  Â  Â  const q = query(collection(db, 'stocktakes', sessionId, 'items'), orderBy('productId'), limit(PAGE_SIZE));
-            // Táº¡o má»™t hÃ m táº¡m Ä‘á»ƒ fetch
+    const handleAddUnlistedItem = async (newItem) => {
+        const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+        try {
+            const docRef = doc(itemsRef, newItem.lotId);
+            await setDoc(docRef, newItem);
+            toast.success("ÄÃ£ thÃªm máº·t hÃ ng má»›i vÃ o phiÃªn kiá»ƒm kÃª.");
+            const q = query(collection(db, 'stocktakes', sessionId, 'items'), orderBy('productId'), limit(PAGE_SIZE));
             const fetchAgain = async () => {
                 const docSnapshots = await getDocs(q);
-                const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
+                const itemsList = docSnapshots.docs.map(doc => ({
+                    id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null
+                }));
                 setItems(itemsList);
                 setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
                 setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
                 setPage(1);
-            }
+            };
             fetchAgain();
-Â  Â  Â  Â  Â  Â  setIsAddItemModalOpen(false);
-Â  Â  Â  Â  } catch (error) {
-Â  Â  Â  Â  Â  Â  toast.error("CÃ³ lá»—i khi lÆ°u máº·t hÃ ng má»›i, vui lÃ²ng thá»­ láº¡i.");
-Â  Â  Â  Â  }
-Â  Â  };
+            setIsAddItemModalOpen(false);
+        } catch (error) {
+            toast.error("CÃ³ lá»—i khi lÆ°u máº·t hÃ ng má»›i, vui lÃ²ng thá»­ láº¡i.");
+        }
+    };
 
-Â  Â  const handleAdjustInventory = async () => {
+    const handleAdjustInventory = async () => {
         setConfirmModal({ isOpen: false });
         const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
         if (itemsToAdjust.length === 0) {
@@ -13828,14 +15822,10 @@ const StocktakeSessionPage = () => {
             const adjustmentsCollectionRef = collection(db, 'inventory_adjustments');
             for (const item of itemsToAdjust) {
                 const finalCountedQty = item.countedQty ?? 0;
-                
-                // KIá»‚M TRA Náº¾U KHÃ”NG PHáº¢I LÃ€ HÃ€NG Má»šI (LOGIC CÅ¨)
                 if (!item.isNew) {
                     const inventoryLotRef = doc(db, 'inventory_lots', item.lotId);
                     batch.update(inventoryLotRef, { quantityRemaining: finalCountedQty });
-                }
-                // LOGIC Má»šI: Náº¾U LÃ€ HÃ€NG Má»šI, Táº O Má»˜T LÃ” Tá»’N KHO Má»šI
-                else {
+                } else {
                     const expiryDateObj = parseDateString(item.expiryDate);
                     const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
                     const newInventoryLotRef = doc(collection(db, 'inventory_lots'));
@@ -13857,115 +15847,105 @@ const StocktakeSessionPage = () => {
                     };
                     batch.set(newInventoryLotRef, newLotData);
                 }
-Â  Â  Â  Â  Â  Â  Â  Â  const newAdjustmentRef = doc(adjustmentsCollectionRef);
-Â  Â  Â  Â  Â  Â  Â  Â  batch.set(newAdjustmentRef, {
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  createdAt: serverTimestamp(), stocktakeId: sessionId, productId: item.productId,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  productName: item.productName, lotNumber: item.lotNumber, quantityBefore: item.systemQty,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  quantityAfter: finalCountedQty, variance: finalCountedQty - item.systemQty,
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  reason: `Äiá»u chá»‰nh sau kiá»ƒm kÃª phiÃªn: ${sessionData.name}`
-Â  Â  Â  Â  Â  Â  Â  Â  });
-Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  const sessionRef = doc(db, 'stocktakes', sessionId);
-Â  Â  Â  Â  Â  Â  batch.update(sessionRef, { status: 'adjusted' });
-Â  Â  Â  Â  Â  Â  await batch.commit();
-Â  Â  Â  Â  Â  Â  setSessionStatus('adjusted');
-Â  Â  Â  Â  Â  Â  toast.success("ÄÃ£ Ä‘iá»u chá»‰nh tá»“n kho thÃ nh cÃ´ng!");
-Â  Â  Â  Â  } catch (error) {
-Â  Â  Â  Â  Â  Â  toast.error("ÄÃ£ xáº£y ra lá»—i khi Ä‘iá»u chá»‰nh tá»“n kho.");
-Â  Â  Â  Â  }
-Â  Â  };
-Â  Â  
-Â  Â  const promptForAdjust = () => {
-Â  Â  Â  Â  const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
-Â  Â  Â  Â  if (itemsToAdjust.length === 0) return toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t máº·t hÃ ng Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
-Â  Â  Â  Â  setConfirmModal({
-Â  Â  Â  Â  Â  Â  isOpen: true,
-Â  Â  Â  Â  Â  Â  title: "XÃ¡c nháº­n Ä‘iá»u chá»‰nh tá»“n kho?",
-Â  Â  Â  Â  Â  Â  message: `Báº¡n cÃ³ cháº¯c muá»‘n Ä‘iá»u chá»‰nh tá»“n kho cho ${itemsToAdjust.length} máº·t hÃ ng Ä‘Ã£ chá»n khÃ´ng? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.`,
-Â  Â  Â  Â  Â  Â  onConfirm: handleAdjustInventory,
-Â  Â  Â  Â  Â  Â  confirmText: "Äá»“ng Ã½ Ä‘iá»u chá»‰nh"
-Â  Â  Â  Â  });
-Â  Â  };
-Â  Â  
-Â  Â  if (loading) return <Spinner />;
-Â  Â  if (!sessionData) return <div>KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.</div>;
-
-Â  Â  const isSessionInProgress = sessionData.status === 'in_progress';
-
-Â  Â  // âœ… CODE Má»šI â€” chá»‰ thÃªm dÃ²ng setCursorHistory
-const handleNextPage = async () => {
-    if (isLastPage) return;
-    setLoadingItems(true);
-    try {
-        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-        let q = query(itemsCollectionRef, orderBy('productId'));
-        if (searchTerm) {
-            const upperSearchTerm = searchTerm.toUpperCase();
-            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+                const newAdjustmentRef = doc(adjustmentsCollectionRef);
+                batch.set(newAdjustmentRef, {
+                    createdAt: serverTimestamp(),
+                    stocktakeId: sessionId,
+                    productId: item.productId,
+                    productName: item.productName,
+                    lotNumber: item.lotNumber,
+                    quantityBefore: item.systemQty,
+                    quantityAfter: finalCountedQty,
+                    variance: finalCountedQty - item.systemQty,
+                    reason: `Äiá»u chá»‰nh sau kiá»ƒm kÃª phiÃªn: ${sessionData.name}`
+                });
+            }
+            const sessionRef = doc(db, 'stocktakes', sessionId);
+            batch.update(sessionRef, { status: 'adjusted' });
+            await batch.commit();
+            setSessionStatus('adjusted');
+            toast.success("ÄÃ£ Ä‘iá»u chá»‰nh tá»“n kho thÃ nh cÃ´ng!");
+        } catch (error) {
+            toast.error("ÄÃ£ xáº£y ra lá»—i khi Ä‘iá»u chá»‰nh tá»“n kho.");
         }
-        const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
-        const docSnapshots = await getDocs(nextPageQuery);
-        const itemsList = docSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null }));
+    };
 
-        // ðŸ‘‡ THÃŠM DÃ’NG NÃ€Y: lÆ°u cursor trang hiá»‡n táº¡i vÃ o lá»‹ch sá»­ trÆ°á»›c khi sang trang má»›i
-        setCursorHistory(prev => [...prev, lastVisible]);
+    const promptForAdjust = () => {
+        const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
+        if (itemsToAdjust.length === 0) return toast.warn("Vui lÃ²ng chá»n Ã­t nháº¥t má»™t máº·t hÃ ng Ä‘á»ƒ Ä‘iá»u chá»‰nh.");
+        setConfirmModal({
+            isOpen: true,
+            title: "XÃ¡c nháº­n Ä‘iá»u chá»‰nh tá»“n kho?",
+            message: `Báº¡n cÃ³ cháº¯c muá»‘n Ä‘iá»u chá»‰nh tá»“n kho cho ${itemsToAdjust.length} máº·t hÃ ng Ä‘Ã£ chá»n khÃ´ng? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.`,
+            onConfirm: handleAdjustInventory,
+            confirmText: "Äá»“ng Ã½ Ä‘iá»u chá»‰nh"
+        });
+    };
 
-        setItems(itemsList);
-        setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-        setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
-        setPage(p => p + 1);
-    } catch (error) {
-        toast.error("Lá»—i khi táº£i trang tiáº¿p theo.");
-    } finally {
-        setLoadingItems(false);
-    }
-};
+    if (loading) return <Spinner />;
+    if (!sessionData) return <div>KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u cho phiÃªn kiá»ƒm kÃª nÃ y.</div>;
 
-    // âœ… CODE Má»šI hoÃ n toÃ n
-const handlePrevPage = async () => {
-    // KhÃ´ng lÃ m gÃ¬ náº¿u Ä‘ang á»Ÿ trang 1
-    if (page <= 1) return;
+    const isSessionInProgress = sessionData.status === 'in_progress';
 
-    setLoadingItems(true);
-    try {
-        const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
-        let q = query(itemsCollectionRef, orderBy('productId'));
-        if (searchTerm) {
-            const upperSearchTerm = searchTerm.toUpperCase();
-            q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+    const handleNextPage = async () => {
+        if (isLastPage) return;
+        setLoadingItems(true);
+        try {
+            const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+            let q = query(itemsCollectionRef, orderBy('productId'));
+            if (searchTerm) {
+                const upperSearchTerm = searchTerm.toUpperCase();
+                q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+            }
+            const nextPageQuery = query(q, startAfter(lastVisible), limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(nextPageQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({
+                id: doc.id, ...doc.data(), countedQtyBeforeSubmit: doc.data().countedQty ?? null
+            }));
+            setCursorHistory(prev => [...prev, lastVisible]);
+            setItems(itemsList);
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
+            setPage(p => p + 1);
+        } catch (error) {
+            toast.error("Lá»—i khi táº£i trang tiáº¿p theo.");
+        } finally {
+            setLoadingItems(false);
         }
+    };
 
-        // Láº¥y cursor lá»‹ch sá»­ ra â€” láº¥y cÃ¡i cuá»‘i cÃ¹ng (trang trÆ°á»›c Ä‘Ã³)
-        // VÃ­ dá»¥: history = [cursorTrang1, cursorTrang2]
-        // Äang á»Ÿ trang 3 â†’ láº¥y cursorTrang2 ra Ä‘á»ƒ load trang 2
-        const newHistory = [...cursorHistory];          // copy máº£ng ra
-        const prevCursor = newHistory.pop();            // láº¥y cursor cuá»‘i ra khá»i máº£ng
-        setCursorHistory(newHistory);                   // lÆ°u láº¡i máº£ng Ä‘Ã£ bá»›t 1 pháº§n tá»­
-
-        // Náº¿u cÃ³ cursor thÃ¬ load tá»« cursor Ä‘Ã³, náº¿u khÃ´ng (vá» trang 1) thÃ¬ load tá»« Ä‘áº§u
-        const prevPageQuery = prevCursor
-            ? query(q, startAfter(prevCursor), limit(PAGE_SIZE))
-            : query(q, limit(PAGE_SIZE));
-
-        const docSnapshots = await getDocs(prevPageQuery);
-        const itemsList = docSnapshots.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            countedQtyBeforeSubmit: doc.data().countedQty ?? null
-        }));
-
-        setItems(itemsList);
-        setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
-        setIsLastPage(false); // Khi vá» trang trÆ°á»›c thÃ¬ cháº¯c cháº¯n chÆ°a pháº£i trang cuá»‘i
-        setPage(p => p - 1); // Giáº£m sá»‘ trang Ä‘i 1
-    } catch (error) {
-        toast.error("Lá»—i khi táº£i trang trÆ°á»›c.");
-    } finally {
-        setLoadingItems(false);
-    }
-};
-
-    // DÃ¡n vÃ o file: src/pages/StocktakeSessionPage.jsx
+    const handlePrevPage = async () => {
+        if (page <= 1) return;
+        setLoadingItems(true);
+        try {
+            const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
+            let q = query(itemsCollectionRef, orderBy('productId'));
+            if (searchTerm) {
+                const upperSearchTerm = searchTerm.toUpperCase();
+                q = query(q, where('productId', '>=', upperSearchTerm), where('productId', '<=', upperSearchTerm + '\uf8ff'));
+            }
+            const newHistory = [...cursorHistory];
+            const prevCursor = newHistory.pop();
+            setCursorHistory(newHistory);
+            const prevPageQuery = prevCursor
+                ? query(q, startAfter(prevCursor), limit(PAGE_SIZE))
+                : query(q, limit(PAGE_SIZE));
+            const docSnapshots = await getDocs(prevPageQuery);
+            const itemsList = docSnapshots.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                countedQtyBeforeSubmit: doc.data().countedQty ?? null
+            }));
+            setItems(itemsList);
+            setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
+            setIsLastPage(false);
+            setPage(p => p - 1);
+        } catch (error) {
+            toast.error("Lá»—i khi táº£i trang trÆ°á»›c.");
+        } finally {
+            setLoadingItems(false);
+        }
+    };
 
     const handleExportPDF = async () => {
         const session = useStocktakeStore.getState().sessionData;
@@ -13973,164 +15953,223 @@ const handlePrevPage = async () => {
             toast.warn("ChÆ°a cÃ³ dá»¯ liá»‡u phiÃªn Ä‘á»ƒ xuáº¥t file PDF.");
             return;
         }
-        
         toast.info("Äang táº£i toÃ n bá»™ dá»¯ liá»‡u Ä‘á»ƒ táº¡o file PDF...");
         try {
             const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
-            
-            // --- THAY Äá»”I Táº I ÄÃ‚Y: Sáº¯p xáº¿p theo 'productId' ---
-            const q = query(itemsRef, orderBy('productId')); 
-            
+            const q = query(itemsRef, orderBy('productId'));
             const querySnapshot = await getDocs(q);
             const allItems = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
             if (allItems.length === 0) {
                 toast.warn("PhiÃªn kiá»ƒm kÃª nÃ y khÃ´ng cÃ³ sáº£n pháº©m nÃ o Ä‘á»ƒ xuáº¥t ra file.");
                 return;
             }
-
             await exportStocktakeToPDF(session, allItems);
-
         } catch (error) {
             console.error("Lá»—i khi xuáº¥t PDF phiáº¿u kiá»ƒm kÃª:", error);
             toast.error("ÄÃ£ xáº£y ra lá»—i khi táº¡o file PDF.");
         }
     };
 
-Â  Â  return (
-Â  Â  Â  Â  <div className="stocktake-session-page-container">
-Â  Â  Â  Â  Â  Â  <ConfirmationModal 
-Â  Â  Â  Â  Â  Â  Â  Â  isOpen={confirmModal.isOpen} 
-Â  Â  Â  Â  Â  Â  Â  Â  title={confirmModal.title}
-Â  Â  Â  Â  Â  Â  Â  Â  message={confirmModal.message}
-Â  Â  Â  Â  Â  Â  Â  Â  onConfirm={confirmModal.onConfirm}
-Â  Â  Â  Â  Â  Â  Â  Â  onCancel={confirmModal.onCancel ?? (() => setConfirmModal({ isOpen: false }))}
-Â  Â  Â  Â  Â  Â  Â  Â  confirmText={confirmModal.confirmText}
-Â  Â  Â  Â  Â  Â  Â  Â  cancelText={confirmModal.cancelText}
-Â  Â  Â  Â  Â  Â  />
-Â  Â  Â  Â  Â  Â  {isAddItemModalOpen && (<AddUnlistedItemModal onClose={() => setIsAddItemModalOpen(false)} onAddItem={handleAddUnlistedItem} />)}
+    return (
+        <div className="stocktake-session-page-container">
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={confirmModal.onCancel ?? (() => setConfirmModal({ isOpen: false }))}
+                confirmText={confirmModal.confirmText}
+                cancelText={confirmModal.cancelText}
+            />
+            {isAddItemModalOpen && (
+                <AddUnlistedItemModal
+                    onClose={() => setIsAddItemModalOpen(false)}
+                    onAddItem={handleAddUnlistedItem}
+                />
+            )}
 
-Â  Â  Â  Â  Â  Â  <div className="page-header">
-    <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
-    <div className="header-actions"> {/* <-- Bá»c cÃ¡c nÃºt vÃ o div nÃ y */}
-        {/* --- THÃŠM NÃšT NÃ€Y VÃ€O ÄÃ‚Y --- */}
-        <button onClick={handleExportPDF} className="btn-secondary">
-            <FiPrinter style={{ marginRight: '5px' }} />
-            Xuáº¥t PDF Kiá»ƒm kÃª
-        </button>
-        {isSessionInProgress && (<button onClick={promptForFinalize} className="btn-primary">HoÃ n táº¥t Ä‘áº¿m</button>)}
-    </div>
-</div>
+            <div className="page-header">
+                <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
+                <div className="header-actions">
+                    <button onClick={handleExportPDF} className="btn-secondary">
+                        <FiPrinter style={{ marginRight: '5px' }} />
+                        Xuáº¥t PDF Kiá»ƒm kÃª
+                    </button>
+                    {isSessionInProgress && (
+                        <button onClick={promptForFinalize} className="btn-primary">
+                            HoÃ n táº¥t Ä‘áº¿m
+                        </button>
+                    )}
+                </div>
+            </div>
 
-Â  Â  Â  Â  Â  Â  {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
-Â  Â  Â  Â  Â  Â  Â  Â  Â <div className="form-section">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="compact-info-grid" style={{gridTemplateColumns: '1fr 1fr 1fr'}}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div><label>Tá»•ng sá»‘ mÃ£ cáº§n Ä‘áº¿m</label><p><strong>{summaryStats.totalItems}</strong></p></div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div><label>Sá»‘ mÃ£ Ä‘Ã£ Ä‘áº¿m</label><p style={{color: 'green'}}><strong>{summaryStats.countedItems}</strong></p></div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div><label>Sá»‘ mÃ£ cÃ³ chÃªnh lá»‡ch</label><p style={{color: 'red'}}><strong>{summaryStats.discrepancies}</strong></p></div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  )}
+            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
+                <div className="form-section">
+                    <div className="compact-info-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                        <div><label>Tá»•ng sá»‘ mÃ£ cáº§n Ä‘áº¿m</label><p><strong>{summaryStats.totalItems}</strong></p></div>
+                        <div><label>Sá»‘ mÃ£ Ä‘Ã£ Ä‘áº¿m</label><p style={{ color: 'green' }}><strong>{summaryStats.countedItems}</strong></p></div>
+                        <div><label>Sá»‘ mÃ£ cÃ³ chÃªnh lá»‡ch</label><p style={{ color: 'red' }}><strong>{summaryStats.discrepancies}</strong></p></div>
+                    </div>
+                </div>
+            )}
 
-Â  Â  Â  Â  Â  Â  <div className="controls-container">
-Â  Â  Â  Â  Â  Â  Â  Â  <div className="search-container">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <input 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  type="text" 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  placeholder="TÃ¬m MÃ£ hÃ ng rá»“i nháº¥n Enter..." 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  value={searchTerm} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onChange={(e) => setSearchTerm(e.target.value)} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  onKeyDown={handleSearch} 
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  className="search-input" />
-Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  {isSessionInProgress && (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={() => setIsAddItemModalOpen(true)} className="btn-secondary" style={{whiteSpace: 'nowrap'}}>+ ThÃªm HÃ ng NgoÃ i DS</button>
-Â  Â  Â  Â  Â  Â  Â  Â  )}
-Â  Â  Â  Â  Â  Â  </div>
+            <div className="controls-container">
+                <div className="search-container">
+                    <input
+                        type="text"
+                        placeholder="TÃ¬m MÃ£ hÃ ng rá»“i nháº¥n Enter..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={handleSearch}
+                        className="search-input"
+                    />
+                </div>
+                {isSessionInProgress && (
+                    <button
+                        onClick={() => setIsAddItemModalOpen(true)}
+                        className="btn-secondary"
+                        style={{ whiteSpace: 'nowrap' }}
+                    >
+                        + ThÃªm HÃ ng NgoÃ i DS
+                    </button>
+                )}
+            </div>
 
-Â  Â  Â  Â  Â  Â  {loadingItems ? <Spinner /> : (
-Â  Â  Â  Â  Â  Â  Â  Â  <>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <div className="table-container">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <table className="products-table">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <thead>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <tr>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>HSD</th><th>ÄVT</th><th>Quy cÃ¡ch</th><th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>NhÃ³m hÃ ng</th>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â {items.map((item) => (
-    <tr 
-        key={item.id}
-        // --- THÃŠM DÃ’NG NÃ€Y: TÃ­nh toÃ¡n vÃ  Ã¡p dá»¥ng class mÃ u sáº¯c dá»±a trÃªn HSD ---
-        className={getRowColorByExpiry(item.expiryDate, item.subGroup)} 
-    >
-        <td>{item.productId}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productName}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.lotNumber || '(KhÃ´ng cÃ³)'}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.expiryDate ? formatDate(item.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.unit}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.packaging}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.systemQty}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>
-    <CountInput item={item} onCountSubmit={handleCountSubmit} />
-</td>
-<td>{item.subGroup}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tbody>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </table>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  
-{!searchTerm && (
-              <div className="pagination-controls">
-                  <button onClick={handlePrevPage} disabled={page <= 1 || loadingItems}>
-                      <FiChevronLeft /> Trang TrÆ°á»›c
-                  </button>
-                  <span>Trang {page}</span>
-                  <button onClick={handleNextPage} disabled={isLastPage || loadingItems}>
-                      Trang Tiáº¿p <FiChevronRight />
-                  </button>
-              </div>
-          )}
-          </>
-      )}
+            {loadingItems ? <Spinner /> : (
+                <>
+                    <div className="table-container">
+                        <table className="products-table">
+                            <thead>
+                                <tr>
+                                    <th>MÃ£ hÃ ng</th>
+                                    <th>TÃªn hÃ ng</th>
+                                    <th>Sá»‘ lÃ´</th>
+                                    <th>HSD</th>
+                                    <th>ÄVT</th>
+                                    <th>Quy cÃ¡ch</th>
+                                    <th>Tá»“n há»‡ thá»‘ng</th>
+                                    <th>Tá»“n Misa (quy Ä‘á»•i)</th>
+                                    <th>Tá»“n thá»±c táº¿</th>
+                                    <th>NhÃ³m hÃ ng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {items.map((item) => (
+                                    <tr
+                                        key={item.id}
+                                        className={getRowColorByExpiry(item.expiryDate, item.subGroup)}
+                                    >
+                                        <td>{item.productId}</td>
+                                        <td>{item.productName}</td>
+                                        <td>{item.lotNumber || '(KhÃ´ng cÃ³)'}</td>
+                                        <td>{item.expiryDate ? formatDate(item.expiryDate) : '(KhÃ´ng cÃ³)'}</td>
+                                        <td>{item.unit}</td>
+                                        <td>{item.packaging}</td>
+                                        <td>{item.systemQty}</td>
+                                        <td style={{
+                                            color: convMap[item.productId] ? '#1a73e8' : 'inherit',
+                                            fontWeight: convMap[item.productId] ? '600' : 'normal'
+                                        }}>
+                                            {convMap[item.productId]
+                                                ? <>
+                                                    {(item.systemQty * convMap[item.productId].factor).toLocaleString('vi-VN')}
+                                                    {convMap[item.productId].misaUnit && (
+                                                        <span style={{ fontSize: '11px', marginLeft: '3px', color: '#888' }}>
+                                                            {convMap[item.productId].misaUnit}
+                                                        </span>
+                                                    )}
+                                                </>
+                                                : <span style={{ color: '#bbb', fontSize: '12px' }}>â€”</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <CountInput item={item} onCountSubmit={handleCountSubmit} />
+                                        </td>
+                                        <td>{item.subGroup}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-Â  Â  Â  Â  Â  Â  {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
-Â  Â  Â  Â  Â  Â  Â  Â  <div className="form-section" style={{marginTop: '20px'}}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <h3 style={{color: '#dc3545'}}>Xá»­ LÃ½ ChÃªnh Lá»‡ch</h3>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {discrepancyItems.length > 0 ? (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <table className="products-table discrepancy-table">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <thead>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â   Â  Â  Â  Â  <tr>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th><input type="checkbox" onChange={(e) => toggleAllCheckedItems(e.target.checked)} disabled={sessionData.status === 'adjusted'} /></th>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <th>MÃ£ hÃ ng</th><th>TÃªn hÃ ng</th><th>Sá»‘ lÃ´</th>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <th>Tá»“n há»‡ thá»‘ng</th><th>Tá»“n thá»±c táº¿</th><th>ChÃªnh lá»‡ch</th>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â </tr>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </thead>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tbody>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â {discrepancyItems.map(item => (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <tr key={item.id}>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <td><input type="checkbox" checked={!!checkedItems[item.id]} onChange={() => toggleCheckedItem(item.id)} disabled={sessionData.status === 'adjusted'} /></td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td>{item.productId}</td><td>{item.productName}</td><td>{item.lotNumber}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <td>{item.systemQty}</td><td><strong>{item.countedQty ?? 0}</strong></td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <td style={{color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red', fontWeight: 'bold'}}>{(item.countedQty ?? 0) - item.systemQty}</td>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </tr>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ))}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â </tbody>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </table>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  {sessionData.status !== 'adjusted' && (
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â <div className="page-actions">
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  <button onClick={promptForAdjust} className="btn-primary">XÃ¡c Nháº­n Äiá»u Chá»‰nh Tá»“n Kho</button>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â   Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â )}
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  </>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  ) : <p>KhÃ´ng cÃ³ chÃªnh lá»‡ch nÃ o Ä‘Æ°á»£c ghi nháº­n.</p>
-Â  Â  Â  Â  Â  Â  Â  Â  Â  Â  }
-Â  Â  Â  Â  Â  Â  Â  Â  </div>
-Â  Â  Â  Â  Â  Â  )}
-Â  Â  Â  Â  </div>
-Â  Â  );
+                    {!searchTerm && (
+                        <div className="pagination-controls">
+                            <button onClick={handlePrevPage} disabled={page <= 1 || loadingItems}>
+                                <FiChevronLeft /> Trang TrÆ°á»›c
+                            </button>
+                            <span>Trang {page}</span>
+                            <button onClick={handleNextPage} disabled={isLastPage || loadingItems}>
+                                Trang Tiáº¿p <FiChevronRight />
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
+                <div className="form-section" style={{ marginTop: '20px' }}>
+                    <h3 style={{ color: '#dc3545' }}>Xá»­ lÃ½ ChÃªnh lá»‡ch</h3>
+                    {discrepancyItems.length > 0 ? (
+                        <>
+                            <table className="products-table discrepancy-table">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <input
+                                                type="checkbox"
+                                                onChange={(e) => toggleAllCheckedItems(e.target.checked)}
+                                                disabled={sessionData.status === 'adjusted'}
+                                            />
+                                        </th>
+                                        <th>MÃ£ hÃ ng</th>
+                                        <th>TÃªn hÃ ng</th>
+                                        <th>Sá»‘ lÃ´</th>
+                                        <th>Tá»“n há»‡ thá»‘ng</th>
+                                        <th>Tá»“n thá»±c táº¿</th>
+                                        <th>ChÃªnh lá»‡ch</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {discrepancyItems.map(item => (
+                                        <tr key={item.id}>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!checkedItems[item.id]}
+                                                    onChange={() => toggleCheckedItem(item.id)}
+                                                    disabled={sessionData.status === 'adjusted'}
+                                                />
+                                            </td>
+                                            <td>{item.productId}</td>
+                                            <td>{item.productName}</td>
+                                            <td>{item.lotNumber}</td>
+                                            <td>{item.systemQty}</td>
+                                            <td><strong>{item.countedQty ?? 0}</strong></td>
+                                            <td style={{
+                                                color: (item.countedQty ?? 0) > item.systemQty ? 'green' : 'red',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                {(item.countedQty ?? 0) - item.systemQty}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {sessionData.status !== 'adjusted' && (
+                                <div className="page-actions">
+                                    <button onClick={promptForAdjust} className="btn-primary">
+                                        XÃ¡c Nháº­n Äiá»u Chá»‰nh Tá»“n Kho
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <p>KhÃ´ng cÃ³ chÃªnh lá»‡ch nÃ o Ä‘Æ°á»£c ghi nháº­n.</p>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default StocktakeSessionPage;
@@ -15659,6 +17698,52 @@ export default useImportSlipStore;
 
 
 
+--- FILE: D:\quan-ly-kho\src\stores\reconciliationStore.js ---
+
+
+// src/stores/reconciliationStore.js
+import { create } from 'zustand';
+
+const initialState = {
+    webkhoLots:           [],
+    convMap:              {},
+    altCodeMap:           {},
+    missingMisaCodes:     [],   // array (Set khÃ´ng serialize Ä‘Æ°á»£c)
+    lastUpdated:          null, // ISO string
+
+    misaItems:            [],
+    misaFileName:         '',
+    duplicateHsdWarnings: [],
+
+    activeTab:            'chenh',
+};
+
+const useReconciliationStore = create((set) => ({
+    ...initialState,
+
+    setWebkhoData: (lots, convMap, altCodeMap, missingMisaArray) => set({
+        webkhoLots:       lots,
+        convMap:          convMap,
+        altCodeMap:       altCodeMap,
+        missingMisaCodes: missingMisaArray,
+        lastUpdated:      new Date().toISOString(),
+    }),
+
+    setMisaData: (items, fileName, dupHsd) => set({
+        misaItems:            items,
+        misaFileName:         fileName,
+        duplicateHsdWarnings: dupHsd,
+    }),
+
+    setActiveTab: (tab) => set({ activeTab: tab }),
+
+    reset: () => set({ ...initialState }),
+}));
+
+export default useReconciliationStore;
+
+
+
 --- FILE: D:\quan-ly-kho\src\stores\stocktakeStore.js ---
 
 
@@ -15741,10 +17826,43 @@ export default useStocktakeStore;
 :root {
   --header-height: 60px;
   --primary-color: #007bff;
-  --text-color: #333;
-  --bg-color: #f8f9fa;
-  --border-color: #dee2e6;
   --transition-speed: 0.3s ease;
+
+  --text-color: #333333;
+  --text-secondary: #555555;
+  --bg-color: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-hover: #f1f1f1;
+  --border-color: #dee2e6;
+  --card-bg: #ffffff;
+  --table-header-bg: #f8f9fa;
+  --table-stripe-bg: #f8f9fa;
+  --input-bg: #ffffff;
+  --input-border: #cccccc;
+  --navbar-bg: #ffffff;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode {
+  --text-color: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --bg-color: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-hover: #0f3460;
+  --border-color: #444466;
+  --card-bg: #16213e;
+  --table-header-bg: #0f3460;
+  --table-stripe-bg: #1a1a2e;
+  --input-bg: #16213e;
+  --input-border: #444466;
+  --navbar-bg: #16213e;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* --- Bá» Cá»¤C LAYOUT NGANG Má»šI --- */
@@ -15758,7 +17876,7 @@ export default useStocktakeStore;
 .top-navbar {
   height: var(--header-height);
   width: 100%;
-  background-color: #ffffff;
+  background-color: var(--navbar-bg);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -15813,6 +17931,7 @@ export default useStocktakeStore;
   flex-grow: 1;
   padding: 20px;
   background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .page-header {
@@ -15827,8 +17946,8 @@ export default useStocktakeStore;
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--card-bg);
+  box-shadow: var(--shadow);
 }
 
 .products-table th,
@@ -15841,16 +17960,17 @@ export default useStocktakeStore;
 }
 
 .products-table th {
-  background-color: var(--bg-color);
+  background-color: var(--table-header-bg);
   font-weight: bold;
+  color: var(--text-color);
 }
 
 .products-table tbody tr:nth-of-type(even) {
-  background-color: #f8f9fa;
+  background-color: var(--table-stripe-bg);
 }
 
 .products-table tbody tr:hover {
-  background-color: #e9ecef;
+  background-color: var(--bg-hover);
 }
 
 /* src/styles/AdminLayout.css */
@@ -15934,7 +18054,7 @@ export default useStocktakeStore;
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 20px;
   border-radius: 8px;
   width: 500px;
@@ -16044,11 +18164,12 @@ export default useStocktakeStore;
 .btn-view:hover { background-color: #e8f6f8; }
 
 .form-section {
-  background-color: #fff;
+  background-color: var(--card-bg);
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
+  color: var(--text-color);
 }
 
 .form-row {
@@ -16061,6 +18182,7 @@ export default useStocktakeStore;
 }
 
 /* PhiÃªn báº£n sá»­a lá»—i - Gá»™p chung input, select, vÃ  textarea */
+/* THAY Báº°NG */
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group input[type="email"],
@@ -16069,14 +18191,16 @@ export default useStocktakeStore;
 .form-group textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--input-border);
   border-radius: 4px;
   box-sizing: border-box;
   font-family: inherit;
   font-size: 14px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
 }
 .form-group select {
-  background-color: white;
+  background-color: var(--input-bg);
 }
 
 .page-actions {
@@ -17337,6 +19461,136 @@ tbody tr.selected-row td {
     background-color: #f7f9fb; /* MÃ u ná»n ráº¥t nháº¡t */
 }
 
+/* ============================================================
+   DARK MODE â€” cÃ¡c element Ä‘áº·c biá»‡t
+   ============================================================ */
+
+body.dark-mode .inventory-table th,
+body.dark-mode .inventory-table td {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .inventory-table th {
+    background-color: var(--table-header-bg) !important;
+}
+
+body.dark-mode .inventory-table tbody tr:hover td {
+    background-color: var(--bg-hover) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .modal-content,
+body.dark-mode .modal {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+body.dark-mode .modal-content .form-section {
+    background-color: var(--bg-secondary);
+}
+
+body.dark-mode .modal-actions {
+    border-top-color: var(--border-color);
+}
+
+body.dark-mode .btn-secondary {
+    background-color: #444466;
+    color: #e0e0e0;
+    border-color: #666688;
+}
+
+body.dark-mode .btn-secondary:hover {
+    background-color: #555577;
+}
+
+body.dark-mode .dropdown-content {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .dropdown-content button {
+    color: var(--text-color);
+}
+
+body.dark-mode .dropdown-content button:hover {
+    background-color: var(--bg-hover);
+}
+
+body.dark-mode .search-input {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--input-border);
+}
+
+body.dark-mode .filter-group button {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .filter-group button:hover {
+    background-color: var(--bg-hover);
+}
+
+body.dark-mode .card {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+body.dark-mode .lot-details-container {
+    background-color: var(--bg-secondary);
+}
+
+body.dark-mode .lot-details-container li {
+    background-color: var(--bg-hover);
+    color: var(--text-color);
+}
+
+body.dark-mode .compact-info-grid {
+    border-color: var(--border-color);
+}
+
+body.dark-mode .item-details-grid,
+body.dark-mode .item-details-grid-edit {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* === MÃ€U Sáº®C HSD TRONG DARK MODE === */
+body.dark-mode tr.near-expiry-yellow td {
+    background-color: #3d3000 !important;
+    color: #fde68a !important;
+}
+body.dark-mode tr.near-expiry-yellow td:first-child {
+    border-left: 5px solid #fbbf24;
+}
+
+body.dark-mode tr.near-expiry-orange td {
+    background-color: #431a07 !important;
+    color: #fed7aa !important;
+}
+body.dark-mode tr.near-expiry-orange td:first-child {
+    border-left: 5px solid #fb923c;
+}
+
+body.dark-mode tr.near-expiry-red td {
+    background-color: #4a0000 !important;
+    color: #fca5a5 !important;
+}
+body.dark-mode tr.near-expiry-red td:first-child {
+    border-left: 5px solid #f87171;
+}
+
+body.dark-mode tr.expired-black td {
+    background-color: #2d1b69 !important;
+    color: #ddd6fe !important;
+}
+body.dark-mode tr.expired-black td:first-child {
+    border-left: 5px solid #a78bfa;
+}
+
 
 
 --- FILE: D:\quan-ly-kho\src\styles\Dashboard.css ---
@@ -18387,8 +20641,6 @@ afterEach(() => {
 --- FILE: D:\quan-ly-kho\src\utils\dateUtils.js ---
 
 
-import { SPECIAL_EXPIRY_SUBGROUPS } from '../constants'; // <-- THÃŠM DÃ’NG NÃ€Y VÃ€O Äáº¦U FILE
-
 // src/utils/dateUtils.js
 
 /**
@@ -18419,6 +20671,12 @@ export const formatDate = (dateOrTimestamp) => {
  */
 export const parseDateString = (dateString) => {
   if (!dateString) return null;
+  // Xá»­ lÃ½ Firestore Timestamp
+  if (typeof dateString.toDate === 'function') return dateString.toDate();
+  // Xá»­ lÃ½ JS Date object
+  if (dateString instanceof Date) return isNaN(dateString.getTime()) ? null : dateString;
+  // Xá»­ lÃ½ string (khÃ´ng pháº£i string thÃ¬ bá» qua)
+  if (typeof dateString !== 'string') return null;
   try {
     const parts = dateString.split('/');
     if (parts.length !== 3) return null;
@@ -18896,9 +21154,9 @@ import { formatDate } from './dateUtils';
 import { formatNumber } from './numberUtils';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 
-// --- HÃ m tiá»‡n Ã­ch dÃ¹ng chung ---
+// --- HÃ m tiÃ¡Â»â€¡n Ã­ch dÃ¹ng chung ---
 const fontToBase64 = async (url) => {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Network response was not ok, status: ${response.status}`);
@@ -18918,7 +21176,7 @@ const reformatDateString = (dateString) => {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
-// --- HÃ m thiáº¿t láº­p PDF vá»›i font chá»¯ vÃ  khá»• giáº¥y ---
+// --- HÃ m thiÃ¡ÂºÂ¿t lÃ¡ÂºÂ­p PDF vÃ¡Â»â€ºi font chÃ¡Â»Â¯ vÃ  khÃ¡Â»â€¢ giÃ¡ÂºÂ¥y ---
 const setupPdfDoc = async (orientation = 'portrait') => {
     const doc = new jsPDF({ orientation });
     try {
@@ -18933,13 +21191,13 @@ const setupPdfDoc = async (orientation = 'portrait') => {
         doc.setFont('Roboto-Regular');
         return doc;
     } catch (error) {
-        console.error("Lá»—i khi táº£i font chá»¯:", error);
-        toast.error("KhÃ´ng thá»ƒ táº£i font chá»¯ Ä‘á»ƒ xuáº¥t PDF.");
+        console.error("LÃ¡Â»â€”i khi tÃ¡ÂºÂ£i font chÃ¡Â»Â¯:", error);
+        toast.error("KhÃ´ng thÃ¡Â»Æ’ tÃ¡ÂºÂ£i font chÃ¡Â»Â¯ Ä‘Ã¡Â»Æ’ xuÃ¡ÂºÂ¥t PDF.");
         return null;
     }
 };
 
-// --- HÃ m láº¥y thÃ´ng tin sáº£n pháº©m ---
+// --- HÃ m lÃ¡ÂºÂ¥y thÃ´ng tin sáº£n pháº©m ---
 const getProductDetailsForItems = async (items) => {
     const productPromises = items.map(item => getDoc(doc(db, 'products', item.productId)));
     const productSnapshots = await Promise.all(productPromises);
@@ -18962,7 +21220,7 @@ const getProductDetailsForItems = async (items) => {
     });
 };
 
-// --- HÃ€M XUáº¤T PHIáº¾U NHáº¬P (ÄÃƒ NÃ‚NG Cáº¤P) ---
+// --- HÃƒâ‚¬M XUÃ¡ÂºÂ¤T PHIÃ¡ÂºÂ¾U NHÃ¡ÂºÂ¬P (ÄÃƒÆ’ NÃƒâ€šNG CÃ¡ÂºÂ¤P) ---
 export const exportImportSlipToPDF = async (slip) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
@@ -18971,17 +21229,17 @@ export const exportImportSlipToPDF = async (slip) => {
 
     doc.setFontSize(18);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text('PHIáº¾U NHáº¬P KHO', 148, 20, { align: 'center' });
+    doc.text('PHIÃ¡ÂºÂ¾U NHÃ¡ÂºÂ¬P KHO', 148, 20, { align: 'center' });
 
     doc.setFontSize(11);
     doc.setFont('Roboto-Regular', 'normal');
     const slipDate = slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'KhÃ´ng cÃ³';
-    doc.text(`NgÃ y láº­p phiáº¿u: ${slipDate}`, 14, 30);
+    doc.text(`NgÃ y lÃ¡ÂºÂ­p phiÃ¡ÂºÂ¿u: ${slipDate}`, 14, 30);
     doc.text(`MÃ£ phiáº¿u: ${slip.id}`, 283, 30, { align: 'right' });
     
-    // YÃªu cáº§u 4: TÃ´ Ä‘áº­m tÃªn Ä‘á»‘i tÃ¡c
+    // YÃªu cÃ¡ÂºÂ§u 4: TÃ´ Ä‘Ã¡ÂºÂ­m tÃªn Ä‘á»‘i tÃ¡c
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`NhÃ  cung cáº¥p: `, 14, 36);
+    doc.text(`NhÃ  cung cÃ¡ÂºÂ¥p: `, 14, 36);
     doc.setFont('Roboto-Regular', 'bold');
     doc.text(slip.supplierName || '', 40, 36);
     
@@ -18997,22 +21255,22 @@ export const exportImportSlipToPDF = async (slip) => {
 
     autoTable(doc, {
         head: head, body: body, startY: 50, theme: 'grid', margin: { left: 10, right: 10 },
-        // YÃªu cáº§u 1 & 2: CÄƒn giá»¯a máº·c Ä‘á»‹nh
+        // YÃªu cÃ¡ÂºÂ§u 1 & 2: CÃ„Æ’n giÃ¡Â»Â¯a mÃ¡ÂºÂ·c Ä‘Ã¡Â»â€¹nh
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
-        // YÃªu cáº§u 3: Äiá»u chá»‰nh Ä‘á»™ rá»™ng cá»™t
+        // YÃªu cÃ¡ÂºÂ§u 3: ÄiÃ¡Â»Âu chÃ¡Â»â€°nh Ä‘á»™ rá»™ng cá»™t
         columnStyles: {
             0: { cellWidth: 31 },  // MÃ£ hÃ ng
-            1: { cellWidth: 71, halign: 'left' }, // TÃªn sáº£n pháº©m (rá»™ng, cÄƒn trÃ¡i)
+            1: { cellWidth: 71, halign: 'left' }, // TÃªn sáº£n pháº©m (rá»™ng, cÃ„Æ’n trÃ¡i)
             2: { cellWidth: 31 },  // Sá»‘ lÃ´
-            3: { cellWidth: 26 },  // HSD (háº¹p)
-            4: { cellWidth: 18 },  // ÄVT (háº¹p)
-            5: { cellWidth: 35 },  // Quy cÃ¡ch (háº¹p)
-            6: { cellWidth: 25 },  // Sá»‘ lÆ°á»£ng (háº¹p)
-            7: { cellWidth: 'auto' }, // Ghi chÃº (tá»± Ä‘á»™ng co giÃ£n)
-            8: { cellWidth: 25 },  // Team (háº¹p)
+            3: { cellWidth: 26 },  // HSD (hÃ¡ÂºÂ¹p)
+            4: { cellWidth: 18 },  // ÄVT (hÃ¡ÂºÂ¹p)
+            5: { cellWidth: 35 },  // Quy cÃ¡ch (hÃ¡ÂºÂ¹p)
+            6: { cellWidth: 25 },  // Sá»‘ lÆ°á»£ng (hÃ¡ÂºÂ¹p)
+            7: { cellWidth: 'auto' }, // Ghi chÃº (tÃ¡Â»Â± Ä‘á»™ng co giÃ£n)
+            8: { cellWidth: 25 },  // Team (hÃ¡ÂºÂ¹p)
         },
-        // YÃªu cáº§u 4: TÃ´ Ä‘áº­m cÃ¡c Ã´ Ä‘Æ°á»£c chá»‰ Ä‘á»‹nh
+        // YÃªu cÃ¡ÂºÂ§u 4: TÃ´ Ä‘Ã¡ÂºÂ­m cÃ¡c Ã´ Ä‘Ã†Â°Ã¡Â»Â£c chÃ¡Â»â€° Ä‘Ã¡Â»â€¹nh
         didParseCell: function (data) {
             const boldColumns = [0, 2, 6]; // MÃ£ hÃ ng, Sá»‘ lÃ´, Sá»‘ lÆ°á»£ng
             if (data.section === 'body' && boldColumns.includes(data.column.index)) {
@@ -19021,39 +21279,39 @@ export const exportImportSlipToPDF = async (slip) => {
         }
     });
     
-    // YÃªu cáº§u 5: Loáº¡i bá» pháº§n kÃ½ tÃªn
-    // KhÃ´ng thÃªm code cho pháº§n kÃ½ tÃªn ná»¯a
+    // YÃªu cÃ¡ÂºÂ§u 5: LoÃ¡ÂºÂ¡i bÃ¡Â»Â phÃ¡ÂºÂ§n kÃ½ tÃªn
+    // KhÃ´ng thÃªm code cho phÃ¡ÂºÂ§n kÃ½ tÃªn nÃ¡Â»Â¯a
 
     doc.save(`PhieuNhapKho_${slip.id}.pdf`);
 };
 
-// --- HÃ€M XUáº¤T PHIáº¾U XUáº¤T (ÄÃƒ Sá»¬A Lá»–I Gá»˜P DÃ’NG) ---
+// --- HÃƒâ‚¬M XUÃ¡ÂºÂ¤T PHIÃ¡ÂºÂ¾U XUÃ¡ÂºÂ¤T (ÄÃƒÆ’ SÃ¡Â»Â¬A Lá»“I GÃ¡Â»ËœP DÃƒ'NG) ---
 export const exportExportSlipToPDF = async (slip) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
 
-    // 1. Láº¥y thÃ´ng tin chi tiáº¿t (ÄVT, Quy cÃ¡ch...) cho tá»«ng item
+    // 1. LÃ¡ÂºÂ¥y thÃ´ng tin chi tiÃ¡ÂºÂ¿t (ÄVT, Quy cÃ¡ch...) cho tÃ¡Â»Â«ng item
     const rawItems = await getProductDetailsForItems(slip.items);
 
-    // === Báº®T Äáº¦U Sá»¬A Äá»”I: Gá»˜P CÃC DÃ’NG CÃ™NG MÃƒ + CÃ™NG Sá» LÃ” ===
+    // === BÃ¡ÂºÂ®T ÄÃ¡ÂºÂ¦U SÃ¡Â»Â¬A Äá»—I: GÃ¡Â»ËœP CÃC DÃƒ'NG CÃƒâ„¢NG MÃƒÆ’ + CÃƒâ„¢NG SÃ¡Â»Â LÃƒ" ===
     const aggregator = new Map();
 
     for (const item of rawItems) {
-        // Táº¡o key duy nháº¥t: MÃ£ hÃ ng + Sá»‘ lÃ´
-        // (Náº¿u lotNumber null/undefined thÃ¬ dÃ¹ng chuá»—i rá»—ng Ä‘á»ƒ trÃ¡nh lá»—i)
+        // TÃ¡ÂºÂ¡o key duy nhÃ¡ÂºÂ¥t: MÃ£ hÃ ng + Sá»‘ lÃ´
+        // (NÃ¡ÂºÂ¿u lotNumber null/undefined thÃ¬ dÃ¹ng chuÃ¡Â»â€”i rÃ¡Â»â€”ng Ä‘Ã¡Â»Æ’ trÃ¡nh lÃ¡Â»â€”i)
         const safeLotNumber = item.lotNumber ? item.lotNumber.trim() : '';
         const key = `${item.productId}-${safeLotNumber}`;
         
-        // Láº¥y sá»‘ lÆ°á»£ng (xá»­ lÃ½ cÃ¡c tÃªn biáº¿n khÃ¡c nhau cÃ³ thá»ƒ cÃ³)
+        // LÃ¡ÂºÂ¥y sá»‘ lÆ°á»£ng (xÃ¡Â»Â­ lÃ½ cÃ¡c tÃªn biÃ¡ÂºÂ¿n khÃ¡c nhau cÃ³ thÃ¡Â»Æ’ cÃ³)
         const quantity = Number(item.quantity || item.quantityToExport || item.quantityExported || 0);
 
         if (aggregator.has(key)) {
-            // Náº¿u Ä‘Ã£ cÃ³ trong Map -> Cá»™ng dá»“n sá»‘ lÆ°á»£ng
+            // NÃ¡ÂºÂ¿u Ä‘Ã£ cÃ³ trong Map -> Cá»™ng dá»•n sá»‘ lÆ°á»£ng
             const existingItem = aggregator.get(key);
             existingItem.totalQuantity += quantity;
         } else {
-            // Náº¿u chÆ°a cÃ³ -> ThÃªm má»›i vÃ o Map
-            // LÆ°u Ã½: Táº¡o trÆ°á»ng má»›i totalQuantity Ä‘á»ƒ chá»©a tá»•ng
+            // NÃ¡ÂºÂ¿u chÃ†Â°a cÃ³ -> ThÃªm mÃ¡Â»â€ºi vÃ o Map
+            // LÃ†Â°u Ã½: TÃ¡ÂºÂ¡o trÃ†Â°Ã¡Â»Âng mÃ¡Â»â€ºi totalQuantity Ä‘Ã¡Â»Æ’ chÃ¡Â»Â©a tÃ¡Â»â€¢ng
             aggregator.set(key, { 
                 ...item, 
                 totalQuantity: quantity 
@@ -19061,18 +21319,18 @@ export const exportExportSlipToPDF = async (slip) => {
         }
     }
 
-    // Chuyá»ƒn Map thÃ nh Máº£ng Ä‘á»ƒ in ra PDF
+    // ChuyÃ¡Â»Æ’n Map thÃ nh MÃ¡ÂºÂ£ng Ä‘Ã¡Â»Æ’ in ra PDF
     const aggregatedItems = Array.from(aggregator.values());
-    // === Káº¾T THÃšC Sá»¬A Äá»”I ===
+    // === KÃ¡ÂºÂ¾T THÃƒÅ¡C SÃ¡Â»Â¬A Äá»—I ===
 
     doc.setFontSize(18);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text('PHIáº¾U XUáº¤T KHO', 148, 20, { align: 'center' });
+    doc.text('PHIÃ¡ÂºÂ¾U XUÃ¡ÂºÂ¤T KHO', 148, 20, { align: 'center' });
 
     doc.setFontSize(11);
     doc.setFont('Roboto-Regular', 'normal');
     const slipDate = slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'KhÃ´ng cÃ³';
-    doc.text(`NgÃ y láº­p phiáº¿u: ${slipDate}`, 14, 30);
+    doc.text(`NgÃ y lÃ¡ÂºÂ­p phiÃ¡ÂºÂ¿u: ${slipDate}`, 14, 30);
     doc.text(`MÃ£ phiáº¿u: ${slip.id}`, 283, 30, { align: 'right' });
 
     doc.setFont('Roboto-Regular', 'normal');
@@ -19085,7 +21343,7 @@ export const exportExportSlipToPDF = async (slip) => {
 
     const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Sá»‘ lÆ°á»£ng', 'Ghi chÃº', 'Nhiá»‡t Ä‘á»™ BQ']];
     
-    // Sá»­ dá»¥ng aggregatedItems thay vÃ¬ enrichedItems (rawItems)
+    // SÃ¡Â»Â­ dÃ¡Â»Â¥ng aggregatedItems thay vÃ¬ enrichedItems (rawItems)
     const body = aggregatedItems.map(item => [
         item.productId, 
         item.productName, 
@@ -19093,7 +21351,7 @@ export const exportExportSlipToPDF = async (slip) => {
         item.expiryDate,
         item.unit, 
         item.specification,
-        formatNumber(item.totalQuantity), // Sá»­ dá»¥ng sá»‘ lÆ°á»£ng Ä‘Ã£ cá»™ng dá»“n
+        formatNumber(item.totalQuantity), // SÃ¡Â»Â­ dÃ¡Â»Â¥ng sá»‘ lÆ°á»£ng Ä‘Ã£ cá»™ng dá»•n
         item.notes || '', 
         item.storageTemp
     ]);
@@ -19130,101 +21388,126 @@ export const exportStocktakeToPDF = async (session, items) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
 
-    doc.setFontSize(18);
+    // Load há»‡ sá»‘ quy Ä‘á»•i Misa tá»« products
+    const convMap = {};
+    try {
+        const prodsSnap = await getDocs(collection(db, 'products'));
+        prodsSnap.forEach(docSnap => {
+            const d = docSnap.data();
+            const f = Number(d.misaConversionFactor);
+            if (f && f !== 1) {
+                convMap[docSnap.id] = { factor: f, misaUnit: d.misaUnit || '' };
+            }
+        });
+    } catch (e) {
+        console.warn('KhÃ´ng thá»ƒ load convMap cho PDF:', e);
+    }
+
+    doc.setFontSize(16);
     doc.setFont('Roboto-Regular', 'bold');
     doc.text('PHIáº¾U KIá»‚M KÃŠ KHO', 148, 15, { align: 'center' });
 
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setFont('Roboto-Regular', 'normal');
     const sessionDate = session.createdAt ? formatDate(session.createdAt.toDate()) : formatDate(new Date());
     doc.text(`NgÃ y táº¡o: ${sessionDate}`, 14, 25);
-    doc.text(`MÃ£ phiÃªn: ${session.id}`, 283, 25, { align: 'right' });
+    doc.text(`MÃ£ phiÃªn: ${session.id}`, 292, 25, { align: 'right' });
     doc.text(`Ghi chÃº phiÃªn: ${session.notes || 'KhÃ´ng cÃ³'}`, 14, 31);
 
-    // --- Sá»¬A Lá»–I: Bá» cá»™t STT khá»i tiÃªu Ä‘á» ---
-    const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Nhiá»‡t Ä‘á»™ BQ', 'Tá»“n kho HT', 'Tá»“n kho TT', 'NhÃ³m HÃ ng', 'Ghi chÃº']]; // <-- ThÃªm "NhÃ³m HÃ ng" vÃ o Ä‘Ã¢y
-    
-    // --- Sá»¬A Lá»–I: Bá» cá»™t STT khá»i ná»™i dung ---
-    const body = items.map(item => [
-        item.productId,
-        item.productName,
-        item.lotNumber || '(KhÃ´ng cÃ³)', // ThÃªm fallback
-        item.expiryDate ? formatDate(item.expiryDate.toDate()) : 'N/A',
-        item.unit,
-        item.packaging,
-        item.storageTemp || 'N/A',
-        formatNumber(item.systemQty || 0), // ThÃªm fallback
-        item.countedQty !== null && item.countedQty !== undefined ? formatNumber(item.countedQty) : '', // Chá»‰ hiá»ƒn thá»‹ náº¿u Ä‘Ã£ Ä‘áº¿m
-        item.subGroup || '', // <-- ThÃªm subGroup vÃ o Ä‘Ã¢y
-        item.notes || '' // <-- Di chuyá»ƒn Ghi chÃº ra cuá»‘i
-    ]);
+    const head = [['MÃ£ hÃ ng', 'TÃªn sáº£n pháº©m', 'Sá»‘ lÃ´', 'HSD', 'ÄVT', 'Quy cÃ¡ch', 'Nhiá»‡t Ä‘á»™ BQ', 'Tá»“n kho HT', 'Tá»“n Misa', 'Tá»“n kho TT', 'NhÃ³m HÃ ng', 'Ghi chÃº']];
+
+    const body = items.map(item => {
+        const conv = convMap[item.productId];
+        const misaQty = conv
+            ? ((item.systemQty || 0) * conv.factor).toLocaleString('vi-VN') + (conv.misaUnit ? ' ' + conv.misaUnit : '')
+            : '';
+        return [
+            item.productId,
+            item.productName,
+            item.lotNumber || '(KhÃ´ng cÃ³)',
+            item.expiryDate ? formatDate(item.expiryDate.toDate ? item.expiryDate.toDate() : item.expiryDate) : 'N/A',
+            item.unit,
+            item.packaging,
+            item.storageTemp || 'N/A',
+            formatNumber(item.systemQty || 0),
+            misaQty,
+            item.countedQty !== null && item.countedQty !== undefined ? formatNumber(item.countedQty) : '',
+            item.subGroup || '',
+            item.notes || ''
+        ];
+    });
 
     autoTable(doc, {
         head: head,
         body: body,
-        startY: 40,
+        startY: 38,
         theme: 'grid',
-        margin: { left: 10, right: 10 },
-        styles: { font: 'Roboto-Regular', fontSize: 11, valign: 'middle', halign: 'center' },
-        headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255 },
-        // --- Sá»¬A Lá»–I: Cáº­p nháº­t láº¡i chá»‰ sá»‘ cÃ¡c cá»™t ---
+        margin: { left: 5, right: 5 },
+        styles: { font: 'Roboto-Regular', fontSize: 9, valign: 'middle', halign: 'center' },
+        headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, fontSize: 9 },
         columnStyles: {
-            0: { cellWidth: 27 },  // MÃ£ hÃ ng
-            1: { cellWidth: 60, halign: 'left' }, // TÃªn sáº£n pháº©m
-            2: { cellWidth: 25 },  // Sá»‘ lÃ´
-            3: { cellWidth: 25 },  // HSD
-            4: { cellWidth: 14 },  // ÄVT
-            5: { cellWidth: 30 },  // Quy cÃ¡ch
-            6: { cellWidth: 20 },  // Nhiá»‡t Ä‘á»™ BQ
-            7: { cellWidth: 18 }, // Tá»“n kho HT
-            8: { cellWidth: 18 }, // Tá»“n kho TT
-            9: { cellWidth: 21 }, // NhÃ³m HÃ ng <-- ThÃªm style cho cá»™t má»›i
-            10: { cellWidth: 'auto', halign: 'left' }, // Ghi chÃº <-- Cáº­p nháº­t index
+            0:  { cellWidth: 22 },                   // MÃ£ hÃ ng
+            1:  { cellWidth: 55, halign: 'left' },   // TÃªn sáº£n pháº©m
+            2:  { cellWidth: 22 },                   // Sá»‘ lÃ´
+            3:  { cellWidth: 22 },                   // HSD
+            4:  { cellWidth: 12 },                   // ÄVT
+            5:  { cellWidth: 28 },                   // Quy cÃ¡ch
+            6:  { cellWidth: 18 },                   // Nhiá»‡t Ä‘á»™ BQ
+            7:  { cellWidth: 18 },                   // Tá»“n kho HT
+            8:  { cellWidth: 20 },                   // Tá»“n Misa (quy Ä‘á»•i)
+            9:  { cellWidth: 18 },                   // Tá»“n kho TT
+            10: { cellWidth: 18 },                   // NhÃ³m HÃ ng
+            11: { cellWidth: 34, halign: 'left' },   // Ghi chÃº
         },
         didParseCell: function (data) {
-            // Cáº­p nháº­t láº¡i chá»‰ sá»‘ cá»™t cáº§n in Ä‘áº­m (Tá»“n HT lÃ  cá»™t 8, index 7)
+            // In Ä‘áº­m Tá»“n kho HT (col 7) vÃ  Tá»“n kho TT (col 9)
             if (data.section === 'body' && data.column.index === 7) {
                 data.cell.styles.fontStyle = 'bold';
             }
-            // In Ä‘áº­m cá»™t Tá»“n TT (cá»™t 9, index 8) náº¿u nÃ³ cÃ³ giÃ¡ trá»‹
-             if (data.section === 'body' && data.column.index === 8 && data.cell.raw !== '') {
-                 data.cell.styles.fontStyle = 'bold';
-             }
+            if (data.section === 'body' && data.column.index === 9 && data.cell.raw !== '') {
+                data.cell.styles.fontStyle = 'bold';
+            }
+            // In Ä‘áº­m + mÃ u xanh cho Tá»“n Misa (col 8) náº¿u cÃ³ giÃ¡ trá»‹
+            if (data.section === 'body' && data.column.index === 8 && data.cell.raw !== '') {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.textColor = [26, 115, 232];
+            }
         }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 20;
-    doc.text('NgÆ°á»i kiá»ƒm kÃª', 50, finalY, { align: 'center' });
-    doc.text('Thá»§ kho', 247, finalY, { align: 'center' });
+    const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(10);
+    doc.text('NgÆ°á»i kiá»ƒm kÃª', 60, finalY, { align: 'center' });
+    doc.text('Thá»§ kho', 237, finalY, { align: 'center' });
 
     doc.save(`PhieuKiemKe_${session.id}.pdf`);
 };
 
-// --- HÃ m xuáº¥t Sá»• váº­t tÆ° (giá»¯ nguyÃªn khÃ´ng Ä‘á»•i) ---
+// --- HÃ m xuÃ¡ÂºÂ¥t SÃ¡Â»â€¢ vÃ¡ÂºÂ­t tÃ†Â° (giÃ¡Â»Â¯ nguyÃªn khÃ´ng Ä‘Ã¡Â»â€¢i) ---
 export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filters) => {
-    const doc = await setupPdfDoc('portrait'); // Sá»• kho váº«n in dá»c
+    const doc = await setupPdfDoc('portrait'); // SÃ¡Â»â€¢ kho vÃ¡ÂºÂ«n in dÃ¡Â»Âc
     if (!doc) return;
     
-    // ... ná»™i dung cÃ²n láº¡i cá»§a hÃ m nÃ y giá»¯ nguyÃªn ...
+    // ... ná»™i dung cÃ²n lÃ¡ÂºÂ¡i cÃ¡Â»Â§a hÃ m nÃ y giÃ¡Â»Â¯ nguyÃªn ...
     
     doc.setFontSize(18);
-    doc.text('Sá»” CHI TIáº¾T Váº¬T TÆ¯ (THáºº KHO)', 105, 20, { align: 'center' });
+    doc.text('Sá»— CHI TIÃ¡ÂºÂ¾T VÃ¡ÂºÂ¬T TÃ†Â¯ (THÃ¡ÂºÂº KHO)', 105, 20, { align: 'center' });
     doc.setFontSize(11);
-    doc.text(`Sáº£n pháº©m: ${productInfo.productName || ''} (${productInfo.id || ''})`, 14, 30);
-    doc.text(`ÄÆ¡n vá»‹ tÃ­nh: ${productInfo.unit || ''}`, 14, 36);
+    doc.text(`SÃ¡ÂºÂ£n phÃ¡ÂºÂ©m: ${productInfo.productName || ''} (${productInfo.id || ''})`, 14, 30);
+    doc.text(`ÄÃ†Â¡n vÃ¡Â»â€¹ tÃ­nh: ${productInfo.unit || ''}`, 14, 36);
     const dateRange = (filters.startDate || filters.endDate) 
-        ? `Tá»« ngÃ y: ${reformatDateString(filters.startDate)} - Äáº¿n ngÃ y: ${reformatDateString(filters.endDate)}`
-        : 'ToÃ n bá»™ thá»i gian';
+        ? `TÃ¡Â»Â« ngÃ y: ${reformatDateString(filters.startDate)} - ÄÃ¡ÂºÂ¿n ngÃ y: ${reformatDateString(filters.endDate)}`
+        : 'ToÃ n bá»™ thÃ¡Â»Âi gian';
     doc.text(dateRange, 196, 36, { align: 'right' });
 
-    const head = [['NgÃ y', 'Chá»©ng tá»«', 'Loáº¡i', 'Diá»…n giáº£i', 'Sá»‘ lÃ´', 'Nháº­p', 'Xuáº¥t', 'Tá»“n']];
+    const head = [['NgÃ y', 'ChÃ¡Â»Â©ng tÃ¡Â»Â«', 'LoÃ¡ÂºÂ¡i', 'DiÃ¡Â»â€¦n giÃ¡ÂºÂ£i', 'Sá»‘ lÃ´', 'NhÃ¡ÂºÂ­p', 'XuÃ¡ÂºÂ¥t', 'Tá»•n']];
     const body = tableRows.map(row => [
         formatDate(row.date), row.docId || '', row.type || '', row.description || '',
         row.lotNumber || '', row.importQty > 0 ? formatNumber(row.importQty) : '',
         row.exportQty > 0 ? formatNumber(row.exportQty) : '', formatNumber(row.balance)
     ]);
     body.unshift([
-        { content: `Tá»“n Ä‘áº§u ká»³:`, colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } },
+        { content: `Tá»•n Ä‘Ã¡ÂºÂ§u kÃ¡Â»Â³:`, colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } },
         { content: formatNumber(ledgerData.openingBalance), styles: { fontStyle: 'bold' } }
     ]);
 
@@ -19253,17 +21536,16 @@ export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filt
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(10);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text('Tá»”NG Káº¾T CUá»I Ká»²:', 14, finalY);
+    doc.text('Tá»—NG KÃ¡ÂºÂ¾T CUÃ¡Â»ÂI KÃ¡Â»Â²:', 14, finalY);
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Tá»•ng Nháº­p: ${formatNumber(ledgerData.totalImport)}`, 14, finalY + 6);
-    doc.text(`Tá»•ng Xuáº¥t: ${formatNumber(ledgerData.totalExport)}`, 14, finalY + 12);
+    doc.text(`TÃ¡Â»â€¢ng NhÃ¡ÂºÂ­p: ${formatNumber(ledgerData.totalImport)}`, 14, finalY + 6);
+    doc.text(`TÃ¡Â»â€¢ng XuÃ¡ÂºÂ¥t: ${formatNumber(ledgerData.totalExport)}`, 14, finalY + 12);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text(`Tá»“n cuá»‘i ká»³: ${formatNumber(ledgerData.closingBalance)}`, 14, finalY + 18);
+    doc.text(`Tá»•n cuá»‘i kÃ¡Â»Â³: ${formatNumber(ledgerData.closingBalance)}`, 14, finalY + 18);
 
     const fileName = `SoKho_${productInfo.id}_${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(fileName);
 };
-
 
 
 
@@ -19391,18 +21673,19 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import AccessDenied from './components/AccessDenied'; // <-- Import trang má»›i táº¡o
+import { ThemeProvider } from './context/ThemeContext';
+import InventoryReconciliationPage from './pages/InventoryReconciliationPage';
 
 // Import login styles Ä‘á»ƒ dÃ¹ng cho wrapper
 import loginStyles from './components/LoginPage.module.css';
 
 const AppRoutes = () => {
-  const { user, role, loading } = useAuth();
+  const { user, role, userData, loading } = useAuth(); // â† thÃªm userData
 
   if (loading) {
-    return <div className="loading-screen">Äang táº£i...</div>; // Hoáº·c component Spinner cá»§a báº¡n
+    return <div className="loading-screen">Äang táº£i...</div>;
   }
 
-  // 1. ChÆ°a Ä‘Äƒng nháº­p -> Hiá»‡n trang Login
   if (!user) {
     return (
       <div className={loginStyles.loginPageWrapper}>
@@ -19411,47 +21694,48 @@ const AppRoutes = () => {
     );
   }
 
-  // 2. ÄÃ£ Ä‘Äƒng nháº­p nhÆ°ng KHÃ”NG CÃ“ QUYá»€N (role rá»—ng hoáº·c null) -> Hiá»‡n trang Tá»« chá»‘i
   if (!role) {
     return <AccessDenied />;
   }
 
-  // 3. CÃ³ quyá»n -> PhÃ¢n luá»“ng
+  const canReconcile = role === 'owner' || (role === 'admin' && userData?.canReconcile === true);
+
   return (
     <Routes>
       {role === 'owner' ? (
-        // Náº¿u lÃ  owner -> AdminLayout
         <Route path="/*" element={<AdminLayout />} />
       ) : (
-        // Náº¿u lÃ  cÃ¡c role há»£p lá»‡ khÃ¡c (med, bio, admin...) -> ViewerLayout
         <Route path="/*" element={<ViewerLayout />} />
       )}
     </Routes>
   );
 };
 
+// âœ… CODE Má»šI â€” bá»c ThemeProvider ngoÃ i cÃ¹ng
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-          closeButton={false} 
-        />
-        <ErrorBoundary>
-          <AppRoutes />
-        </ErrorBoundary>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            closeButton={false} 
+          />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
@@ -19557,7 +21841,6 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f0f2f5; /* ThÃªm má»™t mÃ u ná»n xÃ¡m nháº¡t cho toÃ n bá»™ trang */
 }
 
 * {
@@ -19600,6 +21883,40 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 );
+
+
+
+--- FILE: D:\quan-ly-kho\src\ThemeContext.jsx ---
+
+
+// src/context/ThemeContext.jsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+const ThemeContext = createContext();
+
+export const ThemeProvider = ({ children }) => {
+    const [theme, setTheme] = useState(() => {
+        return localStorage.getItem('app-theme') || 'light';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('app-theme', theme);
+        document.body.classList.remove('light-mode', 'dark-mode');
+        document.body.classList.add(`${theme}-mode`);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    };
+
+    return (
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+};
+
+export const useTheme = () => useContext(ThemeContext);
 
 
 

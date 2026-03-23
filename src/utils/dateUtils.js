@@ -1,10 +1,10 @@
-import { SPECIAL_EXPIRY_SUBGROUPS } from '../constants'; // <-- THÊM DÒNG NÀY VÀO ĐẦU FILE
-
 // src/utils/dateUtils.js
 
 /**
  * Chuyển đổi một đối tượng Firebase Timestamp hoặc Date thành chuỗi dd/mm/yyyy.
  */
+import { SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
+
 export const formatDate = (dateOrTimestamp) => {
   let date;
   if (dateOrTimestamp && typeof dateOrTimestamp.toDate === 'function') {
@@ -30,6 +30,12 @@ export const formatDate = (dateOrTimestamp) => {
  */
 export const parseDateString = (dateString) => {
   if (!dateString) return null;
+  // Xử lý Firestore Timestamp
+  if (typeof dateString.toDate === 'function') return dateString.toDate();
+  // Xử lý JS Date object
+  if (dateString instanceof Date) return isNaN(dateString.getTime()) ? null : dateString;
+  // Xử lý string (không phải string thì bỏ qua)
+  if (typeof dateString !== 'string') return null;
   try {
     const parts = dateString.split('/');
     if (parts.length !== 3) return null;

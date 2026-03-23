@@ -5,9 +5,9 @@ import { formatDate } from './dateUtils';
 import { formatNumber } from './numberUtils';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
 
-// --- Hàm tiện ích dùng chung ---
+// --- Hàm tiá»‡n ích dùng chung ---
 const fontToBase64 = async (url) => {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Network response was not ok, status: ${response.status}`);
@@ -27,7 +27,7 @@ const reformatDateString = (dateString) => {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
-// --- Hàm thiết lập PDF với font chữ và khổ giấy ---
+// --- Hàm thiáº¿t láº­p PDF vá»›i font chá»¯ và khá»• giáº¥y ---
 const setupPdfDoc = async (orientation = 'portrait') => {
     const doc = new jsPDF({ orientation });
     try {
@@ -42,13 +42,13 @@ const setupPdfDoc = async (orientation = 'portrait') => {
         doc.setFont('Roboto-Regular');
         return doc;
     } catch (error) {
-        console.error("Lỗi khi tải font chữ:", error);
-        toast.error("Không thể tải font chữ để xuất PDF.");
+        console.error("Lá»—i khi táº£i font chá»¯:", error);
+        toast.error("Không thá»ƒ táº£i font chá»¯ đá»ƒ xuáº¥t PDF.");
         return null;
     }
 };
 
-// --- Hàm lấy thông tin sản phẩm ---
+// --- Hàm láº¥y thông tin sản phẩm ---
 const getProductDetailsForItems = async (items) => {
     const productPromises = items.map(item => getDoc(doc(db, 'products', item.productId)));
     const productSnapshots = await Promise.all(productPromises);
@@ -71,7 +71,7 @@ const getProductDetailsForItems = async (items) => {
     });
 };
 
-// --- HÀM XUẤT PHIẾU NHẬP (ĐÃ NÂNG CẤP) ---
+// --- HÃ€M XUáº¤T PHIáº¾U NHáº¬P (ĐÃƒ NÃ‚NG Cáº¤P) ---
 export const exportImportSlipToPDF = async (slip) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
@@ -80,17 +80,17 @@ export const exportImportSlipToPDF = async (slip) => {
 
     doc.setFontSize(18);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text('PHIẾU NHẬP KHO', 148, 20, { align: 'center' });
+    doc.text('PHIáº¾U NHáº¬P KHO', 148, 20, { align: 'center' });
 
     doc.setFontSize(11);
     doc.setFont('Roboto-Regular', 'normal');
     const slipDate = slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'Không có';
-    doc.text(`Ngày lập phiếu: ${slipDate}`, 14, 30);
+    doc.text(`Ngày láº­p phiáº¿u: ${slipDate}`, 14, 30);
     doc.text(`Mã phiếu: ${slip.id}`, 283, 30, { align: 'right' });
     
-    // Yêu cầu 4: Tô đậm tên đối tác
+    // Yêu cáº§u 4: Tô đáº­m tên đối tác
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Nhà cung cấp: `, 14, 36);
+    doc.text(`Nhà cung cáº¥p: `, 14, 36);
     doc.setFont('Roboto-Regular', 'bold');
     doc.text(slip.supplierName || '', 40, 36);
     
@@ -106,22 +106,22 @@ export const exportImportSlipToPDF = async (slip) => {
 
     autoTable(doc, {
         head: head, body: body, startY: 50, theme: 'grid', margin: { left: 10, right: 10 },
-        // Yêu cầu 1 & 2: Căn giữa mặc định
+        // Yêu cáº§u 1 & 2: CÄƒn giá»¯a máº·c đá»‹nh
         styles: { font: 'Roboto-Regular', fontSize: 11, halign: 'center', valign: 'middle' },
         headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, halign: 'center' },
-        // Yêu cầu 3: Điều chỉnh độ rộng cột
+        // Yêu cáº§u 3: Điá»u chá»‰nh độ rộng cột
         columnStyles: {
             0: { cellWidth: 31 },  // Mã hàng
-            1: { cellWidth: 71, halign: 'left' }, // Tên sản phẩm (rộng, căn trái)
+            1: { cellWidth: 71, halign: 'left' }, // Tên sản phẩm (rộng, cÄƒn trái)
             2: { cellWidth: 31 },  // Số lô
-            3: { cellWidth: 26 },  // HSD (hẹp)
-            4: { cellWidth: 18 },  // ĐVT (hẹp)
-            5: { cellWidth: 35 },  // Quy cách (hẹp)
-            6: { cellWidth: 25 },  // Số lượng (hẹp)
-            7: { cellWidth: 'auto' }, // Ghi chú (tự động co giãn)
-            8: { cellWidth: 25 },  // Team (hẹp)
+            3: { cellWidth: 26 },  // HSD (háº¹p)
+            4: { cellWidth: 18 },  // ĐVT (háº¹p)
+            5: { cellWidth: 35 },  // Quy cách (háº¹p)
+            6: { cellWidth: 25 },  // Số lượng (háº¹p)
+            7: { cellWidth: 'auto' }, // Ghi chú (tá»± động co giãn)
+            8: { cellWidth: 25 },  // Team (háº¹p)
         },
-        // Yêu cầu 4: Tô đậm các ô được chỉ định
+        // Yêu cáº§u 4: Tô đáº­m các ô đÆ°á»£c chá»‰ đá»‹nh
         didParseCell: function (data) {
             const boldColumns = [0, 2, 6]; // Mã hàng, Số lô, Số lượng
             if (data.section === 'body' && boldColumns.includes(data.column.index)) {
@@ -130,39 +130,39 @@ export const exportImportSlipToPDF = async (slip) => {
         }
     });
     
-    // Yêu cầu 5: Loại bỏ phần ký tên
-    // Không thêm code cho phần ký tên nữa
+    // Yêu cáº§u 5: Loáº¡i bá» pháº§n ký tên
+    // Không thêm code cho pháº§n ký tên ná»¯a
 
     doc.save(`PhieuNhapKho_${slip.id}.pdf`);
 };
 
-// --- HÀM XUẤT PHIẾU XUẤT (ĐÃ SỬA LỖI GỘP DÒNG) ---
+// --- HÃ€M XUáº¤T PHIáº¾U XUáº¤T (ĐÃƒ Sá»¬A LồI Gá»˜P DÃ'NG) ---
 export const exportExportSlipToPDF = async (slip) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
 
-    // 1. Lấy thông tin chi tiết (ĐVT, Quy cách...) cho từng item
+    // 1. Láº¥y thông tin chi tiáº¿t (ĐVT, Quy cách...) cho tá»«ng item
     const rawItems = await getProductDetailsForItems(slip.items);
 
-    // === BẮT ĐẦU SỬA ĐỔI: GỘP CÁC DÒNG CÙNG MÃ + CÙNG SỐ LÔ ===
+    // === Báº®T Đáº¦U Sá»¬A ĐỗI: Gá»˜P CÁC DÃ'NG CÃ™NG MÃƒ + CÃ™NG Sá» LÃ" ===
     const aggregator = new Map();
 
     for (const item of rawItems) {
-        // Tạo key duy nhất: Mã hàng + Số lô
-        // (Nếu lotNumber null/undefined thì dùng chuỗi rỗng để tránh lỗi)
+        // Táº¡o key duy nháº¥t: Mã hàng + Số lô
+        // (Náº¿u lotNumber null/undefined thì dùng chuá»—i rá»—ng đá»ƒ tránh lá»—i)
         const safeLotNumber = item.lotNumber ? item.lotNumber.trim() : '';
         const key = `${item.productId}-${safeLotNumber}`;
         
-        // Lấy số lượng (xử lý các tên biến khác nhau có thể có)
+        // Láº¥y số lượng (xá»­ lý các tên biáº¿n khác nhau có thá»ƒ có)
         const quantity = Number(item.quantity || item.quantityToExport || item.quantityExported || 0);
 
         if (aggregator.has(key)) {
-            // Nếu đã có trong Map -> Cộng dồn số lượng
+            // Náº¿u đã có trong Map -> Cộng dổn số lượng
             const existingItem = aggregator.get(key);
             existingItem.totalQuantity += quantity;
         } else {
-            // Nếu chưa có -> Thêm mới vào Map
-            // Lưu ý: Tạo trường mới totalQuantity để chứa tổng
+            // Náº¿u chÆ°a có -> Thêm má»›i vào Map
+            // LÆ°u ý: Táº¡o trÆ°á»ng má»›i totalQuantity đá»ƒ chá»©a tá»•ng
             aggregator.set(key, { 
                 ...item, 
                 totalQuantity: quantity 
@@ -170,18 +170,18 @@ export const exportExportSlipToPDF = async (slip) => {
         }
     }
 
-    // Chuyển Map thành Mảng để in ra PDF
+    // Chuyá»ƒn Map thành Máº£ng đá»ƒ in ra PDF
     const aggregatedItems = Array.from(aggregator.values());
-    // === KẾT THÚC SỬA ĐỔI ===
+    // === Káº¾T THÃšC Sá»¬A ĐỗI ===
 
     doc.setFontSize(18);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text('PHIẾU XUẤT KHO', 148, 20, { align: 'center' });
+    doc.text('PHIáº¾U XUáº¤T KHO', 148, 20, { align: 'center' });
 
     doc.setFontSize(11);
     doc.setFont('Roboto-Regular', 'normal');
     const slipDate = slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'Không có';
-    doc.text(`Ngày lập phiếu: ${slipDate}`, 14, 30);
+    doc.text(`Ngày láº­p phiáº¿u: ${slipDate}`, 14, 30);
     doc.text(`Mã phiếu: ${slip.id}`, 283, 30, { align: 'right' });
 
     doc.setFont('Roboto-Regular', 'normal');
@@ -194,7 +194,7 @@ export const exportExportSlipToPDF = async (slip) => {
 
     const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Số lượng', 'Ghi chú', 'Nhiệt độ BQ']];
     
-    // Sử dụng aggregatedItems thay vì enrichedItems (rawItems)
+    // Sá»­ dá»¥ng aggregatedItems thay vì enrichedItems (rawItems)
     const body = aggregatedItems.map(item => [
         item.productId, 
         item.productName, 
@@ -202,7 +202,7 @@ export const exportExportSlipToPDF = async (slip) => {
         item.expiryDate,
         item.unit, 
         item.specification,
-        formatNumber(item.totalQuantity), // Sử dụng số lượng đã cộng dồn
+        formatNumber(item.totalQuantity), // Sá»­ dá»¥ng số lượng đã cộng dổn
         item.notes || '', 
         item.storageTemp
     ]);
@@ -239,101 +239,126 @@ export const exportStocktakeToPDF = async (session, items) => {
     const doc = await setupPdfDoc('landscape');
     if (!doc) return;
 
-    doc.setFontSize(18);
+    // Load hệ số quy đổi Misa từ products
+    const convMap = {};
+    try {
+        const prodsSnap = await getDocs(collection(db, 'products'));
+        prodsSnap.forEach(docSnap => {
+            const d = docSnap.data();
+            const f = Number(d.misaConversionFactor);
+            if (f && f !== 1) {
+                convMap[docSnap.id] = { factor: f, misaUnit: d.misaUnit || '' };
+            }
+        });
+    } catch (e) {
+        console.warn('Không thể load convMap cho PDF:', e);
+    }
+
+    doc.setFontSize(16);
     doc.setFont('Roboto-Regular', 'bold');
     doc.text('PHIẾU KIỂM KÊ KHO', 148, 15, { align: 'center' });
 
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setFont('Roboto-Regular', 'normal');
     const sessionDate = session.createdAt ? formatDate(session.createdAt.toDate()) : formatDate(new Date());
     doc.text(`Ngày tạo: ${sessionDate}`, 14, 25);
-    doc.text(`Mã phiên: ${session.id}`, 283, 25, { align: 'right' });
+    doc.text(`Mã phiên: ${session.id}`, 292, 25, { align: 'right' });
     doc.text(`Ghi chú phiên: ${session.notes || 'Không có'}`, 14, 31);
 
-    // --- SỬA LỖI: Bỏ cột STT khỏi tiêu đề ---
-    const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Nhiệt độ BQ', 'Tồn kho HT', 'Tồn kho TT', 'Nhóm Hàng', 'Ghi chú']]; // <-- Thêm "Nhóm Hàng" vào đây
-    
-    // --- SỬA LỖI: Bỏ cột STT khỏi nội dung ---
-    const body = items.map(item => [
-        item.productId,
-        item.productName,
-        item.lotNumber || '(Không có)', // Thêm fallback
-        item.expiryDate ? formatDate(item.expiryDate.toDate()) : 'N/A',
-        item.unit,
-        item.packaging,
-        item.storageTemp || 'N/A',
-        formatNumber(item.systemQty || 0), // Thêm fallback
-        item.countedQty !== null && item.countedQty !== undefined ? formatNumber(item.countedQty) : '', // Chỉ hiển thị nếu đã đếm
-        item.subGroup || '', // <-- Thêm subGroup vào đây
-        item.notes || '' // <-- Di chuyển Ghi chú ra cuối
-    ]);
+    const head = [['Mã hàng', 'Tên sản phẩm', 'Số lô', 'HSD', 'ĐVT', 'Quy cách', 'Nhiệt độ BQ', 'Tồn kho HT', 'Tồn Misa', 'Tồn kho TT', 'Nhóm Hàng', 'Ghi chú']];
+
+    const body = items.map(item => {
+        const conv = convMap[item.productId];
+        const misaQty = conv
+            ? ((item.systemQty || 0) * conv.factor).toLocaleString('vi-VN') + (conv.misaUnit ? ' ' + conv.misaUnit : '')
+            : '';
+        return [
+            item.productId,
+            item.productName,
+            item.lotNumber || '(Không có)',
+            item.expiryDate ? formatDate(item.expiryDate.toDate ? item.expiryDate.toDate() : item.expiryDate) : 'N/A',
+            item.unit,
+            item.packaging,
+            item.storageTemp || 'N/A',
+            formatNumber(item.systemQty || 0),
+            misaQty,
+            item.countedQty !== null && item.countedQty !== undefined ? formatNumber(item.countedQty) : '',
+            item.subGroup || '',
+            item.notes || ''
+        ];
+    });
 
     autoTable(doc, {
         head: head,
         body: body,
-        startY: 40,
+        startY: 38,
         theme: 'grid',
-        margin: { left: 10, right: 10 },
-        styles: { font: 'Roboto-Regular', fontSize: 11, valign: 'middle', halign: 'center' },
-        headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255 },
-        // --- SỬA LỖI: Cập nhật lại chỉ số các cột ---
+        margin: { left: 5, right: 5 },
+        styles: { font: 'Roboto-Regular', fontSize: 9, valign: 'middle', halign: 'center' },
+        headStyles: { font: 'Roboto-Regular', fontStyle: 'bold', fillColor: [22, 160, 133], textColor: 255, fontSize: 9 },
         columnStyles: {
-            0: { cellWidth: 27 },  // Mã hàng
-            1: { cellWidth: 60, halign: 'left' }, // Tên sản phẩm
-            2: { cellWidth: 25 },  // Số lô
-            3: { cellWidth: 25 },  // HSD
-            4: { cellWidth: 14 },  // ĐVT
-            5: { cellWidth: 30 },  // Quy cách
-            6: { cellWidth: 20 },  // Nhiệt độ BQ
-            7: { cellWidth: 18 }, // Tồn kho HT
-            8: { cellWidth: 18 }, // Tồn kho TT
-            9: { cellWidth: 21 }, // Nhóm Hàng <-- Thêm style cho cột mới
-            10: { cellWidth: 'auto', halign: 'left' }, // Ghi chú <-- Cập nhật index
+            0:  { cellWidth: 22 },                   // Mã hàng
+            1:  { cellWidth: 55, halign: 'left' },   // Tên sản phẩm
+            2:  { cellWidth: 22 },                   // Số lô
+            3:  { cellWidth: 22 },                   // HSD
+            4:  { cellWidth: 12 },                   // ĐVT
+            5:  { cellWidth: 28 },                   // Quy cách
+            6:  { cellWidth: 18 },                   // Nhiệt độ BQ
+            7:  { cellWidth: 18 },                   // Tồn kho HT
+            8:  { cellWidth: 20 },                   // Tồn Misa (quy đổi)
+            9:  { cellWidth: 18 },                   // Tồn kho TT
+            10: { cellWidth: 18 },                   // Nhóm Hàng
+            11: { cellWidth: 34, halign: 'left' },   // Ghi chú
         },
         didParseCell: function (data) {
-            // Cập nhật lại chỉ số cột cần in đậm (Tồn HT là cột 8, index 7)
+            // In đậm Tồn kho HT (col 7) và Tồn kho TT (col 9)
             if (data.section === 'body' && data.column.index === 7) {
                 data.cell.styles.fontStyle = 'bold';
             }
-            // In đậm cột Tồn TT (cột 9, index 8) nếu nó có giá trị
-             if (data.section === 'body' && data.column.index === 8 && data.cell.raw !== '') {
-                 data.cell.styles.fontStyle = 'bold';
-             }
+            if (data.section === 'body' && data.column.index === 9 && data.cell.raw !== '') {
+                data.cell.styles.fontStyle = 'bold';
+            }
+            // In đậm + màu xanh cho Tồn Misa (col 8) nếu có giá trị
+            if (data.section === 'body' && data.column.index === 8 && data.cell.raw !== '') {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.textColor = [26, 115, 232];
+            }
         }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 20;
-    doc.text('Người kiểm kê', 50, finalY, { align: 'center' });
-    doc.text('Thủ kho', 247, finalY, { align: 'center' });
+    const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(10);
+    doc.text('Người kiểm kê', 60, finalY, { align: 'center' });
+    doc.text('Thủ kho', 237, finalY, { align: 'center' });
 
     doc.save(`PhieuKiemKe_${session.id}.pdf`);
 };
 
-// --- Hàm xuất Sổ vật tư (giữ nguyên không đổi) ---
+// --- Hàm xuáº¥t Sá»• váº­t tÆ° (giá»¯ nguyên không đá»•i) ---
 export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filters) => {
-    const doc = await setupPdfDoc('portrait'); // Sổ kho vẫn in dọc
+    const doc = await setupPdfDoc('portrait'); // Sá»• kho váº«n in dá»c
     if (!doc) return;
     
-    // ... nội dung còn lại của hàm này giữ nguyên ...
+    // ... nội dung còn láº¡i cá»§a hàm này giá»¯ nguyên ...
     
     doc.setFontSize(18);
-    doc.text('SỔ CHI TIẾT VẬT TƯ (THẺ KHO)', 105, 20, { align: 'center' });
+    doc.text('Sỗ CHI TIáº¾T Váº¬T TÆ¯ (THáºº KHO)', 105, 20, { align: 'center' });
     doc.setFontSize(11);
-    doc.text(`Sản phẩm: ${productInfo.productName || ''} (${productInfo.id || ''})`, 14, 30);
-    doc.text(`Đơn vị tính: ${productInfo.unit || ''}`, 14, 36);
+    doc.text(`Sáº£n pháº©m: ${productInfo.productName || ''} (${productInfo.id || ''})`, 14, 30);
+    doc.text(`ĐÆ¡n vá»‹ tính: ${productInfo.unit || ''}`, 14, 36);
     const dateRange = (filters.startDate || filters.endDate) 
-        ? `Từ ngày: ${reformatDateString(filters.startDate)} - Đến ngày: ${reformatDateString(filters.endDate)}`
-        : 'Toàn bộ thời gian';
+        ? `Tá»« ngày: ${reformatDateString(filters.startDate)} - Đáº¿n ngày: ${reformatDateString(filters.endDate)}`
+        : 'Toàn bộ thá»i gian';
     doc.text(dateRange, 196, 36, { align: 'right' });
 
-    const head = [['Ngày', 'Chứng từ', 'Loại', 'Diễn giải', 'Số lô', 'Nhập', 'Xuất', 'Tồn']];
+    const head = [['Ngày', 'Chá»©ng tá»«', 'Loáº¡i', 'Diá»…n giáº£i', 'Số lô', 'Nháº­p', 'Xuáº¥t', 'Tổn']];
     const body = tableRows.map(row => [
         formatDate(row.date), row.docId || '', row.type || '', row.description || '',
         row.lotNumber || '', row.importQty > 0 ? formatNumber(row.importQty) : '',
         row.exportQty > 0 ? formatNumber(row.exportQty) : '', formatNumber(row.balance)
     ]);
     body.unshift([
-        { content: `Tồn đầu kỳ:`, colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } },
+        { content: `Tổn đáº§u ká»³:`, colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } },
         { content: formatNumber(ledgerData.openingBalance), styles: { fontStyle: 'bold' } }
     ]);
 
@@ -362,12 +387,12 @@ export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filt
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(10);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text('TỔNG KẾT CUỐI KỲ:', 14, finalY);
+    doc.text('TỗNG Káº¾T CUá»I Ká»²:', 14, finalY);
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Tổng Nhập: ${formatNumber(ledgerData.totalImport)}`, 14, finalY + 6);
-    doc.text(`Tổng Xuất: ${formatNumber(ledgerData.totalExport)}`, 14, finalY + 12);
+    doc.text(`Tá»•ng Nháº­p: ${formatNumber(ledgerData.totalImport)}`, 14, finalY + 6);
+    doc.text(`Tá»•ng Xuáº¥t: ${formatNumber(ledgerData.totalExport)}`, 14, finalY + 12);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text(`Tồn cuối kỳ: ${formatNumber(ledgerData.closingBalance)}`, 14, finalY + 18);
+    doc.text(`Tổn cuối ká»³: ${formatNumber(ledgerData.closingBalance)}`, 14, finalY + 18);
 
     const fileName = `SoKho_${productInfo.id}_${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(fileName);

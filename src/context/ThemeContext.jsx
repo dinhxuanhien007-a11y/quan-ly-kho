@@ -5,7 +5,6 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    // Kiểm tra xem trong máy đã lưu chế độ dark chưa
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('app-theme');
         return savedTheme === 'dark';
@@ -15,7 +14,6 @@ export const ThemeProvider = ({ children }) => {
         setIsDarkMode(prev => !prev);
     };
 
-    // Mỗi khi biến isDarkMode thay đổi, ta cập nhật class cho thẻ <body>
     useEffect(() => {
         const body = document.body;
         if (isDarkMode) {
@@ -27,12 +25,14 @@ export const ThemeProvider = ({ children }) => {
         }
     }, [isDarkMode]);
 
+    // Export cả isDarkMode lẫn theme để tương thích với tất cả component
+    const theme = isDarkMode ? 'dark' : 'light';
+
     return (
-        <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+        <ThemeContext.Provider value={{ isDarkMode, theme, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );
 };
 
-// Hook để các file khác gọi dùng dễ dàng
 export const useTheme = () => useContext(ThemeContext);
