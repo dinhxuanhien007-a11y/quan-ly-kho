@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import React, { useMemo, useRef } from 'react';
 import useReconciliationStore from '../stores/reconciliationStore';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+// FIX 1: Xóa orderBy thừa
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
@@ -68,6 +69,19 @@ function fmtDateDisplay(dateVal) {
     return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
+// FIX/CẢI TIẾN 3: Badge cảnh báo HSD sắp hết hạn (≤30, ≤60, ≤90 ngày)
+function getExpiryBadge(dateVal) {
+    const d = parseDate(dateVal);
+    if (!d) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const days = Math.floor((d - today) / (1000 * 60 * 60 * 24));
+    if (days < 0) return null; // đã hết hạn (đã bị lọc bỏ khi load)
+    if (days <= 30) return { bg: '#fdecea', color: '#c0392b', border: '#e74c3c', label: `${days}N` };
+    if (days <= 60) return { bg: '#fff3e0', color: '#e65100', border: '#ff9800', label: `${days}N` };
+    if (days <= 90) return { bg: '#fffde7', color: '#f57f17', border: '#fbc02d', label: `${days}N` };
+    return null;
+}
+
 // ============================================================
 // PARSE FILE EXCEL MISA
 // ============================================================
@@ -80,8 +94,7 @@ function parseMisaExcel(arrayBuffer) {
     for (let i = 0; i < Math.min(rows.length, 10); i++) {
         const row = rows[i].map(c => String(c).trim());
         if (row.some(c => c === 'Mã hàng') && row.some(c => c.includes('Số lô') || c.includes('lô'))) {
-            headerIdx = i;
-            break;
+            headerIdx = i; break;
         }
     }
     if (headerIdx === -1) throw new Error('Không tìm thấy header trong file Misa. Cần có cột "Mã hàng" và "Số lô".');
@@ -100,21 +113,17 @@ function parseMisaExcel(arrayBuffer) {
         const row = rows[i];
         const ma = String(row[idxMa] || '').trim();
         if (!ma || ma.toLowerCase().includes('mã kho') || ma.toLowerCase().includes('tổng')) continue;
-
         const lo  = String(row[idxLo] || '').trim();
         const hsd = idxHsd >= 0 ? row[idxHsd] : null;
         const dvt = idxDvt >= 0 ? String(row[idxDvt] || '').trim() : '';
         const sl  = idxSl >= 0 ? Number(row[idxSl]) || 0 : 0;
-
         if (isExpired(hsd)) continue;
         if (sl <= 0) continue;
-
         items.push({ ma, lo, hsdRaw: hsd, dvt, sl, lotKey: normLot(lo) });
     }
 
     const merged = new Map();
     const duplicateHsd = [];
-
     for (const item of items) {
         const key = `${item.ma}__${item.lotKey}`;
         if (merged.has(key)) {
@@ -124,9 +133,7 @@ function parseMisaExcel(arrayBuffer) {
             const hsd2 = fmtDateDisplay(item.hsdRaw);
             if (hsd1 && hsd2 && hsd1 !== hsd2) {
                 const alreadyWarned = duplicateHsd.some(d => d.ma === item.ma && d.lo === item.lo);
-                if (!alreadyWarned) {
-                    duplicateHsd.push({ ma: item.ma, lo: item.lo, hsd1, hsd2 });
-                }
+                if (!alreadyWarned) duplicateHsd.push({ ma: item.ma, lo: item.lo, hsd1, hsd2 });
             }
         } else {
             merged.set(key, { ...item });
@@ -139,16 +146,16 @@ function parseMisaExcel(arrayBuffer) {
 // TABS CONFIG
 // ============================================================
 const TABS = [
-    { key: 'chenh',   label: 'Chênh lệch',    color: '#c0392b', bgColor: '#fff5f5' },
-    { key: 'khop',    label: 'Khớp',           color: '#27ae60', bgColor: '#f0fff4' },
-    { key: 'hsdlech', label: 'Lệch HSD',       color: '#8e44ad', bgColor: '#f9f0ff' },
-    { key: 'webkho',  label: 'Chỉ WebKho',     color: '#d68910', bgColor: '#fffde7' },
-    { key: 'misa',    label: 'Chỉ Misa',        color: '#ca6f1e', bgColor: '#fff3e0' },
-    { key: 'nomisa',  label: 'Misa thiếu mã',  color: '#922b21', bgColor: '#fdecea' },
+    { key: 'chenh',   label: 'Chênh lệch',   color: '#c0392b', bgColor: '#fff5f5' },
+    { key: 'khop',    label: 'Khớp',          color: '#27ae60', bgColor: '#f0fff4' },
+    { key: 'hsdlech', label: 'Lệch HSD',      color: '#8e44ad', bgColor: '#f9f0ff' },
+    { key: 'webkho',  label: 'Chỉ WebKho',    color: '#d68910', bgColor: '#fffde7' },
+    { key: 'misa',    label: 'Chỉ Misa',       color: '#ca6f1e', bgColor: '#fff3e0' },
+    { key: 'nomisa',  label: 'Misa thiếu mã', color: '#922b21', bgColor: '#fdecea' },
 ];
 
 // ============================================================
-// LOT HISTORY MODAL
+// LOT HISTORY MODAL — FIX 2 & 3: bổ sung inventory_adjustments
 // ============================================================
 const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
     const [history, setHistory] = React.useState([]);
@@ -162,86 +169,80 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
                 const pidTrim = productId.trim();
                 const normLotNum = normLot(lotNumber || '');
 
-                // Import tickets
-                let importSnap;
-                try {
-                    const importQ = query(
-                        collection(db, 'import_tickets'),
-                        where('productIds', 'array-contains', pidTrim)
-                    );
-                    importSnap = await getDocs(importQ);
-                } catch (err) {
-                    if (err.code === 'permission-denied') {
-                        toast.warn('⚠️ Firestore rules chưa cho phép đọc import_tickets — xem hướng dẫn trong console.', { autoClose: 6000 });
-                        console.warn(
-                            '[LotHistory] Cần thêm rule cho import_tickets:\n' +
-                            'match /import_tickets/{doc} { allow read: if request.auth != null; }'
-                        );
-                        importSnap = { forEach: () => {} };
-                    } else throw err;
-                }
+                // Helper: safe fetch với permission fallback
+                const safeFetch = async (collName, constraints) => {
+                    try {
+                        return await getDocs(query(collection(db, collName), ...constraints));
+                    } catch (err) {
+                        if (err.code === 'permission-denied') {
+                            toast.warn(`⚠️ Chưa có quyền đọc ${collName} — kiểm tra Firestore Rules.`, { autoClose: 5000 });
+                            return { forEach: () => {} };
+                        }
+                        throw err;
+                    }
+                };
+
+                // ── Import tickets ──
+                const importSnap = await safeFetch('import_tickets', [where('productIds', 'array-contains', pidTrim)]);
                 importSnap.forEach(doc => {
                     const d = doc.data();
-                    const matchItems = (d.items || []).filter(item =>
-                        String(item.productId || '').trim() === pidTrim &&
-                        normLot(item.lotNumber) === normLotNum
-                    );
-                    matchItems.forEach(item => {
-                        results.push({
+                    (d.items || [])
+                        .filter(item => String(item.productId || '').trim() === pidTrim && normLot(item.lotNumber) === normLotNum)
+                        .forEach(item => results.push({
                             type: 'import',
                             date: d.importDate || '',
+                            dateRaw: null,
                             quantity: item.quantity || 0,
                             unit: item.unit || '',
                             expiryDate: item.expiryDate || '',
                             partner: d.supplierName || d.supplierId || '',
-                            ticketId: doc.id,
                             description: d.description || '',
-                        });
-                    });
+                        }));
                 });
 
-                // Export tickets
-                let exportSnap;
-                try {
-                    const exportQ = query(
-                        collection(db, 'export_tickets'),
-                        where('productIds', 'array-contains', pidTrim)
-                    );
-                    exportSnap = await getDocs(exportQ);
-                } catch (err) {
-                    if (err.code === 'permission-denied') {
-                        toast.warn('⚠️ Firestore rules chưa cho phép đọc export_tickets — xem hướng dẫn trong console.', { autoClose: 6000 });
-                        console.warn(
-                            '[LotHistory] Cần thêm rule cho export_tickets:\n' +
-                            'match /export_tickets/{doc} { allow read: if request.auth != null; }'
-                        );
-                        exportSnap = { forEach: () => {} };
-                    } else throw err;
-                }
+                // ── Export tickets ──
+                const exportSnap = await safeFetch('export_tickets', [where('productIds', 'array-contains', pidTrim)]);
                 exportSnap.forEach(doc => {
                     const d = doc.data();
-                    const matchItems = (d.items || []).filter(item =>
-                        String(item.productId || '').trim() === pidTrim &&
-                        normLot(item.lotNumber) === normLotNum
-                    );
-                    matchItems.forEach(item => {
-                        results.push({
+                    (d.items || [])
+                        .filter(item => String(item.productId || '').trim() === pidTrim && normLot(item.lotNumber) === normLotNum)
+                        .forEach(item => results.push({
                             type: 'export',
                             date: d.exportDate || '',
+                            dateRaw: null,
                             quantity: item.quantityToExport || 0,
                             unit: item.unit || '',
                             expiryDate: item.expiryDate || '',
                             partner: d.customer || d.customerId || '',
-                            ticketId: doc.id,
                             description: d.description || '',
-                        });
+                        }));
+                });
+
+                // ── FIX 2: Inventory adjustments ──
+                // Fields: productId, lotNumber, variance, quantityBefore, quantityAfter, reason, createdAt
+                const adjSnap = await safeFetch('inventory_adjustments', [where('productId', '==', pidTrim)]);
+                adjSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (normLot(d.lotNumber) !== normLotNum) return;
+                    const createdAt = d.createdAt?.toDate?.() || null;
+                    results.push({
+                        type: 'adjust',
+                        date: createdAt ? fmtDateDisplay(createdAt) : '',
+                        dateRaw: createdAt,
+                        quantity: d.variance || 0,
+                        quantityBefore: d.quantityBefore,
+                        quantityAfter: d.quantityAfter,
+                        unit: '',
+                        expiryDate: '',
+                        partner: '',
+                        description: d.reason || '',
                     });
                 });
 
                 // Sort by date desc
                 results.sort((a, b) => {
-                    const da = parseDate(a.date) || new Date(0);
-                    const db2 = parseDate(b.date) || new Date(0);
+                    const da = a.dateRaw || parseDate(a.date) || new Date(0);
+                    const db2 = b.dateRaw || parseDate(b.date) || new Date(0);
                     return db2 - da;
                 });
 
@@ -258,19 +259,19 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
 
     const totalImport = history.filter(h => h.type === 'import').reduce((s, h) => s + h.quantity, 0);
     const totalExport = history.filter(h => h.type === 'export').reduce((s, h) => s + h.quantity, 0);
-    const unit = history[0]?.unit || '';
+    // FIX 3: Tính cả điều chỉnh vào tồn lý thuyết
+    const totalAdj    = history.filter(h => h.type === 'adjust').reduce((s, h) => s + (h.quantity || 0), 0);
+    const unit = history.find(h => h.unit)?.unit || '';
+
+    const typeConfig = {
+        import: { bg: '#e8f5e9', color: '#2e7d32', border: '#a5d6a7', label: '↓ Nhập' },
+        export: { bg: '#fff3e0', color: '#e65100', border: '#ffcc80', label: '↑ Xuất' },
+        adjust: { bg: '#e3f2fd', color: '#1565c0', border: '#90caf9', label: '⚖ Điều chỉnh' },
+    };
 
     return (
-        <div onClick={onClose} style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
-        }}>
-            <div onClick={e => e.stopPropagation()} style={{
-                background: 'var(--bg-color, #fff)', borderRadius: '14px',
-                padding: '28px', width: '720px', maxWidth: '94vw',
-                maxHeight: '82vh', overflowY: 'auto',
-                boxShadow: '0 12px 48px rgba(0,0,0,0.22)'
-            }}>
+        <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-color, #fff)', borderRadius: '14px', padding: '28px', width: '760px', maxWidth: '94vw', maxHeight: '82vh', overflowY: 'auto', boxShadow: '0 12px 48px rgba(0,0,0,0.22)' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                     <div>
@@ -280,44 +281,33 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
                         </div>
                         <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                             <span style={{ fontWeight: '600', color: '#007bff' }}>{productId}</span>
-                            {' · '}
-                            <span>Lot <strong>{lotNumber}</strong></span>
+                            {' · '}Lot <strong>{lotNumber}</strong>
                         </div>
                     </div>
-                    <button onClick={onClose} style={{
-                        background: 'none', border: 'none', fontSize: '22px',
-                        cursor: 'pointer', color: 'var(--text-secondary)', lineHeight: 1
-                    }}>✕</button>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: 'var(--text-secondary)' }}>✕</button>
                 </div>
 
                 {/* Summary chips */}
                 {!loading && history.length > 0 && (
                     <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
-                        <div style={{
-                            padding: '8px 16px', borderRadius: '8px',
-                            background: '#e8f5e9', border: '1px solid #a5d6a7',
-                            fontSize: '13px', fontWeight: '600', color: '#2e7d32'
-                        }}>
-                            ↓ Tổng nhập: {fmtNum(totalImport)} {unit}
+                        <div style={{ padding: '8px 14px', borderRadius: '8px', background: '#e8f5e9', border: '1px solid #a5d6a7', fontSize: '13px', fontWeight: '600', color: '#2e7d32' }}>
+                            ↓ Nhập: {fmtNum(totalImport)} {unit}
                         </div>
-                        <div style={{
-                            padding: '8px 16px', borderRadius: '8px',
-                            background: '#fff3e0', border: '1px solid #ffcc80',
-                            fontSize: '13px', fontWeight: '600', color: '#e65100'
-                        }}>
-                            ↑ Tổng xuất: {fmtNum(totalExport)} {unit}
+                        <div style={{ padding: '8px 14px', borderRadius: '8px', background: '#fff3e0', border: '1px solid #ffcc80', fontSize: '13px', fontWeight: '600', color: '#e65100' }}>
+                            ↑ Xuất: {fmtNum(totalExport)} {unit}
                         </div>
-                        <div style={{
-                            padding: '8px 16px', borderRadius: '8px',
-                            background: '#e3f2fd', border: '1px solid #90caf9',
-                            fontSize: '13px', fontWeight: '600', color: '#1565c0'
-                        }}>
-                            = Tồn lý thuyết: {fmtNum(totalImport - totalExport)} {unit}
+                        {totalAdj !== 0 && (
+                            <div style={{ padding: '8px 14px', borderRadius: '8px', background: '#e3f2fd', border: '1px solid #90caf9', fontSize: '13px', fontWeight: '600', color: '#1565c0' }}>
+                                ⚖ Điều chỉnh: {totalAdj > 0 ? '+' : ''}{fmtNum(totalAdj)} {unit}
+                            </div>
+                        )}
+                        {/* FIX 3: Tồn lý thuyết = Nhập - Xuất + Điều chỉnh */}
+                        <div style={{ padding: '8px 14px', borderRadius: '8px', background: '#f3e8ff', border: '1px solid #a855f7', fontSize: '13px', fontWeight: '600', color: '#6d28d9' }}>
+                            = Tồn lý thuyết: {fmtNum(totalImport - totalExport + totalAdj)} {unit}
                         </div>
                     </div>
                 )}
 
-                {/* Content */}
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
                         <div style={{ fontSize: '28px', marginBottom: '8px' }}>⏳</div>
@@ -333,58 +323,36 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                             <thead>
                                 <tr style={{ backgroundColor: 'var(--table-header-bg, #f8f9fa)' }}>
-                                    {['Loại', 'Ngày', 'Số lượng', 'HSD', 'Đối tác', 'Ghi chú'].map(h => (
-                                        <th key={h} style={{
-                                            padding: '9px 12px', textAlign: 'left', fontWeight: '600',
-                                            fontSize: '12px', color: 'var(--text-color)',
-                                            borderBottom: '2px solid var(--border-color, #e0e0e0)',
-                                            whiteSpace: 'nowrap',
-                                        }}>{h}</th>
+                                    {['Loại', 'Ngày', 'Số lượng', 'Tồn trước→sau', 'HSD', 'Đối tác / Lý do'].map(h => (
+                                        <th key={h} style={{ padding: '9px 12px', textAlign: 'left', fontWeight: '600', fontSize: '12px', color: 'var(--text-color)', borderBottom: '2px solid var(--border-color, #e0e0e0)', whiteSpace: 'nowrap' }}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
                                 {history.map((h, i) => {
-                                    const isImport = h.type === 'import';
+                                    const cfg = typeConfig[h.type];
+                                    const qtySign = h.type === 'import' ? '+' : h.type === 'export' ? '-' : (h.quantity >= 0 ? '+' : '');
                                     return (
-                                        <tr key={i} style={{
-                                            backgroundColor: i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg, #fafafa)',
-                                            borderBottom: '1px solid var(--border-color, #eee)'
-                                        }}>
+                                        <tr key={i} style={{ backgroundColor: i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg, #fafafa)', borderBottom: '1px solid var(--border-color, #eee)' }}>
                                             <td style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}>
-                                                <span style={{
-                                                    display: 'inline-block',
-                                                    padding: '3px 10px', borderRadius: '12px',
-                                                    fontSize: '12px', fontWeight: '600',
-                                                    backgroundColor: isImport ? '#e8f5e9' : '#fff3e0',
-                                                    color: isImport ? '#2e7d32' : '#e65100',
-                                                    border: `1px solid ${isImport ? '#a5d6a7' : '#ffcc80'}`,
-                                                }}>
-                                                    {isImport ? '↓ Nhập' : '↑ Xuất'}
+                                                <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                                                    {cfg.label}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', fontWeight: '500' }}>
-                                                {fmtDateDisplay(h.date) || '—'}
+                                            <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', fontWeight: '500' }}>{fmtDateDisplay(h.date) || '—'}</td>
+                                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: '700', whiteSpace: 'nowrap', color: cfg.color }}>
+                                                {qtySign}{fmtNum(Math.abs(h.quantity))} {h.unit}
                                             </td>
-                                            <td style={{
-                                                padding: '9px 12px', textAlign: 'right',
-                                                fontWeight: '700', whiteSpace: 'nowrap',
-                                                color: isImport ? '#2e7d32' : '#e65100'
-                                            }}>
-                                                {isImport ? '+' : '-'}{fmtNum(h.quantity)} {h.unit}
+                                            <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                                                {h.type === 'adjust' && h.quantityBefore != null
+                                                    ? `${fmtNum(h.quantityBefore)} → ${fmtNum(h.quantityAfter)}`
+                                                    : '—'}
                                             </td>
-                                            <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
-                                                {fmtDateDisplay(h.expiryDate) || '—'}
-                                            </td>
-                                            <td style={{ padding: '9px 12px', maxWidth: '200px' }}>
-                                                <span title={h.partner} style={{
-                                                    display: 'block', overflow: 'hidden',
-                                                    textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                                    maxWidth: '200px'
-                                                }}>{h.partner || '—'}</span>
-                                            </td>
-                                            <td style={{ padding: '9px 12px', color: 'var(--text-secondary)', fontSize: '12px' }}>
-                                                {h.description || '—'}
+                                            <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>{fmtDateDisplay(h.expiryDate) || '—'}</td>
+                                            <td style={{ padding: '9px 12px', maxWidth: '220px' }}>
+                                                <span title={h.partner || h.description} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {h.partner || h.description || '—'}
+                                                </span>
                                             </td>
                                         </tr>
                                     );
@@ -402,9 +370,17 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
 // COMPONENT CHÍNH
 // ============================================================
 const InventoryReconciliationPage = () => {
-    const [stockModal, setStockModal] = useState({ isOpen: false, productId: '', data: [], loading: false });
+    const [stockModal,      setStockModal]      = useState({ isOpen: false, productId: '', data: [], loading: false });
     const [lotHistoryModal, setLotHistoryModal] = useState({ isOpen: false, productId: '', lotNumber: '' });
     const [webkhoDuplicateHsd, setWebkhoDuplicateHsd] = React.useState([]);
+
+    // CẢI TIẾN 1: Sort state
+    const [sortState, setSortState] = React.useState({ col: null, dir: 'asc' });
+    const handleSort = (col) => setSortState(prev =>
+        prev.col === col
+            ? { col, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+            : { col, dir: 'asc' }
+    );
 
     const openStockModal = async (productId) => {
         setStockModal({ isOpen: true, productId, data: [], loading: true });
@@ -416,35 +392,25 @@ const InventoryReconciliationPage = () => {
             );
             const snap = await getDocs(q);
             const rawLots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
             const lotMap = new Map();
             for (const lot of rawLots) {
                 const lotNumber = (lot.lotNumber || '').trim();
                 const expiry = lot.expiryDate?.toDate?.() || null;
-                const expiryKey = expiry
-                    ? `${expiry.getFullYear()}-${expiry.getMonth()}-${expiry.getDate()}`
-                    : 'no-date';
-                const key = `${lotNumber}__${expiryKey}`;
+                const key = `${lotNumber}__${expiry ? `${expiry.getFullYear()}-${expiry.getMonth()}-${expiry.getDate()}` : 'no-date'}`;
                 if (lotMap.has(key)) {
-                    const existing = lotMap.get(key);
-                    existing.quantityRemaining += lot.quantityRemaining || 0;
-                    existing.quantityAllocated += lot.quantityAllocated || 0;
+                    const e = lotMap.get(key);
+                    e.quantityRemaining += lot.quantityRemaining || 0;
+                    e.quantityAllocated += lot.quantityAllocated || 0;
                 } else {
-                    lotMap.set(key, {
-                        ...lot,
-                        quantityRemaining: lot.quantityRemaining || 0,
-                        quantityAllocated: lot.quantityAllocated || 0,
-                    });
+                    lotMap.set(key, { ...lot, quantityRemaining: lot.quantityRemaining || 0, quantityAllocated: lot.quantityAllocated || 0 });
                 }
             }
-
             const mergedLots = Array.from(lotMap.values());
             mergedLots.sort((a, b) => {
                 const da = a.expiryDate?.toDate?.() || new Date(9999, 0, 1);
                 const db2 = b.expiryDate?.toDate?.() || new Date(9999, 0, 1);
                 return da - db2;
             });
-
             setStockModal({ isOpen: true, productId, data: mergedLots, loading: false });
         } catch (e) {
             setStockModal({ isOpen: true, productId, data: [], loading: false });
@@ -452,7 +418,7 @@ const InventoryReconciliationPage = () => {
     };
 
     const closeStockModal = () => setStockModal({ isOpen: false, productId: '', data: [], loading: false });
-    const openLotHistory = (productId, lotNumber) => setLotHistoryModal({ isOpen: true, productId, lotNumber });
+    const openLotHistory  = (productId, lotNumber) => setLotHistoryModal({ isOpen: true, productId, lotNumber });
     const closeLotHistory = () => setLotHistoryModal({ isOpen: false, productId: '', lotNumber: '' });
 
     // ── Store ──
@@ -464,10 +430,8 @@ const InventoryReconciliationPage = () => {
     } = useReconciliationStore();
 
     const missingMisaCodesSet = useMemo(() => new Set(missingMisaCodes), [missingMisaCodes]);
-
     const [isLoadingWebkho, setIsLoadingWebkho] = React.useState(false);
     const [search, setSearch] = React.useState('');
-
     const fileInputRef = useRef(null);
 
     // ============================================================
@@ -498,64 +462,40 @@ const InventoryReconciliationPage = () => {
             for (const lot of rawLots) {
                 if (isExpired(lot.expiryDate)) continue;
                 if (lot.quantityRemaining <= 0) continue;
-
                 const lotKey = normLot(lot.lotNumber);
                 const key = `${lot.productId}__${lot.lotNumber}`;
                 const hsdStr = fmtDateDisplay(lot.expiryDate);
                 const hsdTrackKey = `${lot.productId}__${lotKey}`;
-
-                if (!lotHsdMap.has(hsdTrackKey)) {
-                    lotHsdMap.set(hsdTrackKey, { hsds: new Set(), lots: [] });
-                }
+                if (!lotHsdMap.has(hsdTrackKey)) lotHsdMap.set(hsdTrackKey, { hsds: new Set(), lots: [] });
                 const tracker = lotHsdMap.get(hsdTrackKey);
                 if (hsdStr) tracker.hsds.add(hsdStr);
                 tracker.lots.push({ lotNumber: lot.lotNumber, hsd: hsdStr, qty: lot.quantityRemaining });
-
-                if (lotMap.has(key)) {
-                    lotMap.get(key).quantityRemaining += lot.quantityRemaining;
-                } else {
-                    lotMap.set(key, { ...lot, lotKey });
-                }
+                if (lotMap.has(key)) lotMap.get(key).quantityRemaining += lot.quantityRemaining;
+                else lotMap.set(key, { ...lot, lotKey });
             }
 
             for (const [hsdTrackKey, tracker] of lotHsdMap) {
                 if (tracker.hsds.size > 1) {
                     const [productId, lotKey] = hsdTrackKey.split('__');
-                    const lotNumber = tracker.lots[0].lotNumber;
                     const hsdList = [...tracker.hsds];
-                    const alreadyWarned = newWebkhoDups.some(
-                        d => d.productId === productId && normLot(d.lotNumber) === lotKey
-                    );
-                    if (!alreadyWarned) {
-                        newWebkhoDups.push({
-                            productId, lotNumber,
-                            hsd1: hsdList[0], hsd2: hsdList[1],
-                            totalQty: tracker.lots.reduce((s, l) => s + l.qty, 0),
-                            count: tracker.lots.length,
-                        });
+                    if (!newWebkhoDups.some(d => d.productId === productId && normLot(d.lotNumber) === lotKey)) {
+                        newWebkhoDups.push({ productId, lotNumber: tracker.lots[0].lotNumber, hsd1: hsdList[0], hsd2: hsdList[1], totalQty: tracker.lots.reduce((s, l) => s + l.qty, 0), count: tracker.lots.length });
                     }
                 }
             }
 
             setWebkhoDuplicateHsd(newWebkhoDups);
-            if (newWebkhoDups.length > 0) {
-                toast.warn(`⚠️ WebKho có ${newWebkhoDups.length} lot cùng số lô nhưng khác HSD!`);
-            }
+            if (newWebkhoDups.length > 0) toast.warn(`⚠️ WebKho có ${newWebkhoDups.length} lot cùng số lô nhưng khác HSD!`);
 
             const finalLots = [...lotMap.values()];
-
             const prodsSnap = await getDocs(collection(db, 'products'));
-            const newConvMap = {};
-            const newMissingSet = new Set();
-            const newAltMap = {};
+            const newConvMap = {}, newAltMap = {}, newMissingSet = new Set();
             prodsSnap.forEach(doc => {
-                const d = doc.data();
-                const id = doc.id;
+                const d = doc.data(), id = doc.id;
                 if (d.misaConversionFactor != null) newConvMap[id] = Number(d.misaConversionFactor) || 1;
                 if (d.misaCode && d.misaCode !== id) newAltMap[id] = d.misaCode;
                 if (d.missingFromMisa === true) newMissingSet.add(id);
             });
-
             setWebkhoData(finalLots, newConvMap, newAltMap, [...newMissingSet]);
             toast.success(`Đã tải ${finalLots.length} lot từ WebKho!`);
         } catch (err) {
@@ -576,9 +516,7 @@ const InventoryReconciliationPage = () => {
             const buf = await file.arrayBuffer();
             const { items, duplicateHsd } = parseMisaExcel(buf);
             setMisaData(items, file.name, duplicateHsd);
-            if (duplicateHsd.length > 0) {
-                toast.warn(`⚠️ Có ${duplicateHsd.length} lot trong Misa bị trùng số lô nhưng khác HSD!`);
-            }
+            if (duplicateHsd.length > 0) toast.warn(`⚠️ Có ${duplicateHsd.length} lot trong Misa bị trùng số lô nhưng khác HSD!`);
             toast.success(`Đã đọc ${items.length} lot từ file Misa!`);
         } catch (err) {
             toast.error('Lỗi đọc file: ' + err.message);
@@ -588,16 +526,13 @@ const InventoryReconciliationPage = () => {
     };
 
     // ============================================================
-    // ĐỐI CHIẾU (bổ sung nhóm hsdlech)
+    // ĐỐI CHIẾU
     // ============================================================
     const { results, counts } = useMemo(() => {
         if (!webkhoLots.length && !misaItems.length) return { results: [], counts: {} };
 
         const misaLookup = new Map();
-        for (const item of misaItems) {
-            const key = `${item.ma}__${item.lotKey}`;
-            misaLookup.set(key, item);
-        }
+        for (const item of misaItems) misaLookup.set(`${item.ma}__${item.lotKey}`, item);
 
         const results = [];
         const matchedMisaKeys = new Set();
@@ -608,56 +543,43 @@ const InventoryReconciliationPage = () => {
             const qtyWebkhoQd = lot.quantityRemaining * heySo;
             const misaKey = `${misaCode}__${lot.lotKey}`;
             const misaItem = misaLookup.get(misaKey);
-
             let status, nhom, chenhWebkho, chenhMisa, dvtMisa, tonMisa, hsdMisa, hsdLech;
 
             if (misaItem) {
                 matchedMisaKeys.add(misaKey);
-                dvtMisa = misaItem.dvt;
-                tonMisa = misaItem.sl;
+                dvtMisa = misaItem.dvt; tonMisa = misaItem.sl;
                 hsdMisa = fmtDateDisplay(misaItem.hsdRaw);
                 const hsdWebkho = fmtDateDisplay(lot.expiryDate);
                 hsdLech = hsdWebkho && hsdMisa && hsdWebkho !== hsdMisa;
-
                 const diff = qtyWebkhoQd - tonMisa;
                 chenhWebkho = diff / heySo;
                 chenhMisa = heySo !== 1 ? diff : null;
-
-                if (hsdLech) {
-                    // Lệch HSD — đưa vào nhóm riêng dù số lượng có khớp hay không
-                    nhom = 'hsdlech';
-                    status = '🟣 Lệch HSD';
-                } else if (Math.abs(diff) < 0.001) {
-                    nhom = 'khop'; status = '✅ Khớp';
-                } else if (diff > 0) {
-                    nhom = 'chenh'; status = '⬆️ WebKho cao hơn';
-                } else {
-                    nhom = 'chenh'; status = '⬇️ WebKho thấp hơn';
-                }
+                if (hsdLech) { nhom = 'hsdlech'; status = '🟣 Lệch HSD'; }
+                else if (Math.abs(diff) < 0.001) { nhom = 'khop'; status = '✅ Khớp'; }
+                else if (diff > 0) { nhom = 'chenh'; status = '⬆️ WebKho cao hơn'; }
+                else { nhom = 'chenh'; status = '⬇️ WebKho thấp hơn'; }
             } else {
                 dvtMisa = ''; tonMisa = null; hsdMisa = '';
                 chenhWebkho = null; chenhMisa = null; hsdLech = false;
-                if (missingMisaCodesSet.has(lot.productId)) {
-                    nhom = 'nomisa'; status = '🔴 Misa chưa có mã';
-                } else {
-                    nhom = 'webkho'; status = '🟡 Chỉ có trên WebKho';
-                }
+                if (missingMisaCodesSet.has(lot.productId)) { nhom = 'nomisa'; status = '🔴 Misa chưa có mã'; }
+                else { nhom = 'webkho'; status = '🟡 Chỉ có trên WebKho'; }
             }
 
             results.push({
                 nhom, productId: lot.productId, lotNumber: lot.lotNumber,
-                hsdWebkho: fmtDateDisplay(lot.expiryDate), dvtWebkho: lot.unit,
+                hsdWebkho: fmtDateDisplay(lot.expiryDate),
+                expiryDateRaw: lot.expiryDate,   // giữ raw để tính badge
+                dvtWebkho: lot.unit,
                 tonWebkho: lot.quantityRemaining, heySo, tonWebkhoQd: qtyWebkhoQd,
                 dvtMisa, tonMisa, hsdMisa, hsdLech: !!hsdLech, chenhWebkho, chenhMisa, status,
             });
         }
 
         for (const item of misaItems) {
-            const key = `${item.ma}__${item.lotKey}`;
-            if (!matchedMisaKeys.has(key)) {
+            if (!matchedMisaKeys.has(`${item.ma}__${item.lotKey}`)) {
                 results.push({
                     nhom: 'misa', productId: item.ma, lotNumber: item.lo,
-                    hsdWebkho: '', dvtWebkho: '', tonWebkho: null, heySo: null, tonWebkhoQd: null,
+                    hsdWebkho: '', expiryDateRaw: null, dvtWebkho: '', tonWebkho: null, heySo: null, tonWebkhoQd: null,
                     dvtMisa: item.dvt, tonMisa: item.sl, hsdMisa: fmtDateDisplay(item.hsdRaw),
                     hsdLech: false, chenhWebkho: null, chenhMisa: null, status: '🟠 Chỉ có trên Misa',
                 });
@@ -666,7 +588,6 @@ const InventoryReconciliationPage = () => {
 
         const counts = {};
         for (const r of results) counts[r.nhom] = (counts[r.nhom] || 0) + 1;
-
         results.sort((a, b) => {
             if (a.nhom !== b.nhom) return 0;
             if (a.nhom === 'chenh') return Math.abs(b.chenhWebkho || 0) - Math.abs(a.chenhWebkho || 0);
@@ -677,7 +598,7 @@ const InventoryReconciliationPage = () => {
     }, [webkhoLots, misaItems, convMap, altCodeMap, missingMisaCodes]);
 
     // ============================================================
-    // LỌC THEO TAB + SEARCH
+    // CẢI TIẾN 1: LỌC + SORT THEO TAB + SEARCH
     // ============================================================
     const filtered = useMemo(() => {
         let rows = results.filter(r => r.nhom === activeTab);
@@ -688,8 +609,27 @@ const InventoryReconciliationPage = () => {
                 (r.lotNumber || '').toLowerCase().includes(q)
             );
         }
+        if (sortState.col) {
+            rows = [...rows].sort((a, b) => {
+                let va, vb;
+                switch (sortState.col) {
+                    case 'productId': va = a.productId; vb = b.productId; break;
+                    case 'lotNumber': va = a.lotNumber || ''; vb = b.lotNumber || ''; break;
+                    case 'hsdWebkho': va = parseDate(a.hsdWebkho) || new Date(0); vb = parseDate(b.hsdWebkho) || new Date(0); break;
+                    case 'tonWebkho': va = a.tonWebkho ?? -Infinity; vb = b.tonWebkho ?? -Infinity; break;
+                    case 'tonMisa':   va = a.tonMisa   ?? -Infinity; vb = b.tonMisa   ?? -Infinity; break;
+                    case 'chenh':     va = Math.abs(a.chenhWebkho ?? 0); vb = Math.abs(b.chenhWebkho ?? 0); break;
+                    default: return 0;
+                }
+                if (va instanceof Date) return sortState.dir === 'asc' ? va - vb : vb - va;
+                if (typeof va === 'number') return sortState.dir === 'asc' ? va - vb : vb - va;
+                return sortState.dir === 'asc'
+                    ? String(va).localeCompare(String(vb))
+                    : String(vb).localeCompare(String(va));
+            });
+        }
         return rows;
-    }, [results, activeTab, search]);
+    }, [results, activeTab, search, sortState]);
 
     // ============================================================
     // XUẤT EXCEL
@@ -697,15 +637,9 @@ const InventoryReconciliationPage = () => {
     const handleExport = () => {
         if (!results.length) { toast.warn('Chưa có dữ liệu để xuất.'); return; }
         const wb = XLSX.utils.book_new();
-        const COLS = ['Mã hàng','Số lot','HSD WebKho','ĐVT WebKho','Tồn WebKho',
-                      'Hệ số','Tồn WebKho (quy đổi)','ĐVT Misa','Tồn Misa','HSD Misa',
-                      'Chênh (ĐVT WebKho)','Chênh (ĐVT Misa)','Trạng thái'];
+        const COLS = ['Mã hàng','Số lot','HSD WebKho','ĐVT WebKho','Tồn WebKho','Hệ số','Tồn WebKho (quy đổi)','ĐVT Misa','Tồn Misa','HSD Misa','Chênh (ĐVT WebKho)','Chênh (ĐVT Misa)','Trạng thái'];
         const tabOrder = ['chenh','khop','hsdlech','webkho','misa','nomisa'];
-        const tabLabel = {
-            chenh:'Chênh lệch', khop:'Khớp', hsdlech:'Lệch HSD',
-            webkho:'Chỉ WebKho', misa:'Chỉ Misa', nomisa:'Misa thiếu mã'
-        };
-
+        const tabLabel = { chenh:'Chênh lệch', khop:'Khớp', hsdlech:'Lệch HSD', webkho:'Chỉ WebKho', misa:'Chỉ Misa', nomisa:'Misa thiếu mã' };
         for (const tab of tabOrder) {
             const rows = results.filter(r => r.nhom === tab);
             if (!rows.length) continue;
@@ -719,7 +653,6 @@ const InventoryReconciliationPage = () => {
             ])];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), tabLabel[tab]);
         }
-
         const now = new Date();
         const stamp = `${now.getDate().toString().padStart(2,'0')}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getFullYear()}`;
         XLSX.writeFile(wb, `doi_chieu_ton_kho_${stamp}.xlsx`);
@@ -727,116 +660,110 @@ const InventoryReconciliationPage = () => {
     };
 
     // ============================================================
-    // RENDER
+    // RENDER HELPERS
     // ============================================================
     const hasData = webkhoLots.length > 0 || misaItems.length > 0;
     const canReconcile = webkhoLots.length > 0 && misaItems.length > 0;
 
-    // ── Banner cảnh báo HSD trùng (WebKho / Misa) ──
+    // CẢI TIẾN 1: Sort arrow indicator
+    const SortArrow = ({ col }) => sortState.col !== col
+        ? <span style={{ color: '#bbb', marginLeft: '2px', fontSize: '10px' }}>↕</span>
+        : <span style={{ color: '#007bff', marginLeft: '2px', fontSize: '10px' }}>{sortState.dir === 'asc' ? '↑' : '↓'}</span>;
+
+    // Sortable TH
+    const SortTh = ({ col, label, align = 'left' }) => (
+        <th onClick={() => handleSort(col)} style={{
+            padding: '8px 6px', textAlign: align, fontWeight: '600', fontSize: '11px',
+            color: 'var(--text-color)', borderBottom: '2px solid var(--border-color)',
+            whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
+            backgroundColor: sortState.col === col ? 'var(--table-header-active-bg, #eef2ff)' : 'var(--table-header-bg)',
+        }}>
+            {label}<SortArrow col={col} />
+        </th>
+    );
+
+    // Plain TH (không sort)
+    const PlainTh = ({ label, align = 'left' }) => (
+        <th style={{ padding: '8px 6px', textAlign: align, fontWeight: '600', fontSize: '11px', color: 'var(--text-color)', borderBottom: '2px solid var(--border-color)', whiteSpace: 'nowrap', backgroundColor: 'var(--table-header-bg)' }}>
+            {label}
+        </th>
+    );
+
+    // Banner HSD trùng
     const DuplicateHsdWarning = ({ warnings, source }) => {
         if (!warnings.length) return null;
         const isMisa = source === 'misa';
         return (
-            <div style={{
-                backgroundColor: isMisa ? '#fff8e1' : '#fce4ec',
-                border: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}`,
-                borderLeft: `4px solid ${isMisa ? '#f9a825' : '#e91e63'}`,
-                borderRadius: '6px', padding: '12px 16px', marginBottom: '16px',
-            }}>
+            <div style={{ backgroundColor: isMisa ? '#fff8e1' : '#fce4ec', border: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}`, borderLeft: `4px solid ${isMisa ? '#f9a825' : '#e91e63'}`, borderRadius: '6px', padding: '12px 16px', marginBottom: '16px' }}>
                 <div style={{ fontWeight: '600', color: isMisa ? '#e65100' : '#c2185b', marginBottom: '8px', fontSize: '14px' }}>
                     ⚠️ {isMisa ? 'Misa' : 'WebKho'}: Phát hiện {warnings.length} lot cùng số lô nhưng khác HSD
                     {!isMisa && ' — Dữ liệu nhập kho có thể bị lỗi, cần kiểm tra lại!'}
                     {isMisa && ' — cần kiểm tra lại trên Misa!'}
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: isMisa ? '#fff3cd' : '#fce4ec' }}>
-                            <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Mã hàng</th>
-                            <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Số lô</th>
-                            <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 1</th>
-                            <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 2</th>
-                            {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Số docs</th>}
-                            {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Tổng tồn</th>}
+                    <thead><tr style={{ backgroundColor: isMisa ? '#fff3cd' : '#fce4ec' }}>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Mã hàng</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Số lô</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 1</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 2</th>
+                        {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Docs</th>}
+                        {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Tổng tồn</th>}
+                    </tr></thead>
+                    <tbody>{warnings.map((w, i) => (
+                        <tr key={i} style={{ backgroundColor: i % 2 === 0 ? (isMisa ? '#fffde7' : '#fce4ec') : (isMisa ? '#fff8e1' : '#f8bbd0') }}>
+                            <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>{isMisa ? w.ma : w.productId}</td>
+                            <td style={{ padding: '5px 10px', color: '#555' }}>{isMisa ? w.lo : w.lotNumber}</td>
+                            <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd1}</td>
+                            <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd2}</td>
+                            {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', color: '#555' }}>{w.count} docs</td>}
+                            {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: '600' }}>{fmtNum(w.totalQty)}</td>}
                         </tr>
-                    </thead>
-                    <tbody>
-                        {warnings.map((w, i) => (
-                            <tr key={i} style={{ backgroundColor: i % 2 === 0 ? (isMisa ? '#fffde7' : '#fce4ec') : (isMisa ? '#fff8e1' : '#f8bbd0') }}>
-                                <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>{isMisa ? w.ma : w.productId}</td>
-                                <td style={{ padding: '5px 10px', color: '#555' }}>{isMisa ? w.lo : w.lotNumber}</td>
-                                <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd1}</td>
-                                <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd2}</td>
-                                {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', color: '#555' }}>{w.count} docs</td>}
-                                {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: '600' }}>{fmtNum(w.totalQty)}</td>}
-                            </tr>
-                        ))}
-                    </tbody>
+                    ))}</tbody>
                 </table>
                 <div style={{ marginTop: '8px', fontSize: '12px', color: '#795548' }}>
-                    {isMisa
-                        ? '💡 Số lượng đã được cộng dồn — chỉ cần sửa HSD đúng trên Misa rồi xuất file mới.'
-                        : '💡 Hệ thống đã cộng dồn số lượng — nhưng cần kiểm tra lại phiếu nhập để sửa HSD cho đúng.'
-                    }
+                    {isMisa ? '💡 Số lượng đã cộng dồn — sửa HSD đúng trên Misa rồi xuất file mới.' : '💡 Đã cộng dồn số lượng — kiểm tra phiếu nhập để sửa HSD.'}
                 </div>
             </div>
         );
     };
 
-    // ── Banner cảnh báo Lệch HSD giữa WebKho và Misa ──
+    // Banner lệch HSD WebKho vs Misa
     const HsdMismatchBanner = ({ rows }) => {
-        const mismatches = rows.filter(r => r.nhom === 'hsdlech');
-        if (!mismatches.length) return null;
+        const mm = rows.filter(r => r.nhom === 'hsdlech');
+        if (!mm.length) return null;
         return (
-            <div style={{
-                backgroundColor: '#f3e8ff',
-                border: '1px solid #a855f7',
-                borderLeft: '4px solid #7c3aed',
-                borderRadius: '6px', padding: '12px 16px', marginBottom: '16px',
-            }}>
+            <div style={{ backgroundColor: '#f3e8ff', border: '1px solid #a855f7', borderLeft: '4px solid #7c3aed', borderRadius: '6px', padding: '12px 16px', marginBottom: '16px' }}>
                 <div style={{ fontWeight: '600', color: '#6d28d9', marginBottom: '8px', fontSize: '14px' }}>
-                    🟣 Phát hiện {mismatches.length} lot khớp số lô nhưng HSD ghi khác nhau giữa WebKho và Misa
+                    🟣 Phát hiện {mm.length} lot khớp số lô nhưng HSD ghi khác nhau giữa WebKho và Misa
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: '#ede9fe' }}>
-                            {['Mã hàng', 'Số lô', 'HSD WebKho', 'HSD Misa', 'Chênh lệch SL'].map(h => (
-                                <th key={h} style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #a855f7', color: '#5b21b6' }}>{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {mismatches.slice(0, 10).map((r, i) => (
-                            <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f5f3ff' : '#ede9fe' }}>
-                                <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>
-                                    <button
-                                        onClick={() => { setActiveTab('hsdlech'); setSearch(r.productId); }}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontWeight: '600', padding: 0, fontSize: 'inherit' }}
-                                    >{r.productId}</button>
-                                </td>
-                                <td style={{ padding: '5px 10px', color: '#555' }}>{r.lotNumber}</td>
-                                <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdWebkho || '—'}</td>
-                                <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdMisa || '—'}</td>
-                                <td style={{ padding: '5px 10px', color: r.chenhWebkho ? (r.chenhWebkho > 0 ? '#e67e22' : '#e74c3c') : '#27ae60', fontWeight: '600' }}>
-                                    {r.chenhWebkho != null && Math.abs(r.chenhWebkho) >= 0.001
-                                        ? fmtChenh(r.chenhWebkho, r.dvtWebkho)
-                                        : '✅ Khớp SL'}
-                                </td>
-                            </tr>
+                    <thead><tr style={{ backgroundColor: '#ede9fe' }}>
+                        {['Mã hàng','Số lô','HSD WebKho','HSD Misa','Chênh lệch SL'].map(h => (
+                            <th key={h} style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #a855f7', color: '#5b21b6' }}>{h}</th>
                         ))}
-                    </tbody>
+                    </tr></thead>
+                    <tbody>{mm.slice(0, 10).map((r, i) => (
+                        <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f5f3ff' : '#ede9fe' }}>
+                            <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>
+                                <button onClick={() => { setActiveTab('hsdlech'); setSearch(r.productId); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontWeight: '600', padding: 0, fontSize: 'inherit' }}>{r.productId}</button>
+                            </td>
+                            <td style={{ padding: '5px 10px', color: '#555' }}>{r.lotNumber}</td>
+                            <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdWebkho || '—'}</td>
+                            <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdMisa || '—'}</td>
+                            <td style={{ padding: '5px 10px', fontWeight: '600', color: r.chenhWebkho && Math.abs(r.chenhWebkho) >= 0.001 ? (r.chenhWebkho > 0 ? '#e67e22' : '#e74c3c') : '#27ae60' }}>
+                                {r.chenhWebkho != null && Math.abs(r.chenhWebkho) >= 0.001 ? fmtChenh(r.chenhWebkho, r.dvtWebkho) : '✅ Khớp SL'}
+                            </td>
+                        </tr>
+                    ))}</tbody>
                 </table>
-                {mismatches.length > 10 && (
+                {mm.length > 10 && (
                     <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>
-                        ... và {mismatches.length - 10} lot khác.
-                        <button onClick={() => setActiveTab('hsdlech')} style={{
-                            marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer',
-                            color: '#7c3aed', textDecoration: 'underline', fontSize: '12px'
-                        }}>Xem tất cả →</button>
+                        ... và {mm.length - 10} lot khác.
+                        <button onClick={() => setActiveTab('hsdlech')} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontSize: '12px' }}>Xem tất cả →</button>
                     </div>
                 )}
                 <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>
-                    💡 Không kết luận bên nào đúng — cần kiểm tra phiếu nhập gốc để xác định HSD chính xác.
-                    Bấm vào tab <strong>Lệch HSD</strong> để xem đầy đủ và xem lịch sử từng lot.
+                    💡 Không kết luận bên nào đúng — kiểm tra phiếu nhập gốc. Bấm tab <strong>Lệch HSD</strong> để xem đầy đủ.
                 </div>
             </div>
         );
@@ -850,11 +777,11 @@ const InventoryReconciliationPage = () => {
                     <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '600' }}>Đối chiếu tồn kho WebKho vs Misa</h1>
                     {lastUpdated && (
                         <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                            {(() => { const d = lastUpdated ? new Date(lastUpdated) : null; return d ? `Dữ liệu WebKho: ${fmtDateDisplay(d)} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : ''; })()}
+                            {(() => { const d = new Date(lastUpdated); return `Dữ liệu WebKho: ${fmtDateDisplay(d)} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`; })()}
                         </p>
                     )}
                 </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button onClick={loadWebkhoData} disabled={isLoadingWebkho} className="btn-primary"
                         style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
                         <FiRefreshCw style={{ fontSize: '14px', animation: isLoadingWebkho ? 'spin 1s linear infinite' : 'none' }} />
@@ -877,7 +804,7 @@ const InventoryReconciliationPage = () => {
                     )}
 
                     {hasData && (
-                        <button onClick={() => { if (window.confirm('Xóa toàn bộ dữ liệu đối chiếu hiện tại?')) { reset(); setWebkhoDuplicateHsd([]); } }}
+                        <button onClick={() => { if (window.confirm('Xóa toàn bộ dữ liệu đối chiếu hiện tại?')) { reset(); setWebkhoDuplicateHsd([]); setSortState({ col: null, dir: 'asc' }); } }}
                             className="btn-secondary"
                             style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', backgroundColor: '#e74c3c', color: 'white', border: 'none' }}>
                             <FiAlertCircle style={{ fontSize: '14px' }} />
@@ -892,7 +819,7 @@ const InventoryReconciliationPage = () => {
             <DuplicateHsdWarning warnings={duplicateHsdWarnings} source="misa" />
             {canReconcile && <HsdMismatchBanner rows={results} />}
 
-            {/* HƯỚNG DẪN NẾU CHƯA CÓ DỮ LIỆU */}
+            {/* HƯỚNG DẪN */}
             {!hasData && (
                 <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '32px', textAlign: 'center' }}>
                     <FiAlertCircle style={{ fontSize: '48px', color: 'var(--text-secondary)', marginBottom: '12px' }} />
@@ -905,215 +832,171 @@ const InventoryReconciliationPage = () => {
                 </div>
             )}
 
-            {/* BẢNG THỐNG KÊ */}
-            {canReconcile && (
-                <>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            {canReconcile && (<>
+                {/* CẢI TIẾN 2: STICKY SUMMARY BAR */}
+                <div style={{
+                    position: 'sticky', top: 0, zIndex: 10,
+                    backgroundColor: 'var(--bg-color, #f8f9fa)',
+                    borderBottom: '1px solid var(--border-color)',
+                    paddingTop: '8px', paddingBottom: '10px',
+                }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {TABS.map(tab => (
-                            <div key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-                                padding: '10px 16px', borderRadius: '8px', cursor: 'pointer',
+                            <div key={tab.key} onClick={() => { setActiveTab(tab.key); setSortState({ col: null, dir: 'asc' }); }} style={{
+                                padding: '8px 14px', borderRadius: '8px', cursor: 'pointer',
                                 border: activeTab === tab.key ? `2px solid ${tab.color}` : '2px solid transparent',
                                 backgroundColor: activeTab === tab.key ? tab.bgColor : 'var(--card-bg)',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)', minWidth: '100px', transition: 'all 0.15s ease',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.08)', minWidth: '88px', transition: 'all 0.15s',
                             }}>
-                                <div style={{ fontSize: '22px', fontWeight: '700', color: tab.color }}>{counts[tab.key] || 0}</div>
-                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{tab.label}</div>
+                                <div style={{ fontSize: '20px', fontWeight: '700', color: tab.color }}>{counts[tab.key] || 0}</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '1px' }}>{tab.label}</div>
                             </div>
                         ))}
                     </div>
+                </div>
 
-                    {/* SEARCH */}
-                    <div style={{ marginBottom: '12px' }}>
-                        <input type="text" placeholder="Tìm theo mã hàng hoặc số lot..."
-                            value={search} onChange={e => setSearch(e.target.value)}
-                            style={{
-                                padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--input-border)',
-                                backgroundColor: 'var(--input-bg)', color: 'var(--text-color)',
-                                fontSize: '14px', width: '300px', maxWidth: '100%',
-                            }}
-                        />
-                        <span style={{ marginLeft: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                            {filtered.length} kết quả
-                        </span>
-                    </div>
+                {/* SEARCH */}
+                <div style={{ margin: '10px 0' }}>
+                    <input type="text" placeholder="Tìm theo mã hàng hoặc số lot..."
+                        value={search} onChange={e => setSearch(e.target.value)}
+                        style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', fontSize: '14px', width: '280px', maxWidth: '100%' }}
+                    />
+                    <span style={{ marginLeft: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        {filtered.length} kết quả
+                        {sortState.col && (
+                            <span style={{ marginLeft: '8px', color: '#007bff', fontSize: '12px' }}>
+                                • Sort: {sortState.col} {sortState.dir === 'asc' ? '↑' : '↓'}
+                                <button onClick={() => setSortState({ col: null, dir: 'asc' })} style={{ marginLeft: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '11px' }}>✕</button>
+                            </span>
+                        )}
+                    </span>
+                </div>
 
-                    {/* BẢNG KẾT QUẢ — compact, không cần scroll ngang */}
-                    <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
-                            <colgroup>
-                                <col style={{ width: '90px' }}  />{/* Mã hàng */}
-                                <col style={{ width: '80px' }}  />{/* Số lot */}
-                                <col style={{ width: '72px' }}  />{/* HSD WebKho */}
-                                <col style={{ width: '48px' }}  />{/* ĐVT WK */}
-                                <col style={{ width: '68px' }}  />{/* Tồn WK */}
-                                <col style={{ width: '36px' }}  />{/* Hệ số */}
-                                <col style={{ width: '68px' }}  />{/* Tồn qđ */}
-                                <col style={{ width: '48px' }}  />{/* ĐVT Misa */}
-                                <col style={{ width: '68px' }}  />{/* Tồn Misa */}
-                                <col style={{ width: '72px' }}  />{/* HSD Misa */}
-                                <col style={{ width: '90px' }}  />{/* Chênh */}
-                                <col style={{ width: '110px' }} />{/* Trạng thái */}
-                                <col style={{ width: '62px' }}  />{/* Lịch sử */}
-                            </colgroup>
-                            <thead>
-                                <tr style={{ backgroundColor: 'var(--table-header-bg)', position: 'sticky', top: 0, zIndex: 1 }}>
-                                    {[
-                                        { label: 'Mã hàng',    align: 'left'   },
-                                        { label: 'Số lot',     align: 'left'   },
-                                        { label: 'HSD WK',     align: 'center' },
-                                        { label: 'ĐVT WK',    align: 'center' },
-                                        { label: 'Tồn WK',    align: 'right'  },
-                                        { label: '×',          align: 'center' },
-                                        { label: 'Tồn QĐ',   align: 'right'  },
-                                        { label: 'ĐVT Misa',  align: 'center' },
-                                        { label: 'Tồn Misa',  align: 'right'  },
-                                        { label: 'HSD Misa',  align: 'center' },
-                                        { label: 'Chênh',     align: 'right'  },
-                                        { label: 'Trạng thái',align: 'left'   },
-                                        { label: '',           align: 'center' },
-                                    ].map((h, idx) => (
-                                        <th key={idx} style={{
-                                            padding: '8px 6px', textAlign: h.align, fontWeight: '600',
-                                            fontSize: '11px', color: 'var(--text-color)',
-                                            borderBottom: '2px solid var(--border-color)', whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                        }}>{h.label}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={13} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                            Không có dữ liệu
+                {/* BẢNG KẾT QUẢ */}
+                <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
+                        <colgroup>
+                            <col style={{ width: '90px' }} />  {/* Mã hàng */}
+                            <col style={{ width: '80px' }} />  {/* Số lot */}
+                            <col style={{ width: '82px' }} />  {/* HSD WK + badge */}
+                            <col style={{ width: '46px' }} />  {/* ĐVT WK */}
+                            <col style={{ width: '66px' }} />  {/* Tồn WK */}
+                            <col style={{ width: '32px' }} />  {/* × */}
+                            <col style={{ width: '64px' }} />  {/* Tồn QĐ */}
+                            <col style={{ width: '46px' }} />  {/* ĐVT Misa */}
+                            <col style={{ width: '66px' }} />  {/* Tồn Misa */}
+                            <col style={{ width: '76px' }} />  {/* HSD Misa */}
+                            <col style={{ width: '90px' }} />  {/* Chênh */}
+                            <col style={{ width: '110px' }} /> {/* Trạng thái */}
+                            <col style={{ width: '54px' }} />  {/* Lịch sử */}
+                        </colgroup>
+                        <thead>
+                            {/* Header sticky ngay dưới summary bar */}
+                            <tr style={{ position: 'sticky', top: '62px', zIndex: 1 }}>
+                                <SortTh col="productId" label="Mã hàng" />
+                                <SortTh col="lotNumber" label="Số lot" />
+                                <SortTh col="hsdWebkho" label="HSD WK" align="center" />
+                                <PlainTh label="ĐVT WK" align="center" />
+                                <SortTh col="tonWebkho" label="Tồn WK" align="right" />
+                                <PlainTh label="×" align="center" />
+                                <PlainTh label="Tồn QĐ" align="right" />
+                                <PlainTh label="ĐVT Misa" align="center" />
+                                <SortTh col="tonMisa" label="Tồn Misa" align="right" />
+                                <PlainTh label="HSD Misa" align="center" />
+                                <SortTh col="chenh" label="Chênh" align="right" />
+                                <PlainTh label="Trạng thái" />
+                                <PlainTh label="" align="center" />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.length === 0 ? (
+                                <tr><td colSpan={13} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có dữ liệu</td></tr>
+                            ) : filtered.map((r, i) => {
+                                const rowBg = i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg)';
+                                const chenhColor = r.chenhWebkho > 0 ? '#e67e22' : r.chenhWebkho < 0 ? '#e74c3c' : 'inherit';
+                                const hasDupHsd = webkhoDuplicateHsd.some(d => d.productId === r.productId && normLot(d.lotNumber) === normLot(r.lotNumber));
+                                const isHsdLech = r.nhom === 'hsdlech';
+                                const chenhDisplay = r.chenhWebkho != null ? fmtChenh(r.chenhWebkho, r.dvtWebkho) : '';
+                                const chenhTitle = (r.chenhMisa != null && r.heySo !== 1) ? `Theo ĐVT Misa: ${fmtChenh(r.chenhMisa, r.dvtMisa)}` : '';
+                                // CẢI TIẾN 3: Badge HSD sắp hết hạn
+                                const expiryBadge = getExpiryBadge(r.expiryDateRaw || r.hsdWebkho);
+
+                                return (
+                                    <tr key={i} style={{
+                                        backgroundColor: hasDupHsd ? '#fce4ec' : isHsdLech ? '#f5f3ff' : rowBg,
+                                        outline: hasDupHsd ? '1px solid #e91e63' : isHsdLech ? '1px solid #a855f7' : 'none',
+                                    }}>
+                                        {/* Mã hàng */}
+                                        <td style={tdCompact}>
+                                            <button onClick={() => openStockModal(r.productId)} title={r.productId + (hasDupHsd ? ' ⚠ Trùng HSD' : '')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: hasDupHsd ? '#c2185b' : isHsdLech ? '#7c3aed' : '#007bff', textDecoration: 'underline', fontWeight: '600', fontSize: 'inherit', padding: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', display: 'block' }}>
+                                                {r.productId}{hasDupHsd ? '⚠' : ''}
+                                            </button>
+                                        </td>
+                                        {/* Số lot */}
+                                        <td style={{ ...tdCompact, overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.lotNumber}>{r.lotNumber}</td>
+                                        {/* HSD WK + badge */}
+                                        <td style={{ ...tdCompact, textAlign: 'center', color: isHsdLech ? '#7c3aed' : 'var(--text-color)', fontWeight: isHsdLech ? '600' : 'normal' }}>
+                                            {r.hsdWebkho}
+                                            {expiryBadge && (
+                                                <span title={`Còn ${expiryBadge.label} ngày đến HSD`} style={{ display: 'inline-block', marginLeft: '3px', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', backgroundColor: expiryBadge.bg, color: expiryBadge.color, border: `1px solid ${expiryBadge.border}`, verticalAlign: 'middle', cursor: 'help' }}>
+                                                    {expiryBadge.label}
+                                                </span>
+                                            )}
+                                        </td>
+                                        {/* ĐVT WK */}
+                                        <td style={{ ...tdCompact, textAlign: 'center', color: 'var(--text-secondary)' }}>{r.dvtWebkho}</td>
+                                        {/* Tồn WK */}
+                                        <td style={{ ...tdCompact, textAlign: 'right' }}>{r.tonWebkho != null ? fmtNum(r.tonWebkho) : ''}</td>
+                                        {/* Hệ số */}
+                                        <td style={{ ...tdCompact, textAlign: 'center', color: 'var(--text-secondary)', fontSize: '11px' }}>{r.heySo != null && r.heySo !== 1 ? r.heySo : ''}</td>
+                                        {/* Tồn QĐ */}
+                                        <td style={{ ...tdCompact, textAlign: 'right', color: 'var(--text-secondary)' }}>{r.heySo != null && r.heySo !== 1 && r.tonWebkhoQd != null ? fmtNum(r.tonWebkhoQd) : ''}</td>
+                                        {/* ĐVT Misa */}
+                                        <td style={{ ...tdCompact, textAlign: 'center', color: 'var(--text-secondary)' }}>{r.dvtMisa}</td>
+                                        {/* Tồn Misa */}
+                                        <td style={{ ...tdCompact, textAlign: 'right' }}>{r.tonMisa != null ? fmtNum(r.tonMisa) : ''}</td>
+                                        {/* HSD Misa */}
+                                        <td style={{ ...tdCompact, textAlign: 'center', color: isHsdLech ? '#7c3aed' : 'var(--text-color)', fontWeight: isHsdLech ? '600' : 'normal' }}>{r.hsdMisa}</td>
+                                        {/* Chênh */}
+                                        <td style={{ ...tdCompact, textAlign: 'right', fontWeight: '600', color: chenhColor }} title={chenhTitle}>
+                                            {chenhDisplay}
+                                            {chenhTitle && <span style={{ fontSize: '10px', color: '#bbb', marginLeft: '2px' }}>*</span>}
+                                        </td>
+                                        {/* Trạng thái */}
+                                        <td style={{ ...tdCompact, overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.status}>{r.status}</td>
+                                        {/* Lịch sử */}
+                                        <td style={{ ...tdCompact, textAlign: 'center', padding: '4px' }}>
+                                            {r.lotNumber ? (
+                                                <button onClick={() => openLotHistory(r.productId, r.lotNumber)} title={`Lịch sử lot ${r.lotNumber}`}
+                                                    style={{ background: '#f3e8ff', border: '1px solid #a855f7', borderRadius: '5px', cursor: 'pointer', padding: '3px 6px', color: '#7c3aed', fontSize: '11px', display: 'inline-flex', alignItems: 'center' }}>
+                                                    <FiClock style={{ fontSize: '11px' }} />
+                                                </button>
+                                            ) : null}
                                         </td>
                                     </tr>
-                                ) : filtered.map((r, i) => {
-                                    const rowBg = i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg)';
-                                    const chenhColor = r.chenhWebkho > 0 ? '#e67e22' : r.chenhWebkho < 0 ? '#e74c3c' : 'inherit';
-                                    const hasDupHsd = webkhoDuplicateHsd.some(
-                                        d => d.productId === r.productId && normLot(d.lotNumber) === normLot(r.lotNumber)
-                                    );
-                                    const isHsdLech = r.nhom === 'hsdlech';
-                                    // Chênh: chỉ hiện theo ĐVT WebKho (nếu hệ số=1); nếu hệ số≠1 thêm tooltip
-                                    const chenhDisplay = r.chenhWebkho != null ? fmtChenh(r.chenhWebkho, r.dvtWebkho) : '';
-                                    const chenhTitle = (r.chenhMisa != null && r.heySo !== 1)
-                                        ? `Theo ĐVT Misa: ${fmtChenh(r.chenhMisa, r.dvtMisa)}`
-                                        : '';
-                                    return (
-                                        <tr key={i} style={{
-                                            backgroundColor: hasDupHsd ? '#fce4ec' : isHsdLech ? '#f5f3ff' : rowBg,
-                                            outline: hasDupHsd ? '1px solid #e91e63' : isHsdLech ? '1px solid #a855f7' : 'none',
-                                        }}>
-                                            {/* Mã hàng */}
-                                            <td style={tdCompact}>
-                                                <button onClick={() => openStockModal(r.productId)} style={{
-                                                    background: 'none', border: 'none', cursor: 'pointer',
-                                                    color: hasDupHsd ? '#c2185b' : isHsdLech ? '#7c3aed' : '#007bff',
-                                                    textDecoration: 'underline', fontWeight: '600',
-                                                    fontSize: 'inherit', padding: 0,
-                                                    overflow: 'hidden', textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap', maxWidth: '100%', display: 'block',
-                                                }} title={r.productId + (hasDupHsd ? ' ⚠️ Trùng HSD trong WebKho' : '')}>
-                                                    {r.productId}{hasDupHsd ? '⚠' : ''}
-                                                </button>
-                                            </td>
-                                            {/* Số lot */}
-                                            <td style={{ ...tdCompact, overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.lotNumber}>{r.lotNumber}</td>
-                                            {/* HSD WebKho */}
-                                            <td style={{
-                                                ...tdCompact, textAlign: 'center',
-                                                color: isHsdLech ? '#7c3aed' : 'var(--text-color)',
-                                                fontWeight: isHsdLech ? '600' : 'normal',
-                                            }}>{r.hsdWebkho}</td>
-                                            {/* ĐVT WebKho */}
-                                            <td style={{ ...tdCompact, textAlign: 'center', color: 'var(--text-secondary)' }}>{r.dvtWebkho}</td>
-                                            {/* Tồn WebKho */}
-                                            <td style={{ ...tdCompact, textAlign: 'right' }}>{r.tonWebkho != null ? fmtNum(r.tonWebkho) : ''}</td>
-                                            {/* Hệ số */}
-                                            <td style={{ ...tdCompact, textAlign: 'center', color: 'var(--text-secondary)', fontSize: '11px' }}>
-                                                {r.heySo != null && r.heySo !== 1 ? r.heySo : ''}
-                                            </td>
-                                            {/* Tồn quy đổi — chỉ hiện nếu hệ số ≠ 1 */}
-                                            <td style={{ ...tdCompact, textAlign: 'right', color: 'var(--text-secondary)' }}>
-                                                {r.heySo != null && r.heySo !== 1 && r.tonWebkhoQd != null ? fmtNum(r.tonWebkhoQd) : ''}
-                                            </td>
-                                            {/* ĐVT Misa */}
-                                            <td style={{ ...tdCompact, textAlign: 'center', color: 'var(--text-secondary)' }}>{r.dvtMisa}</td>
-                                            {/* Tồn Misa */}
-                                            <td style={{ ...tdCompact, textAlign: 'right' }}>{r.tonMisa != null ? fmtNum(r.tonMisa) : ''}</td>
-                                            {/* HSD Misa */}
-                                            <td style={{
-                                                ...tdCompact, textAlign: 'center',
-                                                color: isHsdLech ? '#7c3aed' : 'var(--text-color)',
-                                                fontWeight: isHsdLech ? '600' : 'normal',
-                                            }}>{r.hsdMisa}</td>
-                                            {/* Chênh (gộp 2 cột cũ, tooltip khi hệ số ≠ 1) */}
-                                            <td style={{ ...tdCompact, textAlign: 'right', fontWeight: '600', color: chenhColor }}
-                                                title={chenhTitle}>
-                                                {chenhDisplay}
-                                                {chenhTitle && <span style={{ fontSize: '10px', color: '#999', marginLeft: '2px' }}>*</span>}
-                                            </td>
-                                            {/* Trạng thái — icon + text ngắn */}
-                                            <td style={{ ...tdCompact, overflow: 'hidden', textOverflow: 'ellipsis' }}
-                                                title={r.status}>
-                                                {r.status}
-                                            </td>
-                                            {/* Nút lịch sử */}
-                                            <td style={{ ...tdCompact, textAlign: 'center', padding: '4px' }}>
-                                                {r.lotNumber ? (
-                                                    <button
-                                                        onClick={() => openLotHistory(r.productId, r.lotNumber)}
-                                                        title={`Lịch sử lot ${r.lotNumber}`}
-                                                        style={{
-                                                            background: '#f3e8ff', border: '1px solid #a855f7',
-                                                            borderRadius: '5px', cursor: 'pointer',
-                                                            padding: '3px 6px', color: '#7c3aed',
-                                                            fontSize: '11px', display: 'inline-flex',
-                                                            alignItems: 'center', gap: '3px',
-                                                        }}
-                                                    >
-                                                        <FiClock style={{ fontSize: '11px' }} />
-                                                    </button>
-                                                ) : null}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </>
-            )}
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </>)}
 
             {/* CHỈ CÓ 1 TRONG 2 */}
             {(webkhoLots.length > 0 && !misaItems.length) && (
-                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '24px', textAlign: 'center' }}>
-                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-                        Đã tải <strong>{webkhoLots.length} lot</strong> từ WebKho. Hãy upload file Misa để bắt đầu đối chiếu.
-                    </p>
+                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '24px', textAlign: 'center', marginTop: '12px' }}>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Đã tải <strong>{webkhoLots.length} lot</strong> từ WebKho. Hãy upload file Misa để bắt đầu đối chiếu.</p>
                 </div>
             )}
             {(!webkhoLots.length && misaItems.length > 0) && (
-                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '24px', textAlign: 'center' }}>
-                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-                        Đã đọc <strong>{misaItems.length} lot</strong> từ Misa. Hãy tải dữ liệu WebKho để bắt đầu đối chiếu.
-                    </p>
+                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '24px', textAlign: 'center', marginTop: '12px' }}>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Đã đọc <strong>{misaItems.length} lot</strong> từ Misa. Hãy tải dữ liệu WebKho để bắt đầu đối chiếu.</p>
                 </div>
             )}
 
             {/* MODAL TỒN KHO NHANH */}
             {stockModal.isOpen && (
-                <div onClick={closeStockModal} style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-                }}>
-                    <div onClick={e => e.stopPropagation()} style={{
-                        background: 'var(--bg-color, #fff)', borderRadius: '12px',
-                        padding: '24px', width: '600px', maxWidth: '90vw',
-                        maxHeight: '80vh', overflowY: 'auto',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
-                    }}>
+                <div onClick={closeStockModal} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-color, #fff)', borderRadius: '12px', padding: '24px', width: '620px', maxWidth: '90vw', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <h3 style={{ margin: 0 }}>Tồn kho: {stockModal.productId}</h3>
                             <button onClick={closeStockModal} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
@@ -1138,25 +1021,21 @@ const InventoryReconciliationPage = () => {
                                     {stockModal.data.map(lot => {
                                         const allocated = lot.quantityAllocated || 0;
                                         const available = lot.quantityRemaining - allocated;
+                                        const badge = getExpiryBadge(lot.expiryDate);
                                         return (
-                                            <tr key={lot.id} style={{ borderBottom: '1px solid #eee' }}>
+                                            <tr key={lot.id} style={{ borderBottom: '1px solid #eee', backgroundColor: badge?.color === '#c0392b' ? '#fff5f5' : 'transparent' }}>
                                                 <td style={{ padding: '8px' }}>{lot.lotNumber || '(Không có)'}</td>
-                                                <td style={{ padding: '8px' }}>{lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}</td>
+                                                <td style={{ padding: '8px' }}>
+                                                    {lot.expiryDate ? formatDate(lot.expiryDate) : '(Không có)'}
+                                                    {badge && <span style={{ marginLeft: '4px', padding: '1px 5px', borderRadius: '4px', fontSize: '11px', fontWeight: '700', backgroundColor: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>{badge.label}</span>}
+                                                </td>
                                                 <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold' }}>{formatNumber(lot.quantityRemaining)}</td>
                                                 <td style={{ padding: '8px', textAlign: 'right', color: '#e67e22' }}>{allocated > 0 ? formatNumber(allocated) : '-'}</td>
                                                 <td style={{ padding: '8px', textAlign: 'right', color: 'green', fontWeight: 'bold' }}>{formatNumber(available)}</td>
                                                 <td style={{ padding: '8px', textAlign: 'center' }}>
                                                     {lot.lotNumber && (
-                                                        <button
-                                                            onClick={() => { closeStockModal(); openLotHistory(stockModal.productId, lot.lotNumber); }}
-                                                            style={{
-                                                                background: 'none', border: '1px solid #7c3aed',
-                                                                borderRadius: '5px', cursor: 'pointer',
-                                                                padding: '3px 8px', color: '#7c3aed',
-                                                                fontSize: '12px', display: 'inline-flex',
-                                                                alignItems: 'center', gap: '4px',
-                                                            }}
-                                                        >
+                                                        <button onClick={() => { closeStockModal(); openLotHistory(stockModal.productId, lot.lotNumber); }}
+                                                            style={{ background: 'none', border: '1px solid #7c3aed', borderRadius: '5px', cursor: 'pointer', padding: '3px 8px', color: '#7c3aed', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                                             <FiClock style={{ fontSize: '11px' }} /> Lịch sử
                                                         </button>
                                                     )}
@@ -1194,13 +1073,6 @@ const InventoryReconciliationPage = () => {
             `}</style>
         </div>
     );
-};
-
-const tdStyle = {
-    padding: '9px 12px',
-    borderBottom: '1px solid var(--border-color)',
-    color: 'var(--text-color)',
-    whiteSpace: 'nowrap',
 };
 
 const tdCompact = {
