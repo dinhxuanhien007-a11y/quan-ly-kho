@@ -1,4 +1,4 @@
-﻿--- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AccessDenied.jsx ---
+﻿--- FILE: D:\quan-ly-kho\src\components\AccessDenied.jsx ---
 
 
 import React from 'react';
@@ -46,7 +46,7 @@ export default AccessDenied;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddAllowedUserModal.jsx ---
 
 
 // src/components/AddAllowedUserModal.jsx
@@ -120,7 +120,7 @@ export default AddAllowedUserModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewLotModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddNewLotModal.jsx ---
 
 
 // src/components/AddNewLotModal.jsx
@@ -221,7 +221,7 @@ export default AddNewLotModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddNewProductAndLotModal.jsx ---
 
 
 // src/components/AddNewProductAndLotModal.jsx
@@ -413,7 +413,7 @@ export default AddNewProductAndLotModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddPartnerModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddPartnerModal.jsx ---
 
 
 // src/components/AddPartnerModal.jsx
@@ -508,7 +508,7 @@ export default AddPartnerModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddProductModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddProductModal.jsx ---
 
 
 // src/components/AddProductModal.jsx
@@ -661,7 +661,7 @@ export default AddProductModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddUnlistedItemModal.jsx ---
 
 
 // src/components/AddUnlistedItemModal.jsx
@@ -820,7 +820,7 @@ export default AddUnlistedItemModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AddUserModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AddUserModal.jsx ---
 
 
 // src/components/AddUserModal.jsx
@@ -941,7 +941,7 @@ export default AddUserModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\AdminLayout.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\AdminLayout.jsx ---
 
 
 // src/components/AdminLayout.jsx
@@ -1069,7 +1069,7 @@ export default AdminLayout;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Autocomplete.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\Autocomplete.module.css ---
 
 
 /* src/components/Autocomplete.module.css */
@@ -1142,7 +1142,7 @@ export default AdminLayout;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ClickableCopy.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ClickableCopy.jsx ---
 
 
 // src/components/ClickableCopy.jsx
@@ -1195,7 +1195,7 @@ export default ClickableCopy;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ConfirmationModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.jsx ---
 
 
 // src/components/ConfirmationModal.jsx
@@ -1258,7 +1258,7 @@ export default React.memo(ConfirmationModal);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ConfirmationModal.test.jsx ---
 
 
 // src/components/ConfirmationModal.test.jsx
@@ -1353,7 +1353,7 @@ describe('Component: ConfirmationModal', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\CreateStocktakeModal.jsx ---
 
 
 // src/components/CreateStocktakeModal.jsx
@@ -1661,7 +1661,7 @@ export default CreateStocktakeModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\CustomerAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\CustomerAutocomplete.jsx ---
 
 
 // src/components/CustomerAutocomplete.jsx
@@ -1817,7 +1817,7 @@ export default CustomerAutocomplete;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\DateRangePresets.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\DateRangePresets.jsx ---
 
 
 // src/components/DateRangePresets.jsx
@@ -1899,7 +1899,7 @@ export default DateRangePresets;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditAllowedUserModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditAllowedUserModal.jsx ---
 
 
 // src/components/EditAllowedUserModal.jsx
@@ -1964,7 +1964,7 @@ export default EditAllowedUserModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditExportSlipModal.jsx ---
 
 
 // src/components/EditExportSlipModal.jsx
@@ -2343,7 +2343,7 @@ export default EditExportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditImportSlipModal.jsx ---
 
 
 // src/components/EditImportSlipModal.jsx
@@ -2633,7 +2633,7 @@ export default EditImportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditPartnerModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditPartnerModal.jsx ---
 
 
 // src/components/EditPartnerModal.jsx
@@ -2727,7 +2727,7 @@ export default EditPartnerModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditProductModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditProductModal.jsx ---
 
 
 // src/components/EditProductModal.jsx
@@ -2836,7 +2836,7 @@ export default EditProductModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EditUserRoleModal.jsx ---
 
 
 // src/components/EditUserRoleModal.jsx
@@ -2909,7 +2909,7 @@ export default EditUserRoleModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\EmptyState.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\EmptyState.jsx ---
 
 
 // src/components/EmptyState.jsx
@@ -2931,7 +2931,7 @@ export default EmptyState;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ErrorBoundary.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ErrorBoundary.jsx ---
 
 
 // src/components/ErrorBoundary.jsx
@@ -2980,7 +2980,7 @@ export default ErrorBoundary;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExpiryBadge.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ExpiryBadge.jsx ---
 
 
 // src/components/ExpiryBadge.jsx
@@ -3052,7 +3052,7 @@ export default React.memo(ExpiryBadge);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExpiryNotificationBanner.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ExpiryNotificationBanner.jsx ---
 
 
 // src/components/ExpiryNotificationBanner.jsx
@@ -3138,7 +3138,7 @@ export default ExpiryNotificationBanner;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExpiryPieChart.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ExpiryPieChart.jsx ---
 
 
 import React from 'react';
@@ -3181,7 +3181,7 @@ export default ExpiryPieChart;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ExportSlipCounter.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ExportSlipCounter.jsx ---
 
 
 // src/components/ExportSlipCounter.jsx
@@ -3219,7 +3219,7 @@ export default ExportSlipCounter;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingCalculator.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingCalculator.jsx ---
 
 
 // src/components/FloatingCalculator.jsx
@@ -3371,7 +3371,7 @@ export default FloatingCalculator;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingCalculator.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingCalculator.module.css ---
 
 
 /* src/components/FloatingCalculator.module.css */
@@ -3513,7 +3513,7 @@ export default FloatingCalculator;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingToolsModal.jsx ---
 
 
 // src/components/FloatingToolsModal.jsx
@@ -3582,7 +3582,7 @@ export default FloatingToolsModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\FloatingToolsModal.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\FloatingToolsModal.module.css ---
 
 
 /* src/components/FloatingToolsModal.module.css */
@@ -3676,7 +3676,7 @@ export default FloatingToolsModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\HighlightText.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\HighlightText.jsx ---
 
 
 // src/components/HighlightText.jsx
@@ -3727,7 +3727,7 @@ export default HighlightText;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\HomePage.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\HomePage.jsx ---
 
 
 // src/components/HomePage.jsx
@@ -3768,7 +3768,7 @@ export default HomePage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ImportSlipCounter.jsx ---
 
 
 // src/components/ImportSlipCounter.jsx
@@ -3807,7 +3807,7 @@ export default ImportSlipCounter;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\InlineEditCell.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\InlineEditCell.jsx ---
 
 
 // src/components/InlineEditCell.jsx
@@ -3964,7 +3964,7 @@ export default InlineEditCell;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\InlineEditCell.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\InlineEditCell.module.css ---
 
 
 /* src/components/InlineEditCell.module.css */
@@ -4027,7 +4027,7 @@ export default InlineEditCell;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\InventoryFilters.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\InventoryFilters.jsx ---
 
 
 // src/components/InventoryFilters.jsx
@@ -4127,7 +4127,7 @@ export default React.memo(InventoryFilters);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LoginPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\LoginPage.jsx ---
 
 
 // src/components/LoginPage.jsx
@@ -4206,7 +4206,7 @@ export default LoginPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LoginPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\LoginPage.module.css ---
 
 
 /* src/components/LoginPage.module.css */
@@ -4273,7 +4273,7 @@ export default LoginPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\LotJourneyExplorer.jsx ---
 
 
 // src/components/LotJourneyExplorer.jsx
@@ -4387,7 +4387,7 @@ export default LotJourneyExplorer;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Navbar.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\Navbar.jsx ---
 
 
 // src/components/Navbar.jsx
@@ -4550,7 +4550,7 @@ export default React.memo(Navbar);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\NewDataNotification.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\NewDataNotification.jsx ---
 
 
 // src/components/NewDataNotification.jsx
@@ -4574,7 +4574,7 @@ export default NewDataNotification;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\PartnerAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\PartnerAutocomplete.jsx ---
 
 
 // src/components/PartnerAutocomplete.jsx
@@ -4684,7 +4684,7 @@ export default PartnerAutocomplete;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ProductAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ProductAutocomplete.jsx ---
 
 
 // src/components/ProductAutocomplete.jsx
@@ -4872,7 +4872,7 @@ export default ProductAutocomplete;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\QuickStockLookup.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\QuickStockLookup.jsx ---
 
 
 // src/components/QuickStockLookup.jsx
@@ -5217,7 +5217,7 @@ export default QuickStockLookup;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\QuickStockLookup.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\QuickStockLookup.module.css ---
 
 
 /* src/components/QuickStockLookup.module.css */
@@ -5429,7 +5429,7 @@ export default QuickStockLookup;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\RecentActivityList.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\RecentActivityList.jsx ---
 
 
 import React from 'react';
@@ -5468,7 +5468,7 @@ export default RecentActivityList;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Sidebar.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\Sidebar.jsx ---
 
 
 // src/components/Sidebar.jsx
@@ -5554,7 +5554,7 @@ export default Sidebar;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\Spinner.jsx ---
 
 
 // src/components/Spinner.jsx
@@ -5583,7 +5583,7 @@ export default Spinner;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\Spinner.module.css ---
+--- FILE: D:\quan-ly-kho\src\components\Spinner.module.css ---
 
 
 /* src/components/Spinner.module.css */
@@ -5619,7 +5619,7 @@ export default Spinner;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatCard.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\StatCard.jsx ---
 
 
 import React from 'react';
@@ -5643,7 +5643,7 @@ export default StatCard;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatusBadge.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\StatusBadge.jsx ---
 
 
 // src/components/StatusBadge.jsx
@@ -5685,7 +5685,7 @@ export default React.memo(StatusBadge);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\StatusBadge.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\StatusBadge.test.jsx ---
 
 
 // src/components/StatusBadge.test.jsx
@@ -5756,7 +5756,7 @@ describe('Component: StatusBadge', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\SupplierAutocomplete.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\SupplierAutocomplete.jsx ---
 
 
 // src/components/SupplierAutocomplete.jsx
@@ -5917,7 +5917,7 @@ export default SupplierAutocomplete;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TeamBadge.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\TeamBadge.jsx ---
 
 
 // src/components/TeamBadge.jsx
@@ -5948,7 +5948,7 @@ export default React.memo(TeamBadge);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TeamBarChart.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\TeamBarChart.jsx ---
 
 
 // src/components/TeamBarChart.jsx
@@ -5996,7 +5996,7 @@ export default TeamBarChart;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\TempBadge.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\TempBadge.jsx ---
 
 
 // src/components/TempBadge.jsx
@@ -6025,7 +6025,7 @@ export default React.memo(TempBadge);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewerLayout.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ViewerLayout.jsx ---
 
 
 // src/components/ViewerLayout.jsx
@@ -6207,7 +6207,7 @@ export default ViewerLayout;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ViewExportSlipModal.jsx ---
 
 
 // src/components/ViewExportSlipModal.jsx
@@ -6426,7 +6426,7 @@ export default ViewExportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
+--- FILE: D:\quan-ly-kho\src\components\ViewImportSlipModal.jsx ---
 
 
 // src/components/ViewImportSlipModal.jsx
@@ -6519,7 +6519,7 @@ export default ViewImportSlipModal;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\context\ThemeContext.jsx ---
+--- FILE: D:\quan-ly-kho\src\context\ThemeContext.jsx ---
 
 
 // src/context/ThemeContext.jsx
@@ -6563,7 +6563,7 @@ export const useTheme = () => useContext(ThemeContext);
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\context\UserContext.jsx ---
+--- FILE: D:\quan-ly-kho\src\context\UserContext.jsx ---
 
 
 // src/context/UserContext.jsx
@@ -6630,7 +6630,7 @@ export const useAuth = () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useFirestorePagination.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useFirestorePagination.js ---
 
 
 // src/hooks/useFirestorePagination.js
@@ -6720,7 +6720,7 @@ export const useFirestorePagination = (baseQuery, pageSize) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useFirestorePagination.test.js ---
 
 
 // src/hooks/useFirestorePagination.test.js
@@ -6823,7 +6823,7 @@ describe('Hook: useFirestorePagination', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\usePresence.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\usePresence.js ---
 
 
 // src/hooks/usePresence.js
@@ -6882,7 +6882,7 @@ export const usePresence = () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useProductLedger.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useProductLedger.js ---
 
 
 // src/hooks/useProductLedger.js
@@ -6961,7 +6961,7 @@ export const useProductLedger = () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useRealtimeNotification.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useRealtimeNotification.js ---
 
 
 import { useState, useEffect, useRef } from 'react';
@@ -7026,7 +7026,7 @@ if (lastSeenTimestampRef.current && newestTimestamp && typeof newestTimestamp.to
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\hooks\useResponsive.js ---
+--- FILE: D:\quan-ly-kho\src\hooks\useResponsive.js ---
 
 
 import { useState, useEffect } from 'react';
@@ -7049,7 +7049,7 @@ export const useResponsive = () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DashboardPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\DashboardPage.jsx ---
 
 
 // src/pages/DashboardPage.jsx
@@ -7261,7 +7261,7 @@ export default DashboardPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\DataImportPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\DataImportPage.jsx ---
 
 
 // src/pages/DataImportPage.jsx
@@ -7553,7 +7553,7 @@ export default DataImportPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ExportListPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ExportListPage.jsx ---
 
 
 // src/pages/ExportListPage.jsx
@@ -8061,7 +8061,7 @@ export default ExportListPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ImportListPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ImportListPage.jsx ---
 
 
 // src/pages/ImportListPage.jsx
@@ -8527,7 +8527,7 @@ export default ImportListPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventoryPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\InventoryPage.jsx ---
 
 
 // src/pages/InventoryPage.jsx
@@ -8991,7 +8991,7 @@ export default InventoryPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventoryReconciliationPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\InventoryReconciliationPage.jsx ---
 
 
 // src/pages/InventoryReconciliationPage.jsx
@@ -9159,13 +9159,49 @@ const openStockModal = async (productId) => {
             where('quantityRemaining', '>', 0)
         );
         const snap = await getDocs(q);
-        const lots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        lots.sort((a, b) => {
-            const da = a.expiryDate?.toDate?.() || new Date(9999,0,1);
-            const db2 = b.expiryDate?.toDate?.() || new Date(9999,0,1);
-            return da - db2;
+        const rawLots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+// ===== Gá»˜P LOT TRÃ™NG =====
+const lotMap = new Map();
+
+for (const lot of rawLots) {
+    const lotNumber = (lot.lotNumber || '').trim();
+    const expiry = lot.expiryDate?.toDate?.() || null;
+
+    const expiryKey = expiry
+        ? `${expiry.getFullYear()}-${expiry.getMonth()}-${expiry.getDate()}`
+        : 'no-date';
+
+    const key = `${lotNumber}__${expiryKey}`;
+
+    if (lotMap.has(key)) {
+        const existing = lotMap.get(key);
+        existing.quantityRemaining += lot.quantityRemaining || 0;
+        existing.quantityAllocated += lot.quantityAllocated || 0;
+    } else {
+        lotMap.set(key, {
+            ...lot,
+            quantityRemaining: lot.quantityRemaining || 0,
+            quantityAllocated: lot.quantityAllocated || 0,
         });
-        setStockModal({ isOpen: true, productId, data: lots, loading: false });
+    }
+}
+
+const mergedLots = Array.from(lotMap.values());
+
+// sort theo HSD
+mergedLots.sort((a, b) => {
+    const da = a.expiryDate?.toDate?.() || new Date(9999,0,1);
+    const db = b.expiryDate?.toDate?.() || new Date(9999,0,1);
+    return da - db;
+});
+
+setStockModal({
+    isOpen: true,
+    productId,
+    data: mergedLots,
+    loading: false
+});
     } catch (e) {
         setStockModal({ isOpen: true, productId, data: [], loading: false });
     }
@@ -9776,7 +9812,7 @@ export default InventoryReconciliationPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\InventorySummaryPage.jsx ---
 
 
 // src/pages/InventorySummaryPage.jsx
@@ -10552,7 +10588,7 @@ export default InventorySummaryPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\LotTracePage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\LotTracePage.jsx ---
 
 
 // src/pages/LotTracePage.jsx
@@ -10875,7 +10911,7 @@ export default LotTracePage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\MobileInventoryPage.jsx ---
 
 
 // src/pages/MobileInventoryPage.jsx
@@ -11298,7 +11334,7 @@ export default MobileInventoryPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\NewExportPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\NewExportPage.jsx ---
 
 
 // src/pages/NewExportPage.jsx (Thay tháº¿ toÃ n bá»™ ná»™i dung file)
@@ -11931,7 +11967,7 @@ export default NewExportPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\NewImportPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\NewImportPage.jsx ---
 
 
 // src/pages/NewImportPage.jsx
@@ -13779,7 +13815,7 @@ export default NewImportPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\PartnersPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\PartnersPage.jsx ---
 
 
 // src/pages/PartnersPage.jsx
@@ -14024,7 +14060,7 @@ export default PartnersPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\PartnersPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\pages\PartnersPage.module.css ---
 
 
 /* src/pages/PartnersPage.module.css */
@@ -14044,7 +14080,7 @@ export default PartnersPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\PartnersPage.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\PartnersPage.test.jsx ---
 
 
 // src/pages/PartnersPage.test.jsx
@@ -14139,7 +14175,7 @@ describe('Page: PartnersPage', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ProductLedgerPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ProductLedgerPage.jsx ---
 
 
 // src/pages/ProductLedgerPage.jsx
@@ -14661,7 +14697,7 @@ export default ProductLedgerPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ProductsPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ProductsPage.jsx ---
 
 
 // src/pages/ProductsPage.jsx
@@ -14869,7 +14905,7 @@ export default ProductsPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\ProductsPage.test.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\ProductsPage.test.jsx ---
 
 
 // src/pages/ProductsPage.test.jsx
@@ -14967,7 +15003,7 @@ describe('Page: ProductsPage', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\SalesAnalyticsPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\SalesAnalyticsPage.jsx ---
 
 
 // src/pages/SalesAnalyticsPage.jsx
@@ -15397,7 +15433,7 @@ export default SalesAnalyticsPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\StocktakeListPage.jsx ---
 
 
 // src/pages/StocktakeListPage.jsx
@@ -15651,7 +15687,7 @@ export default StocktakeListPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\StocktakeSessionPage.jsx ---
 
 
 // src/pages/StocktakeSessionPage.jsx
@@ -16325,7 +16361,7 @@ export default StocktakeSessionPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\pages\UsersPage.jsx ---
+--- FILE: D:\quan-ly-kho\src\pages\UsersPage.jsx ---
 
 
 // src/pages/UsersPage.jsx
@@ -16593,7 +16629,7 @@ export default UsersPage;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\dashboardService.js ---
+--- FILE: D:\quan-ly-kho\src\services\dashboardService.js ---
 
 
 // src/services/dashboardService.js
@@ -17105,7 +17141,7 @@ export const getInventoryHistory = async (productId, days = 30) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\partnerService.js ---
+--- FILE: D:\quan-ly-kho\src\services\partnerService.js ---
 
 
 // src/services/partnerService.js
@@ -17153,7 +17189,7 @@ export const deletePartner = async (partnerId) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\partnerService.test.js ---
+--- FILE: D:\quan-ly-kho\src\services\partnerService.test.js ---
 
 
 // src/services/partnerService.test.js
@@ -17229,7 +17265,7 @@ describe('Service: partnerService', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\productService.js ---
+--- FILE: D:\quan-ly-kho\src\services\productService.js ---
 
 
 // src/services/productService.js
@@ -17286,7 +17322,7 @@ export const deleteProduct = async (productId) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\productService.test.js ---
+--- FILE: D:\quan-ly-kho\src\services\productService.test.js ---
 
 
 // src/services/productService.test.js
@@ -17359,7 +17395,7 @@ describe('Service: productService', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\stocktakeService.js ---
+--- FILE: D:\quan-ly-kho\src\services\stocktakeService.js ---
 
 
 // src/services/stocktakeService.js
@@ -17414,7 +17450,7 @@ export const deleteStocktakeSession = async (sessionId) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\services\stocktakeService.test.js ---
+--- FILE: D:\quan-ly-kho\src\services\stocktakeService.test.js ---
 
 
 // src/services/stocktakeService.test.js
@@ -17494,7 +17530,7 @@ describe('Service: stocktakeService', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\exportSlipStore.js ---
+--- FILE: D:\quan-ly-kho\src\stores\exportSlipStore.js ---
 
 
 // src/stores/exportSlipStore.js
@@ -17696,7 +17732,7 @@ export default useExportSlipStore;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\importSlipStore.js ---
+--- FILE: D:\quan-ly-kho\src\stores\importSlipStore.js ---
 
 
 // src/stores/importSlipStore.js
@@ -17855,7 +17891,7 @@ export default useImportSlipStore;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\reconciliationStore.js ---
+--- FILE: D:\quan-ly-kho\src\stores\reconciliationStore.js ---
 
 
 // src/stores/reconciliationStore.js
@@ -17901,7 +17937,7 @@ export default useReconciliationStore;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\stores\stocktakeStore.js ---
+--- FILE: D:\quan-ly-kho\src\stores\stocktakeStore.js ---
 
 
 // src/stores/stocktakeStore.js
@@ -17977,7 +18013,7 @@ export default useStocktakeStore;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\AdminLayout.css ---
+--- FILE: D:\quan-ly-kho\src\styles\AdminLayout.css ---
 
 
 :root {
@@ -19750,7 +19786,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\Dashboard.css ---
+--- FILE: D:\quan-ly-kho\src\styles\Dashboard.css ---
 
 
 /* src/styles/Dashboard.css */
@@ -19911,7 +19947,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\DashboardPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\styles\DashboardPage.module.css ---
 
 
 /* src/styles/DashboardPage.module.css */
@@ -19969,7 +20005,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\DataImportPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\styles\DataImportPage.module.css ---
 
 
 /* src/styles/DataImportPage.module.css */
@@ -20095,7 +20131,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\ExpiryNotificationBanner.css ---
+--- FILE: D:\quan-ly-kho\src\styles\ExpiryNotificationBanner.css ---
 
 
 /* src/styles/ExpiryNotificationBanner.css */
@@ -20193,7 +20229,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\MobileInventoryPage.module.css ---
+--- FILE: D:\quan-ly-kho\src\styles\MobileInventoryPage.module.css ---
 
 
 /* src/styles/MobileInventoryPage.module.css */
@@ -20435,7 +20471,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\print.css ---
+--- FILE: D:\quan-ly-kho\src\styles\print.css ---
 
 
 /* src/styles/print.css (PhiÃªn báº£n cuá»‘i cÃ¹ng) */
@@ -20573,7 +20609,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\Responsive.css ---
+--- FILE: D:\quan-ly-kho\src\styles\Responsive.css ---
 
 
 /* src/styles/Responsive.css */
@@ -20592,7 +20628,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\styles\StocktakePage.css ---
+--- FILE: D:\quan-ly-kho\src\styles\StocktakePage.css ---
 
 
 /* src/styles/StocktakePage.css */
@@ -20729,7 +20765,7 @@ body.dark-mode tr.expired-black td:first-child {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
+--- FILE: D:\quan-ly-kho\src\test\__mocks__\firebaseFirestore.js ---
 
 
 // src/test/__mocks__/firebaseFirestore.js
@@ -20777,7 +20813,7 @@ export const documentId = vi.fn(() => 'mockDocumentId');
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\test\setup.js ---
+--- FILE: D:\quan-ly-kho\src\test\setup.js ---
 
 
 // src/test/setup.js
@@ -20795,7 +20831,7 @@ afterEach(() => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\dateUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\dateUtils.js ---
 
 
 // src/utils/dateUtils.js
@@ -21004,7 +21040,7 @@ export const getRelativeTimeFromNow = (expiryDate) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\dateUtils.test.js ---
+--- FILE: D:\quan-ly-kho\src\utils\dateUtils.test.js ---
 
 
 import { describe, it, expect } from 'vitest';
@@ -21043,7 +21079,7 @@ describe('CÃ¡c hÃ m xá»­ lÃ½ ngÃ y thÃ¡ng', () => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\excelExportUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\excelExportUtils.js ---
 
 
 // src/utils/excelExportUtils.js
@@ -21229,7 +21265,7 @@ const addRowToSheet = (worksheet, product, productId, lot) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\numberUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\numberUtils.js ---
 
 
 // src/utils/numberUtils.js
@@ -21303,7 +21339,7 @@ export const calculateCaseCount = (quantity, factor, unit) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\pdfUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\pdfUtils.js ---
 
 
 // src/utils/pdfUtils.js
@@ -21708,7 +21744,7 @@ export const exportLedgerToPDF = async (productInfo, ledgerData, tableRows, filt
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\utils\stringUtils.js ---
+--- FILE: D:\quan-ly-kho\src\utils\stringUtils.js ---
 
 
 // src/utils/stringUtils.js
@@ -21815,7 +21851,7 @@ export const fuzzyNormalize = (str) => {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\App.jsx ---
+--- FILE: D:\quan-ly-kho\src\App.jsx ---
 
 
 // src/App.jsx
@@ -21902,7 +21938,7 @@ export default App;
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\constants.js ---
+--- FILE: D:\quan-ly-kho\src\constants.js ---
 
 
 /// src/constants.js
@@ -21955,7 +21991,7 @@ export const ALL_SUBGROUPS = [
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\firebaseConfig.js ---
+--- FILE: D:\quan-ly-kho\src\firebaseConfig.js ---
 
 
 // src/firebaseConfig.js
@@ -21988,7 +22024,7 @@ export { db, auth, functions, app, rtdb }; // <-- THÃŠM rtdb VÃ€O EXPORT
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\index.css ---
+--- FILE: D:\quan-ly-kho\src\index.css ---
 
 
 /* src/index.css */
@@ -22009,7 +22045,7 @@ body {
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\main.jsx ---
+--- FILE: D:\quan-ly-kho\src\main.jsx ---
 
 
 // src/main.jsx
@@ -22045,7 +22081,7 @@ createRoot(document.getElementById('root')).render(
 
 
 
---- FILE: C:\Users\T14s Gen 3\quan-ly-kho\src\ThemeContext.jsx ---
+--- FILE: D:\quan-ly-kho\src\ThemeContext.jsx ---
 
 
 // src/context/ThemeContext.jsx
