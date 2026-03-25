@@ -18,9 +18,15 @@ function fmtNum(val) {
     if (val === null || val === undefined || val === '') return '';
     const n = Number(val);
     if (isNaN(n)) return String(val);
-    if (n === Math.floor(n)) return n.toLocaleString('vi-VN');
-    const s = parseFloat(n.toPrecision(10)).toString();
-    return s.replace(/\.?0+$/, '');
+    
+    // Làm tròn đến 2 chữ số thập phân để tránh lỗi floating point
+    const rounded = Math.round(n * 100) / 100;
+    
+    // Nếu là số nguyên, hiển thị không có phần thập phân
+    if (rounded === Math.floor(rounded)) return rounded.toLocaleString('vi-VN');
+    
+    // Nếu có phần thập phân, hiển thị và loại bỏ số 0 thừa
+    return rounded.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 function fmtChenh(val, unit) {
@@ -659,6 +665,20 @@ const InventoryReconciliationPage = () => {
                 const diff = qtyWebkhoQd - tonMisa;
                 chenhWebkho = diff / heySo;
                 chenhMisa = heySo !== 1 ? diff : null;
+                
+                // DEBUG: Log sau khi tính chenhWebkho
+                if (Math.abs(diff) > 0.001) {
+                    console.log('🔍 DEBUG - Sản phẩm:', lot.productId);
+                    console.log('  - Tồn WebKho:', lot.quantityRemaining, lot.unit);
+                    console.log('  - Hệ số quy đổi (heySo):', heySo);
+                    console.log('  - Tồn WebKho quy đổi:', qtyWebkhoQd, misaItem.dvt);
+                    console.log('  - Tồn Misa:', misaItem.sl, misaItem.dvt);
+                    console.log('  - Chênh lệch (diff):', diff, misaItem.dvt);
+                    console.log('  - chenhWebkho:', chenhWebkho, lot.unit);
+                    console.log('  - chenhMisa:', chenhMisa, misaItem.dvt);
+                    console.log('  - Hiển thị:', fmtChenh(chenhWebkho, lot.unit));
+                }
+                
                 if (hsdLech) { nhom = 'hsdlech'; status = '🟣 Lệch HSD'; }
                 else if (Math.abs(diff) < 0.001) { nhom = 'khop'; status = '✅ Khớp'; }
                 else if (diff > 0) { nhom = 'chenh'; status = '⬆️ WebKho cao hơn'; }
