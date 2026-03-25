@@ -306,20 +306,43 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
 
                 // ── Export tickets ──
                 const exportSnap = await safeFetch('export_tickets', [where('productIds', 'array-contains', pidTrim)]);
+                console.log('🔍 DEBUG - Truy vết xuất kho cho:', pidTrim, 'Lot:', normLotNum);
+                console.log('  - Tổng số phiếu xuất tìm thấy:', exportSnap.size);
+                
                 exportSnap.forEach(doc => {
                     const d = doc.data();
-                    (d.items || [])
-                        .filter(item => String(item.productId || '').trim() === pidTrim && normLot(item.lotNumber) === normLotNum)
-                        .forEach(item => results.push({
-                            type: 'export',
-                            date: d.exportDate || '',
-                            dateRaw: null,
-                            quantity: item.quantityToExport || 0,
-                            unit: item.unit || '',
-                            expiryDate: item.expiryDate || '',
-                            partner: d.customer || d.customerId || '',
-                            description: d.description || '',
-                        }));
+                    const matchingItems = (d.items || [])
+                        .filter(item => String(item.productId || '').trim() === pidTrim && normLot(item.lotNumber) === normLotNum);
+                    
+                    if (matchingItems.length > 0) {
+                        console.log('  📄 Phiếu xuất:', doc.id);
+                        console.log('    - Ngày xuất:', d.exportDate);
+                        console.log('    - Khách hàng:', d.customer || d.customerId);
+                        console.log('    - Tổng items trong phiếu:', (d.items || []).length);
+                        console.log('    - Items khớp lot:', matchingItems.length);
+                        
+                        matchingItems.forEach((item, idx) => {
+                            console.log(`    - Item ${idx + 1}:`, {
+                                productId: item.productId,
+                                lotNumber: item.lotNumber,
+                                lotNormalized: normLot(item.lotNumber),
+                                quantity: item.quantityToExport,
+                                unit: item.unit,
+                                expiryDate: item.expiryDate
+                            });
+                            
+                            results.push({
+                                type: 'export',
+                                date: d.exportDate || '',
+                                dateRaw: null,
+                                quantity: item.quantityToExport || 0,
+                                unit: item.unit || '',
+                                expiryDate: item.expiryDate || '',
+                                partner: d.customer || d.customerId || '',
+                                description: d.description || '',
+                            });
+                        });
+                    }
                 });
 
                 // ── FIX 2: Inventory adjustments ──

@@ -380,48 +380,65 @@ const handleSaveDraft = async () => {
 };
 
     const handleDirectExport = async () => {
-        const slipData = getValidSlipData();
-        if (!slipData) return;
-        setConfirmModal({isOpen: false});
-        setIsProcessing(true);
-        try {
-            const batch = writeBatch(db); // Dùng Batch Writes
+    const slipData = getValidSlipData();
+    if (!slipData) return;
+    setConfirmModal({isOpen: false});
+    setIsProcessing(true);
+    try {
+        const batch = writeBatch(db);
 
-            // 1. Trừ tồn kho thực tế VÀ giải phóng đặt giữ
-            for (const item of slipData.items) {
-                const lotRef = doc(db, 'inventory_lots', item.lotId);
-                const lotSnap = await getDoc(lotRef);
-                if(lotSnap.exists()){
-                    const currentRemaining = lotSnap.data().quantityRemaining;
-                    const currentAllocated = lotSnap.data().quantityAllocated || 0;
-                    
-                    const newQuantityRemaining = currentRemaining - item.quantityToExport; // Trừ tồn kho thực tế
-                    
-                    // Nếu lô hàng này đã được đặt giữ trước đó, giải phóng phần đó (Đặt giữ luôn phải >= 0)
-                    const newAllocated = Math.max(0, currentAllocated - item.quantityToExport); 
+        // FIX RACE CONDITION: Gộp các items cùng lotId trước khi xử lý
+        const lotUpdates = new Map(); // Map<lotId, {totalQty, lotRef}>
+        
+        for (const item of slipData.items) {
+            const lotId = item.lotId;
+            if (lotUpdates.has(lotId)) {
+                // Cộng dồn số lượng nếu đã có
+                lotUpdates.get(lotId).totalQty += item.quantityToExport;
+            } else {
+                // Tạo mới
+                lotUpdates.set(lotId, {
+                    totalQty: item.quantityToExport,
+                    lotRef: doc(db, 'inventory_lots', lotId)
+                });
+            }
+        }
 
-                    batch.update(lotRef, { 
-                        quantityRemaining: newQuantityRemaining,
-                        quantityAllocated: newAllocated // Giải phóng đặt giữ
-                    });
-                }
-            }
+        // 1. Trừ tồn kho thực tế VÀ giải phóng đặt giữ (chỉ 1 lần cho mỗi lot)
+        for (const [lotId, updateInfo] of lotUpdates) {
+            const lotSnap = await getDoc(updateInfo.lotRef);
+            if(lotSnap.exists()){
+                const currentRemaining = lotSnap.data().quantityRemaining;
+                const currentAllocated = lotSnap.data().quantityAllocated || 0;
+                
+                const newQuantityRemaining = currentRemaining - updateInfo.totalQty; // Trừ TỔNG số lượng
+                const newAllocated = Math.max(0, currentAllocated - updateInfo.totalQty); 
 
-            // 2. Lưu phiếu xuất chính thức
-            const slipRef = doc(collection(db, 'export_tickets'));
-            batch.set(slipRef, { ...slipData, status: 'completed' });
+                batch.update(updateInfo.lotRef, { 
+                    quantityRemaining: newQuantityRemaining,
+                    quantityAllocated: newAllocated
+                });
+                
+                console.log(`✅ Trừ tồn kho lot ${lotId}: ${currentRemaining} - ${updateInfo.totalQty} = ${newQuantityRemaining}`);
+            }
+        }
 
-            await batch.commit(); // Ghi tất cả một lần
+        // 2. Lưu phiếu xuất chính thức
+        const slipRef = doc(collection(db, 'export_tickets'));
+        batch.set(slipRef, { ...slipData, status: 'completed' });
 
-            toast.success('Xuất kho trực tiếp thành công!');
-            resetSlip();
-        } catch (error) {
-            console.error("Lỗi khi xuất kho trực tiếp: ", error);
-            toast.error('Đã xảy ra lỗi trong quá trình xuất kho.');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+        await batch.commit();
+
+        toast.success('Xuất kho trực tiếp thành công!');
+        resetSlip();
+    } catch (error) {
+        console.error("Lỗi khi xuất kho trực tiếp: ", error);
+        toast.error('Đã xảy ra lỗi trong quá trình xuất kho.');
+    } finally {
+        setIsProcessing(false);
+    }
+};
+
     
     const promptForDirectExport = () => {
         if (getValidSlipData()) {

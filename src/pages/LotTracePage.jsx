@@ -1,317 +1,641 @@
 // src/pages/LotTracePage.jsx
-
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  doc,
-  getDoc
-} from 'firebase/firestore';
-import LotJourneyExplorer from '../components/LotJourneyExplorer';
-import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
-import Spinner from '../components/Spinner';
-import ViewImportSlipModal from '../components/ViewImportSlipModal';
-import ViewExportSlipModal from '../components/ViewExportSlipModal';
+import { FiSearch, FiPackage, FiTrendingUp, FiTrendingDown, FiBarChart2, FiChevronDown, FiChevronUp, FiUser, FiTruck, FiFileText, FiX } from 'react-icons/fi';
+
+function normLot(s) {
+    if (!s) return '';
+    return String(s).trim().toUpperCase().replace(/^0+/, '') || '';
+}
+
+function fmtNum(val) {
+    if (val === null || val === undefined || val === '') return '';
+    const n = Number(val);
+    if (isNaN(n)) return String(val);
+    const rounded = Math.round(n * 100) / 100;
+    if (rounded === Math.floor(rounded)) return rounded.toLocaleString('vi-VN');
+    return rounded.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
 
 const LotTracePage = () => {
-  const [lotNumber, setLotNumber] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [importRecords, setImportRecords] = useState([]);
-  const [exportHistory, setExportHistory] = useState([]);
-  const [searchAttempted, setSearchAttempted] = useState(false);
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [totalRemaining, setTotalRemaining] = useState(0);
+    const [productId, setProductId] = useState('');
+    const [lotNumber, setLotNumber] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [results, setResults] = useState(null);
+    const [expandedTickets, setExpandedTickets] = useState(new Set());
+    const [modalTicket, setModalTicket] = useState(null);
+    const [modalType, setModalType] = useState(null);
 
-  // NÂNG CẤP 1: State để quản lý modal xem chi tiết
-  const [viewModal, setViewModal] = useState({ isOpen: false, slip: null, type: '' });
+    const toggleTicket = (ticketId) => {
+        setExpandedTickets(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(ticketId)) {
+                newSet.delete(ticketId);
+            } else {
+                newSet.add(ticketId);
+            }
+            return newSet;
+        });
+    };
 
-  const handleTrace = async () => {
-    if (!lotNumber) {
-      toast.warn('Vui lòng nhập số lô cần truy vết.');
-      return;
-    }
-    setIsLoading(true);
-    setImportRecords([]);
-    setExportHistory([]);
-    setSearchAttempted(true);
-    setSelectedNode(null);
+    const openTicketModal = async (ticketId, type) => {
+        try {
+            const collectionName = type === 'export' ? 'export_tickets' : 'import_tickets';
+            const docRef = doc(db, collectionName, ticketId);
+            const docSnap = await getDoc(docRef);
 
-    try {
-      let lotQuery;
-      const searchTerm = lotNumber.trim();
-      if (['null', 'none', 'khongcolo'].includes(searchTerm.toLowerCase())) {
-        lotQuery = query(collection(db, 'inventory_lots'), where('lotNumber', '==', null), orderBy('importDate', 'asc'));
-      } else {
-        lotQuery = query(collection(db, 'inventory_lots'), where('lotNumber', '==', searchTerm), orderBy('importDate', 'asc'));
-      }
-      
-      const lotSnapshot = await getDocs(lotQuery);
-      if (lotSnapshot.empty) {
-        setIsLoading(false);
-        return;
-      }
+            if (docSnap.exists()) {
+                const ticketData = { id: docSnap.id, ...docSnap.data() };
+                
+                // Làm giàu dữ liệu sản phẩm
+                const productPromises = ticketData.items.map(item => getDoc(doc(db, 'products', item.productId)));
+                const productSnapshots = await Promise.all(productPromises);
+                
+                const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                    if (docSn.exists()) {
+                        acc[docSn.id] = docSn.data();
+                    }
+                    return acc;
+                }, {});
 
-      const foundImports = lotSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setImportRecords(foundImports);
+                ticketData.items = ticketData.items.map(item => ({
+                    ...item,
+                    productName: productDetailsMap[item.productId]?.name || 'N/A',
+                }));
 
-      // Lấy lịch sử xuất kho
-      const history = [];
-      const exportsQuery = query(collection(db, 'export_tickets'), where('status', '==', 'completed'), orderBy('createdAt', 'asc'));
-      const exportsSnapshot = await getDocs(exportsQuery);
-
-      exportsSnapshot.forEach((doc) => {
-        const ticket = doc.data();
-        
-        // --- SỬA ĐỔI TẠI ĐÂY: Thay vì .find(), ta dùng .filter() và .reduce() để cộng tổng ---
-        
-        // 1. Tìm TẤT CẢ các item trong phiếu này trùng với số lô đang tìm
-        const matchingItems = ticket.items.filter((item) => item.lotNumber === lotNumber.trim());
-        
-        // 2. Nếu có ít nhất 1 item trùng khớp
-        if (matchingItems.length > 0) {
-          // 3. Cộng dồn số lượng của tất cả các item đó lại
-          const totalQuantityForLot = matchingItems.reduce((sum, item) => {
-             const qty = Number(item.quantityToExport || item.quantityExported || 0);
-             return sum + qty;
-          }, 0);
-
-          history.push({
-            ticketId: doc.id,
-            exportDate: ticket.createdAt,
-            customer: ticket.customer,
-            quantityExported: totalQuantityForLot, // Sử dụng tổng đã cộng dồn
-          });
+                setModalTicket(ticketData);
+                setModalType(type);
+            } else {
+                toast.error('Không tìm thấy phiếu');
+            }
+        } catch (error) {
+            console.error('Lỗi khi tải chi tiết phiếu:', error);
+            toast.error('Lỗi: ' + error.message);
         }
-        // --- KẾT THÚC SỬA ĐỔI ---
-      });
-      setExportHistory(history);
-      
-      const totalRemainingFromImports = foundImports.reduce((sum, record) => sum + record.quantityRemaining, 0);
-      setTotalRemaining(totalRemainingFromImports);
+    };
 
-    } catch (error) {
-      console.error('Lỗi khi truy vết lô hàng: ', error);
-      toast.error('Đã có lỗi xảy ra khi truy vết.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const closeModal = () => {
+        setModalTicket(null);
+        setModalType(null);
+    };
 
-  // NÂNG CẤP 1: Hàm để mở modal xem chi tiết phiếu
-  const handleViewSlip = async (slipId, slipType) => {
-    const collectionName = slipType === 'import' ? 'import_tickets' : 'export_tickets';
-    toast.info("Đang tải chi tiết phiếu...");
-    try {
-        const docRef = doc(db, collectionName, slipId);
-        const docSnap = await getDoc(docRef);
+    const handleSearch = async () => {
+        if (!productId && !lotNumber) {
+            toast.error('Vui lòng nhập ít nhất mã hàng hoặc số lot');
+            return;
+        }
 
-        if (docSnap.exists()) {
-            const slipData = { id: docSnap.id, ...docSnap.data() };
-            // Làm giàu dữ liệu sản phẩm để hiển thị đầy đủ trong modal
-            const productPromises = slipData.items.map(item => getDoc(doc(db, 'products', item.productId)));
+        setLoading(true);
+        setResults(null);
+
+        try {
+            const pidTrim = productId.trim();
+            const normLotNum = normLot(lotNumber);
+
+            // Tìm phiếu xuất
+            let exportQuery;
+            if (pidTrim) {
+                exportQuery = query(collection(db, 'export_tickets'), where('productIds', 'array-contains', pidTrim));
+            } else {
+                exportQuery = query(collection(db, 'export_tickets'));
+            }
+            
+            const exportSnap = await getDocs(exportQuery);
+
+
+            const exportDetails = [];
+            let totalExportQty = 0;
+
+            exportSnap.forEach(doc => {
+                const d = doc.data();
+                const allItems = d.items || [];
+                
+                // Lọc items khớp điều kiện
+                const matchingItems = allItems.filter(item => {
+                    const itemPid = String(item.productId || '').trim();
+                    const itemLot = normLot(item.lotNumber);
+                    
+                    // Nếu có cả mã hàng và số lot
+                    if (pidTrim && normLotNum) {
+                        return itemPid === pidTrim && itemLot === normLotNum;
+                    }
+                    // Nếu chỉ có mã hàng
+                    if (pidTrim) {
+                        return itemPid === pidTrim;
+                    }
+                    // Nếu chỉ có số lot
+                    if (normLotNum) {
+                        return itemLot === normLotNum;
+                    }
+                    return false;
+                });
+
+                if (matchingItems.length > 0) {
+                    matchingItems.forEach(item => {
+                        const qty = item.quantityToExport || 0;
+                        totalExportQty += qty;
+                    });
+
+                    exportDetails.push({
+                        id: doc.id,
+                        date: d.exportDate,
+                        customer: d.customer || d.customerId,
+                        status: d.status,
+                        description: d.description || '',
+                        allItems: allItems,
+                        matchingItems: matchingItems,
+                    });
+                }
+            });
+
+            // Tìm phiếu nhập
+            let importQuery;
+            if (pidTrim) {
+                importQuery = query(collection(db, 'import_tickets'), where('productIds', 'array-contains', pidTrim));
+            } else {
+                importQuery = query(collection(db, 'import_tickets'));
+            }
+            
+            const importSnap = await getDocs(importQuery);
+
+            const importDetails = [];
+            let totalImportQty = 0;
+
+            importSnap.forEach(doc => {
+                const d = doc.data();
+                const allItems = d.items || [];
+                
+                const matchingItems = allItems.filter(item => {
+                    const itemPid = String(item.productId || '').trim();
+                    const itemLot = normLot(item.lotNumber);
+                    
+                    if (pidTrim && normLotNum) {
+                        return itemPid === pidTrim && itemLot === normLotNum;
+                    }
+                    if (pidTrim) {
+                        return itemPid === pidTrim;
+                    }
+                    if (normLotNum) {
+                        return itemLot === normLotNum;
+                    }
+                    return false;
+                });
+
+                if (matchingItems.length > 0) {
+                    matchingItems.forEach(item => {
+                        totalImportQty += item.quantity || 0;
+                    });
+
+                    importDetails.push({
+                        id: doc.id,
+                        date: d.importDate,
+                        supplier: d.supplierName || d.supplierId,
+                        description: d.description || '',
+                        allItems: allItems,
+                        matchingItems: matchingItems,
+                    });
+                }
+            });
+
+            // Làm giàu dữ liệu sản phẩm cho tất cả items
+            const allProductIds = new Set();
+            exportDetails.forEach(exp => {
+                exp.allItems.forEach(item => allProductIds.add(item.productId));
+            });
+            importDetails.forEach(imp => {
+                imp.allItems.forEach(item => allProductIds.add(item.productId));
+            });
+
+            const productPromises = Array.from(allProductIds).map(pid => getDoc(doc(db, 'products', pid)));
             const productSnapshots = await Promise.all(productPromises);
+            
             const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
-                if (docSn.exists()) acc[docSn.id] = docSn.data();
+                if (docSn.exists()) {
+                    acc[docSn.id] = docSn.data();
+                }
                 return acc;
             }, {});
-            const enrichedItems = slipData.items.map(item => {
-                const details = productDetailsMap[item.productId] || {};
-                return { ...item, unit: details.unit || '', specification: details.packaging || '', storageTemp: details.storageTemp || '' };
+
+            // Thêm tên sản phẩm vào items
+            exportDetails.forEach(exp => {
+                exp.allItems = exp.allItems.map(item => ({
+                    ...item,
+                    productName: productDetailsMap[item.productId]?.name || 'N/A',
+                }));
+                exp.matchingItems = exp.matchingItems.map(item => ({
+                    ...item,
+                    productName: productDetailsMap[item.productId]?.name || 'N/A',
+                }));
             });
 
-            setViewModal({ 
-                isOpen: true, 
-                slip: { ...slipData, items: enrichedItems }, 
-                type: slipType 
+            importDetails.forEach(imp => {
+                imp.allItems = imp.allItems.map(item => ({
+                    ...item,
+                    productName: productDetailsMap[item.productId]?.name || 'N/A',
+                }));
+                imp.matchingItems = imp.matchingItems.map(item => ({
+                    ...item,
+                    productName: productDetailsMap[item.productId]?.name || 'N/A',
+                }));
             });
-        } else {
-            toast.error("Không tìm thấy chi tiết của phiếu này.");
+
+            setResults({
+                exportDetails,
+                importDetails,
+                totalImportQty,
+                totalExportQty,
+                theoreticalStock: totalImportQty - totalExportQty,
+            });
+
+        } catch (error) {
+            console.error('❌ Lỗi:', error);
+            toast.error('Lỗi: ' + error.message);
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        toast.error("Lỗi khi tải chi tiết phiếu.");
-        console.error(error);
-    }
-  };
-  
-  const closeViewModal = () => setViewModal({ isOpen: false, slip: null, type: '' });
-  const handleNodeClick = (event, node) => setSelectedNode(node.data);
-  const handlePaneClick = () => setSelectedNode(null);
+    };
 
-  const filteredExportHistory = selectedNode && selectedNode.type === 'customer' 
-    ? exportHistory.filter(item => item.customer === selectedNode.name)
-    : exportHistory;
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
 
-  const masterInfo = importRecords.length > 0 ? importRecords[0] : null;
-  const totalImported = importRecords.reduce((sum, record) => sum + record.quantityImported, 0);
-
-  return (
-    <div>
-        {/* NÂNG CẤP 1: Render các modal */}
-        {viewModal.isOpen && viewModal.type === 'import' && (
-            <ViewImportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
-        )}
-        {viewModal.isOpen && viewModal.type === 'export' && (
-            <ViewExportSlipModal slip={viewModal.slip} onClose={closeViewModal} />
-        )}
-
-        <div className="page-header">
-            <h1>Truy Vết Lô Hàng</h1>
-        </div>
-
-        <div className="form-section">
-            <div className="form-group">
-              <label>Nhập Số Lô Cần Truy Vết</label>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <input
-                  type="text"
-                  value={lotNumber}
-                  onChange={(e) => setLotNumber(e.target.value)}
-                  placeholder="Ví dụ: 4523468 hoặc 'không có lô'"
-                  onKeyDown={(e) => e.key === 'Enter' && handleTrace()}
-                  style={{ flexGrow: 1 }}
-                />
-                <button
-                  onClick={handleTrace}
-                  className="btn-primary"
-                  disabled={isLoading}
-                  style={{ width: 'auto' }}
-                >
-                  {isLoading ? 'Đang tìm...' : 'Truy vết'}
-                </button>
-              </div>
+    return (
+        <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '30px' }}>
+                <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '600', color: 'var(--text-color)' }}>
+                    Truy Vết Lô Hàng
+                </h1>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)' }}>
+                    Xem lịch sử nhập/xuất chi tiết của từng lô hàng
+                </p>
             </div>
-        </div>
-
-        {isLoading && <Spinner />}
-
-        {!isLoading && searchAttempted && importRecords.length === 0 && (
-            <div className="form-section">
-                <h4>Không tìm thấy thông tin cho số lô "{lotNumber}"</h4>
-            </div>
-        )}
-
-        {!isLoading && importRecords.length > 0 && (
-            <div>
-                <div className="form-section">
-                    <h3 style={{ marginTop: 0 }}>Hành Trình Lô Hàng: {masterInfo.lotNumber || '(Không có lô)'}</h3>
-                    <LotJourneyExplorer
-                        importRecords={importRecords}
-                        exportHistory={exportHistory}
-                        totalRemaining={totalRemaining}
-                        onNodeClick={handleNodeClick}
-                        onPaneClick={handlePaneClick}
-                    />
+            
+            <div style={{ marginBottom: '30px', padding: '24px', backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'end' }}>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: 'var(--text-color)' }}>
+                            Mã hàng
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Nhập mã hàng..."
+                            value={productId}
+                            onChange={(e) => setProductId(e.target.value.toUpperCase())}
+                            onKeyDown={handleKeyPress}
+                            style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', fontSize: '14px', width: '100%' }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: 'var(--text-color)' }}>
+                            Số lot
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Nhập số lot..."
+                            value={lotNumber}
+                            onChange={(e) => setLotNumber(e.target.value)}
+                            onKeyDown={handleKeyPress}
+                            style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', fontSize: '14px', width: '100%' }}
+                        />
+                    </div>
+                    <button
+                        onClick={handleSearch}
+                        disabled={loading}
+                        style={{ padding: '10px 24px', borderRadius: '6px', border: 'none', backgroundColor: loading ? '#ccc' : '#007bff', color: 'white', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
+                    >
+                        <FiSearch style={{ fontSize: '16px' }} />
+                        {loading ? 'Đang tìm...' : 'Tìm kiếm'}
+                    </button>
                 </div>
+            </div>
 
-                <div className="form-section">
-                    <h3 style={{ marginTop: 0 }}>Thông Tin Chung & Tóm Tắt</h3>
-                    <div className="compact-info-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                        <div><label>Mã hàng</label><p><strong>{masterInfo.productId}</strong></p></div>
-                        <div><label>Tên hàng</label><p>{masterInfo.productName}</p></div>
-                        <div>
-                            <label>Nhà cung cấp (lần nhập đầu)</label>
-                            <p>
-                                <Link to={`/partners`} className="table-link">
-                                    {masterInfo.supplierName || '(không có)'}
-                                </Link>
-                            </p>
+            {results && (
+                <div>
+                    {/* Tổng kết */}
+                    <div style={{ marginBottom: '24px', padding: '24px', backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: '2px solid #4caf50', boxShadow: '0 4px 12px rgba(76, 175, 80, 0.1)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                            <FiBarChart2 style={{ fontSize: '20px', color: '#4caf50' }} />
+                            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--text-color)' }}>Tổng kết</h2>
                         </div>
-                        <div><label>ĐVT</label><p>{masterInfo.unit}</p></div>
-                        <div><label>Quy cách</label><p>{masterInfo.packaging}</p></div>
-                        <div><label>Số lô</label><p><strong>{masterInfo.lotNumber || '(Không có)'}</strong></p></div>
-                        <div><label>HSD</label><p><strong>{masterInfo.expiryDate ? formatDate(masterInfo.expiryDate) : '(Không có)'}</strong></p></div>
-                        <div><label>Tổng đã nhập</label><p style={{color: 'blue', fontSize: '18px'}}><strong>{totalImported}</strong></p></div>
-                        <div><label>Tổng còn lại</label><p style={{color: 'green', fontSize: '18px'}}><strong>{totalRemaining}</strong></p></div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#e8f5e9', border: '1px solid #a5d6a7' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <FiTrendingDown style={{ fontSize: '18px', color: '#2e7d32' }} />
+                                    <div style={{ fontSize: '12px', color: '#2e7d32', fontWeight: '600' }}>Tổng nhập</div>
+                                </div>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#2e7d32' }}>{fmtNum(results.totalImportQty)}</div>
+                            </div>
+                            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#fff3e0', border: '1px solid #ffcc80' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <FiTrendingUp style={{ fontSize: '18px', color: '#e65100' }} />
+                                    <div style={{ fontSize: '12px', color: '#e65100', fontWeight: '600' }}>Tổng xuất</div>
+                                </div>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#e65100' }}>{fmtNum(results.totalExportQty)}</div>
+                            </div>
+                            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#e3f2fd', border: '1px solid #90caf9' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <FiPackage style={{ fontSize: '18px', color: '#1976d2' }} />
+                                    <div style={{ fontSize: '12px', color: '#1976d2', fontWeight: '600' }}>Tồn lý thuyết</div>
+                                </div>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#1976d2' }}>{fmtNum(results.theoreticalStock)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Phiếu xuất */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: 'var(--text-color)' }}>
+                            📤 Phiếu xuất ({results.exportDetails.length})
+                        </h2>
+                        {results.exportDetails.length === 0 ? (
+                            <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                                Không có phiếu xuất nào
+                            </div>
+                        ) : (
+                            results.exportDetails.map((exp, idx) => {
+                                const isExpanded = expandedTickets.has(exp.id);
+                                const hiddenCount = exp.allItems.length - exp.matchingItems.length;
+                                
+                                return (
+                                    <div key={idx} style={{ marginBottom: '16px', padding: '20px', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid #ff9800', boxShadow: '0 2px 6px rgba(255, 152, 0, 0.1)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-color)', marginBottom: '8px' }}>
+                                                    Phiếu: {exp.id}
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#fff3e0', borderRadius: '6px', border: '1px solid #ffcc80' }}>
+                                                        <FiUser style={{ fontSize: '14px', color: '#e65100' }} />
+                                                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#e65100' }}>{exp.customer}</span>
+                                                    </div>
+                                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                        📅 {exp.date}
+                                                    </div>
+                                                </div>
+                                                {exp.description && (
+                                                    <div style={{ marginTop: '8px', padding: '8px 12px', backgroundColor: '#fff9e6', borderRadius: '6px', border: '1px solid #ffe0b2', fontSize: '12px', color: '#e65100', fontStyle: 'italic' }}>
+                                                        💬 {exp.description}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                                                <div style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: exp.status === 'completed' ? '#e8f5e9' : '#fff3e0', color: exp.status === 'completed' ? '#2e7d32' : '#e65100', border: `1px solid ${exp.status === 'completed' ? '#a5d6a7' : '#ffcc80'}` }}>
+                                                    {exp.status === 'completed' ? 'Hoàn thành' : exp.status}
+                                                </div>
+                                                <button
+                                                    onClick={() => openTicketModal(exp.id, 'export')}
+                                                    style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #ff9800', backgroundColor: 'white', color: '#e65100', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s' }}
+                                                >
+                                                    <FiFileText style={{ fontSize: '14px' }} />
+                                                    Chi tiết
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {hiddenCount > 0 && !isExpanded && (
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                                                Hiển thị {exp.matchingItems.length} items khớp điều kiện • {hiddenCount} items khác trong phiếu
+                                            </div>
+                                        )}
+                                        
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                            <thead>
+                                                <tr style={{ backgroundColor: 'var(--table-header-bg, #f8f9fa)' }}>
+                                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Mã hàng</th>
+                                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Tên hàng</th>
+                                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Số lot</th>
+                                                    <th style={{ padding: '8px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600' }}>Số lượng</th>
+                                                    <th style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)', fontWeight: '600' }}>ĐVT</th>
+                                                    <th style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)', fontWeight: '600' }}>HSD</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(isExpanded ? exp.allItems : exp.matchingItems).map((item, i) => {
+                                                    const isMatching = exp.matchingItems.some(m => 
+                                                        m.productId === item.productId && 
+                                                        normLot(m.lotNumber) === normLot(item.lotNumber)
+                                                    );
+                                                    return (
+                                                        <tr key={i} style={{ 
+                                                            backgroundColor: isMatching ? '#fff9e6' : (i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg, #fafafa)'),
+                                                            borderLeft: isMatching ? '3px solid #ff9800' : 'none'
+                                                        }}>
+                                                            <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontWeight: isMatching ? '600' : 'normal' }}>{item.productId}</td>
+                                                            <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontSize: '12px' }}>{item.productName}</td>
+                                                            <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontWeight: isMatching ? '600' : 'normal' }}>{item.lotNumber}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600', color: isMatching ? '#e65100' : 'var(--text-color)' }}>{fmtNum(item.quantityToExport)}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.unit}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.expiryDate}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                        
+                                        {hiddenCount > 0 && (
+                                            <button
+                                                onClick={() => toggleTicket(exp.id)}
+                                                style={{ marginTop: '12px', padding: '8px 16px', borderRadius: '6px', border: '1px solid #ff9800', backgroundColor: 'transparent', color: '#e65100', cursor: 'pointer', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+                                            >
+                                                {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+                                                {isExpanded ? 'Thu gọn' : `Xem toàn bộ phiếu (+${hiddenCount} items)`}
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {/* Phiếu nhập */}
+                    <div>
+                        <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: 'var(--text-color)' }}>
+                            📥 Phiếu nhập ({results.importDetails.length})
+                        </h2>
+                        {results.importDetails.length === 0 ? (
+                            <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                                Không có phiếu nhập nào
+                            </div>
+                        ) : (
+                            results.importDetails.map((imp, idx) => {
+                                const isExpanded = expandedTickets.has(imp.id);
+                                const hiddenCount = imp.allItems.length - imp.matchingItems.length;
+                                
+                                return (
+                                    <div key={idx} style={{ marginBottom: '16px', padding: '20px', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid #4caf50', boxShadow: '0 2px 6px rgba(76, 175, 80, 0.1)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-color)', marginBottom: '8px' }}>
+                                                    Phiếu: {imp.id}
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#e8f5e9', borderRadius: '6px', border: '1px solid #a5d6a7' }}>
+                                                        <FiTruck style={{ fontSize: '14px', color: '#2e7d32' }} />
+                                                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#2e7d32' }}>{imp.supplier}</span>
+                                                    </div>
+                                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                        📅 {imp.date}
+                                                    </div>
+                                                </div>
+                                                {imp.description && (
+                                                    <div style={{ marginTop: '8px', padding: '8px 12px', backgroundColor: '#e8f9e8', borderRadius: '6px', border: '1px solid #c8e6c9', fontSize: '12px', color: '#2e7d32', fontStyle: 'italic' }}>
+                                                        💬 {imp.description}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => openTicketModal(imp.id, 'import')}
+                                                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #4caf50', backgroundColor: 'white', color: '#2e7d32', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s' }}
+                                            >
+                                                <FiFileText style={{ fontSize: '14px' }} />
+                                                Chi tiết
+                                            </button>
+                                        </div>
+                                        
+                                        {hiddenCount > 0 && !isExpanded && (
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                                                Hiển thị {imp.matchingItems.length} items khớp điều kiện • {hiddenCount} items khác trong phiếu
+                                            </div>
+                                        )}
+                                        
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                            <thead>
+                                                <tr style={{ backgroundColor: 'var(--table-header-bg, #f8f9fa)' }}>
+                                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Mã hàng</th>
+                                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Tên hàng</th>
+                                                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Số lot</th>
+                                                    <th style={{ padding: '8px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600' }}>Số lượng</th>
+                                                    <th style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)', fontWeight: '600' }}>ĐVT</th>
+                                                    <th style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)', fontWeight: '600' }}>HSD</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(isExpanded ? imp.allItems : imp.matchingItems).map((item, i) => {
+                                                    const isMatching = imp.matchingItems.some(m => 
+                                                        m.productId === item.productId && 
+                                                        normLot(m.lotNumber) === normLot(item.lotNumber)
+                                                    );
+                                                    return (
+                                                        <tr key={i} style={{ 
+                                                            backgroundColor: isMatching ? '#e8f9e8' : (i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg, #fafafa)'),
+                                                            borderLeft: isMatching ? '3px solid #4caf50' : 'none'
+                                                        }}>
+                                                            <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontWeight: isMatching ? '600' : 'normal' }}>{item.productId}</td>
+                                                            <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontSize: '12px' }}>{item.productName}</td>
+                                                            <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontWeight: isMatching ? '600' : 'normal' }}>{item.lotNumber}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600', color: isMatching ? '#2e7d32' : 'var(--text-color)' }}>{fmtNum(item.quantity)}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.unit}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.expiryDate}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                        
+                                        {hiddenCount > 0 && (
+                                            <button
+                                                onClick={() => toggleTicket(imp.id)}
+                                                style={{ marginTop: '12px', padding: '8px 16px', borderRadius: '6px', border: '1px solid #4caf50', backgroundColor: 'transparent', color: '#2e7d32', cursor: 'pointer', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+                                            >
+                                                {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+                                                {isExpanded ? 'Thu gọn' : `Xem toàn bộ phiếu (+${hiddenCount} items)`}
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
+            )}
 
-                <div className="form-section">
-                    <h3 style={{ marginTop: 0 }}>Chi Tiết Các Lần Nhập Kho</h3>
-                    <table className="products-table list-page-table">
-                        <thead>
-                            <tr>
-                                <th>Ngày nhập</th>
-                                <th>Nhà cung cấp</th>
-                                <th>Số lượng nhập</th>
-                                <th>SL còn lại của lần nhập</th>
-                                <th>ID Phiếu Nhập Gốc</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {importRecords.map((record) => (
-                                <tr key={record.id}>
-                                    <td>{formatDate(record.importDate)}</td>
-                                    <td>
-    <Link to={`/partners?search=${record.supplierName || ''}`} className="table-link">
-        {record.supplierName || '(không có)'}
-    </Link>
-</td>
-                                    <td>{record.quantityImported}</td>
-                                    <td>{record.quantityRemaining}</td>
-                                    {/* THÊM DỮ LIỆU CHO CỘT MỚI */}
-                                    <td>
-                                        {record.importTicketId ? (
-                                            <button onClick={() => handleViewSlip(record.importTicketId, 'import')} className="btn-link table-link">
-                                                {record.importTicketId}
-                                            </button>
-                                        ) : (
-                                            <span style={{ color: '#888' }}>(Tồn đầu kỳ)</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            {/* Modal xem chi tiết phiếu */}
+            {modalTicket && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }} onClick={closeModal}>
+                    <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', maxWidth: '900px', width: '100%', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
+                        {/* Header */}
+                        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'start', position: 'sticky', top: 0, backgroundColor: 'var(--card-bg)', zIndex: 1 }}>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600', color: 'var(--text-color)' }}>
+                                    {modalType === 'export' ? '📤 Phiếu xuất' : '📥 Phiếu nhập'}: {modalTicket.id}
+                                </h2>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                    {modalType === 'export' ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#fff3e0', borderRadius: '6px', border: '1px solid #ffcc80' }}>
+                                            <FiUser style={{ fontSize: '14px', color: '#e65100' }} />
+                                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#e65100' }}>{modalTicket.customer || modalTicket.customerId}</span>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#e8f5e9', borderRadius: '6px', border: '1px solid #a5d6a7' }}>
+                                            <FiTruck style={{ fontSize: '14px', color: '#2e7d32' }} />
+                                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#2e7d32' }}>{modalTicket.supplierName || modalTicket.supplierId}</span>
+                                        </div>
+                                    )}
+                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                        📅 {modalType === 'export' ? modalTicket.exportDate : modalTicket.importDate}
+                                    </div>
+                                    <div style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: modalTicket.status === 'completed' ? '#e8f5e9' : '#fff3e0', color: modalTicket.status === 'completed' ? '#2e7d32' : '#e65100', border: `1px solid ${modalTicket.status === 'completed' ? '#a5d6a7' : '#ffcc80'}` }}>
+                                        {modalTicket.status === 'completed' ? 'Hoàn thành' : modalTicket.status}
+                                    </div>
+                                </div>
+                                {modalTicket.description && (
+                                    <div style={{ padding: '10px 14px', backgroundColor: modalType === 'export' ? '#fff9e6' : '#e8f9e8', borderRadius: '6px', border: `1px solid ${modalType === 'export' ? '#ffe0b2' : '#c8e6c9'}`, fontSize: '13px', color: modalType === 'export' ? '#e65100' : '#2e7d32' }}>
+                                        <strong>💬 Ghi chú:</strong> {modalTicket.description}
+                                    </div>
+                                )}
+                            </div>
+                            <button onClick={closeModal} style={{ padding: '8px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '20px', display: 'flex', alignItems: 'center' }}>
+                                <FiX />
+                            </button>
+                        </div>
 
-                <div className="form-section">
-                    <h3 style={{ marginTop: 0 }}>
-                        {selectedNode && selectedNode.type === 'customer' 
-                            ? `Lịch Sử Xuất Kho cho: ${selectedNode.name}`
-                            : 'Toàn Bộ Lịch Sử Xuất Kho'
-                        }
-                    </h3>
-                    {filteredExportHistory.length > 0 ? (
-                        <table className="products-table list-page-table">
-                            <thead>
-                                <tr>
-                                    <th>Ngày xuất</th>
-                                    <th>ID Phiếu xuất</th>
-                                    <th>Khách hàng</th>
-                                    <th>Số lượng đã xuất</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredExportHistory.map((item) => (
-                                    <tr key={item.ticketId}>
-                                        <td>{formatDate(item.exportDate)}</td>
-                                        <td>
-                                            <button onClick={() => handleViewSlip(item.ticketId, 'export')} className="btn-link table-link">
-                                                {item.ticketId}
-                                            </button>
-                                        </td>
-                                        <td>
-    <Link to={`/partners?search=${item.customer || ''}`} className="table-link">
-        {item.customer}
-    </Link>
-</td>
-                                        <td>{item.quantityExported}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (<p>Lô hàng này chưa được xuất kho lần nào.</p>)}
+                        {/* Body - Items */}
+                        <div style={{ padding: '20px' }}>
+                            <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: 'var(--text-color)' }}>
+                                Danh sách sản phẩm ({modalTicket.items.length} items)
+                            </h3>
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                    <thead>
+                                        <tr style={{ backgroundColor: 'var(--table-header-bg, #f8f9fa)' }}>
+                                            <th style={{ padding: '10px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Mã hàng</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Tên hàng</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Số lot</th>
+                                            <th style={{ padding: '10px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600' }}>Số lượng</th>
+                                            <th style={{ padding: '10px', textAlign: 'center', border: '1px solid var(--border-color)', fontWeight: '600' }}>ĐVT</th>
+                                            <th style={{ padding: '10px', textAlign: 'center', border: '1px solid var(--border-color)', fontWeight: '600' }}>HSD</th>
+                                            <th style={{ padding: '10px', textAlign: 'left', border: '1px solid var(--border-color)', fontWeight: '600' }}>Ghi chú</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {modalTicket.items.map((item, i) => (
+                                            <tr key={i} style={{ backgroundColor: i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg, #fafafa)' }}>
+                                                <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontWeight: '600' }}>{item.productId}</td>
+                                                <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>{item.productName}</td>
+                                                <td style={{ padding: '10px', border: '1px solid var(--border-color)' }}>{item.lotNumber}</td>
+                                                <td style={{ padding: '10px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600', color: modalType === 'export' ? '#e65100' : '#2e7d32' }}>
+                                                    {fmtNum(modalType === 'export' ? item.quantityToExport : item.quantity)}
+                                                </td>
+                                                <td style={{ padding: '10px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.unit}</td>
+                                                <td style={{ padding: '10px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.expiryDate}</td>
+                                                <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontSize: '12px', fontStyle: item.notes ? 'italic' : 'normal', color: item.notes ? 'var(--text-color)' : 'var(--text-secondary)' }}>
+                                                    {item.notes || '-'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        )}
-    </div>
-  );
+            )}
+        </div>
+    );
 };
 
 export default LotTracePage;
