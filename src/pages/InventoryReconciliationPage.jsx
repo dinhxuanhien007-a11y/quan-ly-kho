@@ -38,14 +38,33 @@ function normLot(s) {
 
 function parseDate(v) {
     if (!v) return null;
+    
+    // ✅ Xử lý Firestore Timestamp
+    if (v && typeof v === 'object' && typeof v.toDate === 'function') {
+        const firebaseDate = v.toDate();
+        const year = firebaseDate.getFullYear();
+        const month = firebaseDate.getMonth();
+        const day = firebaseDate.getDate();
+        return new Date(year, month, day);
+    }
+    
+    // ✅ Xử lý Date object (từ Excel) - KHÔNG dùng getUTC...()
     if (v instanceof Date) {
         if (isNaN(v.getTime())) return null;
-        return new Date(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate());
+        // Lấy ngày theo LOCAL timezone
+        const year = v.getFullYear();
+        const month = v.getMonth();
+        const day = v.getDate();
+        return new Date(year, month, day);
     }
+    
+    // Xử lý số (Excel serial date)
     if (typeof v === 'number') {
         const d = new Date(Math.round((v - 25569) * 86400 * 1000));
         return isNaN(d.getTime()) ? null : d;
     }
+    
+    // Xử lý string
     const s = String(v).trim();
     const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (m1) return new Date(+m1[3], +m1[2] - 1, +m1[1]);
@@ -64,9 +83,51 @@ function isExpired(dateVal) {
 }
 
 function fmtDateDisplay(dateVal) {
+    if (!dateVal) return '';
+    
+    // Nếu là Firestore Timestamp
+    if (typeof dateVal === 'object' && typeof dateVal.toDate === 'function') {
+        const firebaseDate = dateVal.toDate();
+        const year = firebaseDate.getFullYear();
+        const month = firebaseDate.getMonth() + 1;
+        const day = firebaseDate.getDate();
+        return `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
+    }
+    
+    // Nếu là Date object
+    if (dateVal instanceof Date) {
+        if (isNaN(dateVal.getTime())) return '';
+        const year = dateVal.getFullYear();
+        const month = dateVal.getMonth() + 1;
+        const day = dateVal.getDate();
+        return `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
+    }
+    
+    // Nếu là string (DD/MM/YYYY)
+    if (typeof dateVal === 'string') {
+        const s = dateVal.trim();
+        const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (m) return `${String(m[1]).padStart(2,'0')}/${String(m[2]).padStart(2,'0')}/${m[3]}`;
+        return s;
+    }
+    
+    // Nếu là số (Excel serial date)
+    if (typeof dateVal === 'number') {
+        const d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+        if (isNaN(d.getTime())) return '';
+        const year = d.getFullYear();
+        const month = d.getMonth() + 1;
+        const day = d.getDate();
+        return `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
+    }
+    
+    // Fallback: parse rồi display
     const d = parseDate(dateVal);
     if (!d) return '';
-    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    return `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
 }
 
 // FIX/CẢI TIẾN 3: Badge cảnh báo HSD sắp hết hạn (≤30, ≤60, ≤90 ngày)
@@ -86,7 +147,7 @@ function getExpiryBadge(dateVal) {
 // PARSE FILE EXCEL MISA
 // ============================================================
 function parseMisaExcel(arrayBuffer) {
-    const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+    const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
 
@@ -110,17 +171,54 @@ function parseMisaExcel(arrayBuffer) {
 
     const items = [];
     for (let i = headerIdx + 1; i < rows.length; i++) {
-        const row = rows[i];
-        const ma = String(row[idxMa] || '').trim();
-        if (!ma || ma.toLowerCase().includes('mã kho') || ma.toLowerCase().includes('tổng')) continue;
-        const lo  = String(row[idxLo] || '').trim();
-        const hsd = idxHsd >= 0 ? row[idxHsd] : null;
-        const dvt = idxDvt >= 0 ? String(row[idxDvt] || '').trim() : '';
-        const sl  = idxSl >= 0 ? Number(row[idxSl]) || 0 : 0;
-        if (isExpired(hsd)) continue;
-        if (sl <= 0) continue;
-        items.push({ ma, lo, hsdRaw: hsd, dvt, sl, lotKey: normLot(lo) });
+    const row = rows[i];
+    const ma = String(row[idxMa] || '').trim();
+    if (!ma || ma.toLowerCase().includes('mã kho') || ma.toLowerCase().includes('tổng')) continue;
+    const lo  = String(row[idxLo] || '').trim();
+    
+    // Xử lý HSD từ Excel - Chuyển đổi Excel serial date
+    let hsd = idxHsd >= 0 ? row[idxHsd] : null;
+    
+    if (hsd) {
+        // Nếu là số (Excel serial date)
+        if (typeof hsd === 'number') {
+            // Chuyển đổi Excel serial date sang ngày thực
+            // Excel serial date: số ngày kể từ 1/1/1900
+            // Excel có bug: tính 1900 là năm nhuận (nhưng thực tế không phải)
+            const daysFrom1900 = hsd - 1; // Trừ 1 vì Excel đếm từ 1, không phải 0
+            const msPerDay = 24 * 60 * 60 * 1000;
+            
+            // Tạo Date từ 1/1/1900 theo UTC
+            const excelEpoch = Date.UTC(1900, 0, 1);
+            const dateMs = excelEpoch + (daysFrom1900 - 1) * msPerDay; // Trừ thêm 1 để bù bug năm nhuận
+            const date = new Date(dateMs);
+            
+            // Lấy ngày theo UTC để tránh vấn đề múi giờ
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            hsd = `${day}/${month}/${year}`;
+        }
+        // Nếu là Date object
+        else if (hsd instanceof Date && !isNaN(hsd.getTime())) {
+            const year = hsd.getFullYear();
+            const month = String(hsd.getMonth() + 1).padStart(2, '0');
+            const day = String(hsd.getDate()).padStart(2, '0');
+            hsd = `${day}/${month}/${year}`;
+        }
+        // Nếu là string, giữ nguyên
+        else if (typeof hsd === 'string') {
+            hsd = hsd.trim();
+        }
     }
+
+    
+    const dvt = idxDvt >= 0 ? String(row[idxDvt] || '').trim() : '';
+    const sl  = idxSl >= 0 ? Number(row[idxSl]) || 0 : 0;
+    if (isExpired(hsd)) continue;
+    if (sl <= 0) continue;
+    items.push({ ma, lo, hsdRaw: hsd, dvt, sl, lotKey: normLot(lo) });
+}
 
     const merged = new Map();
     const duplicateHsd = [];
@@ -449,7 +547,14 @@ const InventoryReconciliationPage = () => {
                 rawLots.push({
                     productId: d.productId,
                     lotNumber: d.lotNumber || '',
-                    expiryDate: d.expiryDate ? (d.expiryDate.toDate ? d.expiryDate.toDate() : d.expiryDate) : null,
+                    expiryDate: d.expiryDate ? (() => {
+    const firebaseDate = d.expiryDate.toDate ? d.expiryDate.toDate() : d.expiryDate;
+    // Lấy ngày theo local timezone (UTC+7)
+    const year = firebaseDate.getFullYear();
+    const month = firebaseDate.getMonth();
+    const day = firebaseDate.getDate();
+    return new Date(year, month, day);
+})() : null,
                     quantityRemaining: d.quantityRemaining || 0,
                     unit: d.unit || '',
                 });
