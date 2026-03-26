@@ -30,6 +30,7 @@ const useExportSlipStore = create(
             // === ACTIONS ===
             setCustomer: (id, name) => set({ customerId: id, customerName: name }),
             setDescription: (description) => set({ description }),
+            setExportDate: (date) => set({ exportDate: date }),
 
             updateItem: (index, field, value) => set(state => {
                 const newItems = state.items.map((item, i) => {
