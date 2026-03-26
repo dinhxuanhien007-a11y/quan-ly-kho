@@ -1,7 +1,7 @@
 // src/pages/PartnersPage.jsx
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, query, orderBy, doc, deleteDoc, getDocs, where, documentId } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, where, documentId } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { FiPlus, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import AddPartnerModal from '../components/AddPartnerModal';
@@ -10,22 +10,21 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import Spinner from '../components/Spinner';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { PAGE_SIZE } from '../constants';
-import { normalizeString } from '../utils/stringUtils'; // <-- THÊM DÒNG NÀY
+import { normalizeString } from '../utils/stringUtils';
 import HighlightText from '../components/HighlightText';
 import { useSearchParams } from 'react-router-dom';
+import { deletePartner } from '../services/partnerService';
 
 const PartnersPage = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [partnerToEdit, setPartnerToEdit] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
-    const [forceRerender, setForceRerender] = useState(0); // State để trigger re-fetch
 
-    // MỚI: State cho chức năng tìm kiếm
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState(null); // null: không tìm kiếm, []: tìm không thấy, [...]: kết quả
+    const [searchResults, setSearchResults] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         const termFromUrl = searchParams.get('search');
@@ -36,7 +35,7 @@ const PartnersPage = () => {
 
     const baseQuery = useMemo(() => {
         return query(collection(db, "partners"), orderBy(documentId()));
-    }, [forceRerender]); // Phụ thuộc vào forceRerender
+    }, []);
 
     const {
         documents: partners,
@@ -44,7 +43,8 @@ const PartnersPage = () => {
         isLastPage,
         page,
         nextPage,
-        prevPage
+        prevPage,
+        reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
     // THAY THẾ TOÀN BỘ HÀM CŨ BẰNG HÀM MỚI NÀY
@@ -55,38 +55,45 @@ const performSearch = useCallback(async (term) => {
     }
     setIsSearching(true);
     try {
-        // Bước 1: Chuẩn hóa và tách tất cả các từ người dùng gõ
         const searchTerms = normalizeString(term).split(' ').filter(t => t);
-
         if (searchTerms.length === 0) {
             setSearchResults([]);
             setIsSearching(false);
             return;
         }
 
-        // Bước 2: Dùng từ đầu tiên để truy vấn Firestore (lấy về các kết quả tiềm năng)
         const firstTerm = searchTerms[0];
-        const q = query(
-            collection(db, "partners"),
-            where("searchKeywords", "array-contains", firstTerm)
-        );
 
+        // Query theo searchKeywords (đối tác mới)
+        const q = query(collection(db, "partners"), where("searchKeywords", "array-contains", firstTerm));
         const querySnapshot = await getDocs(q);
-        const initialResults = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let results = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Bước 3: Lọc kết quả trên client để khớp với TẤT CẢ các từ còn lại
+        // Fallback: tìm thêm đối tác cũ không có searchKeywords bằng client-side filter
+        const allSnap = await getDocs(query(collection(db, "partners"), orderBy(documentId())));
+        const allPartners = allSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const foundIds = new Set(results.map(r => r.id));
+        const fallback = allPartners.filter(p => {
+            if (foundIds.has(p.id)) return false; // đã có rồi
+            if (p.searchKeywords) return false; // có keywords nhưng không khớp
+            // đối tác cũ: tìm theo tên
+            return normalizeString(p.partnerName || '').includes(firstTerm);
+        });
+        results = [...results, ...fallback];
+
+        // Lọc thêm với các từ còn lại
         if (searchTerms.length > 1) {
             const remainingTerms = searchTerms.slice(1);
-            const finalResults = initialResults.filter(partner => 
-                // Kiểm tra xem 'searchKeywords' của đối tác có chứa MỌI từ còn lại không
-                remainingTerms.every(t => partner.searchKeywords.includes(t))
-            );
-            setSearchResults(finalResults);
-        } else {
-            // Nếu chỉ gõ 1 từ thì không cần lọc thêm
-            setSearchResults(initialResults);
+            results = results.filter(partner => {
+                const keywords = partner.searchKeywords || [];
+                const nameFallback = normalizeString(partner.partnerName || '');
+                return remainingTerms.every(t =>
+                    keywords.includes(t) || nameFallback.includes(t)
+                );
+            });
         }
 
+        setSearchResults(results);
     } catch (error) {
         console.error("Lỗi khi tìm kiếm đối tác:", error);
         toast.error("Không thể thực hiện tìm kiếm.");
@@ -105,16 +112,16 @@ const performSearch = useCallback(async (term) => {
 
     const handlePartnerAdded = () => {
         setIsAddModalOpen(false);
-        setForceRerender(prev => prev + 1); // Trigger re-fetch
+        reset();
     };
 
     const handlePartnerUpdated = () => {
         setIsEditModalOpen(false);
         setPartnerToEdit(null);
         if (searchResults) {
-            performSearch(searchTerm); // Cập nhật lại kết quả tìm kiếm
+            performSearch(searchTerm);
         } else {
-            setForceRerender(prev => prev + 1); // Trigger re-fetch
+            reset();
         }
     };
 
@@ -125,13 +132,24 @@ const performSearch = useCallback(async (term) => {
             message: `Bạn có chắc chắn muốn xóa "${partnerName}" (Mã: ${partnerId})? Hành động này không thể hoàn tác.`,
             onConfirm: async () => {
                 try {
-                    await deleteDoc(doc(db, 'partners', partnerId));
+                    // Kiểm tra đối tác có đang được dùng trong phiếu nhập/xuất không
+                    const [importSnap, exportSnap] = await Promise.all([
+                        getDocs(query(collection(db, 'import_tickets'), where('supplierId', '==', partnerId))),
+                        getDocs(query(collection(db, 'export_tickets'), where('customerId', '==', partnerId)))
+                    ]);
+                    if (!importSnap.empty || !exportSnap.empty) {
+                        const count = importSnap.size + exportSnap.size;
+                        toast.error(`Không thể xóa: "${partnerName}" đang có ${count} phiếu nhập/xuất liên quan.`);
+                        setConfirmModal({ isOpen: false });
+                        return;
+                    }
+                    await deletePartner(partnerId);
                     toast.success(`Đã xóa đối tác "${partnerName}" thành công.`);
                     setConfirmModal({ isOpen: false });
                     if (searchResults) {
                         performSearch(searchTerm);
                     } else {
-                        setForceRerender(prev => prev + 1);
+                        reset();
                     }
                 } catch (error) {
                     console.error("Lỗi khi xóa đối tác:", error);

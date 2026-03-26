@@ -446,37 +446,31 @@ exportSnap.forEach(doc => {
     });
 });
 
-    // --- BẮT ĐẦU THÊM LOGIC LỌC MỚI ---
-    let finalTransactions = transactions;
-    if (partnerName && partnerName.trim() !== '') {
-        const normalizedPartnerName = partnerName.trim().toLowerCase();
-        finalTransactions = transactions.filter(tx => 
-            tx.description.toLowerCase().includes(normalizedPartnerName)
-        );
-    }
-    // --- KẾT THÚC LOGIC LỌC MỚI ---
+    // Sắp xếp tất cả giao dịch theo ngày
+    transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    // Sắp xếp lại sau khi đã lọc
-    finalTransactions.sort((a, b) => a.date.getTime() - b.date.getTime());
-    
-    // Tính toán lại các giá trị tổng dựa trên dữ liệu đã lọc
-    const totalImport = finalTransactions.reduce((sum, tx) => sum + tx.importQty, 0);
-    const totalExport = finalTransactions.reduce((sum, tx) => sum + tx.exportQty, 0);
+    // Tính tổng nhập/xuất toàn bộ (không lọc đối tác) để số dư chính xác
+    const totalImport = transactions.reduce((sum, tx) => sum + tx.importQty, 0);
+    const totalExport = transactions.reduce((sum, tx) => sum + tx.exportQty, 0);
 
+    // Tính số dư lũy kế trên toàn bộ giao dịch
     let currentBalance = openingBalance;
-    const ledgerRows = [];
-
-    finalTransactions.forEach(tx => {
+    const ledgerRows = transactions.map(tx => {
         currentBalance += (tx.importQty - tx.exportQty);
-        ledgerRows.push({ ...tx, balance: currentBalance });
+        return { ...tx, balance: currentBalance };
     });
 
+    // Lọc theo đối tác CHỈ để hiển thị, không ảnh hưởng số dư
+    const displayRows = partnerName && partnerName.trim() !== ''
+        ? ledgerRows.filter(tx => tx.description.toLowerCase().includes(partnerName.trim().toLowerCase()))
+        : ledgerRows;
+
     return {
-        openingBalance, 
-        totalImport, // Trả về tổng đã lọc
-        totalExport, // Trả về tổng đã lọc
+        openingBalance,
+        totalImport,
+        totalExport,
         closingBalance: currentBalance,
-        rows: ledgerRows
+        rows: displayRows
     };
 };
 

@@ -205,7 +205,9 @@ const ProductLedgerPage = () => {
     const lineChartData = useMemo(() => {
         if (!sortedRows || sortedRows.length === 0) return null;
         const dataByDate = sortedRows.reduce((acc, row) => {
-            const date = formatDate(row.date);
+            if (!row.date) return acc;
+            const date = row.date instanceof Date ? formatDate(row.date) : formatDate(row.date);
+            if (!date || date === 'N/A') return acc;
             if (!acc[date]) {
                 acc[date] = { import: 0, export: 0 };
             }
@@ -251,9 +253,10 @@ const ProductLedgerPage = () => {
                     const details = productDetailsMap[item.productId] || {};
                     return {
                         ...item,
-                        unit: details.unit || '',
-                        specification: details.packaging || '',
-                        storageTemp: details.storageTemp || '',
+                        productName: item.productName || details.productName || details.name || item.productId,
+                        unit: item.unit || details.unit || '',
+                        specification: details.packaging || item.packaging || '',
+                        storageTemp: details.storageTemp || item.storageTemp || '',
                     };
                 });
 
@@ -300,9 +303,9 @@ const ProductLedgerPage = () => {
 
             <div className="form-section">
                 <div className="filter-group" style={{ marginBottom: '15px' }}>
-                    <button className={filters.transactionType === 'all' ? 'active' : ''} onClick={() => setFilters(prev => ({...prev, transactionType: 'all'}))}>Tất cả</button>
-                    <button className={filters.transactionType === 'NHẬP' ? 'active' : ''} onClick={() => setFilters(prev => ({...prev, transactionType: 'NHẬP'}))}>Chỉ xem Nhập</button>
-                    <button className={filters.transactionType === 'XUẤT' ? 'active' : ''} onClick={() => setFilters(prev => ({...prev, transactionType: 'XUẤT'}))}>Chỉ xem Xuất</button>
+                    <button className={filters.transactionType === 'all' ? 'active' : ''} onClick={() => { setFilters(prev => ({...prev, transactionType: 'all'})); setCurrentPage(1); }}>Tất cả</button>
+                    <button className={filters.transactionType === 'NHẬP' ? 'active' : ''} onClick={() => { setFilters(prev => ({...prev, transactionType: 'NHẬP'})); setCurrentPage(1); }}>Chỉ xem Nhập</button>
+                    <button className={filters.transactionType === 'XUẤT' ? 'active' : ''} onClick={() => { setFilters(prev => ({...prev, transactionType: 'XUẤT'})); setCurrentPage(1); }}>Chỉ xem Xuất</button>
                 </div>
                 <DateRangePresets onPresetSelect={(startDate, endDate) => setFilters(prev => ({ ...prev, startDate, endDate }))} />
                 <div className="form-row">
@@ -345,6 +348,11 @@ const ProductLedgerPage = () => {
                                 }}
                                 onChange={(value) => setFilters(prev => ({ ...prev, productId: value, productName: '' }))}
                             />
+                            {filters.productName && (
+                                <div style={{ marginTop: '4px', fontSize: '12px', color: '#007bff', fontStyle: 'italic' }}>
+                                    {filters.productName}
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%' }}>
@@ -440,7 +448,7 @@ const ProductLedgerPage = () => {
                                         </tr>
                                         {paginatedRows.map((row, index) => {
                                             const isSearchedLot = lotNumberFilter && row.lotNumber === lotNumberFilter;
-                                            const expiryClass = getRowColorByExpiry(row.expiryDateObject);
+                                            const expiryClass = getRowColorByExpiry(row.expiryDateObject, productInfo?.subGroup);
                                             const isLatestTransaction = sortedRows.length > 0 && row === sortedRows[sortedRows.length - 1];
                                             const rowClassName = `${expiryClass} ${isSearchedLot ? 'searched-lot-highlight' : ''} ${isLatestTransaction ? 'latest-transaction-highlight' : ''}`.trim();
 
@@ -452,10 +460,29 @@ const ProductLedgerPage = () => {
                                                     </td>
                                                     <td>{row.type}</td>
                                                     <td style={{ textAlign: 'left' }}>{row.description}</td>
-                                                    <td>{row.lotNumber || '(Không có)'}</td>
+                                                    <td>
+                                                        {row.lotNumber ? (
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newFilters = { ...filters, productId: row.lotNumber };
+                                                                    setFilters(prev => ({ ...prev, productId: row.lotNumber }));
+                                                                    search(newFilters);
+                                                                }}
+                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#007bff', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}
+                                                                title="Lọc theo lô này"
+                                                            >
+                                                                {row.lotNumber}
+                                                            </button>
+                                                        ) : '(Không có)'}
+                                                    </td>
                                                     <td>{row.expiryDate || '(Không có)'}</td>
                                                     <td>
-                                                        {row.expiryDateObject ? (getRowColorByExpiry(row.expiryDateObject).replace('near-expiry-red', 'Cận Date').replace('near-expiry-orange', 'Cận Date').replace('near-expiry-yellow', 'Cận Date').replace('expired-black', 'Hết Hạn') || 'An toàn') : '(N/A)'}
+                                                        {row.expiryDateObject ? (() => {
+                                                            const cls = getRowColorByExpiry(row.expiryDateObject, productInfo?.subGroup);
+                                                            if (cls === 'expired-black') return 'Hết Hạn';
+                                                            if (cls.includes('near-expiry')) return 'Cận Date';
+                                                            return 'An toàn';
+                                                        })() : '(N/A)'}
                                                     </td>
                                                     <td style={{ color: 'green' }}>{row.importQty > 0 ? formatNumber(row.importQty) : ''}</td>
                                                     <td style={{ color: 'red' }}>{row.exportQty > 0 ? formatNumber(row.exportQty) : ''}</td>

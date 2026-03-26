@@ -283,9 +283,10 @@ const promptAction = (action, slip) => {
                     const details = productDetailsMap[item.productId] || {};
                     return {
                         ...item,
-                        unit: details.unit || '',
-                        specification: details.packaging || '', // Sửa 'specification' thành 'packaging'
-                        storageTemp: details.storageTemp || '',
+                        productName: item.productName || details.productName || details.name || item.productId,
+                        unit: item.unit || details.unit || '',
+                        specification: details.packaging || item.packaging || '',
+                        storageTemp: item.storageTemp || details.storageTemp || '',
                     };
                 });
 
@@ -390,6 +391,16 @@ return (
                             <option value="cancelled">Đã hủy</option>
                         </select>
                     </div>
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => setFilters({ startDate: null, endDate: null, customer: { id: '', name: '' }, status: 'all' })}
+                            style={{ width: '100%' }}
+                        >
+                            Xóa bộ lọc
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -397,7 +408,7 @@ return (
             <div className="stats-grid" style={{ marginBottom: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 <div className="stat-card">
                     <div className="stat-card-info">
-                        <h4>Tổng Số Phiếu (trang này)</h4>
+                        <h4>Tổng Số Phiếu</h4>
                         <p>{summaryStats.total}</p>
                     </div>
                 </div>
@@ -441,7 +452,7 @@ return (
                 </thead>
                 <tbody>
 {exportSlips.length > 0 ? exportSlips.map(slip => (
-                                <tr key={slip.id}>
+                                <tr key={slip.id} style={{ backgroundColor: slip.status === 'pending' ? '#fffbea' : undefined }}>
                                     <td>{slip.exportDate ? slip.exportDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.customer}</td>
                                     <td>{slip.description}</td>

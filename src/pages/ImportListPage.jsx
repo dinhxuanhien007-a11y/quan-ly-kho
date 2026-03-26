@@ -1,7 +1,7 @@
 // src/pages/ImportListPage.jsx
 
 import React, { useState, useMemo } from 'react';
-import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc, where } from 'firebase/firestore'; // Thêm "where"
+import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc, where, increment } from 'firebase/firestore';
 import { FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
@@ -157,6 +157,17 @@ const handleConfirmImport = async (slipToConfirm) => {
             await addDoc(collection(db, "inventory_lots"), newLotData);
         }
 
+            // Cập nhật totalRemaining trên products cho từng mã hàng
+            const qtyByProduct = {};
+            for (const item of slip.items) {
+                qtyByProduct[item.productId] = (qtyByProduct[item.productId] || 0) + Number(item.quantity);
+            }
+            await Promise.all(
+                Object.entries(qtyByProduct).map(([pid, qty]) =>
+                    updateDoc(doc(db, 'products', pid), { totalRemaining: increment(qty) })
+                )
+            );
+
             const slipDocRef = doc(db, "import_tickets", slip.id);
             await updateDoc(slipDocRef, { status: "completed" });
             
@@ -190,7 +201,10 @@ const handleConfirmImport = async (slipToConfirm) => {
 
 const handleDeleteSlip = async (slipToDelete) => {
         if (!slipToDelete) return;
-        
+        if (slipToDelete.status === 'completed') {
+            toast.error('Không thể xóa phiếu đã hoàn thành. Chỉ xóa được phiếu đang chờ.');
+            return;
+        }
         toast.info(`Đang xóa phiếu nhập...`);
         try {
             const slipDocRef = doc(db, "import_tickets", slipToDelete.id);
@@ -276,9 +290,10 @@ const promptForConfirm = (slip) => {
                     const details = productDetailsMap[item.productId] || {};
                     return {
                         ...item,
-                        unit: details.unit || '',
-                        specification: details.packaging || '',
-                        storageTemp: details.storageTemp || '',
+                        productName: item.productName || details.productName || details.name || item.productId,
+                        unit: item.unit || details.unit || '',
+                        specification: details.packaging || item.packaging || '',
+                        storageTemp: item.storageTemp || details.storageTemp || '',
                     };
                 });
 
@@ -358,6 +373,16 @@ return (
                             <option value="completed">Hoàn thành</option>
                         </select>
                     </div>
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => setFilters({ startDate: null, endDate: null, supplier: { id: '', name: '' }, status: 'all' })}
+                            style={{ width: '100%' }}
+                        >
+                            Xóa bộ lọc
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -365,7 +390,7 @@ return (
             <div className="stats-grid" style={{ marginBottom: '20px' }}>
                 <div className="stat-card">
                     <div className="stat-card-info">
-                        <h4>Tổng Số Phiếu (trang này)</h4>
+                        <h4>Tổng Số Phiếu</h4>
                         <p>{summaryStats.total}</p>
                     </div>
                 </div>
@@ -403,7 +428,7 @@ return (
                         </thead>
                         <tbody>
 {importSlips.length > 0 ? importSlips.map(slip => (
-                                <tr key={slip.id}>
+                                <tr key={slip.id} style={{ backgroundColor: slip.status === 'pending' ? '#fffbea' : undefined }}>
                                    <td>{slip.importDate ? slip.importDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.supplierName}</td>
                                     <td>{slip.description}</td>

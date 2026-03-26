@@ -15,8 +15,7 @@ import AddAllowedUserModal from '../components/AddAllowedUserModal';
 import HighlightText from '../components/HighlightText';
 import StatCard from '../components/StatCard'; // Thêm StatCard
 
-// Component con PresenceIndicator (giữ nguyên)
-// ✅ CODE MỚI - tất cả đều bọc trong <span>
+// Component con PresenceIndicator
 const PresenceIndicator = ({ status }) => {
     if (!status) {
         return <span style={{ color: '#888', fontStyle: 'italic' }}>Chưa từng hoạt động</span>;
@@ -26,7 +25,20 @@ const PresenceIndicator = ({ status }) => {
         return <span style={{ color: '#28a745', fontWeight: 'bold' }}>● Online</span>;
     }
 
-    const lastChanged = new Date(status.last_changed);
+    // last_changed có thể là số ms hoặc ISO string
+    let lastChanged;
+    if (typeof status.last_changed === 'number') {
+        lastChanged = new Date(status.last_changed);
+    } else if (typeof status.last_changed === 'string') {
+        lastChanged = new Date(status.last_changed);
+    } else {
+        return <span style={{ color: '#888', fontStyle: 'italic' }}>Không rõ</span>;
+    }
+
+    if (isNaN(lastChanged.getTime())) {
+        return <span style={{ color: '#888', fontStyle: 'italic' }}>Không rõ</span>;
+    }
+
     const now = new Date();
     const diffSeconds = Math.round((now - lastChanged) / 1000);
 
@@ -58,10 +70,12 @@ const UsersPage = () => {
     const [userToEdit, setUserToEdit] = useState(null);
     const [presenceData, setPresenceData] = useState({});
 
-    // --- BẮT ĐẦU THAY ĐỔI 2: Tính toán các chỉ số thống kê ---
     const stats = useMemo(() => {
         const totalUsers = allUsers.length;
-        const onlineUsers = Object.values(presenceData).filter(status => status && status.isOnline).length;
+        // Chỉ đếm online cho những user đang có trong allUsers
+        const onlineUsers = allUsers.filter(user =>
+            user.uid && presenceData[user.uid]?.isOnline === true
+        ).length;
         return { totalUsers, onlineUsers };
     }, [allUsers, presenceData]);
 
@@ -113,9 +127,10 @@ const UsersPage = () => {
     // Lọc danh sách user dựa trên từ khóa tìm kiếm
     const filteredUsers = useMemo(() => {
         if (!searchTerm) return allUsers;
-        return allUsers.filter(user => 
-            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (user.uid && user.uid.toLowerCase().includes(searchTerm.toLowerCase()))
+        const lower = searchTerm.toLowerCase();
+        return allUsers.filter(user =>
+            user.email.toLowerCase().includes(lower) ||
+            (user.uid ? user.uid.toLowerCase().includes(lower) : false)
         );
     }, [searchTerm, allUsers]);
 
@@ -124,17 +139,21 @@ const UsersPage = () => {
         setIsEditModalOpen(true);
     };
 
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleDelete = async (user) => {
-        setConfirmModal({ isOpen: false });
-        toast.info(`Đang xóa ${user.email}...`);
+        setIsDeleting(true);
         try {
             const deleteFunc = httpsCallable(functions, 'deleteUserAndAllowlist');
             await deleteFunc({ email: user.email });
             toast.success(`Đã xóa ${user.email} khỏi hệ thống.`);
+            setConfirmModal({ isOpen: false });
             fetchAndMergeUsers();
         } catch (error) {
             console.error("Lỗi khi xóa:", error);
             toast.error(error.message);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -146,15 +165,16 @@ const UsersPage = () => {
         setConfirmModal({
             isOpen: true,
             title: "Xác nhận xóa?",
-            message: message,
+            message,
             onConfirm: () => handleDelete(user),
             confirmText: "Vẫn xóa",
+            isConfirming: isDeleting,
         });
     };
 
     return (
         <div>
-            <ConfirmationModal {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} />
+            <ConfirmationModal {...confirmModal} onCancel={() => setConfirmModal({ isOpen: false })} isConfirming={isDeleting} />
             {isAddModalOpen && <AddAllowedUserModal onClose={() => setIsAddModalOpen(false)} onUserAdded={fetchAndMergeUsers} />}
             {isEditModalOpen && <EditAllowedUserModal onClose={() => setIsEditModalOpen(false)} onUserUpdated={fetchAndMergeUsers} userToEdit={userToEdit} />}
 
