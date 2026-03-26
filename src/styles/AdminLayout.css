@@ -1765,3 +1765,28 @@ body.dark-mode tr.expired-black td {
 body.dark-mode tr.expired-black td:first-child {
     border-left: 5px solid #a78bfa;
 }
+
+
+/* --- STICKY HEADER CHO BẢNG TỒN KHO TỔNG HỢP --- */
+.inventory-summary-page .table-responsive-wrapper {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
+}
+
+.inventory-summary-page .products-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: var(--table-header-bg) !important;
+    box-shadow: 0 1px 0 var(--border-color);
+}
+
+/* --- STICKY HEADER CHO BẢNG TỒN KHO CHI TIẾT --- */
+.table-container {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    overflow-x: auto;
+    position: relative;
+}

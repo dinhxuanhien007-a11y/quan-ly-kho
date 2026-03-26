@@ -1,7 +1,5 @@
 // src/pages/ProductsPage.jsx
-import React, { useState, useMemo, useEffect } from 'react'; 
-import { collection, query, orderBy, where, documentId, getDocs } from 'firebase/firestore';
-import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import React, { useState, useMemo, useEffect } from 'react'; import { collection, query, orderBy, where, documentId, getDocs, limit } from 'firebase/firestore';import { FiEdit, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { db } from '../firebaseConfig';
 import { PAGE_SIZE } from '../constants';
@@ -23,14 +21,11 @@ const ProductsPage = () => {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
 
   const baseQuery = useMemo(() => {
-    // Sắp xếp theo 'createdAt' để luôn lấy được sản phẩm mới nhất lên đầu
-    let q = query(collection(db, 'products'));
     if (searchTerm) {
-        // Tìm kiếm vẫn dùng documentId vì hiệu quả hơn
         const upperSearchTerm = searchTerm.toUpperCase();
-        q = query(collection(db, 'products'), where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
+        return query(collection(db, 'products'), where(documentId(), '>=', upperSearchTerm), where(documentId(), '<=', upperSearchTerm + '\uf8ff'));
     }
-    return q;
+    return query(collection(db, 'products'), orderBy(documentId(), 'asc'));
   }, [searchTerm]);
 
   const {
@@ -62,7 +57,19 @@ const ProductsPage = () => {
     reset();
   };
 
-  const promptForDelete = (product) => {
+  const promptForDelete = async (product) => {
+    // Kiểm tra còn tồn kho không trước khi cho xóa
+    try {
+      const lotsSnap = await getDocs(
+        query(collection(db, 'inventory_lots'), where('productId', '==', product.id), where('quantityRemaining', '>', 0), limit(1))
+      );
+      if (!lotsSnap.empty) {
+        toast.error(`Không thể xóa "${product.productName}" vì vẫn còn tồn kho. Hãy xuất hết hàng trước.`);
+        return;
+      }
+    } catch (err) {
+      console.error(err);
+    }
     setConfirmModal({
         isOpen: true,
         item: product,
@@ -180,8 +187,7 @@ const ProductsPage = () => {
             Không tìm thấy sản phẩm nào.
           </td>
       </tr>
-  )}
-</tbody>
+  )}</tbody>
           </table>
 
           <div className="pagination-controls">

@@ -26,6 +26,8 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
   const [storageTemp, setStorageTemp] = useState('');
   const [manufacturer, setManufacturer] = useState('');
   const [team, setTeam] = useState('MED');
+  const [misaCode, setMisaCode] = useState('');
+  const [misaConversionFactor, setMisaConversionFactor] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -40,6 +42,8 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       storageTemp: storageTemp.trim(),
       manufacturer: manufacturer.trim(),
       team,
+      misaCode: misaCode.trim().toUpperCase() || null,
+      misaConversionFactor: misaConversionFactor !== '' ? Number(misaConversionFactor) : null,
     };
     
     const validationResult = productSchema.safeParse(formData);
@@ -130,6 +134,47 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
               <option value="MED">MED</option>
               <option value="BIO">BIO</option>
             </select>
+          </div>
+
+          <hr style={{ margin: '16px 0', borderColor: '#e9ecef' }} />
+          <p style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600', color: '#6c757d' }}>
+            Cấu hình đối chiếu Misa (tuỳ chọn)
+          </p>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Mã hàng trên Misa (nếu khác WebKho)</label>
+              <input
+                type="text"
+                value={misaCode}
+                onChange={(e) => setMisaCode(e.target.value.toUpperCase())}
+                placeholder="Để trống nếu mã giống nhau"
+              />
+            </div>
+            <div className="form-group">
+              <label>Hệ số quy đổi sang Misa</label>
+              <input
+                type="number"
+                min="0.001"
+                step="any"
+                value={misaConversionFactor}
+                onChange={(e) => setMisaConversionFactor(e.target.value)}
+                placeholder="Để trống nếu cùng đơn vị (= 1)"
+              />
+              <small style={{ color: '#6c757d', fontSize: '11px' }}>
+                VD: WebKho tính Cái, Misa tính Hộp/10 cái → nhập 0.1
+              </small>
+            </div>
+          </div>
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={missingFromMisa}
+                onChange={(e) => setMissingFromMisa(e.target.checked)}
+                style={{ width: 'auto' }}
+              />
+              Mã hàng này không có trên Misa (bỏ qua khi đối chiếu)
+            </label>
           </div>
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Hủy</button>

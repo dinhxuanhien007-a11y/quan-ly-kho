@@ -10,13 +10,12 @@ import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiChevronLeft, FiChevronRight, FiPrinter, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
 import NewDataNotification from '../components/NewDataNotification';
 import { PAGE_SIZE } from '../constants';
-import { formatDate, getRowColorByExpiry, calculateLifePercentage } from '../utils/dateUtils';
-import { fuzzyNormalize } from '../utils/stringUtils'; 
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText'; 
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -44,6 +43,7 @@ const InventoryPage = ({ pageTitle }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
     const [allProductsCache, setAllProductsCache] = useState([]);
+    const [localNoteOverrides, setLocalNoteOverrides] = useState({});
     const searchInputRef = useRef(null);
 
     // --- PHÍM TẮT "/" ĐỂ TÌM KIẾM ---
@@ -79,28 +79,23 @@ const InventoryPage = ({ pageTitle }) => {
 
     // --- HÀM XỬ LÝ SỬA NHANH GHI CHÚ ---
     const handleQuickUpdateNote = async (lotId, newNote) => {
-        // --- THÊM ĐOẠN NÀY: Chặn nếu không phải owner ---
         if (userRole !== 'owner') {
             toast.error("Bạn không có quyền sửa ghi chú!");
             return;
         }
-        // ------------------------------------------------
         try {
             const lotRef = doc(db, 'inventory_lots', lotId);
             await updateDoc(lotRef, { notes: newNote });
             toast.success("Đã cập nhật ghi chú!");
             
-            // Cập nhật UI ngay lập tức (Optimistic Update) để người dùng không phải chờ reload
-            // Cập nhật cho cả danh sách searchResults và inventory
+            // Cập nhật cả searchResults lẫn inventory (optimistic update)
             const updateList = (list) => list.map(item => 
                 item.id === lotId ? { ...item, notes: newNote } : item
             );
-            
-            if (isSearching) {
-                setSearchResults(prev => updateList(prev));
-            }
-            // Lưu ý: inventory được quản lý bởi hook, ta không set trực tiếp được dễ dàng, 
-            // nhưng hook realtime notification sẽ lo phần update sau đó.
+            setSearchResults(prev => updateList(prev));
+            // Cập nhật trực tiếp documents trong hook thông qua setter nếu có,
+            // hoặc dùng local override state để hiển thị ngay
+            setLocalNoteOverrides(prev => ({ ...prev, [lotId]: newNote }));
             
         } catch (error) {
             console.error("Lỗi cập nhật ghi chú:", error);
@@ -134,6 +129,16 @@ const InventoryPage = ({ pageTitle }) => {
 
             if (filters.team !== 'all') constraints.push(where("team", "==", filters.team));
             if (filters.subGroup && filters.subGroup !== 'all') constraints.push(where("subGroup", "==", filters.subGroup));
+
+            // Áp dụng filter dateStatus khi tìm kiếm
+            if (filters.dateStatus === 'expired') {
+                constraints.push(where("expiryDate", "<", Timestamp.now()));
+            } else if (filters.dateStatus === 'near_expiry') {
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + 210);
+                constraints.push(where("expiryDate", ">=", Timestamp.now()));
+                constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+            }
 
             const queryPromises = [];
 
@@ -196,12 +201,6 @@ const InventoryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, performSearch]);
 
-    // --- TỰ ĐỘNG CUỘN LÊN ĐẦU KHI CHUYỂN TRANG ---
-    const [page, setPage] = useState(1);
-    useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [page]);
-
     const baseQuery = useMemo(() => {
         if (searchTerm) return null; 
         
@@ -236,27 +235,28 @@ const InventoryPage = ({ pageTitle }) => {
         documents: inventory,
         loading,
         isLastPage,
-        // page: pageFromHook, // Ta dùng state page ở trên để control scroll
+        page,
         nextPage,
         prevPage,
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    // Sync page state from hook (tùy chỉnh hook nếu cần, ở đây ta giả lập)
-    // Để đơn giản, ta giữ logic page của hook nhưng thêm useEffect scroll ở trên
+    // Reset localNoteOverrides khi filter hoặc trang thay đổi
+    useEffect(() => {
+        setLocalNoteOverrides({});
+    }, [filters, page]);
+
+    // --- TỰ ĐỘNG CUỘN LÊN ĐẦU KHI CHUYỂN TRANG ---
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [page]);
 
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
     const dataToDisplay = useMemo(() => {
         if (isSearching) return searchResults;
-        if (filters.dateStatus === 'near_expiry') {
-            return inventory.filter(lot => {
-                const colorClass = getRowColorByExpiry(lot.expiryDate, lot.subGroup);
-                return colorClass.includes('near-expiry') || colorClass.includes('expired');
-            });
-        }
         return inventory;
-    }, [isSearching, searchResults, inventory, filters.dateStatus]);
+    }, [isSearching, searchResults, inventory]);
 
     const handleRefresh = () => {
         dismissNewData();
@@ -412,12 +412,11 @@ const InventoryPage = ({ pageTitle }) => {
                                         <td data-label="Ghi chú">
                                             <InlineEditCell 
                                                 id={lot.id} 
-                                                initialValue={lot.notes} 
+                                                initialValue={localNoteOverrides[lot.id] !== undefined ? localNoteOverrides[lot.id] : lot.notes} 
                                                 onSave={handleQuickUpdateNote}
-                                                canEdit={userRole === 'owner'}  // <--- THÊM DÒNG NÀY 
+                                                canEdit={userRole === 'owner'}
                                             />
                                         </td>
-                                        {/* ------------------------------------------------ */}
 
                                         <td data-label="Nhiệt độ BQ"><TempBadge temperature={lot.storageTemp} /></td>
                                         <td data-label="Hãng sản xuất">{lot.manufacturer}</td>
@@ -442,11 +441,11 @@ const InventoryPage = ({ pageTitle }) => {
             
             {!isSearching && !loading && dataToDisplay.length > 0 && (
                 <div className="pagination-controls">
-                    <button onClick={() => { prevPage(); setPage(p => Math.max(1, p - 1)); }} disabled={page <= 1}>
+                    <button onClick={() => { prevPage(); }} disabled={page <= 1}>
                         <FiChevronLeft /> Trang Trước
                     </button>
                     <span>Trang {page}</span>
-                    <button onClick={() => { nextPage(); if(!isLastPage) setPage(p => p + 1); }} disabled={isLastPage}>
+                    <button onClick={() => { nextPage(); }} disabled={isLastPage}>
                         Trang Tiếp <FiChevronRight />
                     </button>
                 </div>

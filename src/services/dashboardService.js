@@ -48,6 +48,7 @@ export const getDashboardStats = async () => {
     specialFutureDate.setDate(today.getDate() + 90);
     const specialNearExpiryQuery = query(
         collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
         where("subGroup", "in", specialGroups),
         where("expiryDate", ">=", Timestamp.now()),
         where("expiryDate", "<=", Timestamp.fromDate(specialFutureDate))
@@ -59,6 +60,7 @@ export const getDashboardStats = async () => {
     otherFutureDate.setDate(today.getDate() + 210);
     const otherNearExpiryQuery = query(
         collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
         where("subGroup", "in", otherGroups),
         where("expiryDate", ">=", Timestamp.now()),
         where("expiryDate", "<=", Timestamp.fromDate(otherFutureDate))
@@ -67,6 +69,7 @@ export const getDashboardStats = async () => {
     // 3. Đếm số lô đã hết hạn (giữ nguyên)
     const expiredQuery = query(
         collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
         where("expiryDate", "<", Timestamp.now())
     );
 
@@ -134,6 +137,7 @@ export const getChartData = async () => {
     specialFutureDate.setDate(today.getDate() + 90);
     const specialNearExpiryQuery = query(
         collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
         where("subGroup", "in", specialGroups),
         where("expiryDate", ">=", Timestamp.now()),
         where("expiryDate", "<=", Timestamp.fromDate(specialFutureDate))
@@ -145,16 +149,24 @@ export const getChartData = async () => {
     otherFutureDate.setDate(today.getDate() + 210);
     const otherNearExpiryQuery = query(
         collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
         where("subGroup", "in", otherGroups),
         where("expiryDate", ">=", Timestamp.now()),
         where("expiryDate", "<=", Timestamp.fromDate(otherFutureDate))
     );
 
     // 3. Lấy số lô đã hết hạn (giữ nguyên)
-    const expiredQuery = query(collection(db, "inventory_lots"), where("expiryDate", "<", Timestamp.now()));
+    const expiredQuery = query(
+        collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0),
+        where("expiryDate", "<", Timestamp.now())
+    );
 
     // 4. Lấy số lô an toàn (phức tạp hơn, cần lấy tổng số lô rồi trừ đi)
-    const allLotsQuery = query(collection(db, "inventory_lots"));
+    const allLotsQuery = query(
+        collection(db, "inventory_lots"),
+        where("quantityRemaining", ">", 0)
+    );
 
     const [specialSnap, otherSnap, expiredSnap, allLotsSnap] = await Promise.all([
         getCountFromServer(specialNearExpiryQuery),

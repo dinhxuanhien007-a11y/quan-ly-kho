@@ -14,7 +14,6 @@ import {
     startAfter,
     Timestamp,
     doc,
-    getDoc,
     onSnapshot,
     updateDoc
 } from 'firebase/firestore';
@@ -29,7 +28,7 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
-import { formatDate, getRowColorByExpiry, calculateLifePercentage } from '../utils/dateUtils'; // <-- Bổ sung calculateLifePercentage
+import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
@@ -62,7 +61,7 @@ const getLotItemColorClass = (expiryDate, subGroup) => {
     return '';
 };
 
-const InventorySummaryPage = ({ pageTitle }) => {
+const InventorySummaryPage = () => {
     const { role: userRole } = useAuth();
     const [summaries, setSummaries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -82,7 +81,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
     });
     
     const [hasNewData, setHasNewData] = useState(false);
-    const lastSeenSnapshotRef = useRef(null); 
 
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
     const subGroupRef = useRef(null);
@@ -134,10 +132,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(where("subGroup", "==", filters.subGroup));
             }
 
-            // --- SỬA ĐỔI: BỎ LỌC DB ĐỂ TRÁNH LỖI ---
-            // Chúng ta sẽ lọc totalRemaining > 0 ở Client-side bên dưới
-            // ---------------------------------------
-
             // 3. Lọc theo Date & Sắp xếp
             if (filters.dateStatus === 'expired') {
                 queryConstraints.push(where("nearestExpiryDate", "<", Timestamp.now()));
@@ -154,13 +148,14 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 queryConstraints.push(orderBy(documentId(), "asc"));
             }
 
-            // 4. Phân trang
+            // 4. Phân trang - fetch nhiều hơn để bù cho việc lọc client-side totalRemaining > 0
+            const FETCH_SIZE = PAGE_SIZE * 3;
             if (direction === 'next' && cursor) {
                 queryConstraints.push(startAfter(cursor));
             } else if (direction === 'first') {
                 setPage(1);
             }
-            queryConstraints.push(limit(PAGE_SIZE));
+            queryConstraints.push(limit(FETCH_SIZE));
             
             const mainQuery = query(baseCollectionRef, ...queryConstraints);
             const mainSnapshot = await getDocs(mainQuery);
@@ -179,14 +174,15 @@ const InventorySummaryPage = ({ pageTitle }) => {
                 nearestExpiryDate: doc.data().nearestExpiryDate ?? null
             }));
 
-            // --- SỬA ĐỔI: LỌC CLIENT-SIDE AN TOÀN ---
-            // Luôn lọc bỏ hàng có tồn kho <= 0 trước khi hiển thị
+            // Lọc bỏ hàng có tồn kho <= 0
             summaryDocs = summaryDocs.filter(item => item.totalRemaining > 0);
-            // ----------------------------------------
+
+            // Lấy đúng PAGE_SIZE sau khi lọc
+            const pageResults = summaryDocs.slice(0, PAGE_SIZE);
             
-            setSummaries(summaryDocs);
+            setSummaries(pageResults);
             setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
-            setIsLastPage(mainSnapshot.docs.length < PAGE_SIZE);
+            setIsLastPage(mainSnapshot.docs.length < FETCH_SIZE);
 
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu tổng hợp: ", error);
@@ -319,6 +315,9 @@ const InventorySummaryPage = ({ pageTitle }) => {
         const debounce = setTimeout(() => {
             setLastVisible(null);
             setPage(1);
+            // Reset expanded state khi search/filter thay đổi
+            setExpandedRows({});
+            setLotDetails({});
             if (searchTerm) {
                 performSearch(searchTerm);
             } else {
@@ -327,7 +326,6 @@ const InventorySummaryPage = ({ pageTitle }) => {
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchTerm, filters, fetchData, performSearch]);
-    
     // --- CÁC PHẦN CÒN LẠI GIỮ NGUYÊN ---
     const isFirstRun = useRef(true);
 
@@ -370,6 +368,8 @@ const InventorySummaryPage = ({ pageTitle }) => {
 
     const handleRefresh = () => {
         setHasNewData(false);
+        setExpandedRows({});
+        setLotDetails({});
         fetchData('first');
     };
     
@@ -451,18 +451,19 @@ const InventorySummaryPage = ({ pageTitle }) => {
         setExpandedRows(prev => ({ ...prev, [productId]: true }));
     };
 
-    const handleNextPage = () => { if (!isLastPage) { setPage(p => p + 1); fetchData('next', lastVisible); } };
-    const handlePrevPage = () => { fetchData('first'); };
-
-    const filteredSummaries = useMemo(() => {
-        if (filters.dateStatus !== 'near_expiry') {
-            return summaries;
-        }
-        return summaries.filter(product => {
-            const colorClass = getRowColorByExpiry(product.nearestExpiryDate, product.subGroup);
-            return colorClass.includes('near-expiry') || colorClass.includes('expired');
-        });
-    }, [summaries, filters.dateStatus]);
+    const handleNextPage = () => { 
+        if (!isLastPage) { 
+            setPage(p => p + 1); 
+            fetchData('next', lastVisible); 
+        } 
+    };
+    const handlePrevPage = () => { 
+        setLastVisible(null);
+        setPage(1);
+        setExpandedRows({});
+        setLotDetails({});
+        fetchData('first'); 
+    };
 
     const handleExportExcel = async () => {
         if (userRole !== 'owner') return;
@@ -520,7 +521,7 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
     const canExport = ALLOWED_EXPORT_ROLES.includes(userRole);
 
     return (
-        <div className="printable-inventory-area">
+        <div className="printable-inventory-area inventory-summary-page">
             <NewDataNotification
                 isVisible={hasNewData}
                 onRefresh={handleRefresh}
@@ -614,7 +615,7 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredSummaries.map(product => (
+                                {summaries.map(product => (
                                     <React.Fragment key={product.id}>
                                         <tr 
     onClick={() => toggleRow(product.id)} 

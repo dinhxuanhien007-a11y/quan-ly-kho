@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { toast } from 'react-toastify';
-import { FiSearch, FiPackage, FiTrendingUp, FiTrendingDown, FiBarChart2, FiChevronDown, FiChevronUp, FiUser, FiTruck, FiFileText, FiX } from 'react-icons/fi';
+import { formatDate } from '../utils/dateUtils';
+import { FiSearch, FiPackage, FiTrendingUp, FiTrendingDown, FiBarChart2, FiChevronDown, FiChevronUp, FiUser, FiTruck, FiFileText, FiX, FiCheckCircle, FiCircle } from 'react-icons/fi';
 
 function normLot(s) {
     if (!s) return '';
@@ -19,17 +20,52 @@ function fmtNum(val) {
     return rounded.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+// Xử lý date an toàn: Timestamp, string, Date, null
+function safeFormatDate(val) {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val.toDate === 'function') return formatDate(val);
+    if (val instanceof Date) return formatDate(val);
+    return String(val);
+}
+
+// Lấy timestamp để sort (cũ nhất lên đầu)
+function getDateTimestamp(val) {
+    if (!val) return 0;
+    if (typeof val.toDate === 'function') return val.toDate().getTime();
+    if (val instanceof Date) return val.getTime();
+    if (typeof val === 'string') {
+        const parts = val.split('/');
+        if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+        return new Date(val).getTime() || 0;
+    }
+    return 0;
+}
+
 const LotTracePage = () => {
     const [productId, setProductId] = useState('');
     const [lotNumber, setLotNumber] = useState('');
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(null);
     const [expandedTickets, setExpandedTickets] = useState(new Set());
+    const [matchedTickets, setMatchedTickets] = useState(new Set());
     const [modalTicket, setModalTicket] = useState(null);
     const [modalType, setModalType] = useState(null);
 
     const toggleTicket = (ticketId) => {
         setExpandedTickets(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(ticketId)) {
+                newSet.delete(ticketId);
+            } else {
+                newSet.add(ticketId);
+            }
+            return newSet;
+        });
+    };
+
+    const toggleMatched = (ticketId) => {
+        setMatchedTickets(prev => {
             const newSet = new Set(prev);
             if (newSet.has(ticketId)) {
                 newSet.delete(ticketId);
@@ -49,20 +85,27 @@ const LotTracePage = () => {
             if (docSnap.exists()) {
                 const ticketData = { id: docSnap.id, ...docSnap.data() };
                 
-                // Làm giàu dữ liệu sản phẩm
-                const productPromises = ticketData.items.map(item => getDoc(doc(db, 'products', item.productId)));
-                const productSnapshots = await Promise.all(productPromises);
-                
-                const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
-                    if (docSn.exists()) {
-                        acc[docSn.id] = docSn.data();
-                    }
-                    return acc;
-                }, {});
+                // Lấy productName từ item trực tiếp nếu có, chỉ query products nếu thiếu
+                const missingNameIds = [...new Set(
+                    ticketData.items
+                        .filter(item => !item.productName)
+                        .map(item => item.productId)
+                )];
+
+                let productDetailsMap = {};
+                if (missingNameIds.length > 0) {
+                    const productSnapshots = await Promise.all(
+                        missingNameIds.map(pid => getDoc(doc(db, 'products', pid)))
+                    );
+                    productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                        if (docSn.exists()) acc[docSn.id] = docSn.data();
+                        return acc;
+                    }, {});
+                }
 
                 ticketData.items = ticketData.items.map(item => ({
                     ...item,
-                    productName: productDetailsMap[item.productId]?.name || 'N/A',
+                    productName: item.productName || productDetailsMap[item.productId]?.name || productDetailsMap[item.productId]?.productName || item.productId,
                 }));
 
                 setModalTicket(ticketData);
@@ -89,6 +132,7 @@ const LotTracePage = () => {
 
         setLoading(true);
         setResults(null);
+        setMatchedTickets(new Set());
 
         try {
             const pidTrim = productId.trim();
@@ -202,43 +246,51 @@ const LotTracePage = () => {
             // Làm giàu dữ liệu sản phẩm cho tất cả items
             const allProductIds = new Set();
             exportDetails.forEach(exp => {
-                exp.allItems.forEach(item => allProductIds.add(item.productId));
+                exp.allItems.forEach(item => { if (!item.productName) allProductIds.add(item.productId); });
             });
             importDetails.forEach(imp => {
-                imp.allItems.forEach(item => allProductIds.add(item.productId));
+                imp.allItems.forEach(item => { if (!item.productName) allProductIds.add(item.productId); });
             });
 
-            const productPromises = Array.from(allProductIds).map(pid => getDoc(doc(db, 'products', pid)));
-            const productSnapshots = await Promise.all(productPromises);
-            
-            const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
-                if (docSn.exists()) {
-                    acc[docSn.id] = docSn.data();
-                }
-                return acc;
-            }, {});
+            let productDetailsMap = {};
+            if (allProductIds.size > 0) {
+                const productPromises = Array.from(allProductIds).map(pid => getDoc(doc(db, 'products', pid)));
+                const productSnapshots = await Promise.all(productPromises);
+                productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                    if (docSn.exists()) {
+                        acc[docSn.id] = docSn.data();
+                    }
+                    return acc;
+                }, {});
+            }
+
+            const resolveProductName = (item) =>
+                item.productName ||
+                productDetailsMap[item.productId]?.name ||
+                productDetailsMap[item.productId]?.productName ||
+                item.productId;
 
             // Thêm tên sản phẩm vào items
             exportDetails.forEach(exp => {
-                exp.allItems = exp.allItems.map(item => ({
-                    ...item,
-                    productName: productDetailsMap[item.productId]?.name || 'N/A',
-                }));
-                exp.matchingItems = exp.matchingItems.map(item => ({
-                    ...item,
-                    productName: productDetailsMap[item.productId]?.name || 'N/A',
-                }));
+                exp.allItems = exp.allItems.map(item => ({ ...item, productName: resolveProductName(item) }));
+                exp.matchingItems = exp.matchingItems.map(item => ({ ...item, productName: resolveProductName(item) }));
             });
 
             importDetails.forEach(imp => {
-                imp.allItems = imp.allItems.map(item => ({
-                    ...item,
-                    productName: productDetailsMap[item.productId]?.name || 'N/A',
-                }));
-                imp.matchingItems = imp.matchingItems.map(item => ({
-                    ...item,
-                    productName: productDetailsMap[item.productId]?.name || 'N/A',
-                }));
+                imp.allItems = imp.allItems.map(item => ({ ...item, productName: resolveProductName(item) }));
+                imp.matchingItems = imp.matchingItems.map(item => ({ ...item, productName: resolveProductName(item) }));
+            });
+
+            // Sắp xếp phiếu cũ nhất lên đầu
+            exportDetails.sort((a, b) => getDateTimestamp(a.date) - getDateTimestamp(b.date));
+            importDetails.sort((a, b) => getDateTimestamp(a.date) - getDateTimestamp(b.date));
+
+            // Tính tổng số lượng matching cho mỗi phiếu xuất
+            exportDetails.forEach(exp => {
+                exp.matchingQty = exp.matchingItems.reduce((sum, item) => sum + (item.quantityToExport || 0), 0);
+            });
+            importDetails.forEach(imp => {
+                imp.matchingQty = imp.matchingItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
             });
 
             setResults({
@@ -248,7 +300,6 @@ const LotTracePage = () => {
                 totalExportQty,
                 theoreticalStock: totalImportQty - totalExportQty,
             });
-
         } catch (error) {
             console.error('❌ Lỗi:', error);
             toast.error('Lỗi: ' + error.message);
@@ -275,7 +326,7 @@ const LotTracePage = () => {
             </div>
             
             <div style={{ marginBottom: '30px', padding: '24px', backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'end' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: '12px', alignItems: 'end' }}>
                     <div>
                         <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: 'var(--text-color)' }}>
                             Mã hàng
@@ -310,6 +361,16 @@ const LotTracePage = () => {
                         <FiSearch style={{ fontSize: '16px' }} />
                         {loading ? 'Đang tìm...' : 'Tìm kiếm'}
                     </button>
+                    {results && (
+                        <button
+                            onClick={() => { setProductId(''); setLotNumber(''); setResults(null); setMatchedTickets(new Set()); }}
+                            title="Xóa tìm kiếm"
+                            style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', backgroundColor: 'white', color: '#666', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+                        >
+                            <FiX style={{ fontSize: '16px' }} />
+                            Xóa
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -359,13 +420,21 @@ const LotTracePage = () => {
                             results.exportDetails.map((exp, idx) => {
                                 const isExpanded = expandedTickets.has(exp.id);
                                 const hiddenCount = exp.allItems.length - exp.matchingItems.length;
+                                const isMatched = matchedTickets.has(exp.id);
                                 
                                 return (
-                                    <div key={idx} style={{ marginBottom: '16px', padding: '20px', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid #ff9800', boxShadow: '0 2px 6px rgba(255, 152, 0, 0.1)' }}>
+                                    <div key={idx} style={{ marginBottom: '16px', padding: '20px', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: `1px solid ${isMatched ? '#4caf50' : '#ff9800'}`, boxShadow: isMatched ? '0 2px 6px rgba(76, 175, 80, 0.15)' : '0 2px 6px rgba(255, 152, 0, 0.1)', opacity: isMatched ? 0.75 : 1, transition: 'all 0.2s' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-color)', marginBottom: '8px' }}>
-                                                    Phiếu: {exp.id}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                                    <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-color)' }}>
+                                                        Phiếu: {exp.id}
+                                                    </div>
+                                                    {isMatched && (
+                                                        <span style={{ padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '700', backgroundColor: '#e8f5e9', color: '#2e7d32', border: '1px solid #a5d6a7' }}>
+                                                            ✓ Đã khớp
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#fff3e0', borderRadius: '6px', border: '1px solid #ffcc80' }}>
@@ -373,8 +442,13 @@ const LotTracePage = () => {
                                                         <span style={{ fontSize: '13px', fontWeight: '600', color: '#e65100' }}>{exp.customer}</span>
                                                     </div>
                                                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                                        📅 {exp.date}
+                                                        📅 {safeFormatDate(exp.date)}
                                                     </div>
+                                                    {exp.matchingQty > 0 && (
+                                                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#e65100', padding: '4px 10px', backgroundColor: '#fff3e0', borderRadius: '6px', border: '1px solid #ffcc80' }}>
+                                                            📦 {fmtNum(exp.matchingQty)} {exp.matchingItems[0]?.unit || ''}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 {exp.description && (
                                                     <div style={{ marginTop: '8px', padding: '8px 12px', backgroundColor: '#fff9e6', borderRadius: '6px', border: '1px solid #ffe0b2', fontSize: '12px', color: '#e65100', fontStyle: 'italic' }}>
@@ -386,13 +460,23 @@ const LotTracePage = () => {
                                                 <div style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: exp.status === 'completed' ? '#e8f5e9' : '#fff3e0', color: exp.status === 'completed' ? '#2e7d32' : '#e65100', border: `1px solid ${exp.status === 'completed' ? '#a5d6a7' : '#ffcc80'}` }}>
                                                     {exp.status === 'completed' ? 'Hoàn thành' : exp.status}
                                                 </div>
-                                                <button
-                                                    onClick={() => openTicketModal(exp.id, 'export')}
-                                                    style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #ff9800', backgroundColor: 'white', color: '#e65100', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s' }}
-                                                >
-                                                    <FiFileText style={{ fontSize: '14px' }} />
-                                                    Chi tiết
-                                                </button>
+                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                                    <button
+                                                        onClick={() => toggleMatched(exp.id)}
+                                                        title={isMatched ? 'Bỏ đánh dấu khớp' : 'Đánh dấu đã khớp'}
+                                                        style={{ padding: '6px 12px', borderRadius: '6px', border: `1px solid ${isMatched ? '#4caf50' : '#ccc'}`, backgroundColor: isMatched ? '#e8f5e9' : 'white', color: isMatched ? '#2e7d32' : '#888', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s' }}
+                                                    >
+                                                        {isMatched ? <FiCheckCircle style={{ fontSize: '14px' }} /> : <FiCircle style={{ fontSize: '14px' }} />}
+                                                        {isMatched ? 'Đã khớp' : 'Đánh dấu khớp'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openTicketModal(exp.id, 'export')}
+                                                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #ff9800', backgroundColor: 'white', color: '#e65100', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s' }}
+                                                    >
+                                                        <FiFileText style={{ fontSize: '14px' }} />
+                                                        Chi tiết
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -429,7 +513,7 @@ const LotTracePage = () => {
                                                             <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontWeight: isMatching ? '600' : 'normal' }}>{item.lotNumber}</td>
                                                             <td style={{ padding: '8px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600', color: isMatching ? '#e65100' : 'var(--text-color)' }}>{fmtNum(item.quantityToExport)}</td>
                                                             <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.unit}</td>
-                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.expiryDate}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{safeFormatDate(item.expiryDate)}</td>
                                                         </tr>
                                                     );
                                                 })}
@@ -478,8 +562,13 @@ const LotTracePage = () => {
                                                         <span style={{ fontSize: '13px', fontWeight: '600', color: '#2e7d32' }}>{imp.supplier}</span>
                                                     </div>
                                                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                                        📅 {imp.date}
+                                                        📅 {safeFormatDate(imp.date)}
                                                     </div>
+                                                    {imp.matchingQty > 0 && (
+                                                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#2e7d32', padding: '4px 10px', backgroundColor: '#e8f5e9', borderRadius: '6px', border: '1px solid #a5d6a7' }}>
+                                                            📦 {fmtNum(imp.matchingQty)} {imp.matchingItems[0]?.unit || ''}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 {imp.description && (
                                                     <div style={{ marginTop: '8px', padding: '8px 12px', backgroundColor: '#e8f9e8', borderRadius: '6px', border: '1px solid #c8e6c9', fontSize: '12px', color: '#2e7d32', fontStyle: 'italic' }}>
@@ -529,7 +618,7 @@ const LotTracePage = () => {
                                                             <td style={{ padding: '8px', border: '1px solid var(--border-color)', fontWeight: isMatching ? '600' : 'normal' }}>{item.lotNumber}</td>
                                                             <td style={{ padding: '8px', textAlign: 'right', border: '1px solid var(--border-color)', fontWeight: '600', color: isMatching ? '#2e7d32' : 'var(--text-color)' }}>{fmtNum(item.quantity)}</td>
                                                             <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.unit}</td>
-                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.expiryDate}</td>
+                                                            <td style={{ padding: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{safeFormatDate(item.expiryDate)}</td>
                                                         </tr>
                                                     );
                                                 })}
@@ -576,7 +665,7 @@ const LotTracePage = () => {
                                         </div>
                                     )}
                                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                        📅 {modalType === 'export' ? modalTicket.exportDate : modalTicket.importDate}
+                                        📅 {modalType === 'export' ? safeFormatDate(modalTicket.exportDate) : safeFormatDate(modalTicket.importDate)}
                                     </div>
                                     <div style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: modalTicket.status === 'completed' ? '#e8f5e9' : '#fff3e0', color: modalTicket.status === 'completed' ? '#2e7d32' : '#e65100', border: `1px solid ${modalTicket.status === 'completed' ? '#a5d6a7' : '#ffcc80'}` }}>
                                         {modalTicket.status === 'completed' ? 'Hoàn thành' : modalTicket.status}
@@ -621,7 +710,7 @@ const LotTracePage = () => {
                                                     {fmtNum(modalType === 'export' ? item.quantityToExport : item.quantity)}
                                                 </td>
                                                 <td style={{ padding: '10px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.unit}</td>
-                                                <td style={{ padding: '10px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{item.expiryDate}</td>
+                                                <td style={{ padding: '10px', textAlign: 'center', border: '1px solid var(--border-color)' }}>{safeFormatDate(item.expiryDate)}</td>
                                                 <td style={{ padding: '10px', border: '1px solid var(--border-color)', fontSize: '12px', fontStyle: item.notes ? 'italic' : 'normal', color: item.notes ? 'var(--text-color)' : 'var(--text-secondary)' }}>
                                                     {item.notes || '-'}
                                                 </td>

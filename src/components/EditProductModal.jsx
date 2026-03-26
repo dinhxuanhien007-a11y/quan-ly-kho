@@ -13,6 +13,8 @@ const productSchema = z.object({
   storageTemp: z.string().optional(),
   manufacturer: z.string().optional(),
   team: z.string(),
+  misaCode: z.string().optional().nullable(),
+  misaConversionFactor: z.number().positive().optional().nullable(),
 });
 
 const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
@@ -86,6 +88,38 @@ const EditProductModal = ({ onClose, onProductUpdated, productToEdit }) => {
               <option value="MED">MED</option>
               <option value="BIO">BIO</option>
             </select>
+          </div>
+
+          <hr style={{ margin: '16px 0', borderColor: '#e9ecef' }} />
+          <p style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600', color: '#6c757d' }}>
+            Cấu hình đối chiếu Misa (tuỳ chọn)
+          </p>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Mã hàng trên Misa (nếu khác WebKho)</label>
+              <input
+                type="text"
+                name="misaCode"
+                value={productData.misaCode || ''}
+                onChange={(e) => setProductData(prev => ({ ...prev, misaCode: e.target.value.toUpperCase() }))}
+                placeholder="Để trống nếu mã giống nhau"
+              />
+            </div>
+            <div className="form-group">
+              <label>Hệ số quy đổi sang Misa</label>
+              <input
+                type="number"
+                min="0.001"
+                step="any"
+                name="misaConversionFactor"
+                value={productData.misaConversionFactor ?? ''}
+                onChange={(e) => setProductData(prev => ({ ...prev, misaConversionFactor: e.target.value !== '' ? Number(e.target.value) : null }))}
+                placeholder="Để trống nếu cùng đơn vị (= 1)"
+              />
+              <small style={{ color: '#6c757d', fontSize: '11px' }}>
+                VD: WebKho tính Cái, Misa tính Hộp/10 cái → nhập 0.1
+              </small>
+            </div>
           </div>
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Hủy</button>

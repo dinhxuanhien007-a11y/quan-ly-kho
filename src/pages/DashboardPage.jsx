@@ -16,12 +16,45 @@ import TeamBarChart from '../components/TeamBarChart';
 import { FiAlertTriangle, FiCheckCircle, FiPackage, FiUsers } from 'react-icons/fi';
 import Spinner from '../components/Spinner';
 import '../styles/Dashboard.css';
-import { Link } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
 import { doc, getDoc } from 'firebase/firestore'; // Thêm getDoc và doc
 import { db } from '../firebaseConfig'; // Thêm db
 import ViewImportSlipModal from '../components/ViewImportSlipModal'; // Thêm modal phiếu nhập
 import ViewExportSlipModal from '../components/ViewExportSlipModal'; // Thêm modal phiếu xuất
+
+const PendingList = ({ title, tickets, type, onView }) => (
+    <div className="card">
+        <h3>{title} ({tickets.length})</h3>
+        {tickets.length > 0 ? (
+            <div className="table-container">
+                <table className="products-table minimal">
+                    <thead>
+                        <tr>
+                            <th>ID Phiếu</th>
+                            <th>{type === 'import' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</th>
+                            <th>Ngày tạo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {tickets.map(ticket => (
+                            <tr key={ticket.id}>
+                                <td>
+                                    <button onClick={() => onView(ticket.id, type)} className="btn-link table-link">
+                                        {ticket.id}
+                                    </button>
+                                </td>
+                                <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
+                                <td>{formatDate(ticket.createdAt)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        ) : (
+            <p className="empty-message">Không có phiếu nào đang chờ xử lý.</p>
+        )}
+    </div>
+);
 
 const DashboardPage = () => {
     const [stats, setStats] = useState({});
@@ -61,8 +94,8 @@ const DashboardPage = () => {
                 const details = productDetailsMap[item.productId] || {};
                 return {
                     ...item,
-                    // Đổi tên 'packaging' thành 'specification' để modal có thể đọc được
-                    specification: details.packaging || '', 
+                    productName: item.productName || details.productName || details.name || item.productId,
+                    specification: details.packaging || item.packaging || '',
                 };
             });
 
@@ -122,43 +155,6 @@ const DashboardPage = () => {
 
         fetchData();
     }, []);
-
-    const PendingList = ({ title, tickets, type, onView }) => ( // Thêm "onView"
-        <div className="card">
-            <h3>{title} ({tickets.length})</h3>
-            {loading ? (
-                 <Spinner />
-            ) : tickets.length > 0 ? (
-                <div className="table-container">
-                    <table className="products-table minimal">
-                        <thead>
-                            <tr>
-                                <th>ID Phiếu</th>
-                                <th>{type === 'import' ? 'Nhà Cung Cấp' : 'Khách Hàng'}</th>
-                                <th>Ngày tạo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tickets.map(ticket => (
-                                <tr key={ticket.id}>
-                                    <td>
-                        {/* THAY THẾ <Link> BẰNG <button> */}
-                        <button onClick={() => onView(ticket.id, type)} className="btn-link table-link">
-                            {ticket.id}
-                        </button>
-                    </td>
-                    <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
-                    <td>{formatDate(ticket.createdAt)}</td>
-                </tr>
-            ))}
-        </tbody>
-                    </table>
-                </div>
-            ) : (
-                <p className="empty-message">Không có phiếu nào đang chờ xử lý.</p>
-            )}
-        </div>
-    );
 
     return (
         <div className="dashboard-container">
