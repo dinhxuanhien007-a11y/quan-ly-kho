@@ -433,6 +433,13 @@ const NewImportPage = () => {
         prevItemsLength.current = items.length;
     }, [items.length]);
 
+    // Reset importDate về hôm nay mỗi khi vào trang (tránh lưu ngày cũ từ localStorage)
+    useEffect(() => {
+        const today = new Date().toISOString().split('T')[0];
+        setImportDate(today);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     
     const isSlipValid = useMemo(() => {
         const hasSupplier = supplierId.trim() !== '' && supplierName.trim() !== '';
@@ -545,50 +552,48 @@ const NewImportPage = () => {
 
     // --- BẮT ĐẦU THAY ĐỔI: Cập nhật hàm checkExistingLot ---
     const checkExistingLot = async (index) => {
-        const currentItem = items[index];
-        if (!currentItem.productId || !currentItem.lotNumber) return;
+            const currentItem = items[index];
+            if (!currentItem.productId || !currentItem.lotNumber) return;
 
-        // BƯỚC 0: Đảm bảo thông tin sản phẩm được load trước (nếu chưa có)
-        // Trường hợp người dùng nhập LotNumber trước khi ProductAutocomplete kịp cập nhật
-        if (!currentItem.productName) {
-            await handleProductSearch(index, currentItem.productId);
-            // Lấy lại item sau khi product đã được cập nhật
-            const updatedItem = items[index]; 
-            if (updatedItem.productNotFound) return; // Không tìm thấy sản phẩm thì dừng
-        }
-
-        try {
-            const q = query(
-                collection(db, "inventory_lots"),
-                where("productId", "==", currentItem.productId.trim()),
-                where("lotNumber", "==", currentItem.lotNumber.trim())
-            );
-            const querySnapshot = await getDocs(q);
-            
-            if (!querySnapshot.empty) {
-                // Lấy dữ liệu của lần nhập đầu tiên để có HSD
-                const baseLotData = querySnapshot.docs[0].data();
-                
-                let totalQuantityRemaining = 0;
-                querySnapshot.forEach(doc => {
-                    totalQuantityRemaining += doc.data().quantityRemaining;
-                });
-
-                const aggregatedLotData = {
-                    ...baseLotData,
-                    quantityRemaining: totalQuantityRemaining
-                };
-                
-                handleLotCheckResult(index, aggregatedLotData, true);
-                setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
-            } else {
-                handleLotCheckResult(index, null, false);
-                setNewLotModal({ isOpen: true, index: index });
+            // Nếu chưa có thông tin sản phẩm, load trước
+            if (!currentItem.productName) {
+                await handleProductSearch(index, currentItem.productId);
+                // Đọc state mới nhất từ store sau khi update (tránh closure cũ)
+                const freshItem = useImportSlipStore.getState().items[index];
+                if (!freshItem || freshItem.productNotFound) return;
             }
-        } catch (error) {
-            console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
-        }
-    };
+
+            try {
+                const q = query(
+                    collection(db, "inventory_lots"),
+                    where("productId", "==", currentItem.productId.trim()),
+                    where("lotNumber", "==", currentItem.lotNumber.trim())
+                );
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const baseLotData = querySnapshot.docs[0].data();
+
+                    let totalQuantityRemaining = 0;
+                    querySnapshot.forEach(doc => {
+                        totalQuantityRemaining += doc.data().quantityRemaining;
+                    });
+
+                    const aggregatedLotData = {
+                        ...baseLotData,
+                        quantityRemaining: totalQuantityRemaining
+                    };
+
+                    handleLotCheckResult(index, aggregatedLotData, true);
+                    setTimeout(() => quantityInputRefs.current[index]?.focus(), 0);
+                } else {
+                    handleLotCheckResult(index, null, false);
+                    setNewLotModal({ isOpen: true, index: index });
+                }
+            } catch (error) {
+                console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
+            }
+        };
     // --- KẾT THÚC THAY ĐỔI ---
 
     const handleProductSearch = async (index, productOrId) => {
@@ -762,10 +767,6 @@ const NewImportPage = () => {
         // thay vì addNewItemRow + updateItem từng dòng gây ra dòng trống
         useImportSlipStore.setState(state => ({
             ...state,
-            supplierId: '',
-            supplierName: '',
-            description: '',
-            importDate: new Date().toISOString().split('T')[0],
             items: newItems
         }));
 
@@ -901,10 +902,6 @@ const handleICUPDFUpload = async (e) => {
         // Set toàn bộ items 1 lần
         useImportSlipStore.setState(state => ({
             ...state,
-            supplierId: '',
-            supplierName: '',
-            description: '',
-            importDate: new Date().toISOString().split('T')[0],
             items: newItems
         }));
 
@@ -1216,10 +1213,6 @@ const handlePharmaPDFUpload = async (e) => {
 
         useImportSlipStore.setState(state => ({
             ...state,
-            supplierId: '',
-            supplierName: '',
-            description: '',
-            importDate: new Date().toISOString().split('T')[0],
             items: newItems
         }));
 
@@ -1350,10 +1343,6 @@ const handleSchulkePDFUpload = async (e) => {
 
         useImportSlipStore.setState(state => ({
             ...state,
-            supplierId: '',
-            supplierName: '',
-            description: '',
-            importDate: new Date().toISOString().split('T')[0],
             items: newItems
         }));
 
@@ -1399,37 +1388,29 @@ const handleSchulkePDFUpload = async (e) => {
         const slipData = getValidSlipData();
         if (!slipData) return;
 
-        console.log("Data AFTER getValidSlipData:", slipData);
-
         setConfirmModal({ isOpen: false });
         setIsSaving(true);
         try {
-            // === BẮT ĐẦU THAY ĐỔI: Truy vấn lại thông tin sản phẩm ===
-         const productIdsInSlip = [...new Set(slipData.items.map(item => item.productId))];
-         const productPromises = productIdsInSlip.map(productId => getDoc(doc(db, 'products', productId.trim().toUpperCase()))); // Chuẩn hóa ID ở đây
-         const productSnapshots = await Promise.all(productPromises);
+            const productIdsInSlip = [...new Set(slipData.items.map(item => item.productId))];
+            const productPromises = productIdsInSlip.map(productId => getDoc(doc(db, 'products', productId.trim().toUpperCase())));
+            const productSnapshots = await Promise.all(productPromises);
 
-         const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
-             if (docSn.exists()) {
-                 // Dùng ID đã chuẩn hóa làm key
-                 acc[docSn.id] = docSn.data();
-             }
-             return acc;
-         }, {});
-         console.log("Product Details Map (Direct Import):", productDetailsMap);
-         // === KẾT THÚC THAY ĐỔI ===
+            const productDetailsMap = productSnapshots.reduce((acc, docSn) => {
+                if (docSn.exists()) {
+                    acc[docSn.id] = docSn.data();
+                }
+                return acc;
+            }, {});
+
             for (const item of slipData.items) {
                 const expiryDateObj = parseDateString(item.expiryDate);
                 const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
-                
-                
-                // === THAY ĐỔI: Lấy subGroup từ productDetailsMap ===
-             const productDetails = productDetailsMap[item.productId.trim().toUpperCase()] || {}; // Lấy thông tin đã truy vấn
-             const subGroupValue = productDetails.subGroup || ''; // Lấy subGroup
-             console.log(`[Direct Import] Processing item: ${item.productId}, Found SubGroup: ${subGroupValue}`);
-             // === KẾT THÚC THAY ĐỔI ===
+
+                const productDetails = productDetailsMap[item.productId.trim().toUpperCase()] || {};
+                const subGroupValue = productDetails.subGroup || '';
+
                 const newLotData = {
-                    importDate: Timestamp.now(),
+                    importDate: slipData.importDate ? Timestamp.fromDate(new Date(slipData.importDate.split('/').reverse().join('-'))) : Timestamp.now(),
                     productId: item.productId,
                     productName: item.productName,
                     lotNumber: item.lotNumber,
@@ -1445,8 +1426,6 @@ const handleSchulkePDFUpload = async (e) => {
                     notes: item.notes,
                     supplierName: slipData.supplierName,
                 };
-                console.log("Data to save to inventory_lots (direct):", newLotData); // Xem dữ liệu cuối cùng
-                console.log("[After Assignment] Data to save:", newLotData); // Log đối tượng hoàn chỉnh
                 await addDoc(collection(db, "inventory_lots"), newLotData);
             }
             
@@ -1506,12 +1485,23 @@ const handleSchulkePDFUpload = async (e) => {
                 <div className="form-row">
                     <div className="form-group">
                         <label>Ngày nhập</label>
-                        <input 
-                            type="text" 
-                            value={formatDate(new Date())} 
-                            readOnly 
-                            style={{backgroundColor: '#f0f0f0'}} 
-                        />
+                        <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                            <input
+                                type="text"
+                                readOnly
+                                value={importDate ? importDate.split('-').reverse().join('/') : ''}
+                                style={{ paddingRight: '32px', cursor: 'pointer', backgroundColor: 'var(--input-bg, #fff)', color: 'var(--text-color)' }}
+                                onClick={() => document.getElementById('import-date-picker').showPicker?.() || document.getElementById('import-date-picker').click()}
+                            />
+                            <input
+                                id="import-date-picker"
+                                type="date"
+                                value={importDate}
+                                onChange={e => setImportDate(e.target.value)}
+                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 1 }}
+                            />
+                            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary, #666)', fontSize: '16px' }}>📅</span>
+                        </div>
                     </div>
                     <div className="form-group" style={{ flex: 2 }}>
                         <label>Nhà Cung Cấp (*)</label>
@@ -1780,7 +1770,7 @@ const handleSchulkePDFUpload = async (e) => {
         </strong> 
         
         {/* ĐƠN VỊ HIỂN THỊ */}
-        {calculateCaseCount(Number(item.quantityToExport), item.conversionFactor, item.unit).action === 'MULTIPLY'
+        {calculateCaseCount(Number(item.quantity), item.conversionFactor, item.unit).action === 'MULTIPLY'
             ? getTargetUnit(item.packaging, item.unit) // Logic Lọ/Test
             : 'Thùng'} 
     </div>
