@@ -19,19 +19,19 @@
 }
 
 body.dark-mode {
-  --text-color: #e0e0e0;
-  --text-secondary: #aaaaaa;
-  --bg-color: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-hover: #0f3460;
-  --border-color: #444466;
-  --card-bg: #16213e;
-  --table-header-bg: #0f3460;
-  --table-stripe-bg: #1a1a2e;
-  --input-bg: #16213e;
-  --input-border: #444466;
-  --navbar-bg: #16213e;
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --text-color: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --bg-color: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-hover: #334155;
+  --border-color: #334155;
+  --card-bg: #1e293b;
+  --table-header-bg: #1e293b;
+  --table-stripe-bg: #172033;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --navbar-bg: #1e293b;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 body {

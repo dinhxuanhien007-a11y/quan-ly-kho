@@ -27,7 +27,12 @@ const PendingList = ({ title, tickets, type, onView }) => (
         <h3>{title} ({tickets.length})</h3>
         {tickets.length > 0 ? (
             <div className="table-container">
-                <table className="products-table minimal">
+                <table className="products-table minimal" style={{ tableLayout: 'fixed', width: '100%' }}>
+                    <colgroup>
+                        <col style={{ width: '35%' }} />
+                        <col style={{ width: '45%' }} />
+                        <col style={{ width: '20%' }} />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>ID Phiếu</th>
@@ -38,13 +43,15 @@ const PendingList = ({ title, tickets, type, onView }) => (
                     <tbody>
                         {tickets.map(ticket => (
                             <tr key={ticket.id}>
-                                <td>
-                                    <button onClick={() => onView(ticket.id, type)} className="btn-link table-link">
+                                <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    <button onClick={() => onView(ticket.id, type)} className="btn-link table-link" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', display: 'block' }}>
                                         {ticket.id}
                                     </button>
                                 </td>
-                                <td>{type === 'import' ? ticket.supplierName : ticket.customer}</td>
-                                <td>{formatDate(ticket.createdAt)}</td>
+                                <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={type === 'import' ? ticket.supplierName : ticket.customer}>
+                                    {type === 'import' ? ticket.supplierName : ticket.customer}
+                                </td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{formatDate(ticket.createdAt)}</td>
                             </tr>
                         ))}
                     </tbody>
