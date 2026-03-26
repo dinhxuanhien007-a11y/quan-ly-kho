@@ -1,7 +1,6 @@
 // src/services/stocktakeService.js
 import { db } from '../firebaseConfig';
 import { doc, deleteDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
-import { toast } from 'react-toastify';
 
 /**
  * Xóa một phiên kiểm kê và tất cả các mục vật tư con bên trong nó.
@@ -31,11 +30,9 @@ export const deleteStocktakeSession = async (sessionId) => {
         batch.delete(itemDoc.ref);
         count++;
         if (count === MAX_BATCH_SIZE) {
-            // Khi đủ 500, thực thi batch và tạo batch mới
             await batch.commit();
             batch = writeBatch(db);
             count = 0;
-            toast.info("Đang xóa dữ liệu kiểm kê...");
         }
     }
 

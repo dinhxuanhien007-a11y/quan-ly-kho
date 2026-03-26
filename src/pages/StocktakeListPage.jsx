@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, serverTimestamp, orderBy, doc, setDoc, writeBatch, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { PAGE_SIZE } from '../constants';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
@@ -19,17 +19,8 @@ import { useAuth } from '../context/UserContext';
 const StocktakeListPage = () => {
     const { role } = useAuth();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isCreating, setIsCreating] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null });
     const navigate = useNavigate();
-    // THÊM 2 ĐOẠN CODE NÀY VÀO
-const [navigateToSession, setNavigateToSession] = useState(null);
-
-useEffect(() => {
-    if (navigateToSession) {
-        navigate(navigateToSession);
-    }
-}, [navigateToSession, navigate]);
     
     const baseQuery = useMemo(() => query(collection(db, "stocktakes"), orderBy("createdAt", "desc")), []);
     const {
@@ -49,72 +40,6 @@ useEffect(() => {
         reset();
     };
 
-    const handleCreateStocktake = async (sessionData) => {
-    setIsCreating(true);
-    toast.info("Đang lấy dữ liệu tồn kho, vui lòng chờ...");
-    try {
-        let inventoryQuery;
-        if (sessionData.scope === 'all') {
-            inventoryQuery = query(collection(db, "inventory_lots"), where("quantityRemaining", ">", 0));
-        } else {
-            inventoryQuery = query(collection(db, "inventory_lots"), where("team", "==", sessionData.scope), where("quantityRemaining", ">", 0));
-        }
-        const querySnapshot = await getDocs(inventoryQuery);
-        const inventorySnapshotItems = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                productId: data.productId || '',
-                productName: data.productName || '',
-                lotNumber: data.lotNumber !== undefined ? data.lotNumber : null,
-                expiryDate: data.expiryDate || null,
-                unit: data.unit || '',
-                packaging: data.packaging || '',
-                storageTemp: data.storageTemp || '',
-                team: data.team || '',
-                manufacturer: data.manufacturer || '',
-                subGroup: data.subGroup || '',
-                notes: data.notes || '',
-                lotId: doc.id,
-                systemQty: data.quantityRemaining || 0,
-                countedQty: null,
-                isNew: false
-            };
-        });
-
-        const newStocktakeSessionRef = doc(collection(db, 'stocktakes'));
-        await setDoc(newStocktakeSessionRef, {
-            name: sessionData.sessionName, scope: sessionData.scope, status: 'in_progress', createdAt: serverTimestamp(),
-        });
-
-        toast.info(`Đã lấy ${inventorySnapshotItems.length} mục. Bắt đầu ghi dữ liệu...`);
-        const itemsCollectionRef = collection(db, 'stocktakes', newStocktakeSessionRef.id, 'items');
-        const MAX_BATCH_SIZE = 500;
-        for (let i = 0; i < inventorySnapshotItems.length; i += MAX_BATCH_SIZE) {
-            const batch = writeBatch(db);
-            const chunk = inventorySnapshotItems.slice(i, i + MAX_BATCH_SIZE);
-            chunk.forEach(item => {
-                const newItemRef = doc(itemsCollectionRef, item.lotId);
-                batch.set(newItemRef, item);
-            });
-            await batch.commit();
-        }
-
-        toast.success("Tạo phiên kiểm kê mới thành công!");
-        
-        // THAY ĐỔI QUAN TRỌNG:
-        // 1. Đóng modal
-        setIsCreateModalOpen(false);
-        // 2. Gửi tín hiệu để useEffect thực hiện điều hướng
-        setNavigateToSession(`/stocktakes/${newStocktakeSessionRef.id}`);
-
-    } catch (error) {
-        console.error("Lỗi khi tạo phiên kiểm kê: ", error);
-        toast.error("Đã có lỗi xảy ra khi tạo phiên kiểm kê.");
-    } finally {
-        setIsCreating(false);
-    }
-};
-
     const promptForDelete = (session) => {
         setConfirmModal({
             isOpen: true,
@@ -131,7 +56,6 @@ useEffect(() => {
         if (!sessionToDelete) return;
 
         try {
-            toast.info(`Đang xóa phiên "${sessionToDelete.name}"...`);
             await deleteStocktakeSession(sessionToDelete.id);
             toast.success(`Đã xóa thành công phiên kiểm kê.`);
             reset();
@@ -173,13 +97,6 @@ useEffect(() => {
                 onRefresh={handleRefresh}
                 message="Có phiên kiểm kê mới!"
             />
-
-            {hasNewData && (
-                <div className="new-data-notification">
-                    <p>Có phiên kiểm kê mới!</p>
-                    <button onClick={handleRefresh} className="btn-primary">Tải lại danh sách</button>
-                </div>
-            )}
 
             {loading ? <Spinner /> : (
                 <>

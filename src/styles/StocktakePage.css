@@ -129,3 +129,54 @@
 .products-table.discrepancy-table th:nth-child(5) { width: 10%; }
 .products-table.discrepancy-table th:nth-child(6) { width: 10%; }
 .products-table.discrepancy-table th:nth-child(7) { width: 10%; }
+
+/* Bảng kiểm kê chính - cố định layout để tránh cột bị tràn */
+.table-container .products-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.table-container .products-table th:nth-child(1),
+.table-container .products-table td:nth-child(1) { width: 8%; }   /* Mã hàng */
+
+.table-container .products-table th:nth-child(2),
+.table-container .products-table td:nth-child(2) {                 /* Tên hàng */
+    width: 22%;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-container .products-table th:nth-child(3),
+.table-container .products-table td:nth-child(3) { width: 9%; }   /* Số lô */
+
+.table-container .products-table th:nth-child(4),
+.table-container .products-table td:nth-child(4) { width: 8%; }   /* HSD */
+
+.table-container .products-table th:nth-child(5),
+.table-container .products-table td:nth-child(5) { width: 5%; }   /* ĐVT */
+
+.table-container .products-table th:nth-child(6),
+.table-container .products-table td:nth-child(6) {                 /* Quy cách */
+    width: 12%;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-container .products-table th:nth-child(7),
+.table-container .products-table td:nth-child(7) { width: 7%; }   /* Tồn hệ thống */
+
+.table-container .products-table th:nth-child(8),
+.table-container .products-table td:nth-child(8) { width: 10%; }  /* Tồn Misa */
+
+.table-container .products-table th:nth-child(9),
+.table-container .products-table td:nth-child(9) { width: 10%; }  /* Tồn thực tế */
+
+.table-container .products-table th:nth-child(10),
+.table-container .products-table td:nth-child(10) { width: 9%; }  /* Nhóm hàng */
+
+/* Đảm bảo input trong ô không vượt quá chiều rộng cột */
+.table-container .products-table td input[type="text"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}

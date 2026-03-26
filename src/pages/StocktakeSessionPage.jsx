@@ -39,7 +39,8 @@ const CountInput = ({ item, onCountSubmit }) => {
             onKeyDown={handleKeyDown}
             disabled={!isSessionInProgress}
             style={{
-                width: '90px',
+                width: '100%',
+                boxSizing: 'border-box',
                 backgroundColor: isNew ? '#fff9e6' :
                     ((countedQty !== null && countedQty !== '') ? '#e6fffa' : '#fff')
             }}
