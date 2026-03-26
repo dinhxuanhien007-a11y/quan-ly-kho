@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import { 
     FiGrid, FiArchive, FiFilePlus, FiFileMinus, FiClipboard, 
     FiFileText, FiShare2, FiCheckSquare, FiUsers, FiUpload, 
-    FiSettings, FiLogOut, FiBookOpen, FiBarChart2, FiBook, FiGitMerge,
+    FiSettings, FiLogOut, FiBookOpen, FiBook, FiGitMerge,
 } from 'react-icons/fi';
 import '../styles/AdminLayout.css';
 import { useAuth } from '../context/UserContext';
@@ -99,11 +99,6 @@ const Navbar = () => {
                 <li>
                     <NavLink to="/stocktakes" title="Kiểm Kê Kho">
                         <FiCheckSquare className="nav-icon" />
-                    </NavLink>
-                </li>
-                <li>
-                    <NavLink to="/sales-analytics" title="Báo cáo & Phân tích">
-                        <FiBarChart2 className="nav-icon" />
                     </NavLink>
                 </li>
                 <li>

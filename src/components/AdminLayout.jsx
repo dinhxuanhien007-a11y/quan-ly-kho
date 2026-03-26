@@ -24,7 +24,6 @@ import ViewerLayout from './ViewerLayout';
 import { useAuth } from '../context/UserContext';
 import FloatingToolsModal from './FloatingToolsModal'; 
 import { FiGrid } from 'react-icons/fi';
-import SalesAnalyticsPage from '../pages/SalesAnalyticsPage';
 import ProductLedgerPage from '../pages/ProductLedgerPage';
 import { usePresence } from '../hooks/usePresence';
 import InventoryReconciliationPage from '../pages/InventoryReconciliationPage';
@@ -84,7 +83,6 @@ const AdminLayout = () => {
           <Route path="/lot-trace" element={<LotTracePage />} />
           <Route path="/import-data" element={<DataImportPage />} />
           <Route path="/users" element={<UsersPage />} />
-          <Route path="/sales-analytics" element={<SalesAnalyticsPage />} />
           <Route path="/product-ledger" element={<ProductLedgerPage />} />
           <Route path="/doi-chieu-ton-kho" element={<InventoryReconciliationPage />} />
         </Routes>
