@@ -14,7 +14,6 @@ import DateRangePresets from '../components/DateRangePresets';
 import { FiCalendar, FiPrinter, FiChevronLeft, FiChevronRight, FiRefreshCw, FiInfo, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
-import { exportLedgerToPDF } from '../utils/pdfUtils';
 import { useProductLedger } from '../hooks/useProductLedger'; // NÂNG CẤP 5: Import hook mới
 import PartnerAutocomplete from '../components/PartnerAutocomplete';
 
@@ -172,6 +171,7 @@ const ProductLedgerPage = () => {
         }
         toast.info("Đang tạo file PDF...");
         try {
+            const { exportLedgerToPDF } = await import('../utils/pdfUtils');
             await exportLedgerToPDF(productInfo, ledgerData, sortedRows, filters);
         } catch (error) {
             console.error("Lỗi khi xuất PDF:", error);

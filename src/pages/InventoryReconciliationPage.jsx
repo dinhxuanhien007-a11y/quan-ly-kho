@@ -1,4 +1,4 @@
-﻿// src/pages/InventoryReconciliationPage.jsx
+// src/pages/InventoryReconciliationPage.jsx
 import { useState } from 'react';
 import React, { useMemo, useRef } from 'react';
 import useReconciliationStore from '../stores/reconciliationStore';
@@ -7,9 +7,16 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
-import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
 import { FiUpload, FiDownload, FiRefreshCw, FiAlertCircle, FiClock } from 'react-icons/fi';
+
+let xlsxModulePromise;
+const loadXLSX = async () => {
+    if (!xlsxModulePromise) {
+        xlsxModulePromise = import('xlsx');
+    }
+    return xlsxModulePromise;
+};
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -152,7 +159,8 @@ function getExpiryBadge(dateVal) {
 // ============================================================
 // PARSE FILE EXCEL MISA
 // ============================================================
-function parseMisaExcel(arrayBuffer) {
+async function parseMisaExcel(arrayBuffer) {
+    const XLSX = await loadXLSX();
     const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
@@ -648,7 +656,7 @@ const InventoryReconciliationPage = () => {
         if (!file) return;
         try {
             const buf = await file.arrayBuffer();
-            const { items, duplicateHsd } = parseMisaExcel(buf);
+            const { items, duplicateHsd } = await parseMisaExcel(buf);
             setMisaData(items, file.name, duplicateHsd);
             if (duplicateHsd.length > 0) toast.warn(`⚠️ Có ${duplicateHsd.length} lot trong Misa bị trùng số lô nhưng khác HSD!`);
             toast.success(`Đã đọc ${items.length} lot từ file Misa!`);
@@ -782,8 +790,9 @@ const InventoryReconciliationPage = () => {
     // ============================================================
     // XUẤT EXCEL
     // ============================================================
-    const handleExport = () => {
+    const handleExport = async () => {
         if (!results.length) { toast.warn('Chưa có dữ liệu để xuất.'); return; }
+        const XLSX = await loadXLSX();
         const wb = XLSX.utils.book_new();
         const COLS = ['Mã hàng','Số lot','HSD WebKho','ĐVT WebKho','Tồn WebKho','Hệ số','Tồn WebKho (quy đổi)','ĐVT Misa','Tồn Misa','HSD Misa','Chênh (ĐVT WebKho)','Chênh (ĐVT Misa)','Trạng thái'];
         const tabOrder = ['chenh','khop','hsdlech','webkho','misa','nomisa'];

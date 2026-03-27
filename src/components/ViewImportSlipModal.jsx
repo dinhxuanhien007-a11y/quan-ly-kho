@@ -4,7 +4,6 @@ import Modal from 'react-modal';
 import { formatDate } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import { FiX, FiPrinter } from 'react-icons/fi';
-import { exportImportSlipToPDF } from '../utils/pdfUtils';
 import { toast } from 'react-toastify';
 
 Modal.setAppElement('#root');
@@ -17,6 +16,7 @@ const ViewImportSlipModal = ({ slip, onClose }) => {
     const handleExportPDF = async () => {
         toast.info("Đang tạo file PDF...");
         try {
+            const { exportImportSlipToPDF } = await import('../utils/pdfUtils');
             await exportImportSlipToPDF(slip);
         } catch (error) {
             console.error("Lỗi khi xuất PDF phiếu nhập:", error);

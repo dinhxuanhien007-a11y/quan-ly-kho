@@ -1,6 +1,5 @@
 // src/pages/StocktakeSessionPage.jsx
 import { FiPrinter } from 'react-icons/fi';
-import { exportStocktakeToPDF } from '../utils/pdfUtils';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
@@ -457,6 +456,7 @@ const StocktakeSessionPage = () => {
                 toast.warn("Phiên kiểm kê này không có sản phẩm nào để xuất ra file.");
                 return;
             }
+            const { exportStocktakeToPDF } = await import('../utils/pdfUtils');
             await exportStocktakeToPDF(session, allItems);
         } catch (error) {
             console.error("Lỗi khi xuất PDF phiếu kiểm kê:", error);

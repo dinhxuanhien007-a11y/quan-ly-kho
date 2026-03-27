@@ -31,7 +31,6 @@ import '../styles/Responsive.css';
 import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
-import { exportFullInventoryToExcel } from '../utils/excelExportUtils';
 import { fuzzyNormalize } from '../utils/stringUtils';
 import ExpiryBadge from '../components/ExpiryBadge'; // <-- Thêm dòng này
 
@@ -471,6 +470,7 @@ const InventorySummaryPage = () => {
         toast.info("Đang tạo file Excel toàn bộ tồn kho...");
 
         try {
+            const { exportFullInventoryToExcel } = await import('../utils/excelExportUtils');
             await exportFullInventoryToExcel();
             toast.success("Xuất file Excel thành công!");
         } catch (error) {
