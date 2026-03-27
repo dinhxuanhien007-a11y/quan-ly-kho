@@ -101,42 +101,104 @@ const importSlipSchema = z.object({
 // =============================================
 // HÀM ĐỌC PACKING LIST PDF CỦA BECTON DICKINSON
 // =============================================
-const parseBDPackingList = async (file) => {
-    // ✅ Import trực tiếp từ package thay vì dùng CDN
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.mjs',
-        import.meta.url
-    ).toString();
+const normalizePdfDate = (dateStr) => {
+    const normalized = String(dateStr || '').trim().replace(/\./g, '/').replace(/-/g, '/');
+    const match = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (!match) return '';
+    let [, d, m, y] = match;
+    if (y.length === 2) y = `20${y}`;
+    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+};
 
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
-        fullText += pageText + '\n';
-    }
-
-    const lineRegex = /\b(\d{6})\b[\s\S]*?(\d+)\s+(?:EA|SP|KT|BX)\s+(\w+)\s+(\d{2}\/\d{2}\/\d{4})/g;
-
+const parseBDStructuredItemsFromText = (rawText) => {
+    const text = String(rawText || '');
+    const fullText = text.replace(/\s+/g, ' ').trim();
+    const lines = text
+        .split('\n')
+        .map(line => line.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
     const rawItems = [];
-    let match;
+    const pushIfValid = (productId, quantity, lotNumber, expiryDateRaw = '') => {
+        const expiryDate = normalizePdfDate(expiryDateRaw);
+        const qty = Number(String(quantity || '').replace(/[.,](?=\d{3}\b)/g, ''));
+        const pid = String(productId || '').trim();
+        const lot = String(lotNumber || '').trim();
 
-    while ((match = lineRegex.exec(fullText)) !== null) {
-        const productId = match[1].trim();
-        const quantity = parseInt(match[2], 10);
-        const lotNumber = match[3].trim();
-        const expiryDate = match[4].trim();
+        if (!pid || qty <= 0) return;
 
-        if (productId && quantity > 0 && lotNumber && expiryDate) {
-            rawItems.push({ productId, quantity, lotNumber, expiryDate });
+        // Cho phép dòng không có lot/HSD (vd mã hàng phụ kiện chỉ có EA).
+        if (!lot) {
+            rawItems.push({ productId: pid, quantity: qty, lotNumber: '', expiryDate: '' });
+            return;
+        }
+
+        if (expiryDate) {
+            rawItems.push({ productId: pid, quantity: qty, lotNumber: lot, expiryDate });
+        }
+    };
+
+    // Ưu tiên parse theo từng dòng để tránh "ăn nhầm" qua dòng kế tiếp.
+    // Case có lot + HSD: 246001 19 SP 5335368 24/11/2026
+    const rowWithLot = /\b(\d{6,8})\b.*?\b(\d{1,3}(?:[.,]\d{3})*|\d+)\s*(EA|SP|KT|BX)\s+([A-Z0-9.-]{4,})\s+(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})\b/i;
+    // Case không lot/HSD: 651352 1 EA
+    const rowNoLot = /\b(\d{6,8})\b.*?\b(\d{1,3}(?:[.,]\d{3})*|\d+)\s*(EA|SP|KT|BX)\b/i;
+
+    for (const line of lines) {
+        const lotMatch = line.match(rowWithLot);
+        if (lotMatch) {
+            pushIfValid(lotMatch[1], lotMatch[2], lotMatch[4], lotMatch[5]);
+            continue;
+        }
+        const noLotMatch = line.match(rowNoLot);
+        if (noLotMatch) {
+            pushIfValid(noLotMatch[1], noLotMatch[2], '', '');
         }
     }
 
-    // Gộp các dòng cùng mã hàng + lot + HSD
+    // Fallback cho text OCR nhiễu (mất xuống dòng/cột).
+    // Chỉ chạy khi parse theo dòng không bắt được gì để tránh match trùng.
+    if (rawItems.length === 0) {
+        let match;
+        // Pattern 1 fallback: mã -> số lượng -> đơn vị -> lot -> HSD
+        const patternLegacy = /\b(\d{6,8})\b[\s\S]{0,120}?(\d{1,3}(?:[.,]\d{3})*|\d+)\s+(?:EA|SP|KT|BX)\s+([A-Z0-9.-]{4,})\s+(\d{2}[\/.-]\d{2}[\/.-]\d{2,4})/gi;
+        while ((match = patternLegacy.exec(fullText)) !== null) {
+            pushIfValid(match[1], match[2], match[3], match[4]);
+        }
+
+        // Pattern 2 fallback: mã -> lot -> HSD -> qty -> đơn vị
+        const patternAltOrder = /\b(\d{6,8})\b[\s\S]{0,180}?([A-Z0-9.-]{4,})[\s\S]{0,100}?(\d{2}[\/.-]\d{2}[\/.-]\d{2,4})[\s\S]{0,80}?(\d{1,3}(?:[.,]\d{3})*|\d+)\s*(EA|SP|KT|BX)\b/gi;
+        while ((match = patternAltOrder.exec(fullText)) !== null) {
+            pushIfValid(match[1], match[4], match[2], match[3]);
+        }
+    }
+
+    // Pattern 3: fallback nhẹ theo từng dòng OCR
+    if (rawItems.length === 0) {
+        const lines = String(rawText || '').split('\n').map(line => line.replace(/\s+/g, ' ').trim()).filter(Boolean);
+        for (const line of lines) {
+            const productIdMatch = line.match(/\b(\d{6})\b/);
+            const dateMatch = line.match(/\b(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})\b/);
+            const qtyUnitMatch = line.match(/\b(\d{1,3}(?:[.,]\d{3})*|\d+)\s*(EA|SP|KT|BX)\b/i);
+            if (!productIdMatch || !dateMatch || !qtyUnitMatch) continue;
+
+            const tokens = line.split(' ');
+            const dateTokenIndex = tokens.findIndex(t => t.includes(dateMatch[1]));
+            let lotCandidate = '';
+            if (dateTokenIndex > 0) {
+                const beforeDate = tokens[dateTokenIndex - 1];
+                if (/^[A-Z0-9.-]{4,}$/i.test(beforeDate) && !/^\d+$/.test(beforeDate)) {
+                    lotCandidate = beforeDate;
+                }
+            }
+            if (!lotCandidate) {
+                const lotFromLine = line.match(/\b([A-Z0-9.-]{5,})\b/gi)?.find(t => !/^\d+$/.test(t) && t !== productIdMatch[1]);
+                lotCandidate = lotFromLine || '';
+            }
+            pushIfValid(productIdMatch[1], qtyUnitMatch[1], lotCandidate, dateMatch[1]);
+        }
+    }
+
+    // Gộp theo mã + lot + HSD (dòng không lot sẽ có lotNumber/expiryDate rỗng)
     const aggregatedMap = new Map();
     for (const item of rawItems) {
         const key = `${item.productId}-${item.lotNumber}-${item.expiryDate}`;
@@ -147,15 +209,89 @@ const parseBDPackingList = async (file) => {
         }
     }
 
-    // Sắp xếp — cùng mã hàng nằm cạnh nhau
-    const sortedItems = Array.from(aggregatedMap.values()).sort((a, b) => {
-        if (a.productId !== b.productId) {
-            return a.productId.localeCompare(b.productId);
-        }
+    return Array.from(aggregatedMap.values()).sort((a, b) => {
+        if (a.productId !== b.productId) return a.productId.localeCompare(b.productId);
         return a.lotNumber.localeCompare(b.lotNumber);
     });
+};
 
-    return sortedItems;
+const parseBDPackingList = async (file) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    let extractedTextItems = 0;
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        extractedTextItems += textContent.items.length;
+        if (!textContent.items.length) continue;
+
+        // Reconstruct text line-by-line by y-coordinate to avoid cross-row matching.
+        const rows = new Map();
+        for (const item of textContent.items) {
+            const str = String(item.str || '').trim();
+            if (!str) continue;
+            const x = item.transform?.[4] ?? 0;
+            const y = item.transform?.[5] ?? 0;
+            const yKey = Math.round(y);
+
+            let foundKey = null;
+            for (const key of rows.keys()) {
+                if (Math.abs(key - yKey) <= 2) {
+                    foundKey = key;
+                    break;
+                }
+            }
+            if (foundKey === null) {
+                rows.set(yKey, []);
+                foundKey = yKey;
+            }
+            rows.get(foundKey).push({ x, str });
+        }
+
+        const sortedRowKeys = Array.from(rows.keys()).sort((a, b) => b - a);
+        const pageLines = sortedRowKeys.map((key) => {
+            const words = rows.get(key).sort((a, b) => a.x - b.x).map(w => w.str);
+            return words.join(' ').replace(/\s+/g, ' ').trim();
+        }).filter(Boolean);
+
+        fullText += `${pageLines.join('\n')}\n`;
+    }
+
+    let parsedItems = parseBDStructuredItemsFromText(fullText);
+    if (parsedItems.length > 0) return parsedItems;
+
+    // OCR fallback cho PDF scan/image-only
+    if (extractedTextItems === 0) {
+        const { createWorker } = await import('tesseract.js');
+        const worker = await createWorker('eng');
+        try {
+            let ocrText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 2 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = Math.ceil(viewport.width);
+                canvas.height = Math.ceil(viewport.height);
+                await page.render({ canvasContext: context, viewport }).promise;
+                const { data } = await worker.recognize(canvas);
+                ocrText += `${data?.text || ''}\n`;
+            }
+            parsedItems = parseBDStructuredItemsFromText(ocrText);
+        } finally {
+            await worker.terminate();
+        }
+    }
+
+    return parsedItems;
 };
 
 // =============================================
