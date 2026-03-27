@@ -398,6 +398,12 @@ const parseSchulkePackingList = async (file) => {
     });
 };
 
+const isDynamicChunkLoadError = (error) => {
+    const message = String(error?.message || error || '');
+    return message.includes('Failed to fetch dynamically imported module')
+        || message.includes('Failed to fetch');
+};
+
 const NewImportPage = () => {
     const {
         supplierId, supplierName, description, items, importDate,
@@ -783,7 +789,11 @@ const NewImportPage = () => {
 
     } catch (error) {
         console.error("Lỗi khi đọc PDF:", error);
-        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        if (isDynamicChunkLoadError(error)) {
+            toast.error("Ứng dụng vừa được cập nhật. Vui lòng tải lại trang (Ctrl+F5) rồi thử import PDF lại.");
+        } else {
+            toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        }
     } finally {
         setIsParsingPDF(false);
         if (pdfInputRef.current) pdfInputRef.current.value = '';
@@ -917,7 +927,11 @@ const handleICUPDFUpload = async (e) => {
 
     } catch (error) {
         console.error("Lỗi khi đọc PDF ICU:", error);
-        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        if (isDynamicChunkLoadError(error)) {
+            toast.error("Ứng dụng vừa được cập nhật. Vui lòng tải lại trang (Ctrl+F5) rồi thử import PDF lại.");
+        } else {
+            toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        }
     } finally {
         setIsParsingPDF(false);
         if (icuPdfInputRef.current) icuPdfInputRef.current.value = '';
@@ -1228,7 +1242,11 @@ const handlePharmaPDFUpload = async (e) => {
 
     } catch (error) {
         console.error("Lỗi khi đọc PDF Pharmadesign:", error);
-        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        if (isDynamicChunkLoadError(error)) {
+            toast.error("Ứng dụng vừa được cập nhật. Vui lòng tải lại trang (Ctrl+F5) rồi thử import PDF lại.");
+        } else {
+            toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        }
     } finally {
         setIsParsingPDF(false);
         if (pharmaPdfInputRef.current) pharmaPdfInputRef.current.value = '';
@@ -1358,7 +1376,11 @@ const handleSchulkePDFUpload = async (e) => {
 
     } catch (error) {
         console.error("Lỗi khi đọc PDF Schulke:", error);
-        toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        if (isDynamicChunkLoadError(error)) {
+            toast.error("Ứng dụng vừa được cập nhật. Vui lòng tải lại trang (Ctrl+F5) rồi thử import PDF lại.");
+        } else {
+            toast.error("Không thể đọc file PDF. Vui lòng thử lại.");
+        }
     } finally {
         setIsParsingPDF(false);
         if (schulkePdfInputRef.current) schulkePdfInputRef.current.value = '';

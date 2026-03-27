@@ -7,6 +7,13 @@ import './index.css';
 import App from './App.jsx';
 import './styles/print.css';
 
+// Handle stale chunk errors after a new deployment.
+// When old cached HTML references removed hashed assets, force a reload.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 // <-- PHẦN ĐÃ SỬA LỖI CÚ PHÁP -->
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
