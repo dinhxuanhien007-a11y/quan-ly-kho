@@ -121,10 +121,9 @@ export default defineConfig({
           if (id.includes('exceljs')) return 'vendor-exceljs';
           if (id.includes('/xlsx/')) return 'vendor-xlsx';
 
-          if (id.includes('@firebase/firestore')) return 'vendor-firebase-firestore';
-          if (id.includes('@firebase/auth')) return 'vendor-firebase-auth';
-          if (id.includes('@firebase/database')) return 'vendor-firebase-database';
-          if (id.includes('firebase')) return 'vendor-firebase-core';
+          // Keep Firebase in a single chunk to avoid init-order issues
+          // across split @firebase subpackages in production builds.
+          if (id.includes('firebase')) return 'vendor-firebase';
 
           if (id.includes('pdfjs-dist')) return 'vendor-pdfjs';
           if (id.includes('jspdf-autotable')) return 'vendor-jspdf-autotable';

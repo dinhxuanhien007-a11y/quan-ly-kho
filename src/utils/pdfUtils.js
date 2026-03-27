@@ -80,17 +80,17 @@ export const exportImportSlipToPDF = async (slip) => {
 
     doc.setFontSize(18);
     doc.setFont('Roboto-Regular', 'bold');
-    doc.text('PHIáº¾U NHáº¬P KHO', 148, 20, { align: 'center' });
+    doc.text('PHIẾU NHẬP KHO', 148, 20, { align: 'center' });
 
     doc.setFontSize(11);
     doc.setFont('Roboto-Regular', 'normal');
     const slipDate = slip.createdAt ? formatDate(slip.createdAt.toDate()) : 'Không có';
-    doc.text(`Ngày láº­p phiáº¿u: ${slipDate}`, 14, 30);
+    doc.text(`Ngày lập phiếu: ${slipDate}`, 14, 30);
     doc.text(`Mã phiếu: ${slip.id}`, 283, 30, { align: 'right' });
     
     // Yêu cáº§u 4: Tô đáº­m tên đối tác
     doc.setFont('Roboto-Regular', 'normal');
-    doc.text(`Nhà cung cáº¥p: `, 14, 36);
+    doc.text(`Nhà cung cấp: `, 14, 36);
     doc.setFont('Roboto-Regular', 'bold');
     doc.text(slip.supplierName || '', 40, 36);
     
