@@ -98,7 +98,22 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
 
-          if (id.includes('react') || id.includes('scheduler')) return 'vendor-react';
+          const modulePath = id.split('node_modules/').pop() || '';
+          const normalized = modulePath.includes('.pnpm/')
+            ? (modulePath.split('node_modules/').pop() || modulePath)
+            : modulePath;
+          const parts = normalized.split('/');
+          const packageName = parts[0]?.startsWith('@')
+            ? `${parts[0]}/${parts[1]}`
+            : parts[0];
+
+          if (!packageName) return;
+
+          if (['react', 'react-dom', 'scheduler'].includes(packageName)) return 'vendor-react-core';
+          if (packageName === 'react-router' || packageName === 'react-router-dom') return 'vendor-react-router';
+          if (packageName === 'react-icons') return 'vendor-react-icons';
+          if (packageName === 'react-toastify') return 'vendor-react-toastify';
+          if (packageName === 'react-modal' || packageName === 'react-loading-skeleton') return 'vendor-react-ui';
 
           if (id.includes('exceljs')) return 'vendor-exceljs';
           if (id.includes('/xlsx/')) return 'vendor-xlsx';
