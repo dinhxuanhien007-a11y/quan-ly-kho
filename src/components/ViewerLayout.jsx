@@ -1,22 +1,23 @@
 // src/components/ViewerLayout.jsx
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import InventoryPage from '../pages/InventoryPage';
-import InventorySummaryPage from '../pages/InventorySummaryPage';
 import { useAuth } from '../context/UserContext';
 import { useResponsive } from '../hooks/useResponsive';
 import FloatingCalculator from './FloatingCalculator';
 import { MdCalculate } from 'react-icons/md';
-import MobileInventoryPage from '../pages/MobileInventoryPage';
 import companyLogo from '../assets/logo.png';
 import { usePresence } from '../hooks/usePresence';
 import { useTheme } from '../context/ThemeContext';
 import { MdDarkMode, MdLightMode } from 'react-icons/md';
 // THÊM 2 DÒNG NÀY vào phần import
 import { Routes, Route } from 'react-router-dom';
-import InventoryReconciliationPage from '../pages/InventoryReconciliationPage';
 import { FiGitMerge } from 'react-icons/fi';
+
+const InventoryPage = lazy(() => import('../pages/InventoryPage'));
+const InventorySummaryPage = lazy(() => import('../pages/InventorySummaryPage'));
+const MobileInventoryPage = lazy(() => import('../pages/MobileInventoryPage'));
+const InventoryReconciliationPage = lazy(() => import('../pages/InventoryReconciliationPage'));
 
 const ViewerLayout = () => {
     const { role, user, userData } = useAuth();
@@ -80,7 +81,9 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     if (isMobile) {
         return (
             <div style={{ padding: '10px' }}>
-                <MobileInventoryPage />
+                <Suspense fallback={<div className="loading-screen">Đang tải...</div>}>
+                    <MobileInventoryPage />
+                </Suspense>
             </div>
         );
     }
@@ -156,13 +159,15 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
             </div>
 
 <div className="viewer-main-content">
-    {isReconcilePage ? (
-        <InventoryReconciliationPage />
-    ) : (
-        (viewMode === 'detail' && canViewDetail) 
-            ? <InventoryPage />
-            : <InventorySummaryPage />
-    )}
+    <Suspense fallback={<div className="loading-screen">Đang tải...</div>}>
+        {isReconcilePage ? (
+            <InventoryReconciliationPage />
+        ) : (
+            (viewMode === 'detail' && canViewDetail)
+                ? <InventoryPage />
+                : <InventorySummaryPage />
+        )}
+    </Suspense>
 </div>
 
             <button className="floating-toggle-btn" onClick={toggleCalculator} title="Mở máy tính (F2)">

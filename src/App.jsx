@@ -1,10 +1,8 @@
 // src/App.jsx
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import './styles/AdminLayout.css';
 import LoginPage from './components/LoginPage';
-import AdminLayout from './components/AdminLayout';
-import ViewerLayout from './components/ViewerLayout';
 // import './App.css'; // Không cần import App.css nữa
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
@@ -13,10 +11,12 @@ import { AuthProvider, useAuth } from './context/UserContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import AccessDenied from './components/AccessDenied'; // <-- Import trang mới tạo
 import { ThemeProvider } from './context/ThemeContext';
-import InventoryReconciliationPage from './pages/InventoryReconciliationPage';
 
 // Import login styles để dùng cho wrapper
 import loginStyles from './components/LoginPage.module.css';
+
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
+const ViewerLayout = lazy(() => import('./components/ViewerLayout'));
 
 const AppRoutes = () => {
   const { user, role, userData, loading } = useAuth(); // ← thêm userData
@@ -37,16 +37,16 @@ const AppRoutes = () => {
     return <AccessDenied />;
   }
 
-  const canReconcile = role === 'owner' || (role === 'admin' && userData?.canReconcile === true);
-
   return (
-    <Routes>
-      {role === 'owner' ? (
-        <Route path="/*" element={<AdminLayout />} />
-      ) : (
-        <Route path="/*" element={<ViewerLayout />} />
-      )}
-    </Routes>
+    <Suspense fallback={<div className="loading-screen">Đang tải...</div>}>
+      <Routes>
+        {role === 'owner' ? (
+          <Route path="/*" element={<AdminLayout />} />
+        ) : (
+          <Route path="/*" element={<ViewerLayout />} />
+        )}
+      </Routes>
+    </Suspense>
   );
 };
 
