@@ -16,6 +16,7 @@ const productSchema = z.object({
   storageTemp: z.string().optional(),
   manufacturer: z.string().optional(),
   team: z.string(),
+  missingFromMisa: z.boolean().optional(),
 });
 
 const AddProductModal = ({ onClose, onProductAdded }) => {
@@ -28,6 +29,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
   const [team, setTeam] = useState('MED');
   const [misaCode, setMisaCode] = useState('');
   const [misaConversionFactor, setMisaConversionFactor] = useState('');
+  const [missingFromMisa, setMissingFromMisa] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -44,6 +46,7 @@ const AddProductModal = ({ onClose, onProductAdded }) => {
       team,
       misaCode: misaCode.trim().toUpperCase() || null,
       misaConversionFactor: misaConversionFactor !== '' ? Number(misaConversionFactor) : null,
+      missingFromMisa,
     };
     
     const validationResult = productSchema.safeParse(formData);

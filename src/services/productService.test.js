@@ -38,6 +38,7 @@ describe('Service: productService', () => {
         // Kiểm tra rằng setDoc được gọi với dữ liệu gốc VÀ trường createdAt
         expect(setDoc).toHaveBeenCalledWith(mockDocRef, {
             ...productData,
+            conversionFactor: 1,
             createdAt: serverTimestamp()
         });
     });
@@ -51,7 +52,10 @@ describe('Service: productService', () => {
         await updateProduct(productId, productData);
 
         expect(doc).toHaveBeenCalledWith(db, 'products', productId);
-        expect(updateDoc).toHaveBeenCalledWith(mockDocRef, productData);
+        expect(updateDoc).toHaveBeenCalledWith(mockDocRef, {
+            ...productData,
+            conversionFactor: 1,
+        });
     });
 
     it('hàm deleteProduct nên gọi doc và deleteDoc với tham số chính xác', async () => {

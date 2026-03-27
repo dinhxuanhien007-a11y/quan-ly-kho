@@ -437,7 +437,6 @@ const NewImportPage = () => {
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
         setImportDate(today);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     

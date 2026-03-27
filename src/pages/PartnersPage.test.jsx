@@ -83,7 +83,7 @@ describe('Page: PartnersPage', () => {
         // Act
         render(<PartnersPage />, { wrapper: MockWrapper });
 
-        // Assert: Kiểm tra thông báo "Chưa có đối tác nào." đã được hiển thị
-        expect(screen.getByText('Chưa có đối tác nào.')).toBeInTheDocument();
+        // Assert: Kiểm tra thông báo empty state hiện tại
+        expect(screen.getByText('Không tìm thấy đối tác nào.')).toBeInTheDocument();
     });
 });

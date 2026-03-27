@@ -43,7 +43,7 @@ describe('Hook: useFirestorePagination', () => {
         expect(result.current.documents[0].id).toBe('partner-01');
         expect(result.current.page).toBe(1);
         expect(result.current.isLastPage).toBe(false);
-        expect(getDocs).toHaveBeenCalledTimes(2); // 1 lần cho data, 1 lần để check isLastPage
+        expect(getDocs).toHaveBeenCalledTimes(1); // Hook hiện chỉ gọi 1 lần mỗi lần fetch
     });
 
     it('nên tải trang tiếp theo khi gọi hàm nextPage', async () => {

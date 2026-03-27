@@ -62,7 +62,6 @@ const ProductLedgerPage = () => {
         if (filters.productId) {
             search(filters);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); 
 
     const handleClearFilters = () => {

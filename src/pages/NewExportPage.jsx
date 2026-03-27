@@ -1,10 +1,10 @@
-﻿// src/pages/NewExportPage.jsx
+// src/pages/NewExportPage.jsx
 import { formatNumber, parseFormattedNumber, calculateCaseCount } from '../utils/numberUtils';
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, doc, getDoc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, doc, getDoc, writeBatch, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
@@ -68,7 +68,6 @@ const NewExportPage = () => {
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
         setExportDate(today);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const isSlipValid = useMemo(() => {
@@ -304,6 +303,18 @@ const NewExportPage = () => {
             batch.set(slipRef, { ...slipData, status: 'completed' });
 
             await batch.commit();
+
+            // Cập nhật totalRemaining trên products
+            const qtyByProduct = {};
+            for (const item of slipData.items) {
+                qtyByProduct[item.productId] = (qtyByProduct[item.productId] || 0) + item.quantityToExport;
+            }
+            await Promise.all(
+                Object.entries(qtyByProduct).map(([pid, qty]) =>
+                    updateDoc(doc(db, 'products', pid), { totalRemaining: increment(-qty) })
+                )
+            );
+
             toast.success('Xuất kho trực tiếp thành công!');
             resetSlip();
         } catch (error) {

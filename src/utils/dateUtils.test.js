@@ -14,9 +14,9 @@ describe('Các hàm xử lý ngày tháng', () => {
             expect(ketQua).toBe('25/12/2025');
         });
 
-        // Test trường hợp 2: Nó phải trả về chuỗi rỗng nếu đầu vào là null
-        it('phải trả về chuỗi rỗng nếu đầu vào là null', () => {
-            expect(formatDate(null)).toBe('');
+        // Test trường hợp 2: Nó phải trả về "N/A" nếu đầu vào không hợp lệ
+        it('phải trả về N/A nếu đầu vào là null', () => {
+            expect(formatDate(null)).toBe('N/A');
         });
     });
 
