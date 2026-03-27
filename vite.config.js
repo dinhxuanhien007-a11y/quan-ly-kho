@@ -1,7 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
@@ -91,5 +90,36 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+
+          if (id.includes('react') || id.includes('scheduler')) return 'vendor-react';
+
+          if (id.includes('exceljs')) return 'vendor-exceljs';
+          if (id.includes('/xlsx/')) return 'vendor-xlsx';
+
+          if (id.includes('@firebase/firestore')) return 'vendor-firebase-firestore';
+          if (id.includes('@firebase/auth')) return 'vendor-firebase-auth';
+          if (id.includes('@firebase/database')) return 'vendor-firebase-database';
+          if (id.includes('firebase')) return 'vendor-firebase-core';
+
+          if (id.includes('pdfjs-dist')) return 'vendor-pdfjs';
+          if (id.includes('jspdf-autotable')) return 'vendor-jspdf-autotable';
+          if (id.includes('jspdf')) return 'vendor-jspdf';
+          if (id.includes('html2canvas')) return 'vendor-html2canvas';
+          if (id.includes('dompurify')) return 'vendor-dompurify';
+
+          if (id.includes('chart.js') || id.includes('react-chartjs-2')) return 'vendor-chartjs';
+          if (id.includes('recharts')) return 'vendor-recharts';
+
+          return;
+        },
+      },
+    },
   },
 })
