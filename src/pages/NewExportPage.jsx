@@ -160,7 +160,7 @@ const NewExportPage = () => {
     };
 
     const getValidSlipData = () => {
-        const formattedDate = exportDate ? formatDate(new Date(exportDate)) : formatDate(new Date());
+        const formattedDate = exportDate ? exportDate.split('-').reverse().join('/') : formatDate(new Date());
 
         const validItemsInput = items.filter(item => {
             const qty = Number(item.quantityToExport);

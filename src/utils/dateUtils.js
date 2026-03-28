@@ -69,10 +69,13 @@ export const formatExpiryDate = (value) => {
  * PHIÊN BẢN MỚI: Xác định class màu sắc cho một dòng dựa trên ngày hết hạn và nhóm hàng.
  */
 export const getRowColorByExpiry = (expiryDate, subGroup) => {
-    if (!expiryDate || !expiryDate.toDate) return '';
+    if (!expiryDate) return '';
+    // Hỗ trợ cả Firestore Timestamp lẫn JS Date object
+    const isTimestamp = typeof expiryDate.toDate === 'function';
+    if (!isTimestamp && !(expiryDate instanceof Date)) return '';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const expDate = expiryDate.toDate();
+    const expDate = isTimestamp ? expiryDate.toDate() : new Date(expiryDate);
     expDate.setHours(0, 0, 0, 0);
     const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

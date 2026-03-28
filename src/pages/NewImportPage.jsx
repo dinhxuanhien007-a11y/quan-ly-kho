@@ -642,7 +642,7 @@ const NewImportPage = () => {
 
         return {
             ...validationResult.data,
-            importDate: formatDate(new Date(importDate)),
+            importDate: importDate ? importDate.split('-').reverse().join('/') : formatDate(new Date()),
             description,
             productIds: Array.from(new Set(validationResult.data.items.map(item => item.productId))),
             status: '',
@@ -1569,7 +1569,7 @@ const handleSchulkePDFUpload = async (e) => {
                 const subGroupValue = productDetails.subGroup || '';
 
                 const newLotData = {
-                    importDate: slipData.importDate ? Timestamp.fromDate(new Date(slipData.importDate.split('/').reverse().join('-'))) : Timestamp.now(),
+                    importDate: slipData.importDate ? (() => { const [d, m, y] = slipData.importDate.split('/'); return Timestamp.fromDate(new Date(Number(y), Number(m) - 1, Number(d))); })() : Timestamp.now(),
                     productId: item.productId,
                     productName: item.productName,
                     lotNumber: item.lotNumber,
