@@ -202,6 +202,7 @@ const NewExportPage = () => {
             for (const originalLot of originalLotsSorted) {
                 if (quantityToDistribute <= 0) break;
                 const originalLotAvailableQty = originalLot.quantityRemaining - (originalLot.quantityAllocated || 0);
+                if (originalLotAvailableQty <= 0) continue;
                 const quantityFromThisLot = Math.min(quantityToDistribute, originalLotAvailableQty);
 
                 finalItems.push({
@@ -274,11 +275,16 @@ const NewExportPage = () => {
             const batch = writeBatch(db);
 
             // Dùng increment() để tránh race condition khi nhiều user xuất cùng lúc
+            // quantityAllocated chỉ trừ nếu phiếu này đã qua bước "Lưu Nháp" (đã đặt giữ trước đó).
+            // Xuất trực tiếp không qua nháp thì quantityAllocated = 0, không trừ để tránh âm.
             for (const item of slipData.items) {
                 const lotRef = doc(db, 'inventory_lots', item.lotId);
+                const lotSnap = await getDoc(lotRef);
+                const currentAllocated = lotSnap.exists() ? (lotSnap.data().quantityAllocated || 0) : 0;
+                const allocatedToDeduct = Math.min(item.quantityToExport, currentAllocated);
                 batch.update(lotRef, {
                     quantityRemaining: increment(-item.quantityToExport),
-                    quantityAllocated: increment(-item.quantityToExport),
+                    quantityAllocated: increment(-allocatedToDeduct),
                 });
             }
 

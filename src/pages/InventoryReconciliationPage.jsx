@@ -124,13 +124,13 @@ function fmtDateDisplay(dateVal) {
         return s;
     }
     
-    // Nếu là số (Excel serial date)
+    // Nếu là số (Excel serial date) — dùng UTC để tránh lệch ngày theo múi giờ
     if (typeof dateVal === 'number') {
         const d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
         if (isNaN(d.getTime())) return '';
-        const year = d.getFullYear();
-        const month = d.getMonth() + 1;
-        const day = d.getDate();
+        const year = d.getUTCFullYear();
+        const month = d.getUTCMonth() + 1;
+        const day = d.getUTCDate();
         return `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
     }
     
@@ -873,7 +873,7 @@ const InventoryReconciliationPage = () => {
                     <tbody>{mm.slice(0, 10).map((r, i) => (
                         <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f5f3ff' : '#ede9fe' }}>
                             <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>
-                                <button onClick={() => { setActiveTab('hsdlech'); setSearch(r.productId); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontWeight: '600', padding: 0, fontSize: 'inherit' }}>{r.productId}</button>
+                                <button onClick={() => { setActiveTab('hsdlech'); setSortState({ col: null, dir: 'asc' }); setSearch(r.productId); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontWeight: '600', padding: 0, fontSize: 'inherit' }}>{r.productId}</button>
                             </td>
                             <td style={{ padding: '5px 10px', color: '#555' }}>{r.lotNumber}</td>
                             <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdWebkho || '—'}</td>
@@ -887,7 +887,7 @@ const InventoryReconciliationPage = () => {
                 {mm.length > 10 && (
                     <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>
                         ... và {mm.length - 10} lot khác.
-                        <button onClick={() => setActiveTab('hsdlech')} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontSize: '12px' }}>Xem tất cả →</button>
+                        <button onClick={() => { setActiveTab('hsdlech'); setSortState({ col: null, dir: 'asc' }); }} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontSize: '12px' }}>Xem tất cả →</button>
                     </div>
                 )}
                 <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>

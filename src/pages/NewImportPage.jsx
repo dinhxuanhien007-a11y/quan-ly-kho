@@ -1681,9 +1681,6 @@ const handleSchulkePDFUpload = async (e) => {
                             value={supplierName || supplierId}
                             onSelect={({ id, name }) => {
                                 setSupplier(id, name);
-                                if (!id && name) { 
-                                    setSupplier(name, '');
-                                }
                             }}
                             onBlur={() => {
                                 if (!supplierId && supplierName) {
