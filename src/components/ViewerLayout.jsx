@@ -10,8 +10,6 @@ import companyLogo from '../assets/logo.png';
 import { usePresence } from '../hooks/usePresence';
 import { useTheme } from '../context/ThemeContext';
 import { MdDarkMode, MdLightMode } from 'react-icons/md';
-// THÊM 2 DÒNG NÀY vào phần import
-import { Routes, Route } from 'react-router-dom';
 import { FiGitMerge } from 'react-icons/fi';
 
 const InventoryPage = lazy(() => import('../pages/InventoryPage'));

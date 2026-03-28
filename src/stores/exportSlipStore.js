@@ -185,7 +185,7 @@ try {
             addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
             removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
             replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
-            resetSlip: () => set({ customerId: '', customerName: '', description: '', items: [{ ...initialItemState, id: Date.now() }] })
+            resetSlip: () => set({ customerId: '', customerName: '', description: '', exportDate: new Date().toISOString().split('T')[0], items: [{ ...initialItemState, id: Date.now() }] })
         }),
         {
             name: 'export-slip-storage',

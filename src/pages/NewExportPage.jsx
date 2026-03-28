@@ -4,7 +4,7 @@ import ProductAutocomplete from '../components/ProductAutocomplete';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, doc, getDoc, writeBatch, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
 import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
@@ -273,30 +273,13 @@ const NewExportPage = () => {
         try {
             const batch = writeBatch(db);
 
-            // Gộp các items cùng lotId để tránh race condition
-            const lotUpdates = new Map();
+            // Dùng increment() để tránh race condition khi nhiều user xuất cùng lúc
             for (const item of slipData.items) {
-                const lotId = item.lotId;
-                if (lotUpdates.has(lotId)) {
-                    lotUpdates.get(lotId).totalQty += item.quantityToExport;
-                } else {
-                    lotUpdates.set(lotId, {
-                        totalQty: item.quantityToExport,
-                        lotRef: doc(db, 'inventory_lots', lotId)
-                    });
-                }
-            }
-
-            for (const [, updateInfo] of lotUpdates) {
-                const lotSnap = await getDoc(updateInfo.lotRef);
-                if (lotSnap.exists()) {
-                    const currentRemaining = lotSnap.data().quantityRemaining;
-                    const currentAllocated = lotSnap.data().quantityAllocated || 0;
-                    batch.update(updateInfo.lotRef, {
-                        quantityRemaining: currentRemaining - updateInfo.totalQty,
-                        quantityAllocated: Math.max(0, currentAllocated - updateInfo.totalQty)
-                    });
-                }
+                const lotRef = doc(db, 'inventory_lots', item.lotId);
+                batch.update(lotRef, {
+                    quantityRemaining: increment(-item.quantityToExport),
+                    quantityAllocated: increment(-item.quantityToExport),
+                });
             }
 
             const slipRef = doc(collection(db, 'export_tickets'));
@@ -375,7 +358,6 @@ const NewExportPage = () => {
                             value={customerName || customerId}
                             onSelect={({ id, name }) => {
                                 setCustomer(id, name);
-                                if (!id && name) setCustomer(name, '');
                             }}
                         />
                     </div>

@@ -314,8 +314,6 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
 
                 // ── Export tickets ──
                 const exportSnap = await safeFetch('export_tickets', [where('productIds', 'array-contains', pidTrim)]);
-                console.log('🔍 DEBUG - Truy vết xuất kho cho:', pidTrim, 'Lot:', normLotNum);
-                console.log('  - Tổng số phiếu xuất tìm thấy:', exportSnap.size);
                 
                 exportSnap.forEach(doc => {
                     const d = doc.data();
@@ -323,21 +321,7 @@ const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
                         .filter(item => String(item.productId || '').trim() === pidTrim && normLot(item.lotNumber) === normLotNum);
                     
                     if (matchingItems.length > 0) {
-                        console.log('  📄 Phiếu xuất:', doc.id);
-                        console.log('    - Ngày xuất:', d.exportDate);
-                        console.log('    - Khách hàng:', d.customer || d.customerId);
-                        console.log('    - Tổng items trong phiếu:', (d.items || []).length);
-                        console.log('    - Items khớp lot:', matchingItems.length);
-                        
                         matchingItems.forEach((item, idx) => {
-                            console.log(`    - Item ${idx + 1}:`, {
-                                productId: item.productId,
-                                lotNumber: item.lotNumber,
-                                lotNormalized: normLot(item.lotNumber),
-                                quantity: item.quantityToExport,
-                                unit: item.unit,
-                                expiryDate: item.expiryDate
-                            });
                             
                             results.push({
                                 type: 'export',
@@ -696,19 +680,6 @@ const InventoryReconciliationPage = () => {
                 const diff = qtyWebkhoQd - tonMisa;
                 chenhWebkho = diff / heySo;
                 chenhMisa = heySo !== 1 ? diff : null;
-                
-                // DEBUG: Log sau khi tính chenhWebkho
-                if (Math.abs(diff) > 0.001) {
-                    console.log('🔍 DEBUG - Sản phẩm:', lot.productId);
-                    console.log('  - Tồn WebKho:', lot.quantityRemaining, lot.unit);
-                    console.log('  - Hệ số quy đổi (heySo):', heySo);
-                    console.log('  - Tồn WebKho quy đổi:', qtyWebkhoQd, misaItem.dvt);
-                    console.log('  - Tồn Misa:', misaItem.sl, misaItem.dvt);
-                    console.log('  - Chênh lệch (diff):', diff, misaItem.dvt);
-                    console.log('  - chenhWebkho:', chenhWebkho, lot.unit);
-                    console.log('  - chenhMisa:', chenhMisa, misaItem.dvt);
-                    console.log('  - Hiển thị:', fmtChenh(chenhWebkho, lot.unit));
-                }
                 
                 if (hsdLech) { nhom = 'hsdlech'; status = '🟣 Lệch HSD'; }
                 else if (Math.abs(diff) < 0.001) { nhom = 'khop'; status = '✅ Khớp'; }

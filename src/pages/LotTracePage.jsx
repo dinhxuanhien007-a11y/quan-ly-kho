@@ -139,10 +139,23 @@ const LotTracePage = () => {
             const normLotNum = normLot(lotNumber);
 
             // Tìm phiếu xuất
+            // Khi chỉ có số lot (không có mã hàng): tìm productId từ inventory_lots trước
+            // để tránh full collection scan
+            let resolvedPid = pidTrim;
+            if (!pidTrim && normLotNum) {
+                const lotSnap = await getDocs(
+                    query(collection(db, 'inventory_lots'), where('lotNumber', '==', lotNumber.trim()))
+                );
+                if (!lotSnap.empty) {
+                    resolvedPid = lotSnap.docs[0].data().productId || '';
+                }
+            }
+
             let exportQuery;
-            if (pidTrim) {
-                exportQuery = query(collection(db, 'export_tickets'), where('productIds', 'array-contains', pidTrim));
+            if (resolvedPid) {
+                exportQuery = query(collection(db, 'export_tickets'), where('productIds', 'array-contains', resolvedPid));
             } else {
+                // Fallback: vẫn phải scan nếu không tìm được productId từ lot
                 exportQuery = query(collection(db, 'export_tickets'));
             }
             
@@ -196,8 +209,8 @@ const LotTracePage = () => {
 
             // Tìm phiếu nhập
             let importQuery;
-            if (pidTrim) {
-                importQuery = query(collection(db, 'import_tickets'), where('productIds', 'array-contains', pidTrim));
+            if (resolvedPid) {
+                importQuery = query(collection(db, 'import_tickets'), where('productIds', 'array-contains', resolvedPid));
             } else {
                 importQuery = query(collection(db, 'import_tickets'));
             }

@@ -178,7 +178,6 @@ const EditImportSlipModal = ({ slip, onClose, onSave }) => {
             type="date"
             value={dateToInputValue(slipData.importDate)}
             onChange={(e) => handleInfoChange('importDate', e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
         />
         <FiCalendar className="date-input-icon" />
     </div>

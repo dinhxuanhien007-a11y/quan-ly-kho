@@ -1,6 +1,6 @@
 // src/components/AdminLayout.jsx
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import Navbar from './Navbar';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import FloatingCalculator from './FloatingCalculator';
@@ -39,12 +39,12 @@ const AdminLayout = () => {
   const [isToolsModalVisible, setIsToolsModalVisible] = useState(false);
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
 
-  const toggleToolsModal = () => {
+  const toggleToolsModal = useCallback(() => {
     setIsToolsModalVisible(prev => !prev);
-  };
-  const toggleCalculator = () => {
+  }, []);
+  const toggleCalculator = useCallback(() => {
     setIsCalculatorVisible(prev => !prev);
-  };
+  }, []);
   // =======================================================
 
   // === BƯỚC 2: ĐẶT useEffect Ở DƯỚI SAU KHI CÁC HÀM ĐÃ ĐƯỢC ĐỊNH NGHĨA ===
