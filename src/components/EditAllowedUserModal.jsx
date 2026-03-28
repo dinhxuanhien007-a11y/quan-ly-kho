@@ -1,27 +1,47 @@
 // src/components/EditAllowedUserModal.jsx
 import React, { useState } from 'react';
-import { functions } from '../firebaseConfig'; // <-- THÊM: Import functions đã cấu hình
-import { httpsCallable } from "firebase/functions"; // <-- GIỮ LẠI
+import { functions, auth } from '../firebaseConfig';
+import { httpsCallable } from "firebase/functions";
 import { toast } from 'react-toastify';
 
 const EditAllowedUserModal = ({ onClose, onUserUpdated, userToEdit }) => {
   const [newRole, setNewRole] = useState(userToEdit.role);
+  const [canReconcile, setCanReconcile] = useState(userToEdit.canReconcile === true);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleUpdate = async () => {
-    if (newRole === userToEdit.role) {
-        onClose();
-        return;
+    const roleChanged = newRole !== userToEdit.role;
+    const reconcileChanged = newRole === 'admin' && canReconcile !== (userToEdit.canReconcile === true);
+
+    if (!roleChanged && !reconcileChanged) {
+      onClose();
+      return;
     }
+
     setIsSaving(true);
     try {
-      const updateRoleFunc = httpsCallable(functions, 'updateAllowlistRole');
-      await updateRoleFunc({ email: userToEdit.email, newRole: newRole });
-      toast.success(`Đã cập nhật vai trò cho ${userToEdit.email}!`);
+      // Cập nhật role nếu có thay đổi
+      if (roleChanged) {
+        const updateRoleFunc = httpsCallable(functions, 'updateAllowlistRole');
+        await updateRoleFunc({ email: userToEdit.email, newRole });
+      }
+
+      // Cập nhật canReconcile nếu role là admin và có thay đổi
+      if (newRole === 'admin' && reconcileChanged) {
+        const setCanReconcileFunc = httpsCallable(functions, 'setCanReconcile');
+        await setCanReconcileFunc({ email: userToEdit.email, canReconcile });
+      }
+
+      // Nếu đang chỉnh sửa chính mình, force refresh token để áp dụng ngay
+      if (auth.currentUser?.email === userToEdit.email) {
+        await auth.currentUser.getIdToken(true);
+      }
+
+      toast.success(`Đã cập nhật thông tin cho ${userToEdit.email}!`);
       onUserUpdated();
       onClose();
     } catch (error) {
-      console.error("Lỗi khi cập nhật vai trò:", error);
+      console.error("Lỗi khi cập nhật:", error);
       toast.error(error.message);
     } finally {
       setIsSaving(false);
@@ -44,6 +64,20 @@ const EditAllowedUserModal = ({ onClose, onUserUpdated, userToEdit }) => {
                 <option value="admin">admin</option>
             </select>
         </div>
+        {newRole === 'admin' && (
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <input
+              type="checkbox"
+              id="canReconcile"
+              checked={canReconcile}
+              onChange={(e) => setCanReconcile(e.target.checked)}
+              style={{ width: 'auto', cursor: 'pointer' }}
+            />
+            <label htmlFor="canReconcile" style={{ marginBottom: 0, cursor: 'pointer' }}>
+              Cho phép đọc phiếu nhập/xuất (Đối chiếu tồn kho)
+            </label>
+          </div>
+        )}
         <div className="modal-actions">
           <button type="button" onClick={onClose} className="btn-secondary" disabled={isSaving}>Hủy</button>
           <button type="button" onClick={handleUpdate} className="btn-primary" disabled={isSaving}>

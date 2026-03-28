@@ -109,6 +109,7 @@ const UsersPage = () => {
                     uid: registeredUser?.uid || null,
                     createdAt: registeredUser?.createdAt?.toDate().toLocaleDateString('vi-VN') || 'N/A',
                     status: registeredUser ? 'Đã kích hoạt' : 'Chờ kích hoạt',
+                    canReconcile: registeredUser?.canReconcile === true,
                 };
             });
             setAllUsers(mergedUsers);

@@ -565,3 +565,52 @@ exports.transcribeAudio = onCall({
         );
     }
 });
+
+
+// =================================================================
+// === HÀM CẬP NHẬT QUYỀN CAN_RECONCILE CHO ADMIN ===
+// =================================================================
+
+/**
+ * Hàm 10: Được gọi bởi Owner để bật/tắt quyền canReconcile cho một admin.
+ * Lưu vào cả custom claim (để dùng trong Firestore Rules) và Firestore document.
+ */
+exports.setCanReconcile = onCall({ region: ASIA_REGION }, async (request) => {
+  if (request.auth?.token.role !== "owner") {
+    throw new HttpsError("permission-denied", "Chỉ owner mới có quyền thực hiện chức năng này.");
+  }
+
+  const { email, canReconcile } = request.data;
+  if (!email || typeof canReconcile !== "boolean") {
+    throw new HttpsError("invalid-argument", "Vui lòng cung cấp email và giá trị canReconcile (true/false).");
+  }
+
+  try {
+    const userRecord = await auth.getUserByEmail(email);
+    const uid = userRecord.uid;
+
+    // Lấy claims hiện tại để không ghi đè role
+    const currentClaims = userRecord.customClaims || {};
+
+    // Cập nhật custom claim (giữ nguyên role, chỉ thêm/sửa canReconcile)
+    await auth.setCustomUserClaims(uid, {
+      ...currentClaims,
+      canReconcile: canReconcile,
+    });
+
+    // Cập nhật Firestore document để UI có thể hiển thị + trigger client refresh token
+    await db.collection("users").doc(uid).update({
+      canReconcile: canReconcile,
+      tokenRefreshRequired: Date.now(), // client lắng nghe field này để tự refresh token
+    });
+
+    logger.info(`Đã cập nhật canReconcile=${canReconcile} cho user: ${email}`);
+    return { success: true, message: `Đã cập nhật quyền canReconcile cho ${email}.` };
+  } catch (error) {
+    if (error.code === "auth/user-not-found") {
+      throw new HttpsError("not-found", "Không tìm thấy user với email này.");
+    }
+    logger.error("Lỗi khi cập nhật canReconcile:", error);
+    throw new HttpsError("internal", "Đã xảy ra lỗi khi cập nhật quyền.");
+  }
+});

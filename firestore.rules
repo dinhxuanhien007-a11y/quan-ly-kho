@@ -7,9 +7,15 @@ service cloud.firestore {
     function isOwner() {
       return request.auth.token.role == 'owner';
     }
-    // Bỏ hàm isManager() không dùng đến để cho gọn
     function isSignedIn() {
       return request.auth != null;
+    }
+    // owner luôn có quyền, admin chỉ có quyền nếu custom claim canReconcile == true
+    function canReconcile() {
+      return isSignedIn() && (
+        isOwner() ||
+        (request.auth.token.role == 'admin' && request.auth.token.canReconcile == true)
+      );
     }
 
     // --- QUẢN LÝ USER ---
@@ -43,11 +49,11 @@ service cloud.firestore {
 
     // --- PHIẾU NHẬP/XUẤT ---
     match /import_tickets/{ticketId} {
-      allow read: if isOwner();
+      allow read: if canReconcile();
       allow write: if isOwner();
     }
     match /export_tickets/{ticketId} {
-      allow read: if isOwner();
+      allow read: if canReconcile();
       allow write: if isOwner();
     }
     
