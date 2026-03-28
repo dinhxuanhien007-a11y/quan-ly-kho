@@ -97,46 +97,26 @@ const ExportListPage = () => {
 
 const handleConfirmExport = async (slip) => {
     setIsProcessing(true);
-    const batch = writeBatch(db); // Dùng Batch Writes
+    const batch = writeBatch(db);
     
     try {
         for (const item of slip.items) {
             const lotRef = doc(db, 'inventory_lots', item.lotId);
-            const lotSnap = await getDoc(lotRef);
-            
-            if (lotSnap.exists()) {
-                const currentRemaining = lotSnap.data().quantityRemaining;
-                const currentAllocated = lotSnap.data().quantityAllocated || 0;
-                const quantityToExport = item.quantityToExport || item.quantityExported;
-                
-                const newQuantityRemaining = currentRemaining - quantityToExport; 
-                
-                if (newQuantityRemaining < 0) {
-                    toast.error(`Lỗi: Tồn kho của lô ${item.lotNumber} không đủ.`);
-                    setIsProcessing(false); 
-                    return;
-                }
-                
-                // *** DÒNG SỬA LỖI QUAN TRỌNG NẰM Ở ĐÂY ***
-                // Trừ đi số lượng đã xuất khỏi phần đặt giữ
-                const newAllocated = Math.max(0, currentAllocated - quantityToExport);
-                
-                // Cập nhật cả 2 trường
-                batch.update(lotRef, { 
-                    quantityRemaining: newQuantityRemaining,
-                    quantityAllocated: newAllocated // <--- Sửa lỗi ở đây
-                });
-            }
+            const quantityToExport = item.quantityToExport || item.quantityExported || 0;
+            // Dùng increment() để tránh race condition
+            batch.update(lotRef, {
+                quantityRemaining: increment(-quantityToExport),
+                quantityAllocated: increment(-quantityToExport),
+            });
         }
         
-        // Cập nhật trạng thái phiếu
         const slipRef = doc(db, 'export_tickets', slip.id);
         batch.update(slipRef, { status: 'completed' });
         
         await batch.commit();
 
         toast.success('Xác nhận xuất kho thành công!');
-        reset(); // Tải lại danh sách
+        reset();
     } catch (error) {
         console.error("Lỗi khi xác nhận xuất kho: ", error);
         toast.error('Đã xảy ra lỗi khi xác nhận.');
