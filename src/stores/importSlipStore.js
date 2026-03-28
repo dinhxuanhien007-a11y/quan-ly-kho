@@ -79,7 +79,6 @@ const useImportSlipStore = create(
                 const currentItem = { ...newItems[index] };
                 if (found) {
                     const subGroupValue = productData.subGroup || ''; // Lấy subGroup
-                    console.log(`Updating store for ${productData.id}, subGroup: ${subGroupValue}`); // Log giá trị subGroup
                     Object.assign(currentItem, {
                         productName: productData.productName || '',
                         unit: productData.unit || '',

@@ -4,7 +4,7 @@ import ProductAutocomplete from '../components/ProductAutocomplete';
 import SupplierAutocomplete from '../components/SupplierAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs, updateDoc, increment, writeBatch } from 'firebase/firestore';
 import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
 import AddNewLotModal from '../components/AddNewLotModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -1559,6 +1559,8 @@ const handleSchulkePDFUpload = async (e) => {
                 return acc;
             }, {});
 
+            const batch = writeBatch(db);
+
             for (const item of slipData.items) {
                 const expiryDateObj = parseDateString(item.expiryDate);
                 const expiryTimestamp = expiryDateObj ? Timestamp.fromDate(expiryDateObj) : null;
@@ -1583,11 +1585,24 @@ const handleSchulkePDFUpload = async (e) => {
                     notes: item.notes,
                     supplierName: slipData.supplierName,
                 };
-                await addDoc(collection(db, "inventory_lots"), newLotData);
+                const lotRef = doc(collection(db, "inventory_lots"));
+                batch.set(lotRef, newLotData);
             }
-            
+
             const finalSlipData = { ...slipData, status: 'completed' };
-            await addDoc(collection(db, 'import_tickets'), finalSlipData);
+            const slipRef = doc(collection(db, 'import_tickets'));
+            batch.set(slipRef, finalSlipData);
+
+            // Cập nhật totalRemaining trên products (giống NewExportPage)
+            const qtyByProduct = {};
+            for (const item of slipData.items) {
+                qtyByProduct[item.productId] = (qtyByProduct[item.productId] || 0) + Number(item.quantity);
+            }
+            for (const [pid, qty] of Object.entries(qtyByProduct)) {
+                batch.update(doc(db, 'products', pid), { totalRemaining: increment(qty) });
+            }
+
+            await batch.commit();
             
             toast.success('Nhập kho trực tiếp thành công!');
             resetSlip();
