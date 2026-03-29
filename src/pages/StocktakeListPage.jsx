@@ -73,7 +73,7 @@ const StocktakeListPage = () => {
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
                 message={confirmModal.message}
-                onConfirm={handleDeleteSession}
+                onConfirm={confirmModal.onConfirm}
                 onCancel={() => setConfirmModal({ isOpen: false, item: null })}
                 confirmText={confirmModal.confirmText}
             />
@@ -114,7 +114,30 @@ const StocktakeListPage = () => {
                             {stocktakeSessions.length > 0 ? (
                                 stocktakeSessions.map(session => (
                                     <tr key={session.id}>
-                                        <td>{session.name}</td>
+                                        <td>
+                                            <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                                {session.name}
+                                                {(session.totalItems > 0) && (
+                                                    <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                                        <div style={{
+                                                            flex: 1, height: '4px', backgroundColor: '#e9ecef',
+                                                            borderRadius: '2px', overflow: 'hidden', maxWidth: '120px'
+                                                        }}>
+                                                            <div style={{
+                                                                height: '100%', borderRadius: '2px',
+                                                                width: `${Math.round((session.countedItems / session.totalItems) * 100)}%`,
+                                                                backgroundColor: Math.round((session.countedItems / session.totalItems) * 100) >= 80 ? '#28a745'
+                                                                    : Math.round((session.countedItems / session.totalItems) * 100) >= 50 ? '#ffc107' : '#dc3545',
+                                                                transition: 'width 0.3s ease'
+                                                            }} />
+                                                        </div>
+                                                        <span style={{fontSize: '11px', color: '#888', whiteSpace: 'nowrap'}}>
+                                                            {session.countedItems}/{session.totalItems} đã đếm
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td>{session.createdAt?.toDate().toLocaleDateString('vi-VN')}</td>
                                         <td>{session.scope === 'all' ? 'Toàn bộ kho' : session.scope}</td>
                                         <td><StatusBadge status={session.status} /></td>
@@ -128,7 +151,7 @@ const StocktakeListPage = () => {
                                                     Xem/Thực hiện
                                                 </button>
                                                 
-                                                {session.status === 'in_progress' && (
+                                                {(session.status === 'in_progress' || (session.status === 'completed' && role === 'owner')) && (
                                                     <button
                                                         className="btn-icon btn-delete"
                                                         title="Xóa phiên kiểm kê"

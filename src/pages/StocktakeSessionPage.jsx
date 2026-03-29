@@ -1,9 +1,9 @@
 // src/pages/StocktakeSessionPage.jsx
 import { FiPrinter } from 'react-icons/fi';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, updateDoc, writeBatch, collection, addDoc, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc, documentId, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, writeBatch, collection, serverTimestamp, query, orderBy, limit, startAfter, getDocs, where, getCountFromServer, setDoc, Timestamp, onSnapshot } from 'firebase/firestore';
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -17,11 +17,30 @@ import useStocktakeStore from '../stores/stocktakeStore';
 const PAGE_SIZE = 50;
 
 // Component con không thay đổi
-const CountInput = ({ item, onCountSubmit }) => {
+// Tạo âm thanh beep nhẹ bằng Web Audio API (không cần file âm thanh)
+const playBeep = () => {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.15);
+    } catch (_) { /* bỏ qua nếu trình duyệt không hỗ trợ */ }
+};
+
+const CountInput = ({ item, onCountSubmit, onResetCount, inputRef }) => {
     const { id, countedQty, isNew } = item;
     const updateItemCountInUI = useStocktakeStore(state => state.updateItemCountInUI);
     const sessionData = useStocktakeStore(state => state.sessionData);
     const isSessionInProgress = sessionData?.status === 'in_progress';
+    const hasCounted = countedQty !== null && countedQty !== undefined && countedQty !== '';
+
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             e.target.blur();
@@ -29,20 +48,57 @@ const CountInput = ({ item, onCountSubmit }) => {
     };
 
     return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <input
+                ref={inputRef}
+                type="text"
+                placeholder="Nhập số đếm"
+                value={countedQty ?? ''}
+                onChange={e => updateItemCountInUI(id, e.target.value)}
+                onBlur={e => onCountSubmit(id, e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={!isSessionInProgress}
+                style={{
+                    flex: 1,
+                    boxSizing: 'border-box',
+                    backgroundColor: isNew ? '#fff9e6' : (hasCounted ? '#e6fffa' : '#fff')
+                }}
+            />
+            {isSessionInProgress && hasCounted && (
+                <button
+                    onClick={() => onResetCount(id)}
+                    title="Xóa số đếm"
+                    style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#aaa', fontSize: '14px', padding: '2px 4px',
+                        lineHeight: 1, flexShrink: 0
+                    }}
+                >
+                    ✕
+                </button>
+            )}
+        </div>
+    );
+};
+
+// Component ghi chú cho từng dòng kiểm kê
+const NoteInput = ({ item, onNoteSubmit }) => {
+    const { id, countNote } = item;
+    const sessionData = useStocktakeStore(state => state.sessionData);
+    const isSessionInProgress = sessionData?.status === 'in_progress';
+    const [localNote, setLocalNote] = React.useState(countNote || '');
+
+    React.useEffect(() => { setLocalNote(countNote || ''); }, [countNote]);
+
+    return (
         <input
             type="text"
-            placeholder="Nhập số đếm"
-            value={countedQty ?? ''}
-            onChange={e => updateItemCountInUI(id, e.target.value)}
-            onBlur={e => onCountSubmit(id, e.target.value)}
-            onKeyDown={handleKeyDown}
+            placeholder="Ghi chú..."
+            value={localNote}
+            onChange={e => setLocalNote(e.target.value)}
+            onBlur={() => onNoteSubmit(id, localNote)}
             disabled={!isSessionInProgress}
-            style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                backgroundColor: isNew ? '#fff9e6' :
-                    ((countedQty !== null && countedQty !== '') ? '#e6fffa' : '#fff')
-            }}
+            style={{ width: '100%', boxSizing: 'border-box', fontSize: '12px', color: '#555' }}
         />
     );
 };
@@ -75,12 +131,21 @@ const StocktakeSessionPage = () => {
     const [loadingItems, setLoadingItems] = useState(true);
     const [convMap, setConvMap] = useState({});
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterMode, setFilterMode] = useState('all'); // 'all' | 'uncounted' | 'counted'
     const [lastVisible, setLastVisible] = useState(null);
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     const [cursorHistory, setCursorHistory] = useState([]);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+    const [justSavedId, setJustSavedId] = useState(null); // highlight dòng vừa lưu
+    const [adjustmentHistory, setAdjustmentHistory] = useState([]); // lịch sử điều chỉnh
+    const [suggestions, setSuggestions] = useState([]); // gợi ý mã hàng khi gõ
+    const [productIdCache, setProductIdCache] = useState([]); // cache toàn bộ productId của phiên
+    const [isCacheLoading, setIsCacheLoading] = useState(true); // trạng thái load cache
+
+    const tableContainerRef = useRef(null); // ref để scroll lên đầu bảng khi chuyển trang
+    const firstCountInputRef = useRef(null); // ref để auto-focus ô đếm đầu tiên sau search
 
     const performCountUpdate = async (itemId, finalCount) => {
         updateItemCountInUI(itemId, finalCount);
@@ -88,11 +153,19 @@ const StocktakeSessionPage = () => {
         try {
             await updateDoc(itemRef, { countedQty: finalCount });
             await fetchStatsAndDiscrepancies();
+            // Highlight dòng vừa lưu + âm thanh xác nhận
+            setJustSavedId(itemId);
+            setTimeout(() => setJustSavedId(null), 1000);
+            if (finalCount !== null) playBeep();
             return true;
         } catch (error) {
             toast.error("Lỗi: Không thể lưu số lượng.");
             return false;
         }
+    };
+
+    const handleResetCount = (itemId) => {
+        performCountUpdate(itemId, null);
     };
 
     const handleCountSubmit = (itemId, value) => {
@@ -155,7 +228,45 @@ const StocktakeSessionPage = () => {
         };
         const sortedDiscrepancies = discrepancies.sort((a, b) => a.productId.localeCompare(b.productId));
         setSummary(newSummary, sortedDiscrepancies);
+        // Ghi ngược stats vào document cha để StocktakeListPage hiển thị badge tiến độ
+        try {
+            await updateDoc(doc(db, 'stocktakes', sessionId), {
+                totalItems: newSummary.totalItems,
+                countedItems: newSummary.countedItems
+            });
+        } catch (_) { /* không block nếu lỗi ghi ngược */ }
     }, [sessionId, setSummary]);
+
+    // Realtime listener cập nhật stats khi có người khác đếm cùng phiên
+    useEffect(() => {
+        if (!sessionId) return;
+        const itemsRef = collection(db, 'stocktakes', sessionId, 'items');
+        const unsubscribe = onSnapshot(
+            query(itemsRef, where('countedQty', '!=', null)),
+            (snapshot) => {
+                const countedCount = snapshot.size;
+                // Chỉ cập nhật countedItems trong summary, không fetch lại toàn bộ
+                setSummary(
+                    prev => ({ ...prev, countedItems: countedCount }),
+                    null
+                );
+            }
+        );
+        return () => unsubscribe();
+    }, [sessionId, setSummary]);
+
+    // Lưu ghi chú cho từng dòng
+    const handleNoteSubmit = async (itemId, note) => {
+        const itemRef = doc(db, 'stocktakes', sessionId, 'items', itemId);
+        try {
+            await updateDoc(itemRef, { countNote: note });
+            // Cập nhật UI store
+            const { items: currentItems, setItems: storeSetItems } = useStocktakeStore.getState();
+            storeSetItems(currentItems.map(i => i.id === itemId ? { ...i, countNote: note } : i));
+        } catch (error) {
+            toast.error("Lỗi: Không thể lưu ghi chú.");
+        }
+    };
 
     useEffect(() => {
         const fetchSessionData = async () => {
@@ -226,10 +337,45 @@ const StocktakeSessionPage = () => {
         loadConvMap();
     }, []);
 
+    // Load cache toàn bộ productId của phiên để gợi ý tìm kiếm
+    useEffect(() => {
+        if (!sessionId) return;
+        const loadProductIdCache = async () => {
+            try {
+                const snap = await getDocs(
+                    query(collection(db, 'stocktakes', sessionId, 'items'), orderBy('productId'))
+                );
+                const ids = [...new Set(snap.docs.map(d => d.data().productId).filter(Boolean))];
+                setProductIdCache(ids);
+            } catch (e) {
+                console.error('Lỗi load productId cache:', e);
+            } finally {
+                setIsCacheLoading(false);
+            }
+        };
+        loadProductIdCache();
+    }, [sessionId]);
+
     const handleSearch = async (e) => {
         const term = e.target.value;
         setSearchTerm(term);
         if (e.key !== 'Enter') return;
+        setSuggestions([]);
+        setLoadingItems(true);
+        if (term.trim().length >= 2) {
+            const upper = term.trim().toUpperCase().replace(/-/g, '');
+            const allItems = useStocktakeStore.getState().items;
+            const matched = [...new Set(
+                allItems
+                    .filter(i => (i.productId || '').replace(/-/g, '').includes(upper))
+                    .map(i => i.productId)
+            )].slice(0, 8);
+            setSuggestions(matched);
+        } else {
+            setSuggestions([]);
+        }
+        if (e.key !== 'Enter') return;
+        setSuggestions([]);
         setLoadingItems(true);
         try {
             const itemsCollectionRef = collection(db, 'stocktakes', sessionId, 'items');
@@ -249,12 +395,23 @@ const StocktakeSessionPage = () => {
             setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
             setItems(itemsList);
             setPage(1);
+            // Auto-focus ô đếm nếu chỉ có 1 kết quả
+            if (itemsList.length === 1) {
+                setTimeout(() => firstCountInputRef.current?.focus(), 100);
+            }
         } catch (error) {
             console.error("Lỗi khi tìm kiếm vật tư: ", error);
             toast.error("Không thể tìm kiếm danh sách vật tư.");
         } finally {
             setLoadingItems(false);
         }
+    };
+
+    const handleSelectSuggestion = (productId) => {
+        setSearchTerm(productId);
+        setSuggestions([]);
+        // Trigger search ngay
+        handleSearch({ key: 'Enter', target: { value: productId }, preventDefault: () => {} });
     };
 
     const handleFinalizeCount = async () => {
@@ -358,10 +515,30 @@ const StocktakeSessionPage = () => {
             await batch.commit();
             setSessionStatus('adjusted');
             toast.success("Đã điều chỉnh tồn kho thành công!");
+            // Load lại lịch sử sau khi điều chỉnh
+            loadAdjustmentHistory();
         } catch (error) {
             toast.error("Đã xảy ra lỗi khi điều chỉnh tồn kho.");
         }
     };
+
+    const loadAdjustmentHistory = async () => {
+        try {
+            const snap = await getDocs(query(
+                collection(db, 'inventory_adjustments'),
+                where('stocktakeId', '==', sessionId),
+                orderBy('createdAt', 'desc')
+            ));
+            setAdjustmentHistory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (e) {
+            console.error('Lỗi tải lịch sử điều chỉnh:', e);
+        }
+    };
+
+    // Load lịch sử điều chỉnh khi phiên đã adjusted
+    useEffect(() => {
+        if (sessionData?.status === 'adjusted') loadAdjustmentHistory();
+    }, [sessionData?.status]);
 
     const promptForAdjust = () => {
         const itemsToAdjust = discrepancyItems.filter(item => checkedItems[item.id]);
@@ -379,6 +556,18 @@ const StocktakeSessionPage = () => {
     if (!sessionData) return <div>Không tìm thấy dữ liệu cho phiên kiểm kê này.</div>;
 
     const isSessionInProgress = sessionData.status === 'in_progress';
+
+    // Lọc items theo filterMode
+    const filteredItems = items.filter(item => {
+        if (filterMode === 'uncounted') return item.countedQty === null || item.countedQty === undefined || item.countedQty === '';
+        if (filterMode === 'counted') return item.countedQty !== null && item.countedQty !== undefined && item.countedQty !== '';
+        return true;
+    });
+
+    // Tính % tiến độ
+    const progressPercent = summaryStats.totalItems > 0
+        ? Math.round((summaryStats.countedItems / summaryStats.totalItems) * 100)
+        : 0;
 
     const handleNextPage = async () => {
         if (isLastPage) return;
@@ -400,6 +589,7 @@ const StocktakeSessionPage = () => {
             setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
             setIsLastPage(docSnapshots.docs.length < PAGE_SIZE);
             setPage(p => p + 1);
+            tableContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
             toast.error("Lỗi khi tải trang tiếp theo.");
         } finally {
@@ -433,6 +623,7 @@ const StocktakeSessionPage = () => {
             setLastVisible(docSnapshots.docs[docSnapshots.docs.length - 1]);
             setIsLastPage(false);
             setPage(p => p - 1);
+            tableContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
             toast.error("Lỗi khi tải trang trước.");
         } finally {
@@ -497,26 +688,97 @@ const StocktakeSessionPage = () => {
                 </div>
             </div>
 
-            {(sessionData.status === 'completed' || sessionData.status === 'adjusted') && (
-                <div className="form-section">
-                    <div className="compact-info-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                        <div><label>Tổng số mã cần đếm</label><p><strong>{summaryStats.totalItems}</strong></p></div>
-                        <div><label>Số mã đã đếm</label><p style={{ color: 'green' }}><strong>{summaryStats.countedItems}</strong></p></div>
-                        <div><label>Số mã có chênh lệch</label><p style={{ color: 'red' }}><strong>{summaryStats.discrepancies}</strong></p></div>
+            {/* Stats luôn hiển thị + Progress bar */}
+            <div className="form-section">
+                <div className="compact-info-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                    <div><label>Tổng số mã cần đếm</label><p><strong>{summaryStats.totalItems}</strong></p></div>
+                    <div><label>Số mã đã đếm</label><p style={{ color: 'green' }}><strong>{summaryStats.countedItems}</strong></p></div>
+                    <div><label>{sessionData.status === 'in_progress' ? 'Chưa đếm' : 'Số mã có chênh lệch'}</label>
+                        <p style={{ color: 'red' }}><strong>
+                            {sessionData.status === 'in_progress'
+                                ? (summaryStats.totalItems - summaryStats.countedItems)
+                                : summaryStats.discrepancies}
+                        </strong></p>
                     </div>
                 </div>
-            )}
+                <div className="progress-bar-container">
+                    <div className="progress-bar-track">
+                        <div
+                            className="progress-bar-fill"
+                            style={{
+                                width: `${progressPercent}%`,
+                                backgroundColor: progressPercent >= 80 ? '#28a745' : progressPercent >= 50 ? '#ffc107' : '#dc3545'
+                            }}
+                        />
+                    </div>
+                    <span className="progress-bar-label">{progressPercent}% hoàn thành</span>
+                </div>
+            </div>
 
             <div className="controls-container">
-                <div className="search-container">
+                <div className="search-container" style={{ position: 'relative' }}>
                     <input
                         type="text"
-                        placeholder="Tìm Mã hàng rồi nhấn Enter..."
+                        placeholder={isCacheLoading ? "Đang tải danh sách mã hàng..." : "Tìm Mã hàng rồi nhấn Enter..."}
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setSearchTerm(val);
+                            // Gợi ý realtime dựa trên giá trị mới nhất
+                            if (val.trim().length >= 2) {
+                                const upper = val.trim().toUpperCase().replace(/-/g, '');
+                                const startsWith = productIdCache.filter(pid => pid.replace(/-/g, '').startsWith(upper));
+                                const contains = productIdCache.filter(pid => {
+                                    const clean = pid.replace(/-/g, '');
+                                    return !clean.startsWith(upper) && clean.includes(upper);
+                                });
+                                setSuggestions([...startsWith, ...contains].slice(0, 8));
+                            } else {
+                                setSuggestions([]);
+                            }
+                        }}
                         onKeyDown={handleSearch}
+                        onBlur={() => setTimeout(() => setSuggestions([]), 150)}
                         className="search-input"
                     />
+                    {suggestions.length > 0 && (
+                        <ul className="search-suggestions">
+                            {suggestions.map(pid => {
+                                // Highlight phần khớp với từ khóa
+                                const upper = searchTerm.trim().toUpperCase();
+                                const cleanPid = pid; // giữ nguyên dấu - để hiển thị
+                                const cleanUpper = upper.replace(/-/g, '');
+                                const cleanPidNoDash = pid.replace(/-/g, '');
+                                const matchIdx = cleanPidNoDash.indexOf(cleanUpper);
+                                if (matchIdx === -1) return <li key={pid} onMouseDown={() => handleSelectSuggestion(pid)}>{pid}</li>;
+                                // Map vị trí trong chuỗi không dấu về chuỗi gốc có dấu -
+                                let charCount = 0;
+                                let startOrig = -1, endOrig = -1;
+                                for (let i = 0; i < pid.length; i++) {
+                                    if (pid[i] !== '-') {
+                                        if (charCount === matchIdx) startOrig = i;
+                                        if (charCount === matchIdx + cleanUpper.length - 1) { endOrig = i + 1; break; }
+                                        charCount++;
+                                    }
+                                }
+                                if (startOrig === -1) return <li key={pid} onMouseDown={() => handleSelectSuggestion(pid)}>{pid}</li>;
+                                return (
+                                    <li key={pid} onMouseDown={() => handleSelectSuggestion(pid)}>
+                                        {pid.slice(0, startOrig)}
+                                        <mark style={{ backgroundColor: '#ffeb3b', color: '#000', padding: '0 1px', borderRadius: '2px' }}>
+                                            {pid.slice(startOrig, endOrig)}
+                                        </mark>
+                                        {pid.slice(endOrig)}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </div>
+                <div className="filter-tabs">
+                    <button className={`filter-tab ${filterMode === 'all' ? 'active' : ''}`} onClick={() => setFilterMode('all')}>Tất cả</button>
+                    <button className={`filter-tab ${filterMode === 'uncounted' ? 'active' : ''}`} onClick={() => setFilterMode('uncounted')}>Chưa đếm</button>
+                    <button className={`filter-tab ${filterMode === 'counted' ? 'active' : ''}`} onClick={() => setFilterMode('counted')}>Đã đếm</button>
                 </div>
                 {isSessionInProgress && (
                     <button
@@ -531,8 +793,8 @@ const StocktakeSessionPage = () => {
 
             {loadingItems ? <Spinner /> : (
                 <>
-                    <div className="table-container">
-                        <table className="products-table">
+                    <div className="table-container" ref={tableContainerRef}>
+                        <table className="products-table sticky-header-table">
                             <thead>
                                 <tr>
                                     <th>Mã hàng</th>
@@ -544,15 +806,23 @@ const StocktakeSessionPage = () => {
                                     <th>Tồn hệ thống</th>
                                     <th>Tồn Misa (quy đổi)</th>
                                     <th>Tồn thực tế</th>
+                                    <th>Ghi chú</th>
                                     <th>Nhóm hàng</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {items.map((item) => (
-                                    <tr
-                                        key={item.id}
-                                        className={getRowColorByExpiry(item.expiryDate, item.subGroup)}
-                                    >
+                                {filteredItems.length > 0 ? filteredItems.map((item, index) => {
+                                        // Tô màu dòng chênh lệch: đã đếm và khác systemQty
+                                        const hasCounted = item.countedQty !== null && item.countedQty !== undefined && item.countedQty !== '';
+                                        const hasDiscrepancy = hasCounted && Number(item.countedQty) !== Number(item.systemQty);
+                                        const expiryColorClass = getRowColorByExpiry(item.expiryDate, item.subGroup);
+                                        const rowClass = [
+                                            expiryColorClass,
+                                            hasDiscrepancy ? 'row-discrepancy' : '',
+                                            justSavedId === item.id ? 'row-just-saved' : ''
+                                        ].filter(Boolean).join(' ');
+                                        return (
+                                    <tr key={item.id} className={rowClass}>
                                         <td>{item.productId}</td>
                                         <td>{item.productName}</td>
                                         <td>{item.lotNumber || '(Không có)'}</td>
@@ -577,11 +847,21 @@ const StocktakeSessionPage = () => {
                                             }
                                         </td>
                                         <td>
-                                            <CountInput item={item} onCountSubmit={handleCountSubmit} />
+                                            <CountInput item={item} onCountSubmit={handleCountSubmit} onResetCount={handleResetCount} inputRef={index === 0 ? firstCountInputRef : null} />
+                                        </td>
+                                        <td>
+                                            <NoteInput item={item} onNoteSubmit={handleNoteSubmit} />
                                         </td>
                                         <td>{item.subGroup}</td>
                                     </tr>
-                                ))}
+                                        );
+                                    }) : (
+                                    <tr>
+                                        <td colSpan="11" style={{ textAlign: 'center', color: '#888', padding: '20px' }}>
+                                            {filterMode === 'uncounted' ? 'Tất cả mã hàng đã được đếm.' : 'Chưa có mã hàng nào được đếm.'}
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -660,6 +940,46 @@ const StocktakeSessionPage = () => {
                     ) : (
                         <p>Không có chênh lệch nào được ghi nhận.</p>
                     )}
+                </div>
+            )}
+
+            {/* LỊCH SỬ ĐIỀU CHỈNH */}
+            {sessionData.status === 'adjusted' && adjustmentHistory.length > 0 && (
+                <div className="form-section" style={{ marginTop: '20px' }}>
+                    <h3 style={{ color: '#495057' }}>Lịch sử Điều chỉnh Tồn kho</h3>
+                    <table className="products-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Mã hàng</th>
+                                <th>Tên hàng</th>
+                                <th>Số lô</th>
+                                <th>Tồn trước</th>
+                                <th>Tồn sau</th>
+                                <th>Chênh lệch</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {adjustmentHistory.map(adj => (
+                                <tr key={adj.id}>
+                                    <td style={{ fontSize: '12px', color: '#888' }}>
+                                        {adj.createdAt?.toDate().toLocaleString('vi-VN')}
+                                    </td>
+                                    <td>{adj.productId}</td>
+                                    <td>{adj.productName}</td>
+                                    <td>{adj.lotNumber || '(Không có)'}</td>
+                                    <td>{adj.quantityBefore}</td>
+                                    <td><strong>{adj.quantityAfter}</strong></td>
+                                    <td style={{
+                                        fontWeight: 'bold',
+                                        color: adj.variance > 0 ? '#28a745' : '#dc3545'
+                                    }}>
+                                        {adj.variance > 0 ? `+${adj.variance}` : adj.variance}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
         </div>

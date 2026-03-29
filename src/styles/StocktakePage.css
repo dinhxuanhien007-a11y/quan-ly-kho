@@ -180,3 +180,137 @@
     max-width: 100%;
     box-sizing: border-box;
 }
+
+/* --- PROGRESS BAR TIẾN ĐỘ KIỂM KÊ --- */
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.progress-bar-track {
+    flex: 1;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: #28a745; /* mặc định xanh, bị override bởi inline style */
+    border-radius: 4px;
+    transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+.progress-bar-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: right;
+}
+
+/* --- FILTER TABS --- */
+.filter-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.filter-tab {
+    padding: 6px 14px;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    background: #fff;
+    font-size: 13px;
+    color: #495057;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.filter-tab:hover {
+    background-color: #f1f3f5;
+}
+
+.filter-tab.active {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+}
+
+/* --- STICKY HEADER BẢNG KIỂM KÊ --- */
+.sticky-header-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #f8f9fa;
+    box-shadow: 0 1px 0 #dee2e6;
+}
+
+/* --- HIGHLIGHT DÒNG VỪA LƯU --- */
+@keyframes rowSavedFlash {
+    0%   { background-color: #d4edda; }
+    100% { background-color: transparent; }
+}
+
+.row-just-saved {
+    animation: rowSavedFlash 1s ease-out forwards;
+}
+
+/* --- DÒNG CÓ CHÊNH LỆCH --- */
+.row-discrepancy {
+    background-color: #fff3cd !important;
+    border-left: 3px solid #ffc107 !important;
+}
+
+.row-discrepancy td {
+    color: #856404 !important;
+}
+
+/* Cập nhật width cột khi có thêm cột Ghi chú (11 cột) */
+.table-container .products-table th:nth-child(10),
+.table-container .products-table td:nth-child(10) { width: 12%; } /* Ghi chú */
+
+.table-container .products-table th:nth-child(11),
+.table-container .products-table td:nth-child(11) { width: 7%; }  /* Nhóm hàng */
+
+/* --- DROPDOWN GỢI Ý MÃ HÀNG --- */
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    z-index: 100;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.search-suggestions li {
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #333;
+    border-bottom: 1px solid #f1f3f5;
+    transition: background-color 0.1s;
+}
+
+.search-suggestions li:last-child {
+    border-bottom: none;
+}
+
+.search-suggestions li:hover {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+    font-weight: 500;
+}
