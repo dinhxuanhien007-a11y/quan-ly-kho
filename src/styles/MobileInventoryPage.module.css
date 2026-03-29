@@ -17,27 +17,36 @@
   position: relative;
 }
 
-.refreshButton {
+.headerActions {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconButton {
   position: absolute;
   right: 0;
   background: none;
   border: none;
   cursor: pointer;
   color: #888;
-  font-size: 1.1rem;
-  padding: 5px;
+  font-size: 1.2rem;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: color 0.2s;
+  transition: color 0.2s, background-color 0.2s;
 }
 
-.refreshButton:hover:not(:disabled) {
+.iconButton:hover:not(:disabled) {
   color: #007bff;
+  background-color: rgba(0,123,255,0.08);
 }
 
-.refreshButton:disabled {
+.iconButton:disabled {
   cursor: default;
   opacity: 0.5;
 }
@@ -92,7 +101,7 @@
     background: transparent;
     font-size: 16px;
     outline: none;
-    padding-right: 80px; /* Tạo không gian cho cả 2 icon */
+    padding-right: 90px; /* chỗ cho micro + search icon */
 }
 
 .searchIcon {
@@ -100,11 +109,12 @@
     right: 15px;
     color: #888;
     font-size: 20px;
+    pointer-events: none;
 }
 
 .voiceButton {
     position: absolute;
-    right: 45px; /* Đặt cạnh icon tìm kiếm */
+    right: 42px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
@@ -113,6 +123,9 @@
     font-size: 1.2rem;
     color: #888;
     padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .voiceButton.listening {
@@ -276,23 +289,25 @@
 /* --- NÚT XÓA NHANH --- */
 .clearButton {
     position: absolute;
-    right: 45px;
+    right: 78px; /* bên trái micro */
     top: 50%;
     transform: translateY(-50%);
-    background: none;
+    background: #e9ecef;
     border: none;
     cursor: pointer;
-    font-size: 1rem;
-    color: #aaa;
-    padding: 5px;
+    font-size: 0.85rem;
+    color: #555;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: color 0.15s;
+    transition: background-color 0.15s, color 0.15s;
+    flex-shrink: 0;
 }
 
-.clearButton:hover { color: #555; }
+.clearButton:hover { background: #ced4da; color: #212529; }
 
 /* --- NÚT COPY --- */
 .copyButton {
@@ -516,4 +531,173 @@
 .emptyStateTips strong {
     color: #007bff;
     font-family: monospace;
+}
+
+/* ============================================================
+   DARK MODE — MobileInventoryPage (mobile-optimized)
+   ============================================================ */
+
+:global(body.dark-mode) .container {
+    background-color: #111827;
+    color: #f1f5f9;
+}
+
+:global(body.dark-mode) .header {
+    border-bottom-color: #374151;
+}
+
+:global(body.dark-mode) .header h2 {
+    color: #f1f5f9;
+}
+
+:global(body.dark-mode) .iconButton {
+    color: #9ca3af;
+}
+
+:global(body.dark-mode) .iconButton:hover:not(:disabled) {
+    color: #60a5fa;
+    background-color: rgba(96,165,250,0.15);
+}
+
+:global(body.dark-mode) .searchBox {
+    background-color: #1f2937;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    border: 1px solid #374151;
+}
+
+:global(body.dark-mode) .searchBox input {
+    color: #f1f5f9;
+}
+
+:global(body.dark-mode) .searchBox input::placeholder {
+    color: #6b7280;
+}
+
+:global(body.dark-mode) .searchIcon {
+    color: #6b7280;
+}
+
+:global(body.dark-mode) .clearButton {
+    background: #374151;
+    color: #e5e7eb;
+}
+
+:global(body.dark-mode) .clearButton:hover {
+    background: #4b5563;
+    color: #fff;
+}
+
+:global(body.dark-mode) .voiceButton {
+    color: #9ca3af;
+}
+
+/* Cards — nền sáng hơn để chữ dễ đọc */
+:global(body.dark-mode) .generalInfoCard,
+:global(body.dark-mode) .lotListCard,
+:global(body.dark-mode) .skeletonCard {
+    background-color: #1f2937;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    border: 1px solid #374151;
+}
+
+:global(body.dark-mode) .generalInfoCard h3,
+:global(body.dark-mode) .lotListCard h3 {
+    color: #f1f5f9;
+    border-bottom-color: #374151;
+}
+
+/* Label (strong) — xám nhạt, value (span) — trắng rõ */
+:global(body.dark-mode) .infoGrid strong {
+    color: #9ca3af;
+}
+
+:global(body.dark-mode) .infoGrid span {
+    color: #f1f5f9;
+    font-weight: 500;
+}
+
+:global(body.dark-mode) .totalInfo {
+    border-top-color: #374151;
+}
+
+:global(body.dark-mode) .totalInfo strong {
+    color: #d1d5db;
+}
+
+:global(body.dark-mode) .totalInfo span {
+    color: #34d399;
+}
+
+:global(body.dark-mode) .lotItem {
+    border-bottom-color: #374151;
+}
+
+:global(body.dark-mode) .lotItem strong {
+    color: #9ca3af;
+}
+
+:global(body.dark-mode) .lotItem span {
+    color: #f1f5f9;
+    font-weight: 500;
+}
+
+:global(body.dark-mode) .backButton {
+    border-color: #4b5563;
+    color: #d1d5db;
+    background-color: #1f2937;
+}
+
+:global(body.dark-mode) .backButton:hover {
+    background-color: #374151;
+    color: #f1f5f9;
+}
+
+:global(body.dark-mode) .lotCountBadge {
+    background-color: #374151;
+    color: #d1d5db;
+}
+
+:global(body.dark-mode) .copyButton {
+    color: #6b7280;
+}
+
+:global(body.dark-mode) .copyButton:hover {
+    color: #60a5fa;
+}
+
+/* Kết quả tìm kiếm — text rõ hơn */
+:global(body.dark-mode) .resultsContainer p {
+    color: #9ca3af !important;
+}
+
+:global(body.dark-mode) .generalInfoCard h3[style],
+:global(body.dark-mode) .generalInfoCard p[style] {
+    color: #f1f5f9 !important;
+}
+
+:global(body.dark-mode) .noResults,
+:global(body.dark-mode) .emptyMessage {
+    color: #6b7280;
+}
+
+:global(body.dark-mode) .emptyStateTitle {
+    color: #f1f5f9;
+}
+
+:global(body.dark-mode) .emptyStateHint {
+    color: #9ca3af;
+}
+
+:global(body.dark-mode) .emptyStateTips {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+}
+
+:global(body.dark-mode) .emptyStateTips span {
+    color: #d1d5db;
+}
+
+:global(body.dark-mode) .skeletonLine {
+    background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+    background-size: 200% 100%;
 }
