@@ -14,6 +14,52 @@
   padding-bottom: 15px;
   border-bottom: 1px solid #e0e0e0;
   width: 100%;
+  position: relative;
+}
+
+.refreshButton {
+  position: absolute;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: 1.1rem;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.2s;
+}
+
+.refreshButton:hover:not(:disabled) {
+  color: #007bff;
+}
+
+.refreshButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+.pullRefreshIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #007bff;
+  margin: -10px 0 10px 0;
+  animation: fadeIn 0.3s;
 }
 
 .headerLogo {
@@ -205,6 +251,143 @@
     font-size: 24px;
 }
 
+/* --- NÚT QUAY LẠI --- */
+.backButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: #495057;
+    cursor: pointer;
+    width: fit-content;
+    margin-bottom: 15px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.backButton:hover {
+    background-color: #f1f3f5;
+    color: #212529;
+}
+
+/* --- NÚT XÓA NHANH --- */
+.clearButton {
+    position: absolute;
+    right: 45px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #aaa;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: color 0.15s;
+}
+
+.clearButton:hover { color: #555; }
+
+/* --- NÚT COPY --- */
+.copyButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.8rem;
+    padding: 2px 4px;
+    margin-left: 4px;
+    border-radius: 4px;
+    vertical-align: middle;
+    transition: color 0.15s;
+}
+
+.copyButton:hover { color: #007bff; }
+
+.copyableField {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* --- BADGE SỐ LÔ --- */
+.lotCountBadge {
+    display: inline-block;
+    background-color: #e9ecef;
+    color: #495057;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* --- HIGHLIGHT LÔ ĐƯỢC TÌM --- */
+.lotItemHighlighted {
+    outline: 2px solid #007bff !important;
+    outline-offset: 2px;
+    border-radius: 6px;
+    animation: highlightPulse 1.5s ease-out;
+}
+
+@keyframes highlightPulse {
+    0% { outline-color: #007bff; box-shadow: 0 0 0 4px rgba(0,123,255,0.3); }
+    100% { outline-color: #007bff; box-shadow: none; }
+}
+
+/* --- SKELETON LOADING --- */
+.skeletonCard {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.skeletonLine {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 4px;
+    height: 14px;
+    margin-bottom: 10px;
+}
+
+.skeletonTitle {
+    height: 20px;
+    width: 60%;
+    margin-bottom: 16px;
+}
+
+.skeletonTotal {
+    height: 18px;
+    width: 40%;
+    margin-top: 10px;
+}
+
+.skeletonGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.skeletonLotItem {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 /* --- THÊM MỚI: Màu sắc cảnh báo HSD (Copy y nguyên từ QuickStockLookup) --- */
 
 .expired-black {
@@ -234,3 +417,103 @@
     border-left: 5px solid #ffc107 !important;
 }
 .near-expiry-yellow strong, .near-expiry-yellow span { color: #856404 !important; }
+
+/* --- SLIDE-UP ANIMATION CHO TRANG CHI TIẾT (tính năng 5) --- */
+.detailContainer {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.detailVisible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --- THANH ACTION (QUAY LẠI + CHIA SẺ) --- */
+.detailActions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* --- NÚT CHIA SẺ (tính năng 6) --- */
+.shareButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #007bff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: #007bff;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.shareButton:hover {
+    background-color: #007bff;
+    color: #fff;
+}
+
+/* --- SEARCH BOX KHI ĐANG XEM CHI TIẾT (tính năng 4) --- */
+.searchBoxCompact input {
+    font-size: 14px;
+    color: #888;
+    font-style: italic;
+}
+
+/* --- EMPTY STATE (chưa tìm gì) --- */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+}
+
+.emptyStateIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+
+.emptyStateTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 8px 0;
+}
+
+.emptyStateHint {
+    font-size: 14px;
+    color: #888;
+    margin: 0 0 20px 0;
+    line-height: 1.5;
+}
+
+.emptyStateTips {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 14px 18px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.emptyStateTips span {
+    font-size: 13px;
+    color: #555;
+    text-align: left;
+}
+
+.emptyStateTips strong {
+    color: #007bff;
+    font-family: monospace;
+}

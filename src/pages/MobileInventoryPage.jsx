@@ -1,18 +1,18 @@
 // src/pages/MobileInventoryPage.jsx
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { db, app } from '../firebaseConfig'; 
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { collection, query, where, getDocs, doc, getDoc, documentId, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, limit } from 'firebase/firestore';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
-import { FiSearch, FiAlertCircle, FiMic, FiBox, FiLayers, FiArrowLeft } from 'react-icons/fi';
+import { FiSearch, FiAlertCircle, FiMic, FiBox, FiLayers, FiArrowLeft, FiRefreshCw } from 'react-icons/fi';
 import styles from '../styles/MobileInventoryPage.module.css';
-import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+import { getRowColorByExpiry } from '../utils/dateUtils';
 import { formatNumber } from '../utils/numberUtils';
 import companyLogo from '../assets/logo.png';
 import { toast } from 'react-toastify';
-import HighlightText from '../components/HighlightText'; // <-- IMPORT COMPONENT HIGHLIGHT
+import HighlightText from '../components/HighlightText';
 import ExpiryBadge from '../components/ExpiryBadge';
 
 const functionsAsia = getFunctions(app, 'asia-southeast1');
@@ -30,37 +30,63 @@ const MobileInventoryPage = () => {
     const [candidates, setCandidates] = useState([]); 
     const [selectedProductData, setSelectedProductData] = useState(null); 
     const [allProductsCache, setAllProductsCache] = useState([]);
+    const [isCacheReady, setIsCacheReady] = useState(false);
     
     const [loading, setLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Pull-to-refresh state
+    const touchStartY = useRef(0);
+    const containerRef = useRef(null);
     
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
-    // --- TẢI CACHE KHI MOUNT ---
-    useEffect(() => {
-        const fetchAllProducts = async () => {
-            try {
-                const q = query(collection(db, 'products'));
-                const snapshot = await getDocs(q);
-                
-                const cache = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        productName: data.productName || '',
-                        team: data.team,
-                        normName: fuzzyNormalize(data.productName),
-                        normId: fuzzyNormalize(doc.id)
-                    };
-                });
-                setAllProductsCache(cache);
-            } catch (error) {
-                console.error("Lỗi tải cache sản phẩm:", error);
-            }
-        };
-        fetchAllProducts();
+    // --- TẢI CACHE SẢN PHẨM ---
+    const fetchAllProducts = useCallback(async (showToast = false) => {
+        try {
+            const q = query(collection(db, 'products'));
+            const snapshot = await getDocs(q);
+            
+            const cache = snapshot.docs.map(d => {
+                const data = d.data();
+                return {
+                    id: d.id,
+                    productName: data.productName || '',
+                    team: data.team,
+                    normName: fuzzyNormalize(data.productName),
+                    normId: fuzzyNormalize(d.id)
+                };
+            });
+            setAllProductsCache(cache);
+            setIsCacheReady(true);
+            if (showToast) toast.success("Đã cập nhật danh sách sản phẩm.");
+        } catch (error) {
+            console.error("Lỗi tải cache sản phẩm:", error);
+            toast.error("Không thể tải danh sách sản phẩm.");
+        }
     }, []);
+
+    useEffect(() => {
+        fetchAllProducts();
+    }, [fetchAllProducts]);
+
+    // --- PULL-TO-REFRESH ---
+    const handleTouchStart = (e) => {
+        touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = async (e) => {
+        const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+        const scrollTop = containerRef.current?.scrollTop ?? 0;
+        // Chỉ trigger khi kéo xuống > 80px và đang ở đầu trang
+        if (deltaY > 80 && scrollTop === 0 && !isRefreshing) {
+            setIsRefreshing(true);
+            await fetchAllProducts(true);
+            setIsRefreshing(false);
+        }
+    };
 
     // --- HÀM TÌM KIẾM ỨNG VIÊN ---
     const performSearch = useCallback(async (term) => {
@@ -97,7 +123,7 @@ const MobileInventoryPage = () => {
             const snapshots = await Promise.all(queryPromises);
             const resultMap = new Map();
 
-            // Tìm Cache
+            // Tìm trong Cache
             const searchKey = fuzzyNormalize(term);
             const matchedProducts = allProductsCache.filter(p => {
                 const isAllowed = 
@@ -121,11 +147,11 @@ const MobileInventoryPage = () => {
                 });
             });
 
-            // Tìm Firestore
+            // Tìm trong Firestore
             snapshots.forEach(snap => {
-                snap.docs.forEach(doc => {
-                    const data = doc.data();
-const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase(); 
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase(); 
                     const uniqueKey = isLotMatch 
                         ? `LOT_${data.lotNumber}_${data.productId}` 
                         : `PROD_${data.productId}`;
@@ -140,7 +166,7 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
                             lotNumberQuery: data.lotNumber
                         });
                     } else if (!resultMap.has(uniqueKey)) {
-                         resultMap.set(uniqueKey, {
+                        resultMap.set(uniqueKey, {
                             key: uniqueKey,
                             type: 'product',
                             value: data.productId,
@@ -152,37 +178,24 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
                 });
             });
 
-            // --- BẮT ĐẦU SỬA: Logic tự động chọn cho Mobile ---
-
-            // 1. Tạo biến danh sách kết quả
             const results = Array.from(resultMap.values());
-
-            // 2. Chuẩn hóa từ khóa (rawTerm có sẵn ở trên)
             const cleanInput = rawTerm.toLowerCase().replace(/-/g, '');
 
-            // 3. Tìm kết quả trùng khớp
             const exactMatch = results.find(item => {
                 const val = (item.value || '').toLowerCase().replace(/-/g, '');
                 const qId = (item.queryId || '').toLowerCase().replace(/-/g, '');
-                // Mobile có thêm lotNumberQuery để check
                 const lot = (item.lotNumberQuery || '').toLowerCase().replace(/-/g, ''); 
-
-                // So sánh: Trùng giá trị hiển thị OR Mã hàng OR Số lô cụ thể
                 return val === cleanInput || qId === cleanInput || lot === cleanInput;
             });
 
-            // 4. Nếu tìm thấy chính xác -> Chọn ngay
             if (exactMatch) {
                 handleSelectCandidate(exactMatch);
                 setCandidates([]); 
                 setLoading(false);
-                return; // Dừng hàm tại đây
+                return;
             }
 
-            // 5. Nếu không thì hiển thị danh sách như cũ
             setCandidates(results); 
-
-            // --- KẾT THÚC SỬA ---
 
         } catch (error) {
             console.error("Lỗi tìm kiếm:", error);
@@ -211,7 +224,7 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
             const q = query(lotsRef, where('productId', '==', productId), where('quantityRemaining', '>', 0));
             const lotsSnap = await getDocs(q);
             
-            const lots = lotsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const lots = lotsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
             const lotAggregator = new Map();
             for (const lot of lots) {
@@ -232,14 +245,14 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
             const totalRemaining = aggregatedLots.reduce((sum, lot) => sum + lot.quantityRemaining, 0);
 
             setSelectedProductData({
-                generalInfo: { ...productInfo, productId: productId },
+                generalInfo: { ...productInfo, productId },
                 lots: aggregatedLots.sort((a, b) => {
                     const dateA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
                     const dateB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
                     if (dateA !== dateB) return dateA - dateB;
                     return a.quantityRemaining - b.quantityRemaining;
                 }),
-                totalRemaining: totalRemaining
+                totalRemaining
             });
 
         } catch (error) {
@@ -253,12 +266,17 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
     useEffect(() => {
         const debounce = setTimeout(() => {
             if (searchTerm) performSearch(searchTerm);
-            else setCandidates([]);
+            else { setCandidates([]); setSelectedProductData(null); }
         }, 500);
         return () => clearTimeout(debounce);
     }, [searchTerm, performSearch]);
 
     const handleVoiceSearch = async () => {
+        // Kiểm tra hỗ trợ micro trước khi gọi
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            toast.error("Trình duyệt này không hỗ trợ tìm kiếm bằng giọng nói.");
+            return;
+        }
         if (isListening) { mediaRecorderRef.current?.stop(); setIsListening(false); return; }
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -295,28 +313,54 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
         setSelectedProductData(null);
     };
 
+    const handleManualRefresh = async () => {
+        setIsRefreshing(true);
+        await fetchAllProducts(true);
+        setIsRefreshing(false);
+    };
+
     return (
-        <div className={styles.container}>
+        <div
+            className={styles.container}
+            ref={containerRef}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <div className={styles.header}>
                 <img src={companyLogo} alt="Logo" className={styles.headerLogo} />
                 <h2>Tra cứu tồn kho</h2>
+                <button
+                    onClick={handleManualRefresh}
+                    className={styles.refreshButton}
+                    disabled={isRefreshing}
+                    title="Làm mới danh sách sản phẩm"
+                >
+                    <FiRefreshCw className={isRefreshing ? styles.spinning : ''} />
+                </button>
             </div>
-            
-            {!selectedProductData && (
-                <div className={styles.searchBox}>
-                    <input 
-                        type="text" 
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Nhập Mã hàng hoặc Số lô..."
-                        autoFocus
-                    />
-                    <FiSearch className={styles.searchIcon} />
-                    <button onClick={handleVoiceSearch} className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}>
-                        <FiMic />
-                    </button>
+
+            {/* Pull-to-refresh indicator */}
+            {isRefreshing && (
+                <div className={styles.pullRefreshIndicator}>
+                    <FiRefreshCw className={styles.spinning} /> Đang cập nhật...
                 </div>
             )}
+            
+            {/* Ô tìm kiếm luôn hiển thị */}
+            <div className={styles.searchBox}>
+                <input 
+                    type="text" 
+                    value={searchTerm}
+                    onChange={e => { setSearchTerm(e.target.value); setSelectedProductData(null); }}
+                    placeholder={isCacheReady ? "Nhập Mã hàng hoặc Số lô..." : "Đang tải dữ liệu..."}
+                    disabled={!isCacheReady}
+                    autoFocus
+                />
+                <FiSearch className={styles.searchIcon} />
+                <button onClick={handleVoiceSearch} className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}>
+                    <FiMic />
+                </button>
+            </div>
 
             {loading ? <Spinner /> : (
                 <>
@@ -337,7 +381,6 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
                                         </div>
                                         <div>
                                             <h3 style={{margin: '0 0 5px 0', fontSize: '16px', color: '#333'}}>
-                                                {/* --- HIGHLIGHT GỢI Ý MOBILE --- */}
                                                 <HighlightText text={item.value} highlight={searchTerm} />
                                             </h3>
                                             <p style={{margin: 0, fontSize: '13px', color: '#666'}}>
@@ -353,7 +396,7 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
                     {/* TRƯỜNG HỢP 2: HIỂN THỊ CHI TIẾT SẢN PHẨM */}
                     {selectedProductData && (
                         <div className={styles.resultsContainer}>
-                            <button onClick={handleBackToList} className="btn-secondary" style={{marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px', width: 'fit-content'}}>
+                            <button onClick={handleBackToList} className={styles.backButton}>
                                 <FiArrowLeft /> Quay lại danh sách
                             </button>
 
@@ -381,28 +424,38 @@ const isLotMatch = searchTerms[0] === (data.lotNumber || '').toUpperCase();
                                         const colorClass = getRowColorByExpiry(lot.expiryDate, selectedProductData.generalInfo.subGroup);
                                         return (
                                             <div key={lot.id} className={`${styles.lotItem} ${styles[colorClass] || ''}`}>
-                                                {/* --- HIGHLIGHT SỐ LÔ --- */}
-                                                <div><strong>Số lô:</strong><span><HighlightText text={lot.lotNumber} highlight={searchTerm} /></span></div>
+                                                <div>
+                                                    <strong>Số lô:</strong>
+                                                    <span>
+                                                        {lot.lotNumber
+                                                            ? <HighlightText text={lot.lotNumber} highlight={searchTerm} />
+                                                            : <em style={{color: '#aaa'}}>(Không có)</em>
+                                                        }
+                                                    </span>
+                                                </div>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-    <strong>HSD:</strong>
-    <div style={{ textAlign: 'right', width: '60%' }}>
-        <ExpiryBadge expiryDate={lot.expiryDate} subGroup={selectedProductData.generalInfo.subGroup} compact={true} showProgressBar={false} />
-    </div>
-</div>
+                                                    <strong>HSD:</strong>
+                                                    <div style={{ textAlign: 'right', width: '60%' }}>
+                                                        <ExpiryBadge expiryDate={lot.expiryDate} subGroup={selectedProductData.generalInfo.subGroup} compact={true} showProgressBar={false} />
+                                                    </div>
+                                                </div>
                                                 <div><strong>Tồn:</strong><span>{formatNumber(lot.quantityRemaining)}</span></div>
                                                 {lot.notes && <div><strong>Ghi chú:</strong><span>{lot.notes}</span></div>}
                                             </div>
                                         );
                                     })
                                 ) : (
-                                    <p className={styles.emptyMessage}>Không có tồn kho.</p>
+                                    <div className={styles.emptyMessage}>
+                                        <FiAlertCircle size={28} color="#ccc" />
+                                        <p>Không có tồn kho.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
                     )}
 
                     {/* TRƯỜNG HỢP 3: KHÔNG TÌM THẤY */}
-                    {!selectedProductData && candidates.length === 0 && searchTerm && (
+                    {!selectedProductData && candidates.length === 0 && searchTerm && !loading && (
                         <div className={styles.noResults}> 
                             <FiAlertCircle />
                             <p>Không tìm thấy kết quả nào phù hợp.</p>
