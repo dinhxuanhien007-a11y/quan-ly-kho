@@ -5,7 +5,8 @@ import { db } from '../firebaseConfig';
 import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { SUBGROUPS_BY_TEAM } from '../constants';
-import { FiCheckSquare, FiSquare, FiFilter } from 'react-icons/fi';
+import { FiCheckSquare, FiSquare, FiFilter, FiUsers, FiX, FiPlus } from 'react-icons/fi';
+import { validateParticipantEmails, createCollaborativeSession } from '../services/collaborativeStocktakeService';
 
 const CreateStocktakeModal = ({ onClose, onSuccess, userRole }) => {
     const [sessionName, setSessionName] = useState(''); // <-- THÊM LẠI: State lưu tên phiên
@@ -17,6 +18,11 @@ const CreateStocktakeModal = ({ onClose, onSuccess, userRole }) => {
     // --- CÁC TÙY CHỌN MỚI ---
     const [excludeExpired, setExcludeExpired] = useState(false);
     const [selectedSubGroups, setSelectedSubGroups] = useState([]);
+
+    // --- COLLABORATIVE ---
+    const [isCollaborative, setIsCollaborative] = useState(false);
+    const [participantEmailInput, setParticipantEmailInput] = useState('');
+    const [participantEmails, setParticipantEmails] = useState([]);
 
     // Tự động chọn Team nếu user không phải owner/admin
     useEffect(() => {
@@ -41,6 +47,21 @@ const CreateStocktakeModal = ({ onClose, onSuccess, userRole }) => {
         );
     };
 
+    const addParticipantEmail = () => {
+        const email = participantEmailInput.trim().toLowerCase();
+        if (!email) return;
+        if (participantEmails.includes(email)) {
+            toast.warn('Email này đã được thêm rồi.');
+            return;
+        }
+        setParticipantEmails(prev => [...prev, email]);
+        setParticipantEmailInput('');
+    };
+
+    const removeParticipantEmail = (email) => {
+        setParticipantEmails(prev => prev.filter(e => e !== email));
+    };
+
     const handleCreate = async () => {
         // --- THÊM KIỂM TRA TÊN PHIÊN ---
         if (!sessionName.trim()) {
@@ -56,7 +77,24 @@ const CreateStocktakeModal = ({ onClose, onSuccess, userRole }) => {
             return;
         }
 
-        setIsCreating(true);
+        // Validate emails nếu là phiên cộng tác
+        let validatedParticipants = [];
+        if (isCollaborative) {
+            if (participantEmails.length === 0) {
+                toast.warn("Phiên cộng tác cần ít nhất 1 email người tham gia.");
+                return;
+            }
+            setIsCreating(true);
+            const { valid, invalid } = await validateParticipantEmails(participantEmails);
+            if (invalid.length > 0) {
+                invalid.forEach(({ email, reason }) => toast.error(`${email}: ${reason}`));
+                setIsCreating(false);
+                return;
+            }
+            validatedParticipants = valid;
+        } else {
+            setIsCreating(true);
+        }
         try {
             // 1. Tạo Query lấy dữ liệu
             let q;
@@ -134,14 +172,19 @@ const CreateStocktakeModal = ({ onClose, onSuccess, userRole }) => {
 
             // 3. Lưu phiên kiểm kê vào Firestore
             const sessionRef = await addDoc(collection(db, 'stocktakes'), {
-                name: sessionName, // <-- SỬA LỖI: Đã lưu tên phiên vào DB
+                name: sessionName,
                 createdAt: serverTimestamp(),
                 createdBy: 'Admin',
-                status: 'in_progress', // <-- SỬA LỖI: Đổi 'open' thành 'in_progress' để hiện màu vàng
+                status: isCollaborative ? 'active' : 'in_progress',
                 scope: scope,
                 team: scope === 'team' ? selectedTeam : 'ALL',
                 notes: notes,
-                itemCount: items.length
+                itemCount: items.length,
+                isCollaborative: isCollaborative,
+                ...(isCollaborative && {
+                    participantEmails: validatedParticipants.map(p => p.email),
+                    participantUids: validatedParticipants.map(p => p.uid),
+                }),
             });
 
             const itemsCollectionRef = collection(db, 'stocktakes', sessionRef.id, 'items');
@@ -286,6 +329,64 @@ const CreateStocktakeModal = ({ onClose, onSuccess, userRole }) => {
                             placeholder="Ghi chú thêm..."
                         ></textarea>
                     </div>
+
+                    {/* --- PHIÊN CỘT TÁC (chỉ owner) --- */}
+                    {(userRole === 'owner') && (
+                        <div className="form-group" style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f0f7ff', borderRadius: '5px', border: '1px solid #cce0ff' }}>
+                            <label style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={isCollaborative}
+                                    onChange={e => setIsCollaborative(e.target.checked)}
+                                />
+                                <FiUsers /> Phiên kiểm kê cộng tác (nhiều thiết bị)
+                            </label>
+
+                            {isCollaborative && (
+                                <div style={{ marginTop: '12px' }}>
+                                    <label style={{ fontSize: '13px', color: '#555', marginBottom: '6px', display: 'block' }}>
+                                        Thêm email người tham gia (role admin):
+                                    </label>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input
+                                            type="email"
+                                            value={participantEmailInput}
+                                            onChange={e => setParticipantEmailInput(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addParticipantEmail())}
+                                            placeholder="email@example.com"
+                                            style={{ flex: 1 }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={addParticipantEmail}
+                                            className="btn-secondary"
+                                            style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                        >
+                                            <FiPlus /> Thêm
+                                        </button>
+                                    </div>
+
+                                    {participantEmails.length > 0 && (
+                                        <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                            {participantEmails.map(email => (
+                                                <span key={email} style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                    background: '#007bff', color: '#fff',
+                                                    borderRadius: '12px', padding: '3px 10px', fontSize: '13px'
+                                                }}>
+                                                    {email}
+                                                    <FiX
+                                                        style={{ cursor: 'pointer', flexShrink: 0 }}
+                                                        onClick={() => removeParticipantEmail(email)}
+                                                    />
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="modal-actions">

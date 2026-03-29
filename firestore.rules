@@ -17,6 +17,15 @@ service cloud.firestore {
         (request.auth.token.role == 'admin' && request.auth.token.canReconcile == true)
       );
     }
+    // Kiểm tra uid hiện tại có trong danh sách participant của phiên kiểm kê cộng tác
+    function isParticipant(sessionId) {
+      return isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/stocktakes/$(sessionId)).data.participantUids;
+    }
+    // Kiểm tra phiên kiểm kê chưa bị đóng (chưa adjusted)
+    function sessionIsOpen(sessionId) {
+      return get(/databases/$(database)/documents/stocktakes/$(sessionId)).data.status != 'adjusted';
+    }
 
     // --- QUẢN LÝ USER ---
     match /allowlist/{email} {
@@ -74,9 +83,36 @@ service cloud.firestore {
     }
     
     match /stocktakes/{sessionId} {
+      // Owner toàn quyền
       allow read, write: if isOwner();
+      // Participant được đọc document phiên (để xem tên phiên, trạng thái, tiến độ)
+      allow read: if isParticipant(sessionId);
+
       match /items/{itemId} {
         allow read, write: if isOwner();
+      }
+
+      // count_entries: participant được đọc/ghi khi phiên chưa adjusted
+      match /count_entries/{entryId} {
+        allow read: if isOwner() || isParticipant(sessionId);
+        allow create: if isParticipant(sessionId)
+          && sessionIsOpen(sessionId)
+          && request.resource.data.enteredBy == request.auth.uid;
+        allow update: if isParticipant(sessionId)
+          && sessionIsOpen(sessionId)
+          && request.resource.data.enteredBy == request.auth.uid
+          // Chỉ owner mới được update conflict/rejected flags
+          && !('conflict' in request.resource.data.diff(resource.data).affectedKeys())
+          && !('rejected' in request.resource.data.diff(resource.data).affectedKeys());
+        // Owner được update tất cả fields (để resolve conflict, set rejected)
+        allow update: if isOwner();
+        allow delete: if isOwner();
+      }
+
+      // audit_logs: owner đọc/ghi, participant chỉ đọc
+      match /audit_logs/{logId} {
+        allow read: if isOwner() || isParticipant(sessionId);
+        allow write: if isOwner();
       }
     }
     

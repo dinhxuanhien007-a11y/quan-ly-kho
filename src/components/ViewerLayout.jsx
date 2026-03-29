@@ -12,6 +12,9 @@ import { useTheme } from '../context/ThemeContext';
 import { MdDarkMode, MdLightMode } from 'react-icons/md';
 import { FiGitMerge } from 'react-icons/fi';
 
+import ParticipantBanner from './ParticipantBanner';
+import { subscribeToActiveSessions } from '../services/collaborativeStocktakeService';
+
 const InventoryPage = lazy(() => import('../pages/InventoryPage'));
 const InventorySummaryPage = lazy(() => import('../pages/InventorySummaryPage'));
 const MobileInventoryPage = lazy(() => import('../pages/MobileInventoryPage'));
@@ -31,6 +34,14 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     // === BƯỚC 1: DI CHUYỂN STATE VÀ HÀM LÊN TRÊN ===
     const [viewMode, setViewMode] = useState('summary');
     const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
+    const [activeSessions, setActiveSessions] = useState([]);
+
+    // Subscribe phiên kiểm kê cộng tác active khi user là admin
+    useEffect(() => {
+        if (!user?.uid || role !== 'admin') return;
+        const unsubscribe = subscribeToActiveSessions(user.uid, setActiveSessions);
+        return () => unsubscribe();
+    }, [user?.uid, role]);
 
     const toggleCalculator = useCallback(() => {
     setIsCalculatorVisible(prev => !prev);
@@ -88,6 +99,10 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
 
     return (
         <div className="viewer-layout-container">
+            <ParticipantBanner
+                sessions={activeSessions}
+                onNavigate={(id) => navigate(`/stocktakes/${id}/collaborate`)}
+            />
             <div className="viewer-header">
                 <div className="viewer-header-left">
     {role === 'owner' && (
