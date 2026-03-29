@@ -21,18 +21,19 @@ import InlineEditCell from '../components/InlineEditCell'; // <-- BẮT BUỘC
 import NewDataNotification from '../components/NewDataNotification';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
-import { FiChevronDown, FiChevronRight, FiChevronLeft, FiDownload } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiChevronLeft, FiDownload, FiX } from 'react-icons/fi';
 import { useAuth } from '../context/UserContext';
 import Spinner from '../components/Spinner';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
 import '../styles/Responsive.css';
-import { formatDate, getRowColorByExpiry } from '../utils/dateUtils';
+import { getRowColorByExpiry } from '../utils/dateUtils';
 import HighlightText from '../components/HighlightText';
 import { ALL_SUBGROUPS, SUBGROUPS_BY_TEAM, SPECIAL_EXPIRY_SUBGROUPS } from '../constants';
 import { fuzzyNormalize } from '../utils/stringUtils';
-import ExpiryBadge from '../components/ExpiryBadge'; // <-- Thêm dòng này
+import ExpiryBadge from '../components/ExpiryBadge';
+import ClickableCopy from '../components/ClickableCopy';
 
 const PAGE_SIZE = 15;
 
@@ -70,6 +71,7 @@ const InventorySummaryPage = () => {
     const [loadingLots, setLoadingLots] = useState({});
     
     const [lastVisible, setLastVisible] = useState(null);
+    const [cursorStack, setCursorStack] = useState([]); // stack cursor để back đúng trang
     const [page, setPage] = useState(1);
     const [isLastPage, setIsLastPage] = useState(false);
     
@@ -83,10 +85,23 @@ const InventorySummaryPage = () => {
 
     const [isSubGroupOpen, setIsSubGroupOpen] = useState(false);
     const subGroupRef = useRef(null);
+    const searchInputRef = useRef(null);
     
     const [isExporting, setIsExporting] = useState(false);
 
     const [allProductsCache, setAllProductsCache] = useState([]);
+
+    // --- PHÍM TẮT "/" ĐỂ TÌM KIẾM ---
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // --- 1. TẢI CACHE (Chạy 1 lần) ---
     useEffect(() => {
@@ -109,7 +124,6 @@ const InventorySummaryPage = () => {
         fetchCache();
     }, []);
 
-    // --- QUERY CHÍNH (PHÂN TRANG) ---
     const fetchData = useCallback(async (direction = 'next', cursor = null) => {
         setLoading(true);
         try {
@@ -313,8 +327,8 @@ const InventorySummaryPage = () => {
     useEffect(() => {
         const debounce = setTimeout(() => {
             setLastVisible(null);
+            setCursorStack([]); // reset stack khi filter/search thay đổi
             setPage(1);
-            // Reset expanded state khi search/filter thay đổi
             setExpandedRows({});
             setLotDetails({});
             if (searchTerm) {
@@ -451,17 +465,22 @@ const InventorySummaryPage = () => {
     };
 
     const handleNextPage = () => { 
-        if (!isLastPage) { 
+        if (!isLastPage) {
+            setCursorStack(prev => [...prev, lastVisible]); // lưu cursor hiện tại vào stack
             setPage(p => p + 1); 
             fetchData('next', lastVisible); 
         } 
     };
-    const handlePrevPage = () => { 
-        setLastVisible(null);
-        setPage(1);
+    const handlePrevPage = () => {
+        if (page <= 1) return;
+        const newStack = [...cursorStack];
+        newStack.pop(); // bỏ cursor trang hiện tại
+        const prevCursor = newStack[newStack.length - 1] || null; // cursor trang trước
+        setCursorStack(newStack);
+        setPage(p => p - 1);
         setExpandedRows({});
         setLotDetails({});
-        fetchData('first'); 
+        fetchData('next', prevCursor);
     };
 
     const handleExportExcel = async () => {
@@ -560,14 +579,37 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                     </div>
                 </div>
 
-                <div className="search-container" style={{ flexGrow: 1, maxWidth: '400px' }}>
+                <div className="search-container" style={{ flexGrow: 1, maxWidth: '400px', position: 'relative' }}>
                     <input
+                        ref={searchInputRef}
                         type="text"
-                        placeholder="Tìm theo Tên, Mã hàng hoặc Số lô..." // Cập nhật Placeholder
+                        placeholder="Tìm theo Tên, Mã hàng hoặc Số lô... (Phím '/')"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
+                        style={{ paddingRight: '30px' }}
+                        title="Nhấn phím '/' để focus nhanh vào ô tìm kiếm"
                     />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            style={{
+                                position: 'absolute',
+                                right: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: '#999',
+                                cursor: 'pointer',
+                                padding: '5px',
+                                display: 'flex'
+                            }}
+                            title="Xóa tìm kiếm"
+                        >
+                            <FiX />
+                        </button>
+                    )}
                 </div>
 
                 {canExport && (
@@ -625,7 +667,9 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                                             <td>{expandedRows[product.id] ? <FiChevronDown /> : <FiChevronRight />}</td>
                                             <td data-label="Mã hàng"><strong><HighlightText text={product.id} highlight={searchTerm} /></strong></td>
                                             <td data-label="Tên hàng"><HighlightText text={product.productName} highlight={searchTerm} /></td>
-                                            <td data-label="HSD Gần Nhất">{product.nearestExpiryDate ? formatDate(product.nearestExpiryDate) : '(Không có)'}</td>
+                                            <td data-label="HSD Gần Nhất">
+                                                <ExpiryBadge expiryDate={product.nearestExpiryDate} subGroup={product.subGroup} />
+                                            </td>
                                             <td data-label="Tổng Tồn"><strong>{formatNumber(product.totalRemaining)}</strong></td>
                                             <td data-label="ĐVT">{product.unit}</td>
                                             <td data-label="Quy cách">{product.packaging}</td>
@@ -675,7 +719,7 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
     
     {/* Cột Số Lô */}
     <span style={{ minWidth: '150px' }}>
-        Lô: <strong><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></strong>
+        Lô: <strong><ClickableCopy text={lot.lotNumber || ''}><HighlightText text={lot.lotNumber || '(Không có)'} highlight={searchTerm} /></ClickableCopy></strong>
     </span>
 
     {/* Cột HSD - Thay thế code cũ */}
@@ -711,22 +755,18 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                 initialValue={lot.notes} 
                 onSave={handleQuickUpdateNote} 
                 canEdit={userRole === 'owner'}
-                // --- Bước 2: Áp dụng style dựa trên biến hasNote ---
                 customStyle={{ 
                     fontSize: '0.85em',
                     padding: '4px 12px',
                     minHeight: 'auto',
-                    textAlign: 'center', // Canh giữa chữ trong nút
+                    textAlign: 'center',
                     width: '100%',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     borderRadius: '15px',
-                    
-                    // NẾU CÓ GHI CHÚ -> HIỆN MÀU VÀNG
-                    // NẾU KHÔNG -> TRONG SUỐT
                     backgroundColor: hasNote ? '#fff3cd' : 'transparent',
-                    color:           hasNote ? '#856404' : '#adb5bd', // Màu nâu đậm nếu có, màu xám nhạt nếu không
+                    color:           hasNote ? '#856404' : '#adb5bd',
                     border:          hasNote ? '1px solid #ffeeba' : '1px solid transparent',
                     fontWeight:      hasNote ? 'bold' : 'normal',
                     boxShadow:       hasNote ? '0 1px 2px rgba(0,0,0,0.05)' : 'none'
@@ -753,8 +793,11 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                     
                     {!searchTerm && (
                         <div className="pagination-controls">
+                            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                {summaries.length} mục · Trang {page}
+                            </span>
                             <button onClick={handlePrevPage} disabled={page <= 1}>
-                                <FiChevronLeft /> Về Trang Đầu
+                                <FiChevronLeft /> Trang Trước
                             </button>
                             <span>Trang {page}</span>
                             <button onClick={handleNextPage} disabled={isLastPage}>

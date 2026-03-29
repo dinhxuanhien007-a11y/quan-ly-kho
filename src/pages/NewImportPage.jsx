@@ -1615,14 +1615,13 @@ const handleSchulkePDFUpload = async (e) => {
     };
 
     const promptForDirectImport = () => {
-        if (getValidSlipData()) {
-            setConfirmModal({
-                isOpen: true,
-                title: "Xác nhận nhập kho trực tiếp?",
-                message: "Thao tác này sẽ cập nhật tồn kho ngay lập tức và không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?",
-                onConfirm: handleDirectImport
-            });
-        }
+        if (!isSlipValid) return;
+        setConfirmModal({
+            isOpen: true,
+            title: "Xác nhận nhập kho trực tiếp?",
+            message: "Thao tác này sẽ cập nhật tồn kho ngay lập tức và không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục?",
+            onConfirm: handleDirectImport
+        });
     };
 
     return (

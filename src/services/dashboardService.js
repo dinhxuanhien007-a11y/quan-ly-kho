@@ -237,18 +237,14 @@ export const getSalesAnalytics = async (filters = {}) => {
     }
 
     // --- LOGIC LỌC THEO TEAM ---
+    // Lọc team trên client-side sau khi lấy dữ liệu (Firestore không hỗ trợ
+    // array-contains-any kết hợp với các toán tử bất bình đẳng khác).
+    // Nếu không có sản phẩm nào thuộc team, trả về sớm để tránh tải dữ liệu thừa.
     if (filters.team && filters.team !== 'all') {
         const productsByTeamQuery = query(collection(db, 'products'), where("team", "==", filters.team));
         const productsSnapshot = await getDocs(productsByTeamQuery);
-        const productIdsInTeam = productsSnapshot.docs.map(doc => doc.id);
-
-        if (productIdsInTeam.length > 0) {
-            // Firestore v10 không hỗ trợ `array-contains-any` kết hợp với các toán tử bất bình đẳng khác.
-            // Do đó, chúng ta sẽ lọc trên client-side sau khi lấy dữ liệu.
-            // Để tối ưu, nếu có thể, bạn nên thêm trường `teams` vào export_tickets.
-            // Tạm thời, chúng ta sẽ không thêm bộ lọc này vào query chính.
-        } else {
-            return []; // Nếu không có sản phẩm nào thuộc team, trả về mảng rỗng
+        if (productsSnapshot.empty) {
+            return [];
         }
     }
 

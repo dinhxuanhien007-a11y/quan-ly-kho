@@ -97,22 +97,21 @@ const InlineEditCell = ({ initialValue, onSave, id, canEdit = false, customStyle
     // --- Chế độ XEM (Viewing Mode) ---
     return (
         <div 
-            onMouseEnter={() => setIsHovered(true)} // Bật trạng thái hover
-            onMouseLeave={() => setIsHovered(false)} // Tắt trạng thái hover
-            onClick={(e) => e.stopPropagation()} // Ngăn chọn dòng khi click vào nội dung
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={(e) => e.stopPropagation()}
             title={canEdit ? "Click vào biểu tượng để sửa nhanh" : "Chỉ Owner mới có quyền sửa"}
             style={{ 
-                cursor: canEdit ? 'default' : 'default', // Đặt default cursor
+                cursor: canEdit ? 'default' : 'default',
                 minHeight: '20px', 
                 padding: '5px',
                 border: '1px solid transparent',
                 borderRadius: '4px',
                 transition: 'background 0.2s',
-                position: 'relative', // Quan trọng: để đặt icon tuyệt đối
-                // ---> THÊM DÒNG NÀY ĐỂ ÁP DỤNG STYLE TÙY CHỈNH <---
+                position: 'relative',
                 ...customStyle
             }}
-            className={canEdit ? "inline-edit-cell" : ""}
+            className={`${canEdit ? "inline-edit-cell" : ""} ${customStyle.backgroundColor && customStyle.backgroundColor !== 'transparent' ? 'inline-note-badge' : ''}`.trim()}
         >
             {/* 1. HIỂN THỊ NỘI DUNG/TRỐNG */}
             {value ? (

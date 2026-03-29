@@ -160,9 +160,9 @@ body {
   padding: 12px 15px;
   border-bottom: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);
-  white-space: nowrap; /* Giữ nội dung trên một dòng theo mặc định */
+  white-space: nowrap;
   vertical-align: middle;
-  background-color: #ffffff;
+  background-color: var(--card-bg);
   box-sizing: border-box;
 }
 
@@ -172,20 +172,25 @@ body {
 }
 
 .inventory-table th {
-  background-color: #f8f9fa !important;
+  background-color: var(--table-header-bg) !important;
   position: sticky;
   top: 0;
   z-index: 2;
 }
 
 .inventory-table th, .inventory-table td {
-  background-color: #ffffff;
+  background-color: var(--card-bg);
 }
 .inventory-table tbody tr:hover td {
-  background-color: #e9ecef;
+  background-color: var(--bg-hover);
 }
 .inventory-table tbody tr.selected-row td {
   background-color: #d6eaff !important;
+}
+
+body.dark-mode .inventory-table tbody tr.selected-row td {
+  background-color: #1a3a5c !important;
+  color: var(--text-color) !important;
 }
 
 /* Các cột được ghim (sticky) - PHIÊN BẢN SỬA LỖI CUỐI CÙNG */
@@ -195,8 +200,8 @@ body {
 
 .inventory-table th:nth-child(1), .inventory-table th:nth-child(2), .inventory-table th:nth-child(3) { z-index: 3; }
 
-.inventory-table td:nth-child(1), .inventory-table td:nth-child(2), .inventory-table td:nth-child(3) { background-color: #ffffff; }
-.inventory-table tbody tr:hover td:nth-child(1), .inventory-table tbody tr:hover td:nth-child(2), .inventory-table tbody tr:hover td:nth-child(3) { background-color: #e9ecef; }
+.inventory-table td:nth-child(1), .inventory-table td:nth-child(2), .inventory-table td:nth-child(3) { background-color: var(--card-bg); }
+.inventory-table tbody tr:hover td:nth-child(1), .inventory-table tbody tr:hover td:nth-child(2), .inventory-table tbody tr:hover td:nth-child(3) { background-color: var(--bg-hover); }
 .inventory-table tbody tr.selected-row td:nth-child(1), .inventory-table tbody tr:selected-row td:nth-child(2), .inventory-table tbody tr.selected-row td:nth-child(3) { background-color: #d6eaff !important; }
 
 /* --- ĐIỀU CHỈNH LẠI ĐỘ RỘNG CÁC CỘT --- */
@@ -389,7 +394,7 @@ body {
 .item-details-grid, .item-details-grid-edit {
   display: grid;
   gap: 10px;
-  background-color: #fff;
+  background-color: var(--card-bg);
   padding: 10px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
@@ -431,7 +436,7 @@ body {
 
 .grid-cell input[readOnly],
 .grid-cell textarea[readOnly] {
-  background-color: #f0f0f0;
+  background-color: var(--table-stripe-bg);
   cursor: not-allowed;
 }
 
@@ -517,15 +522,15 @@ body {
 
 /* Áp dụng màu cho các ô của dòng có class tương ứng */
 tr.near-expiry-yellow td { background-color: #fff3cd !important; color: #5a5a5a !important; }
-tr.near-expiry-orange td { background-color: #ffe8cc !important; color: #5a5a5a !important; }
-tr.near-expiry-red td { background-color: #f8d7da !important; color: #5a5a5a !important; }
-tr.expired-black td { background-color: #212529 !important; color: #fff !important; }
+tr.near-expiry-orange td { background-color: #ffd0a0 !important; color: #7a2e00 !important; }
+tr.near-expiry-red td { background-color: #ffc8cc !important; color: #4a0000 !important; }
+tr.expired-black td { background-color: #3d3d3d !important; color: #f0f0f0 !important; }
 
 /* Thêm điểm nhấn ở đầu dòng để người dùng dễ nhận biết */
 tr.near-expiry-yellow td:first-child { border-left: 5px solid #ffc107; }
 tr.near-expiry-orange td:first-child { border-left: 5px solid #fd7e14; }
 tr.near-expiry-red td:first-child    { border-left: 5px solid #dc3545; }
-tr.expired-black td:first-child      { border-left: 5px solid #343a40; }
+tr.expired-black td:first-child      { border-left: 5px solid #888888; }
 
 /* In đậm chữ cho các dòng cảnh báo */
 tr.near-expiry-yellow td,
@@ -540,14 +545,19 @@ tr.expired-black td {
 
 /* Đảm bảo màu hover vẫn hoạt động */
 tbody tr:hover td {
-  background-color: #d6eaff !important;
-  color: #000 !important; /* Đảm bảo chữ luôn đọc được khi hover */
+  background-color: var(--bg-hover) !important;
+  color: var(--text-color) !important;
 }
 
 /* Dòng được chọn có màu ưu tiên cao nhất */
 tbody tr.selected-row td {
   background-color: #cce5ff !important;
   color: #000 !important;
+}
+
+body.dark-mode tbody tr.selected-row td {
+  background-color: #1a3a5c !important;
+  color: var(--text-color) !important;
 }
 
 /* --- BADGES (TEAM & TEMP) --- */
@@ -1189,10 +1199,10 @@ tbody tr.selected-row td {
 .empty-state-container {
   text-align: center;
   padding: 40px 20px;
-  background-color: #fff;
+  background-color: var(--card-bg);
   border-radius: 8px;
   margin-top: 20px;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .empty-state-container svg {
@@ -1204,7 +1214,7 @@ tbody tr.selected-row td {
 .empty-state-container h4 {
   margin: 0 0 10px 0;
   font-size: 18px;
-  color: #495057;
+  color: var(--text-color);
 }
 
 .empty-state-container p {
@@ -1690,6 +1700,30 @@ body.dark-mode .filter-group button:hover {
     background-color: var(--bg-hover);
 }
 
+body.dark-mode .filter-group button.active {
+    background-color: #2563eb;
+    color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+body.dark-mode .view-toggle-btn {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .view-toggle-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+body.dark-mode .view-toggle-btn.active {
+    background-color: #2563eb;
+    color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
 body.dark-mode .card {
     background-color: var(--card-bg);
     color: var(--text-color);
@@ -1716,35 +1750,104 @@ body.dark-mode .item-details-grid-edit {
 
 /* === MÀU SẮC HSD TRONG DARK MODE === */
 body.dark-mode tr.near-expiry-yellow td {
-    background-color: #3d3000 !important;
-    color: #fde68a !important;
+    background-color: #2d2200 !important;
+    color: #fef08a !important;
 }
 body.dark-mode tr.near-expiry-yellow td:first-child {
-    border-left: 5px solid #fbbf24;
+    border-left: 5px solid #eab308;
 }
 
 body.dark-mode tr.near-expiry-orange td {
-    background-color: #431a07 !important;
-    color: #fed7aa !important;
+    background-color: #3a1500 !important;
+    color: #fdba74 !important;
 }
 body.dark-mode tr.near-expiry-orange td:first-child {
-    border-left: 5px solid #fb923c;
+    border-left: 5px solid #f97316;
 }
 
 body.dark-mode tr.near-expiry-red td {
-    background-color: #4a0000 !important;
+    background-color: #3d0000 !important;
     color: #fca5a5 !important;
 }
 body.dark-mode tr.near-expiry-red td:first-child {
-    border-left: 5px solid #f87171;
+    border-left: 5px solid #ef4444;
 }
 
 body.dark-mode tr.expired-black td {
-    background-color: #2d1b69 !important;
-    color: #ddd6fe !important;
+    background-color: #3b0764 !important;
+    color: #e9d5ff !important;
 }
 body.dark-mode tr.expired-black td:first-child {
-    border-left: 5px solid #a78bfa;
+    border-left: 5px solid #a855f7;
+}
+
+/* === LOT ITEM COLORS TRONG DARK MODE === */
+body.dark-mode .lot-item {
+    background-color: var(--bg-hover);
+    color: var(--text-color);
+}
+body.dark-mode .lot-item.lot-item-yellow {
+    background-color: #3d3000;
+    color: #fde68a;
+    border-left-color: #fbbf24;
+}
+body.dark-mode .lot-item.lot-item-orange {
+    background-color: #431a07;
+    color: #fed7aa;
+    border-left-color: #fb923c;
+}
+body.dark-mode .lot-item.lot-item-red {
+    background-color: #4a0000;
+    color: #fca5a5;
+    border-left-color: #f87171;
+}
+body.dark-mode .lot-item.lot-item-expired {
+    background-color: #3b0764;
+    color: #e9d5ff;
+    border-left-color: #a855f7;
+}
+
+/* Ghi chú trong lot-item dark mode */
+body.dark-mode .inline-note-badge {
+    background-color: #3d3000 !important;
+    color: #fde68a !important;
+    border-color: #fbbf24 !important;
+}
+
+/* === STICKY COLUMNS TRONG DARK MODE === */
+body.dark-mode .inventory-table td:nth-child(1),
+body.dark-mode .inventory-table td:nth-child(2),
+body.dark-mode .inventory-table td:nth-child(3) {
+    background-color: var(--card-bg);
+}
+body.dark-mode .inventory-table tbody tr:hover td:nth-child(1),
+body.dark-mode .inventory-table tbody tr:hover td:nth-child(2),
+body.dark-mode .inventory-table tbody tr:hover td:nth-child(3) {
+    background-color: var(--bg-hover) !important;
+}
+
+/* === READONLY INPUT TRONG DARK MODE === */
+body.dark-mode .grid-cell input[readOnly],
+body.dark-mode .grid-cell textarea[readOnly] {
+    background-color: #2a3a4a !important;
+    color: var(--text-secondary) !important;
+    cursor: not-allowed;
+}
+
+/* === FILTERS & EMPTY STATE TRONG DARK MODE === */
+body.dark-mode .filters-container {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+body.dark-mode .empty-state-container {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+}
+body.dark-mode .empty-state-container h4 {
+    color: var(--text-color);
+}
+body.dark-mode .empty-state-icon {
+    background-color: var(--bg-secondary);
 }
 
 

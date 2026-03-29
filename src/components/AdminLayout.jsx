@@ -3,14 +3,12 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import Navbar from './Navbar';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import FloatingCalculator from './FloatingCalculator';
-import { MdCalculate } from 'react-icons/md';
 import ExpiryNotificationBanner from './ExpiryNotificationBanner';
 import ImportSlipCounter from './ImportSlipCounter';
 import ExportSlipCounter from './ExportSlipCounter';
 import { useAuth } from '../context/UserContext';
-import FloatingToolsModal from './FloatingToolsModal'; 
-import { FiGrid } from 'react-icons/fi';
+import FloatingToolsModal from './FloatingToolsModal';
+import FloatingCalculator from './FloatingCalculator';
 import { usePresence } from '../hooks/usePresence';
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
@@ -91,23 +89,7 @@ const AdminLayout = () => {
         </Suspense>
       </main>
 
-      {role === 'owner' ? (
-        <button 
-          className="floating-toggle-btn" 
-          onClick={toggleToolsModal}
-          title="Mở công cụ nhanh (F2)"
-        >
-          <FiGrid />
-        </button>
-      ) : (
-        <button 
-          className="floating-toggle-btn" 
-          onClick={toggleCalculator}
-          title="Mở máy tính (F2)"
-        >
-          <MdCalculate />
-        </button>
-      )}
+      {/* Icon floating đã ẩn — dùng phím F2 để mở công cụ nhanh */}
 
       {isToolsModalVisible && role === 'owner' && (
         <FloatingToolsModal onClose={toggleToolsModal} />

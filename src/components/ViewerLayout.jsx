@@ -136,6 +136,24 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     </Link>
 )}
     <button
+        onClick={toggleCalculator}
+        title="Máy tính (F2)"
+        style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '10px',
+            borderRadius: '8px',
+            color: 'inherit',
+            fontSize: '24px'
+        }}
+    >
+        <MdCalculate />
+    </button>
+    <button
         onClick={toggleTheme}
         title={theme === 'light' ? 'Chuyển Dark Mode' : 'Chuyển Light Mode'}
         style={{
@@ -168,9 +186,6 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     </Suspense>
 </div>
 
-            <button className="floating-toggle-btn" onClick={toggleCalculator} title="Mở máy tính (F2)">
-                <MdCalculate />
-            </button>
             {isCalculatorVisible && <FloatingCalculator onClose={toggleCalculator} />}
         </div>
     );

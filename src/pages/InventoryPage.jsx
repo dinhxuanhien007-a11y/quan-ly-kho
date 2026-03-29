@@ -208,7 +208,7 @@ const InventoryPage = ({ pageTitle }) => {
         let constraints = [where("quantityRemaining", ">", 0)];
 
         if (userRole === 'med') constraints.push(where("team", "==", "MED"));
-        else if (userRole === 'bio') constraints.push(where("team", "==", "BIO"));
+        else if (userRole === 'bio') constraints.push(where("team", "in", ["BIO", "Spare Part"]));
         
         if (filters.team !== 'all') constraints.push(where("team", "==", filters.team));
         if (filters.subGroup && filters.subGroup !== 'all') constraints.push(where("subGroup", "==", filters.subGroup));
@@ -316,6 +316,7 @@ const InventoryPage = ({ pageTitle }) => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
                         style={{ paddingRight: '30px' }}
+                        title="Nhấn phím '/' để focus nhanh vào ô tìm kiếm"
                     />
                     {searchTerm && (
                         <button 
@@ -441,6 +442,11 @@ const InventoryPage = ({ pageTitle }) => {
             
             {!isSearching && !loading && dataToDisplay.length > 0 && (
                 <div className="pagination-controls">
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        {isLastPage && page === 1
+                            ? `${dataToDisplay.length} kết quả`
+                            : `Trang ${page} · ${dataToDisplay.length} mục`}
+                    </span>
                     <button onClick={() => { prevPage(); }} disabled={page <= 1}>
                         <FiChevronLeft /> Trang Trước
                     </button>
