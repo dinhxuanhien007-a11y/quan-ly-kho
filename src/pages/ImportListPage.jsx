@@ -1,6 +1,6 @@
 // src/pages/ImportListPage.jsx
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { doc, updateDoc, addDoc, Timestamp, collection, query, orderBy, deleteDoc, getDoc, where, increment } from 'firebase/firestore';
 import { FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -27,6 +27,11 @@ const ImportListPage = () => {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, item: null, title: '', message: '', confirmText: '', action: null });
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Đề xuất 8: tìm kiếm theo ID phiếu
+    const [searchId, setSearchId] = useState('');
+    // Đề xuất 9: sort
+    const [sortConfig, setSortConfig] = useState({ key: 'importDate', direction: 'desc' });
 
     // NÂNG CẤP 1: State để quản lý các giá trị của bộ lọc
     const [filters, setFilters] = useState({
@@ -68,22 +73,50 @@ const ImportListPage = () => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    // NÂNG CẤP 1: TÍNH TOÁN CÁC SỐ LIỆU TÓM TẮT
+    // summaryStats chỉ tính trên trang hiện tại (do phân trang)
     const summaryStats = useMemo(() => {
         if (loading || !importSlips) {
             return { total: '...', pending: '...', completed: '...' };
         }
         const pending = importSlips.filter(s => s.status === 'pending').length;
         const completed = importSlips.filter(s => s.status === 'completed').length;
-        
-        return {
-            total: importSlips.length,
-            pending,
-            completed
-        };
+        return { total: importSlips.length, pending, completed };
     }, [importSlips, loading]);
 
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
+
+    // Đề xuất 5: reset searchId khi filter thay đổi
+    useEffect(() => { setSearchId(''); }, [filters]);
+
+    // Đề xuất 8+9: lọc theo ID và sort client-side
+    const filteredAndSorted = useMemo(() => {
+        let rows = importSlips || [];
+        if (searchId.trim()) {
+            rows = rows.filter(s => s.id.toLowerCase().includes(searchId.trim().toLowerCase()));
+        }
+        return [...rows].sort((a, b) => {
+            const dir = sortConfig.direction === 'asc' ? 1 : -1;
+            if (sortConfig.key === 'importDate') {
+                return (a.importDate || '') > (b.importDate || '') ? dir : -dir;
+            }
+            if (sortConfig.key === 'supplierName') {
+                return (a.supplierName || '') > (b.supplierName || '') ? dir : -dir;
+            }
+            if (sortConfig.key === 'status') {
+                return (a.status || '') > (b.status || '') ? dir : -dir;
+            }
+            return 0;
+        });
+    }, [importSlips, searchId, sortConfig]);
+
+    const requestSort = (key) => {
+        setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
+    };
+
+    const SortIcon = ({ col }) => {
+        if (sortConfig.key !== col) return <span style={{ opacity: 0.3 }}>↕</span>;
+        return <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+    };
 
     const handleRefresh = () => {
         dismissNewData();
@@ -264,7 +297,6 @@ const promptForConfirm = (slip) => {
     // === KẾT THÚC HÀM XỬ LÝ TRUNG TÂM MỚI ===
 
     const openEditModal = (slip) => { setSelectedSlip(slip); setIsEditModalOpen(true); };
-    // src/pages/ImportListPage.jsx
 
     const openViewModal = async (slip) => {
         try {
@@ -414,20 +446,32 @@ return (
                 message="Có phiếu nhập mới!"
             />
 
+            {/* Đề xuất 8: tìm kiếm theo ID */}
+            <div style={{ marginBottom: '12px' }}>
+                <input
+                    type="text"
+                    placeholder="Tìm nhanh theo mã phiếu..."
+                    value={searchId}
+                    onChange={e => setSearchId(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', width: '280px' }}
+                />
+                {searchId && <button onClick={() => setSearchId('')} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#888' }}>✕</button>}
+            </div>
+
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table list-page-table">
 <thead>
                             <tr>
-                                <th>Ngày nhập</th>
-                                <th>Nhà cung cấp</th>
+                                <th style={{ cursor: 'pointer' }} onClick={() => requestSort('importDate')}>Ngày nhập <SortIcon col="importDate" /></th>
+                                <th style={{ cursor: 'pointer' }} onClick={() => requestSort('supplierName')}>Nhà cung cấp <SortIcon col="supplierName" /></th>
                                 <th>Diễn giải</th>
-                                <th>Trạng thái</th>
+                                <th style={{ cursor: 'pointer' }} onClick={() => requestSort('status')}>Trạng thái <SortIcon col="status" /></th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
-{importSlips.length > 0 ? importSlips.map(slip => (
+{filteredAndSorted.length > 0 ? filteredAndSorted.map(slip => (
                                 <tr key={slip.id} style={{ backgroundColor: slip.status === 'pending' ? '#fffbea' : undefined }}>
                                    <td>{slip.importDate ? slip.importDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.supplierName}</td>

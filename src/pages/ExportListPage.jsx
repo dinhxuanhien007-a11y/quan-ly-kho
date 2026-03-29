@@ -1,8 +1,8 @@
 // src/pages/ExportListPage.jsx
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp, writeBatch, deleteDoc } from 'firebase/firestore'; 
+import { doc, updateDoc, getDoc, collection, query, orderBy, where, Timestamp, writeBatch, deleteDoc, increment } from 'firebase/firestore'; 
 import { FiCheckCircle, FiXCircle, FiEdit, FiEye, FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { PAGE_SIZE } from '../constants';
@@ -20,7 +20,6 @@ import DateRangePresets from '../components/DateRangePresets';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-// src/pages/ExportListPage.jsx
 
 const ExportListPage = () => {
     const [selectedSlip, setSelectedSlip] = useState(null);
@@ -28,6 +27,11 @@ const ExportListPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, data: null, title: '', message: '', onConfirm: null, confirmText: 'Xác nhận' });
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Đề xuất 8: tìm kiếm theo ID phiếu
+    const [searchId, setSearchId] = useState('');
+    // Đề xuất 9: sort
+    const [sortConfig, setSortConfig] = useState({ key: 'exportDate', direction: 'desc' });
 
     // NÂNG CẤP 1: State để quản lý các giá trị của bộ lọc
     const [filters, setFilters] = useState({
@@ -93,7 +97,38 @@ const ExportListPage = () => {
         reset();
     };
 
-// File: src/pages/ExportListPage.jsx
+    // Đề xuất 5: reset searchId khi filter thay đổi
+    useEffect(() => { setSearchId(''); }, [filters]);
+
+    // Đề xuất 8+9: lọc theo ID và sort client-side
+    const filteredAndSorted = useMemo(() => {
+        let rows = exportSlips || [];
+        if (searchId.trim()) {
+            rows = rows.filter(s => s.id.toLowerCase().includes(searchId.trim().toLowerCase()));
+        }
+        return [...rows].sort((a, b) => {
+            const dir = sortConfig.direction === 'asc' ? 1 : -1;
+            if (sortConfig.key === 'exportDate') {
+                return (a.exportDate || '') > (b.exportDate || '') ? dir : -dir;
+            }
+            if (sortConfig.key === 'customer') {
+                return (a.customer || '') > (b.customer || '') ? dir : -dir;
+            }
+            if (sortConfig.key === 'status') {
+                return (a.status || '') > (b.status || '') ? dir : -dir;
+            }
+            return 0;
+        });
+    }, [exportSlips, searchId, sortConfig]);
+
+    const requestSort = (key) => {
+        setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
+    };
+
+    const SortIcon = ({ col }) => {
+        if (sortConfig.key !== col) return <span style={{ opacity: 0.3 }}>↕</span>;
+        return <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+    };
 
 const handleConfirmExport = async (slip) => {
     setIsProcessing(true);
@@ -126,44 +161,40 @@ const handleConfirmExport = async (slip) => {
     }
 };
 
-// THAY THẾ HÀM CŨ BẰNG HÀM NÀY (để đồng bộ):
 const handleCancelSlip = async (slip) => {
-    setIsProcessing(true); // Báo cho hệ thống biết là đang xử lý
-    try {
-        const batch = writeBatch(db); // Dùng Batch Writes
+    setIsProcessing(true);
+    try {
+        const batch = writeBatch(db);
 
-        // 1. Giải phóng đặt giữ lô hàng
-        for (const item of slip.items) {
-            const lotRef = doc(db, 'inventory_lots', item.lotId);
-            const lotSnap = await getDoc(lotRef);
-            
-            if (lotSnap.exists()) {
-                const currentAllocated = lotSnap.data().quantityAllocated || 0;
+        // Đọc tất cả lot song song thay vì tuần tự
+        const itemsWithLot = slip.items.filter(item => item.lotId);
+        const lotSnaps = await Promise.all(
+            itemsWithLot.map(item => getDoc(doc(db, 'inventory_lots', item.lotId)))
+        );
+
+        itemsWithLot.forEach((item, i) => {
+            const lotSnap = lotSnaps[i];
+            if (lotSnap.exists()) {
+                const currentAllocated = lotSnap.data().quantityAllocated || 0;
                 const quantityToRelease = item.quantityToExport || item.quantityExported || 0;
-                
-                const newAllocated = Math.max(0, currentAllocated - quantityToRelease); // Giảm lượng đặt giữ
-                
-                batch.update(lotRef, { 
-                    quantityAllocated: newAllocated 
+                batch.update(doc(db, 'inventory_lots', item.lotId), {
+                    quantityAllocated: Math.max(0, currentAllocated - quantityToRelease)
                 });
-            }
-        }
+            }
+        });
 
-        // 2. Cập nhật trạng thái phiếu
-        const slipRef = doc(db, 'export_tickets', slip.id);
-        batch.update(slipRef, { status: 'cancelled' });
+        batch.update(doc(db, 'export_tickets', slip.id), { status: 'cancelled' });
+        await batch.commit();
 
-        await batch.commit(); // Ghi tất cả một lần
-
-        toast.success('Hủy phiếu xuất thành công và giải phóng tồn kho đã đặt giữ!');
-        reset();
-    } catch (error) {
-        console.error("Lỗi khi hủy phiếu: ", error);
-        toast.error('Đã xảy ra lỗi khi hủy phiếu.');
-    } finally {
-       setIsProcessing(false);
-       setConfirmModal({ isOpen: false });
-    }
+        toast.success('Hủy phiếu xuất thành công và giải phóng tồn kho đã đặt giữ!');
+        reset();
+    } catch (error) {
+        console.error("Lỗi khi hủy phiếu: ", error);
+        toast.error('Đã xảy ra lỗi khi hủy phiếu.');
+    } finally {
+        setIsProcessing(false);
+        setConfirmModal({ isOpen: false });
+    }
 };
 
 const handleDeleteSlip = async (slipToDelete) => {
@@ -237,9 +268,7 @@ const promptAction = (action, slip) => {
     }
   };
 
-  // src/pages/ExportListPage.jsx
-
-    const openViewModal = async (slip) => {
+  const openViewModal = async (slip) => {
         try {
             toast.info("Đang tải chi tiết phiếu...");
             const docRef = doc(db, 'export_tickets', slip.id);
@@ -288,18 +317,19 @@ const promptAction = (action, slip) => {
     const slipWithDetails = JSON.parse(JSON.stringify(slip));
     try {
       toast.info("Đang lấy dữ liệu tồn kho mới nhất...");
-      for (const item of slipWithDetails.items) {
-        if (item.lotId) {
-          const lotRef = doc(db, 'inventory_lots', item.lotId);
-          const lotSnap = await getDoc(lotRef);
+      const itemsWithLot = slipWithDetails.items.filter(item => item.lotId);
+      const lotSnaps = await Promise.all(
+          itemsWithLot.map(item => getDoc(doc(db, 'inventory_lots', item.lotId)))
+      );
+      itemsWithLot.forEach((item, i) => {
+          const lotSnap = lotSnaps[i];
           if (lotSnap.exists()) {
-            item.quantityRemaining = lotSnap.data().quantityRemaining;
+              item.quantityRemaining = lotSnap.data().quantityRemaining;
           } else {
-            item.quantityRemaining = 0;
-            toast.warn(`Lô ${item.lotNumber} không còn tồn tại trong kho.`);
+              item.quantityRemaining = 0;
+              toast.warn(`Lô ${item.lotNumber} không còn tồn tại trong kho.`);
           }
-        }
-      }
+      });
       setSelectedSlip(slipWithDetails);
       setIsEditModalOpen(true);
     } catch (error) {
@@ -418,20 +448,32 @@ return (
                 message="Có phiếu xuất mới!"
             />
 
+            {/* Đề xuất 8: tìm kiếm theo ID */}
+            <div style={{ marginBottom: '12px' }}>
+                <input
+                    type="text"
+                    placeholder="Tìm nhanh theo mã phiếu..."
+                    value={searchId}
+                    onChange={e => setSearchId(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '13px', width: '280px' }}
+                />
+                {searchId && <button onClick={() => setSearchId('')} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#888' }}>✕</button>}
+            </div>
+
             {loading ? <Spinner /> : (
                 <>
                     <table className="products-table list-page-table">
 <thead>
                 <tr>
-                    <th>Ngày xuất</th>
-                    <th>Khách hàng / Nơi nhận</th>
+                    <th style={{ cursor: 'pointer' }} onClick={() => requestSort('exportDate')}>Ngày xuất <SortIcon col="exportDate" /></th>
+                    <th style={{ cursor: 'pointer' }} onClick={() => requestSort('customer')}>Khách hàng / Nơi nhận <SortIcon col="customer" /></th>
                     <th>Diễn giải</th>
-                    <th>Trạng thái</th>
+                    <th style={{ cursor: 'pointer' }} onClick={() => requestSort('status')}>Trạng thái <SortIcon col="status" /></th>
                     <th>Thao tác</th>
                 </tr>
                 </thead>
                 <tbody>
-{exportSlips.length > 0 ? exportSlips.map(slip => (
+{filteredAndSorted.length > 0 ? filteredAndSorted.map(slip => (
                                 <tr key={slip.id} style={{ backgroundColor: slip.status === 'pending' ? '#fffbea' : undefined }}>
                                     <td>{slip.exportDate ? slip.exportDate : formatDate(slip.createdAt)}</td>
                                     <td>{slip.customer}</td>

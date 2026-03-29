@@ -1,5 +1,5 @@
 // src/pages/ProductLedgerPage.jsx
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
@@ -149,12 +149,18 @@ const ProductLedgerPage = () => {
         // Tồn cuối kỳ = Tồn đầu + Nhập trong kỳ - Xuất trong kỳ
         const lotClosingBalance = lotOpeningBalance + lotTotalImport - lotTotalExport;
 
+        // Gom danh sách NCC (nhập) và KH (xuất) duy nhất
+        const suppliers = [...new Set(lot.transactions.filter(tx => tx.type === 'NHẬP' && tx.partnerName).map(tx => tx.partnerName))];
+        const customers = [...new Set(lot.transactions.filter(tx => tx.type === 'XUẤT' && tx.partnerName).map(tx => tx.partnerName))];
+
         return {
             ...lot,
             openingBalance: lotOpeningBalance,
             totalImport: lotTotalImport,
             totalExport: lotTotalExport,
             closingBalance: lotClosingBalance,
+            suppliers,
+            customers,
         };
     }).sort((a, b) => { // Sắp xếp theo HSD
         if (!a.expiryDateObject) return 1;
@@ -205,7 +211,7 @@ const ProductLedgerPage = () => {
         if (!sortedRows || sortedRows.length === 0) return null;
         const dataByDate = sortedRows.reduce((acc, row) => {
             if (!row.date) return acc;
-            const date = row.date instanceof Date ? formatDate(row.date) : formatDate(row.date);
+            const date = formatDate(row.date);
             if (!date || date === 'N/A') return acc;
             if (!acc[date]) {
                 acc[date] = { import: 0, export: 0 };
@@ -390,7 +396,23 @@ const ProductLedgerPage = () => {
                     <div className="page-header" style={{ marginTop: '30px' }}>
                         <div>
                             <h3>{productInfo.productName} (ĐVT: {productInfo.unit})</h3>
-                            {lotNumberFilter && <p style={{ margin: 0, color: '#007bff' }}>Đang xem chi tiết cho Lô: <strong>{lotNumberFilter}</strong></p>}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                    📋 <strong>{sortedRows.length}</strong> giao dịch &nbsp;·&nbsp; 🏷️ <strong>{lotSummaryData.length}</strong> lô
+                                </span>
+                                {lotNumberFilter && (
+                                    <span style={{ color: '#007bff', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+                                        Đang lọc lô: <strong>{lotNumberFilter}</strong>
+                                        <button
+                                            onClick={() => search(filters)}
+                                            style={{ background: 'none', border: '1px solid #007bff', borderRadius: '4px', color: '#007bff', cursor: 'pointer', fontSize: '12px', padding: '2px 8px' }}
+                                            title="Quay lại xem toàn bộ sản phẩm"
+                                        >
+                                            ✕ Xem tất cả lô
+                                        </button>
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <button onClick={handleExportPDF} className="btn-primary">
                             <FiPrinter style={{marginRight: '5px'}} /> Xuất PDF
@@ -426,7 +448,7 @@ const ProductLedgerPage = () => {
                         <>
                             <div className="table-container">
                                 <table className="products-table">
-                                    <thead>
+                                    <thead style={{ position: 'sticky', top: 0, zIndex: 2, backgroundColor: 'var(--table-header-bg, #f8f9fa)' }}>
                                         <tr>
                                             <th><button onClick={() => requestSort('date')}>Ngày <SortIndicator columnKey="date" /></button></th>
                                             <th>Chứng từ</th>
@@ -448,11 +470,15 @@ const ProductLedgerPage = () => {
                                         {paginatedRows.map((row, index) => {
                                             const isSearchedLot = lotNumberFilter && row.lotNumber === lotNumberFilter;
                                             const expiryClass = getRowColorByExpiry(row.expiryDateObject, productInfo?.subGroup);
-                                            const isLatestTransaction = sortedRows.length > 0 && row === sortedRows[sortedRows.length - 1];
+                                            const globalIndex = (currentPage - 1) * rowsPerPage + index;
+                                            const isLatestTransaction = sortConfig.key === 'date' && sortConfig.direction === 'ascending' && globalIndex === sortedRows.length - 1;
                                             const rowClassName = `${expiryClass} ${isSearchedLot ? 'searched-lot-highlight' : ''} ${isLatestTransaction ? 'latest-transaction-highlight' : ''}`.trim();
 
                                             return (
-                                                <tr key={`${row.docId}-${row.lotNumber}-${index}`} className={rowClassName}>
+                                                <tr key={`${row.docId}-${row.lotNumber}-${index}`} className={rowClassName}
+                                                    onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.95)'}
+                                                    onMouseLeave={e => e.currentTarget.style.filter = ''}
+                                                >
                                                     <td>{formatDate(row.date)}</td>
                                                     <td>
                                                         {row.isTicket ? (<button onClick={() => openViewModal(row.docId, row.type)} className="btn-link table-link" title="Xem chi tiết phiếu">{row.docId}</button>) : (<span title="Bản ghi tồn kho gốc, không có phiếu chi tiết">{row.docId}</span>)}
@@ -463,9 +489,7 @@ const ProductLedgerPage = () => {
                                                         {row.lotNumber ? (
                                                             <button
                                                                 onClick={() => {
-                                                                    const newFilters = { ...filters, productId: row.lotNumber };
-                                                                    setFilters(prev => ({ ...prev, productId: row.lotNumber }));
-                                                                    search(newFilters);
+                                                                    search({ ...filters, lotNumber: row.lotNumber });
                                                                 }}
                                                                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#007bff', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}
                                                                 title="Lọc theo lô này"
@@ -500,18 +524,27 @@ const ProductLedgerPage = () => {
                                 <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage * rowsPerPage >= (sortedRows.length || 0)}>
                                     Trang Tiếp <FiChevronRight />
                                 </button>
+                                <select
+                                    value={rowsPerPage}
+                                    onChange={e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                    style={{ marginLeft: '12px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '13px' }}
+                                >
+                                    {[15, 30, 50, 100].map(n => <option key={n} value={n}>{n} dòng/trang</option>)}
+                                </select>
                             </div>
                         </>
                     ) : (
                         <div className="table-container">
                             <table className="products-table">
-                                <thead>
+                                <thead style={{ position: 'sticky', top: 0, zIndex: 2, backgroundColor: 'var(--table-header-bg, #f8f9fa)' }}>
                                     <tr>
                                         <th>Số lô</th>
                                         <th>HSD</th>
                                         <th>Tồn đầu kỳ</th>
                                         <th>Tổng Nhập</th>
+                                        <th>NCC</th>
                                         <th>Tổng Xuất</th>
+                                        <th>Khách hàng</th>
                                         <th>Tồn cuối kỳ</th>
                                     </tr>
                                 </thead>
@@ -519,12 +552,28 @@ const ProductLedgerPage = () => {
                                     {lotSummaryData.map(lot => {
                                         const expiryClass = getRowColorByExpiry(lot.expiryDateObject);
                                         return (
-                                            <tr key={lot.lotNumber} className={expiryClass}>
-                                                <td>{lot.lotNumber}</td>
+                                            <tr key={lot.lotNumber} className={expiryClass}
+                                                onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.95)'}
+                                                onMouseLeave={e => e.currentTarget.style.filter = ''}
+                                            >
+                                                <td>
+                                                    <button
+                                                        onClick={() => {
+                                                            search({ ...filters, lotNumber: lot.lotNumber === '(Không có)' ? '' : lot.lotNumber });
+                                                            setViewMode('transactions');
+                                                        }}
+                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#007bff', textDecoration: 'underline', padding: 0, fontSize: 'inherit', fontWeight: '600' }}
+                                                        title="Xem chi tiết giao dịch của lô này"
+                                                    >
+                                                        {lot.lotNumber}
+                                                    </button>
+                                                </td>
                                                 <td>{lot.expiryDate || '(Không có)'}</td>
                                                 <td>{formatNumber(lot.openingBalance)}</td>
                                                 <td style={{ color: 'green' }}>{lot.totalImport > 0 ? `+${formatNumber(lot.totalImport)}` : '0'}</td>
+                                                <td style={{ fontSize: '12px', color: '#555' }}>{lot.suppliers?.join(', ') || '-'}</td>
                                                 <td style={{ color: 'red' }}>{lot.totalExport > 0 ? `-${formatNumber(lot.totalExport)}` : '0'}</td>
+                                                <td style={{ fontSize: '12px', color: '#555' }}>{lot.customers?.join(', ') || '-'}</td>
                                                 <td style={{ fontWeight: 'bold' }}>{formatNumber(lot.closingBalance)}</td>
                                             </tr>
                                         );
