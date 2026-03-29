@@ -1,4 +1,4 @@
-// src/pages/InventoryReconciliationPage.jsx
+﻿// src/pages/InventoryReconciliationPage.jsx
 import { useState } from 'react';
 import React, { useMemo, useRef } from 'react';
 import useReconciliationStore from '../stores/reconciliationStore';
@@ -267,11 +267,133 @@ const TABS = [
 ];
 
 // ============================================================
-// LOT HISTORY MODAL — FIX 2 & 3: bổ sung inventory_adjustments
+// STYLE CONSTANTS (ngoài component để tránh re-create mỗi render)
+// ============================================================
+const tdCompact = {
+    padding: '7px 6px',
+    borderBottom: '1px solid var(--border-color)',
+    color: 'var(--text-color)',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+};
+
+// ============================================================
+// SUB-COMPONENTS (ngoài component chính để tránh unmount/remount)
+// ============================================================
+
+// Sort arrow indicator — nhận sortState qua props
+const SortArrow = ({ col, sortState }) => sortState.col !== col
+    ? <span style={{ color: '#bbb', marginLeft: '2px', fontSize: '10px' }}>↕</span>
+    : <span style={{ color: '#007bff', marginLeft: '2px', fontSize: '10px' }}>{sortState.dir === 'asc' ? '↑' : '↓'}</span>;
+
+const SortTh = ({ col, label, align = 'left', sortState, onSort }) => (
+    <th onClick={() => onSort(col)} style={{
+        padding: '8px 6px', textAlign: align, fontWeight: '600', fontSize: '11px',
+        color: 'var(--text-color)', borderBottom: '2px solid var(--border-color)',
+        whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
+        backgroundColor: sortState.col === col ? 'var(--table-header-active-bg, #eef2ff)' : 'var(--table-header-bg)',
+    }}>
+        {label}<SortArrow col={col} sortState={sortState} />
+    </th>
+);
+
+const PlainTh = ({ label, align = 'left' }) => (
+    <th style={{ padding: '8px 6px', textAlign: align, fontWeight: '600', fontSize: '11px', color: 'var(--text-color)', borderBottom: '2px solid var(--border-color)', whiteSpace: 'nowrap', backgroundColor: 'var(--table-header-bg)' }}>
+        {label}
+    </th>
+);
+
+const DuplicateHsdWarning = ({ warnings, source }) => {
+    if (!warnings.length) return null;
+    const isMisa = source === 'misa';
+    return (
+        <div style={{ backgroundColor: isMisa ? '#fff8e1' : '#fce4ec', border: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}`, borderLeft: `4px solid ${isMisa ? '#f9a825' : '#e91e63'}`, borderRadius: '6px', padding: '12px 16px', marginBottom: '16px' }}>
+            <div style={{ fontWeight: '600', color: isMisa ? '#e65100' : '#c2185b', marginBottom: '8px', fontSize: '14px' }}>
+                ⚠️ {isMisa ? 'Misa' : 'WebKho'}: Phát hiện {warnings.length} lot cùng số lô nhưng khác HSD
+                {!isMisa && ' — Dữ liệu nhập kho có thể bị lỗi, cần kiểm tra lại!'}
+                {isMisa && ' — cần kiểm tra lại trên Misa!'}
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead><tr style={{ backgroundColor: isMisa ? '#fff3cd' : '#fce4ec' }}>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Mã hàng</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Số lô</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 1</th>
+                    <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 2</th>
+                    {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Docs</th>}
+                    {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Tổng tồn</th>}
+                </tr></thead>
+                <tbody>{warnings.map((w, i) => (
+                    <tr key={i} style={{ backgroundColor: i % 2 === 0 ? (isMisa ? '#fffde7' : '#fce4ec') : (isMisa ? '#fff8e1' : '#f8bbd0') }}>
+                        <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>{isMisa ? w.ma : w.productId}</td>
+                        <td style={{ padding: '5px 10px', color: '#555' }}>{isMisa ? w.lo : w.lotNumber}</td>
+                        <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd1}</td>
+                        <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd2}</td>
+                        {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', color: '#555' }}>{w.count} docs</td>}
+                        {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: '600' }}>{fmtNum(w.totalQty)}</td>}
+                    </tr>
+                ))}</tbody>
+            </table>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#795548' }}>
+                {isMisa ? '💡 Số lượng đã cộng dồn — sửa HSD đúng trên Misa rồi xuất file mới.' : '💡 Đã cộng dồn số lượng — kiểm tra phiếu nhập để sửa HSD.'}
+            </div>
+        </div>
+    );
+};
+
+// HsdMismatchBanner nhận callbacks qua props (ngoài component chính)
+const HsdMismatchBanner = ({ rows, onTabClick, onSearch }) => {
+    const mm = rows.filter(r => r.nhom === 'hsdlech');
+    if (!mm.length) return null;
+    return (
+        <div style={{ backgroundColor: '#f3e8ff', border: '1px solid #a855f7', borderLeft: '4px solid #7c3aed', borderRadius: '6px', padding: '12px 16px', marginBottom: '16px' }}>
+            <div style={{ fontWeight: '600', color: '#6d28d9', marginBottom: '8px', fontSize: '14px' }}>
+                🟣 Phát hiện {mm.length} lot khớp số lô nhưng HSD ghi khác nhau giữa WebKho và Misa
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead><tr style={{ backgroundColor: '#ede9fe' }}>
+                    {['Mã hàng','Số lô','HSD WebKho','HSD Misa','Chênh lệch SL'].map(h => (
+                        <th key={h} style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #a855f7', color: '#5b21b6' }}>{h}</th>
+                    ))}
+                </tr></thead>
+                <tbody>{mm.slice(0, 10).map((r, i) => (
+                    <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f5f3ff' : '#ede9fe' }}>
+                        <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>
+                            <button onClick={() => onSearch(r.productId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontWeight: '600', padding: 0, fontSize: 'inherit' }}>{r.productId}</button>
+                        </td>
+                        <td style={{ padding: '5px 10px', color: '#555' }}>{r.lotNumber}</td>
+                        <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdWebkho || '—'}</td>
+                        <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdMisa || '—'}</td>
+                        <td style={{ padding: '5px 10px', fontWeight: '600', color: r.chenhWebkho && Math.abs(r.chenhWebkho) >= 0.001 ? (r.chenhWebkho > 0 ? '#e67e22' : '#e74c3c') : '#27ae60' }}>
+                            {r.chenhWebkho != null && Math.abs(r.chenhWebkho) >= 0.001 ? fmtChenh(r.chenhWebkho, r.dvtWebkho) : '✅ Khớp SL'}
+                        </td>
+                    </tr>
+                ))}</tbody>
+            </table>
+            {mm.length > 10 && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>
+                    ... và {mm.length - 10} lot khác.
+                    <button onClick={onTabClick} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontSize: '12px' }}>Xem tất cả →</button>
+                </div>
+            )}
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>
+                💡 Không kết luận bên nào đúng — kiểm tra phiếu nhập gốc. Bấm tab <strong>Lệch HSD</strong> để xem đầy đủ.
+            </div>
+        </div>
+    );
+};
+
 // ============================================================
 const LotHistoryModal = ({ productId, lotNumber, onClose }) => {
     const [history, setHistory] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
+
+    // Đóng modal bằng phím Escape
+    React.useEffect(() => {
+        const handler = (e) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
 
     React.useEffect(() => {
         const fetchHistory = async () => {
@@ -514,7 +636,7 @@ const InventoryReconciliationPage = () => {
             for (const lot of rawLots) {
                 const lotNumber = (lot.lotNumber || '').trim();
                 const expiry = lot.expiryDate?.toDate?.() || null;
-                const key = `${lotNumber}__${expiry ? `${expiry.getFullYear()}-${expiry.getMonth()}-${expiry.getDate()}` : 'no-date'}`;
+                const key = `${lotNumber}__${expiry ? expiry.toISOString().split('T')[0] : 'no-date'}`;
                 if (lotMap.has(key)) {
                     const e = lotMap.get(key);
                     e.quantityRemaining += lot.quantityRemaining || 0;
@@ -531,6 +653,7 @@ const InventoryReconciliationPage = () => {
             });
             setStockModal({ isOpen: true, productId, data: mergedLots, loading: false });
         } catch (e) {
+            toast.error('Lỗi tải tồn kho: ' + e.message);
             setStockModal({ isOpen: true, productId, data: [], loading: false });
         }
     };
@@ -538,6 +661,17 @@ const InventoryReconciliationPage = () => {
     const closeStockModal = () => setStockModal({ isOpen: false, productId: '', data: [], loading: false });
     const openLotHistory  = (productId, lotNumber) => setLotHistoryModal({ isOpen: true, productId, lotNumber });
     const closeLotHistory = () => setLotHistoryModal({ isOpen: false, productId: '', lotNumber: '' });
+
+    // Đóng modal trên cùng bằng phím Escape
+    React.useEffect(() => {
+        const handler = (e) => {
+            if (e.key !== 'Escape') return;
+            if (lotHistoryModal.isOpen) { closeLotHistory(); return; }
+            if (stockModal.isOpen) { closeStockModal(); }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [lotHistoryModal.isOpen, stockModal.isOpen]);
 
     // ── Store ──
     const {
@@ -553,6 +687,13 @@ const InventoryReconciliationPage = () => {
     const fileInputRef = useRef(null);
     // Chế độ xem: 'detail' (theo lot) hoặc 'summary' (tổng hợp theo mã hàng)
     const [viewMode, setViewMode] = React.useState('detail');
+    // Sort state riêng cho bảng tổng hợp
+    const [summarySortState, setSummarySortState] = React.useState({ col: 'chenh', dir: 'desc' });
+    const handleSummarySort = (col) => setSummarySortState(prev =>
+        prev.col === col ? { col, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'desc' }
+    );
+    // Ref để scroll xuống bảng khi drill-down
+    const tableRef = useRef(null);
     // Ref để tính sticky offset động (lỗi 5)
     const summaryBarRef = useRef(null);
     const [summaryBarHeight, setSummaryBarHeight] = React.useState(62);
@@ -734,7 +875,7 @@ const InventoryReconciliationPage = () => {
         });
 
         return { results, counts };
-    }, [webkhoLots, misaItems, convMap, altCodeMap, missingMisaCodes]);
+    }, [webkhoLots, misaItems, convMap, altCodeMap, missingMisaCodes, missingMisaCodesSet]);
 
     // ============================================================
     // CẢI TIẾN 1: LỌC + SORT THEO TAB + SEARCH
@@ -818,11 +959,41 @@ const InventoryReconciliationPage = () => {
         return arr;
     }, [results]);
 
+    // Reset summarySortState về default khi data thực sự thay đổi (dùng lastUpdated + misaFileName)
+    const prevDataKeyRef = useRef('');
+    React.useEffect(() => {
+        const key = `${lastUpdated || ''}__${misaFileName || ''}`;
+        if (key !== prevDataKeyRef.current) {
+            prevDataKeyRef.current = key;
+            setSummarySortState({ col: 'chenh', dir: 'desc' });
+        }
+    }, [lastUpdated, misaFileName]);
+
     const filteredSummary = useMemo(() => {
-        if (!search.trim()) return summaryByProduct;
-        const q = search.trim().toLowerCase();
-        return summaryByProduct.filter(s => s.productId.toLowerCase().includes(q));
-    }, [summaryByProduct, search]);
+        let arr = summaryByProduct;
+        if (search.trim()) {
+            const q = search.trim().toLowerCase();
+            arr = arr.filter(s => s.productId.toLowerCase().includes(q));
+        }
+        if (summarySortState.col) {
+            arr = [...arr].sort((a, b) => {
+                let va, vb;
+                switch (summarySortState.col) {
+                    case 'productId': va = a.productId; vb = b.productId; break;
+                    case 'tonWebkho': va = a.tonWebkho; vb = b.tonWebkho; break;
+                    case 'tonMisa':   va = a.tonMisa;   vb = b.tonMisa;   break;
+                    case 'chenh':     va = Math.abs(a.chenh); vb = Math.abs(b.chenh); break;
+                    case 'lotCount':  va = a.lotCount;  vb = b.lotCount;  break;
+                    default: return 0;
+                }
+                if (typeof va === 'number') return summarySortState.dir === 'asc' ? va - vb : vb - va;
+                return summarySortState.dir === 'asc'
+                    ? String(va).localeCompare(String(vb))
+                    : String(vb).localeCompare(String(va));
+            });
+        }
+        return arr;
+    }, [summaryByProduct, search, summarySortState]);
 
     // ============================================================
     // XUẤT EXCEL
@@ -831,6 +1002,28 @@ const InventoryReconciliationPage = () => {
         if (!results.length) { toast.warn('Chưa có dữ liệu để xuất.'); return; }
         const XLSX = await loadXLSX();
         const wb = XLSX.utils.book_new();
+
+        // Sheet Tổng hợp theo mã hàng
+        if (summaryByProduct.length) {
+            const sumCols = ['Mã hàng','ĐVT','Tổng tồn WebKho','Tổng tồn Misa','Chênh lệch','Lot WK','Lot Misa','Trạng thái'];
+            const sumData = [sumCols, ...summaryByProduct.map(s => {
+                const badges = [];
+                if (s.hasChenh) badges.push('Chênh SL');
+                if (s.hasHsdLech) badges.push('Lệch HSD');
+                if (s.onlyWebkho > 0) badges.push(`+${s.onlyWebkho} chỉ WK`);
+                if (s.onlyMisa > 0) badges.push(`+${s.onlyMisa} chỉ Misa`);
+                if (s.noMisaCode) badges.push('Thiếu mã Misa');
+                return [
+                    s.productId, s.dvtWebkho || s.dvtMisa,
+                    s.tonWebkho, s.tonMisa,
+                    Math.abs(s.chenh) < 0.001 ? 0 : s.chenh,
+                    s.lotCount, s.lotCountMisa || 0,
+                    badges.length ? badges.join(', ') : 'Khớp',
+                ];
+            })];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumData), 'Tổng hợp');
+        }
+
         const COLS = ['Mã hàng','Số lot','HSD WebKho','ĐVT WebKho','Tồn WebKho','Hệ số','Tồn WebKho (quy đổi)','ĐVT Misa','Tồn Misa','HSD Misa','Chênh (ĐVT WebKho)','Chênh (ĐVT Misa)','Trạng thái'];
         const tabOrder = ['chenh','khop','hsdlech','webkho','misa','nomisa'];
         const tabLabel = { chenh:'Chênh lệch', khop:'Khớp', hsdlech:'Lệch HSD', webkho:'Chỉ WebKho', misa:'Chỉ Misa', nomisa:'Misa thiếu mã' };
@@ -858,131 +1051,6 @@ const InventoryReconciliationPage = () => {
     // ============================================================
     const hasData = webkhoLots.length > 0 || misaItems.length > 0;
     const canReconcile = webkhoLots.length > 0 && misaItems.length > 0;
-
-    // Lỗi 1 fix: tdCompact trong component để reactive với CSS vars
-    const tdCompact = {
-        padding: '7px 6px',
-        borderBottom: '1px solid var(--border-color)',
-        color: 'var(--text-color)',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    };
-
-    const thStyle = {
-        padding: '8px 6px',
-        textAlign: 'left',
-        fontWeight: '600',
-        fontSize: '11px',
-        color: 'var(--text-color)',
-        borderBottom: '2px solid var(--border-color)',
-        whiteSpace: 'nowrap',
-        backgroundColor: 'var(--table-header-bg)',
-    };
-
-    // CẢI TIẾN 1: Sort arrow indicator
-    const SortArrow = ({ col }) => sortState.col !== col
-        ? <span style={{ color: '#bbb', marginLeft: '2px', fontSize: '10px' }}>↕</span>
-        : <span style={{ color: '#007bff', marginLeft: '2px', fontSize: '10px' }}>{sortState.dir === 'asc' ? '↑' : '↓'}</span>;
-
-    // Sortable TH
-    const SortTh = ({ col, label, align = 'left' }) => (
-        <th onClick={() => handleSort(col)} style={{
-            padding: '8px 6px', textAlign: align, fontWeight: '600', fontSize: '11px',
-            color: 'var(--text-color)', borderBottom: '2px solid var(--border-color)',
-            whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
-            backgroundColor: sortState.col === col ? 'var(--table-header-active-bg, #eef2ff)' : 'var(--table-header-bg)',
-        }}>
-            {label}<SortArrow col={col} />
-        </th>
-    );
-
-    // Plain TH (không sort)
-    const PlainTh = ({ label, align = 'left' }) => (
-        <th style={{ padding: '8px 6px', textAlign: align, fontWeight: '600', fontSize: '11px', color: 'var(--text-color)', borderBottom: '2px solid var(--border-color)', whiteSpace: 'nowrap', backgroundColor: 'var(--table-header-bg)' }}>
-            {label}
-        </th>
-    );
-
-    // Banner HSD trùng
-    const DuplicateHsdWarning = ({ warnings, source }) => {
-        if (!warnings.length) return null;
-        const isMisa = source === 'misa';
-        return (
-            <div style={{ backgroundColor: isMisa ? '#fff8e1' : '#fce4ec', border: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}`, borderLeft: `4px solid ${isMisa ? '#f9a825' : '#e91e63'}`, borderRadius: '6px', padding: '12px 16px', marginBottom: '16px' }}>
-                <div style={{ fontWeight: '600', color: isMisa ? '#e65100' : '#c2185b', marginBottom: '8px', fontSize: '14px' }}>
-                    ⚠️ {isMisa ? 'Misa' : 'WebKho'}: Phát hiện {warnings.length} lot cùng số lô nhưng khác HSD
-                    {!isMisa && ' — Dữ liệu nhập kho có thể bị lỗi, cần kiểm tra lại!'}
-                    {isMisa && ' — cần kiểm tra lại trên Misa!'}
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead><tr style={{ backgroundColor: isMisa ? '#fff3cd' : '#fce4ec' }}>
-                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Mã hàng</th>
-                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>Số lô</th>
-                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 1</th>
-                        <th style={{ padding: '6px 10px', textAlign: 'left', borderBottom: `1px solid ${isMisa ? '#f9a825' : '#e91e63'}` }}>HSD 2</th>
-                        {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Docs</th>}
-                        {!isMisa && <th style={{ padding: '6px 10px', textAlign: 'right', borderBottom: '1px solid #e91e63' }}>Tổng tồn</th>}
-                    </tr></thead>
-                    <tbody>{warnings.map((w, i) => (
-                        <tr key={i} style={{ backgroundColor: i % 2 === 0 ? (isMisa ? '#fffde7' : '#fce4ec') : (isMisa ? '#fff8e1' : '#f8bbd0') }}>
-                            <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>{isMisa ? w.ma : w.productId}</td>
-                            <td style={{ padding: '5px 10px', color: '#555' }}>{isMisa ? w.lo : w.lotNumber}</td>
-                            <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd1}</td>
-                            <td style={{ padding: '5px 10px', color: '#c0392b' }}>{w.hsd2}</td>
-                            {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', color: '#555' }}>{w.count} docs</td>}
-                            {!isMisa && <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: '600' }}>{fmtNum(w.totalQty)}</td>}
-                        </tr>
-                    ))}</tbody>
-                </table>
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#795548' }}>
-                    {isMisa ? '💡 Số lượng đã cộng dồn — sửa HSD đúng trên Misa rồi xuất file mới.' : '💡 Đã cộng dồn số lượng — kiểm tra phiếu nhập để sửa HSD.'}
-                </div>
-            </div>
-        );
-    };
-
-    // Banner lệch HSD WebKho vs Misa
-    const HsdMismatchBanner = ({ rows }) => {
-        const mm = rows.filter(r => r.nhom === 'hsdlech');
-        if (!mm.length) return null;
-        return (
-            <div style={{ backgroundColor: '#f3e8ff', border: '1px solid #a855f7', borderLeft: '4px solid #7c3aed', borderRadius: '6px', padding: '12px 16px', marginBottom: '16px' }}>
-                <div style={{ fontWeight: '600', color: '#6d28d9', marginBottom: '8px', fontSize: '14px' }}>
-                    🟣 Phát hiện {mm.length} lot khớp số lô nhưng HSD ghi khác nhau giữa WebKho và Misa
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead><tr style={{ backgroundColor: '#ede9fe' }}>
-                        {['Mã hàng','Số lô','HSD WebKho','HSD Misa','Chênh lệch SL'].map(h => (
-                            <th key={h} style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '1px solid #a855f7', color: '#5b21b6' }}>{h}</th>
-                        ))}
-                    </tr></thead>
-                    <tbody>{mm.slice(0, 10).map((r, i) => (
-                        <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f5f3ff' : '#ede9fe' }}>
-                            <td style={{ padding: '5px 10px', fontWeight: '600', color: '#333' }}>
-                                <button onClick={() => { setActiveTab('hsdlech'); setSortState({ col: null, dir: 'asc' }); setSearch(r.productId); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontWeight: '600', padding: 0, fontSize: 'inherit' }}>{r.productId}</button>
-                            </td>
-                            <td style={{ padding: '5px 10px', color: '#555' }}>{r.lotNumber}</td>
-                            <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdWebkho || '—'}</td>
-                            <td style={{ padding: '5px 10px', color: '#c0392b', fontWeight: '500' }}>{r.hsdMisa || '—'}</td>
-                            <td style={{ padding: '5px 10px', fontWeight: '600', color: r.chenhWebkho && Math.abs(r.chenhWebkho) >= 0.001 ? (r.chenhWebkho > 0 ? '#e67e22' : '#e74c3c') : '#27ae60' }}>
-                                {r.chenhWebkho != null && Math.abs(r.chenhWebkho) >= 0.001 ? fmtChenh(r.chenhWebkho, r.dvtWebkho) : '✅ Khớp SL'}
-                            </td>
-                        </tr>
-                    ))}</tbody>
-                </table>
-                {mm.length > 10 && (
-                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>
-                        ... và {mm.length - 10} lot khác.
-                        <button onClick={() => { setActiveTab('hsdlech'); setSortState({ col: null, dir: 'asc' }); }} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', textDecoration: 'underline', fontSize: '12px' }}>Xem tất cả →</button>
-                    </div>
-                )}
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#6d28d9' }}>
-                    💡 Không kết luận bên nào đúng — kiểm tra phiếu nhập gốc. Bấm tab <strong>Lệch HSD</strong> để xem đầy đủ.
-                </div>
-            </div>
-        );
-    };
 
     return (
         <div style={{ padding: '20px' }}>
@@ -1019,7 +1087,7 @@ const InventoryReconciliationPage = () => {
                     )}
 
                     {hasData && (
-                        <button onClick={() => { if (window.confirm('Xóa toàn bộ dữ liệu đối chiếu hiện tại?')) { reset(); setWebkhoDuplicateHsd([]); setSortState({ col: null, dir: 'asc' }); } }}
+                        <button onClick={() => { if (window.confirm('Xóa toàn bộ dữ liệu đối chiếu hiện tại?')) { reset(); setWebkhoDuplicateHsd([]); setSortState({ col: null, dir: 'asc' }); setSummarySortState({ col: 'chenh', dir: 'desc' }); setSearch(''); setViewMode('detail'); } }}
                             className="btn-secondary"
                             style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', backgroundColor: '#e74c3c', color: 'white', border: 'none' }}>
                             <FiAlertCircle style={{ fontSize: '14px' }} />
@@ -1032,7 +1100,7 @@ const InventoryReconciliationPage = () => {
             {/* BANNERS CẢNH BÁO */}
             <DuplicateHsdWarning warnings={webkhoDuplicateHsd} source="webkho" />
             <DuplicateHsdWarning warnings={duplicateHsdWarnings} source="misa" />
-            {canReconcile && <HsdMismatchBanner rows={results} />}
+            {canReconcile && <HsdMismatchBanner rows={results} onTabClick={() => { setActiveTab('hsdlech'); setSortState({ col: null, dir: 'asc' }); }} onSearch={(pid) => { setActiveTab('hsdlech'); setSortState({ col: null, dir: 'asc' }); setSearch(pid); }} />}
 
             {/* HƯỚNG DẪN */}
             {!hasData && (
@@ -1072,10 +1140,16 @@ const InventoryReconciliationPage = () => {
 
                 {/* SEARCH + VIEW MODE TOGGLE */}
                 <div style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <input type="text" placeholder="Tìm theo mã hàng hoặc số lot..."
-                        value={search} onChange={e => setSearch(e.target.value)}
-                        style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', fontSize: '14px', width: '280px', maxWidth: '100%' }}
-                    />
+                    {/* Search với nút × xóa */}
+                    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                        <input type="text" placeholder="Tìm theo mã hàng hoặc số lot..."
+                            value={search} onChange={e => setSearch(e.target.value)}
+                            style={{ padding: '8px 32px 8px 12px', borderRadius: '6px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-color)', fontSize: '14px', width: '280px', maxWidth: '100%' }}
+                        />
+                        {search && (
+                            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '14px', lineHeight: 1, padding: '2px' }} title="Xóa tìm kiếm">✕</button>
+                        )}
+                    </div>
                     <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                         {viewMode === 'detail' ? filtered.length : filteredSummary.length} kết quả
                         {viewMode === 'detail' && sortState.col && (
@@ -1109,19 +1183,20 @@ const InventoryReconciliationPage = () => {
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                             <thead>
                                 <tr style={{ position: 'sticky', top: `${summaryBarHeight}px`, zIndex: 1 }}>
-                                    <th style={{ ...thStyle }}>Mã hàng</th>
-                                    <th style={{ ...thStyle, textAlign: 'center' }}>ĐVT</th>
-                                    <th style={{ ...thStyle, textAlign: 'right' }}>Tổng tồn WebKho</th>
-                                    <th style={{ ...thStyle, textAlign: 'right' }}>Tổng tồn Misa</th>
-                                    <th style={{ ...thStyle, textAlign: 'right' }}>Chênh lệch</th>
-                                    <th style={{ ...thStyle, textAlign: 'center' }}>Số lot WK</th>
-                                    <th style={{ ...thStyle, textAlign: 'center' }}>Trạng thái</th>
-                                    <th style={{ ...thStyle, textAlign: 'center' }}>Chi tiết</th>
+                                    <SortTh col="productId" label="Mã hàng" sortState={summarySortState} onSort={handleSummarySort} />
+                                    <PlainTh label="ĐVT" align="center" />
+                                    <SortTh col="tonWebkho" label="Tổng tồn WebKho" align="right" sortState={summarySortState} onSort={handleSummarySort} />
+                                    <SortTh col="tonMisa" label="Tổng tồn Misa" align="right" sortState={summarySortState} onSort={handleSummarySort} />
+                                    <SortTh col="chenh" label="Chênh lệch" align="right" sortState={summarySortState} onSort={handleSummarySort} />
+                                    <SortTh col="lotCount" label="Lot WK" align="center" sortState={summarySortState} onSort={handleSummarySort} />
+                                    <PlainTh label="Lot Misa" align="center" />
+                                    <PlainTh label="Trạng thái" />
+                                    <PlainTh label="" align="center" />
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredSummary.length === 0 ? (
-                                    <tr><td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có dữ liệu</td></tr>
+                                    <tr><td colSpan={9} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có dữ liệu</td></tr>
                                 ) : filteredSummary.map((s, i) => {
                                     const rowBg = i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg)';
                                     const chenhColor = s.chenh > 0.001 ? '#e67e22' : s.chenh < -0.001 ? '#e74c3c' : '#27ae60';
@@ -1153,6 +1228,7 @@ const InventoryReconciliationPage = () => {
                                                     </span>
                                                 )}
                                             </td>
+                                            <td style={{ ...tdCompact, textAlign: 'center', color: 'var(--text-secondary)' }}>{s.lotCountMisa || '—'}</td>
                                             <td style={{ ...tdCompact }}>
                                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                                     {statusBadges.map((b, bi) => (
@@ -1161,7 +1237,12 @@ const InventoryReconciliationPage = () => {
                                                 </div>
                                             </td>
                                             <td style={{ ...tdCompact, textAlign: 'center' }}>
-                                                <button onClick={() => { setViewMode('detail'); setSearch(s.productId); }} title="Xem chi tiết theo lot" style={{ background: '#eef2ff', border: '1px solid #6366f1', borderRadius: '5px', cursor: 'pointer', padding: '3px 8px', color: '#4f46e5', fontSize: '11px' }}>
+                                                <button onClick={() => {
+                                                    setViewMode('detail');
+                                                    setSearch(s.productId);
+                                                    // Scroll xuống bảng sau khi switch
+                                                    setTimeout(() => tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                                                }} title="Xem chi tiết theo lot" style={{ background: '#eef2ff', border: '1px solid #6366f1', borderRadius: '5px', cursor: 'pointer', padding: '3px 8px', color: '#4f46e5', fontSize: '11px' }}>
                                                     Lots →
                                                 </button>
                                             </td>
@@ -1169,11 +1250,28 @@ const InventoryReconciliationPage = () => {
                                     );
                                 })}
                             </tbody>
+                            {/* Footer tổng cộng */}
+                            {filteredSummary.length > 0 && (
+                                <tfoot>
+                                    <tr style={{ borderTop: '2px solid var(--border-color)', backgroundColor: 'var(--table-header-bg)', fontWeight: '700', fontSize: '12px' }}>
+                                        <td style={{ padding: '7px 6px' }}>Tổng ({filteredSummary.length} mã)</td>
+                                        <td></td>
+                                        <td style={{ padding: '7px 6px', textAlign: 'right' }}>{fmtNum(filteredSummary.reduce((s, r) => s + r.tonWebkho, 0))}</td>
+                                        <td style={{ padding: '7px 6px', textAlign: 'right' }}>{fmtNum(filteredSummary.reduce((s, r) => s + r.tonMisa, 0))}</td>
+                                        <td style={{ padding: '7px 6px', textAlign: 'right', color: (() => { const t = filteredSummary.reduce((s, r) => s + r.chenh, 0); return t > 0.001 ? '#e67e22' : t < -0.001 ? '#e74c3c' : '#27ae60'; })() }}>
+                                            {(() => { const t = filteredSummary.reduce((s, r) => s + r.chenh, 0); return Math.abs(t) < 0.001 ? '—' : fmtChenh(t, ''); })()}
+                                        </td>
+                                        <td style={{ padding: '7px 6px', textAlign: 'center' }}>{filteredSummary.reduce((s, r) => s + r.lotCount, 0)}</td>
+                                        <td style={{ padding: '7px 6px', textAlign: 'center' }}>{filteredSummary.reduce((s, r) => s + (r.lotCountMisa || 0), 0)}</td>
+                                        <td colSpan={2}></td>
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 ) : (
                     /* ── BẢNG CHI TIẾT THEO LOT ── */
-                    <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div ref={tableRef} style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
                         <colgroup>
                             <col style={{ width: '90px' }} />  {/* Mã hàng */}
@@ -1193,24 +1291,59 @@ const InventoryReconciliationPage = () => {
                         <thead>
                             {/* Header sticky ngay dưới summary bar — offset động (lỗi 5 fix) */}
                             <tr style={{ position: 'sticky', top: `${summaryBarHeight}px`, zIndex: 1 }}>
-                                <SortTh col="productId" label="Mã hàng" />
-                                <SortTh col="lotNumber" label="Số lot" />
-                                <SortTh col="hsdWebkho" label="HSD WK" align="center" />
+                                <SortTh col="productId" label="Mã hàng" sortState={sortState} onSort={handleSort} />
+                                <SortTh col="lotNumber" label="Số lot" sortState={sortState} onSort={handleSort} />
+                                <SortTh col="hsdWebkho" label="HSD WK" align="center" sortState={sortState} onSort={handleSort} />
                                 <PlainTh label="ĐVT WK" align="center" />
-                                <SortTh col="tonWebkho" label="Tồn WK" align="right" />
+                                <SortTh col="tonWebkho" label="Tồn WK" align="right" sortState={sortState} onSort={handleSort} />
                                 <PlainTh label="×" align="center" />
                                 <PlainTh label="Tồn QĐ" align="right" />
                                 <PlainTh label="ĐVT Misa" align="center" />
-                                <SortTh col="tonMisa" label="Tồn Misa" align="right" />
+                                <SortTh col="tonMisa" label="Tồn Misa" align="right" sortState={sortState} onSort={handleSort} />
                                 <PlainTh label="HSD Misa" align="center" />
-                                <SortTh col="chenh" label="Chênh" align="right" />
+                                <SortTh col="chenh" label="Chênh" align="right" sortState={sortState} onSort={handleSort} />
                                 <PlainTh label="Trạng thái" />
                                 <PlainTh label="" align="center" />
                             </tr>
                         </thead>
                         <tbody>
                             {filtered.length === 0 ? (
-                                <tr><td colSpan={13} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có dữ liệu</td></tr>
+                                <tr><td colSpan={13} style={{ padding: '32px', textAlign: 'center' }}>
+                                    {activeTab === 'chenh' && !search.trim() ? (
+                                        <span style={{ color: '#27ae60', fontSize: '15px' }}>✅ Tất cả đã khớp! Không có chênh lệch nào.</span>
+                                    ) : search.trim() ? (() => {
+                                        // Tìm các tab khác có kết quả với search hiện tại
+                                        const q = search.trim().toLowerCase();
+                                        const tabsWithResults = TABS.filter(t =>
+                                            t.key !== activeTab &&
+                                            results.some(r => r.nhom === t.key && (
+                                                r.productId.toLowerCase().includes(q) ||
+                                                (r.lotNumber || '').toLowerCase().includes(q)
+                                            ))
+                                        );
+                                        return (
+                                            <div>
+                                                <div style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>Không tìm thấy ở tab này.</div>
+                                                {tabsWithResults.length > 0 && (
+                                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                        Thử tìm ở:{' '}
+                                                        {tabsWithResults.map((t, i) => (
+                                                            <React.Fragment key={t.key}>
+                                                                {i > 0 && ', '}
+                                                                <button onClick={() => { setActiveTab(t.key); setSortState({ col: null, dir: 'asc' }); }}
+                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.color, fontWeight: '600', textDecoration: 'underline', fontSize: '13px', padding: 0 }}>
+                                                                    {t.label} ({results.filter(r => r.nhom === t.key && (r.productId.toLowerCase().includes(q) || (r.lotNumber || '').toLowerCase().includes(q))).length})
+                                                                </button>
+                                                            </React.Fragment>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })() : (
+                                        <span style={{ color: 'var(--text-secondary)' }}>Không có dữ liệu</span>
+                                    )}
+                                </td></tr>
                             ) : filtered.map((r, i) => {
                                 const rowBg = i % 2 === 0 ? 'var(--card-bg)' : 'var(--table-stripe-bg)';
                                 const chenhColor = r.chenhWebkho > 0 ? '#e67e22' : r.chenhWebkho < 0 ? '#e74c3c' : 'inherit';
@@ -1277,6 +1410,30 @@ const InventoryReconciliationPage = () => {
                                 );
                             })}
                         </tbody>
+                        {/* Footer tổng tồn cho tab đang xem */}
+                        {filtered.length > 0 && (
+                            <tfoot>
+                                <tr style={{ borderTop: '2px solid var(--border-color)', backgroundColor: 'var(--table-header-bg)', fontWeight: '700', fontSize: '12px' }}>
+                                    <td style={{ padding: '7px 6px' }} colSpan={2}>Tổng ({filtered.length} lot)</td>
+                                    <td style={{ padding: '7px 6px', textAlign: 'center' }}></td>
+                                    <td style={{ padding: '7px 6px', textAlign: 'center' }}></td>
+                                    <td style={{ padding: '7px 6px', textAlign: 'right' }}>
+                                        {fmtNum(filtered.reduce((s, r) => s + (r.tonWebkho ?? 0), 0))}
+                                    </td>
+                                    <td></td>
+                                    <td></td>
+                                    <td style={{ padding: '7px 6px', textAlign: 'center' }}></td>
+                                    <td style={{ padding: '7px 6px', textAlign: 'right' }}>
+                                        {fmtNum(filtered.reduce((s, r) => s + (r.tonMisa ?? 0), 0))}
+                                    </td>
+                                    <td></td>
+                                    <td style={{ padding: '7px 6px', textAlign: 'right', color: (() => { const t = filtered.reduce((s, r) => s + (r.chenhWebkho ?? 0), 0); return t > 0.001 ? '#e67e22' : t < -0.001 ? '#e74c3c' : '#27ae60'; })() }}>
+                                        {(() => { const t = filtered.reduce((s, r) => s + (r.chenhWebkho ?? 0), 0); return Math.abs(t) < 0.001 ? '—' : fmtChenh(t, ''); })()}
+                                    </td>
+                                    <td colSpan={2}></td>
+                                </tr>
+                            </tfoot>
+                        )}
                     </table>
                     </div>
                 )}
