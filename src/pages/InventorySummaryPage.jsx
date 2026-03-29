@@ -23,7 +23,6 @@ import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { FiChevronDown, FiChevronRight, FiChevronLeft, FiDownload, FiX } from 'react-icons/fi';
 import { useAuth } from '../context/UserContext';
-import Spinner from '../components/Spinner';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast } from 'react-toastify';
@@ -162,7 +161,9 @@ const InventorySummaryPage = () => {
             }
 
             // 4. Phân trang - fetch nhiều hơn để bù cho việc lọc client-side totalRemaining > 0
-            const FETCH_SIZE = PAGE_SIZE * 3;
+            // NOTE: Client-side filtering after limit may still show fewer than PAGE_SIZE items
+            // if many products have totalRemaining <= 0. FETCH_SIZE * 5 reduces this chance.
+            const FETCH_SIZE = PAGE_SIZE * 5;
             if (direction === 'next' && cursor) {
                 queryConstraints.push(startAfter(cursor));
             } else if (direction === 'first') {
@@ -180,22 +181,22 @@ const InventorySummaryPage = () => {
                 return;
             }
             
-            let summaryDocs = mainSnapshot.docs.map(doc => ({ 
-                id: doc.id, 
-                ...doc.data(),
-                totalRemaining: doc.data().totalRemaining ?? 0,
-                nearestExpiryDate: doc.data().nearestExpiryDate ?? null
-            }));
-
-            // Lọc bỏ hàng có tồn kho <= 0
-            summaryDocs = summaryDocs.filter(item => item.totalRemaining > 0);
+            // Lọc bỏ hàng có tồn kho <= 0, giữ kèm doc gốc để lấy cursor đúng
+            const filteredWithDocs = mainSnapshot.docs
+                .map(doc => ({ doc, data: { id: doc.id, ...doc.data(), totalRemaining: doc.data().totalRemaining ?? 0, nearestExpiryDate: doc.data().nearestExpiryDate ?? null } }))
+                .filter(({ data }) => data.totalRemaining > 0);
 
             // Lấy đúng PAGE_SIZE sau khi lọc
-            const pageResults = summaryDocs.slice(0, PAGE_SIZE);
-            
+            const pageSlice = filteredWithDocs.slice(0, PAGE_SIZE);
+            const pageResults = pageSlice.map(({ data }) => data);
+
+            // cursor trỏ đúng vào doc cuối của page đã filter — tránh bỏ sót dữ liệu
+            const lastPageDoc = pageSlice.length > 0 ? pageSlice[pageSlice.length - 1].doc : null;
+
             setSummaries(pageResults);
-            setLastVisible(mainSnapshot.docs[mainSnapshot.docs.length - 1] || null);
-            setIsLastPage(mainSnapshot.docs.length < FETCH_SIZE);
+            setLastVisible(lastPageDoc);
+            // isLastPage: true nếu batch raw < FETCH_SIZE (hết data) HOẶC filter ra ít hơn PAGE_SIZE
+            setIsLastPage(mainSnapshot.docs.length < FETCH_SIZE || filteredWithDocs.length <= PAGE_SIZE);
 
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu tổng hợp: ", error);
@@ -375,8 +376,15 @@ const InventorySummaryPage = () => {
                 setIsSubGroupOpen(false);
             }
         };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setIsSubGroupOpen(false);
+        };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
     }, []);
 
     const handleRefresh = () => {
@@ -397,6 +405,13 @@ const InventorySummaryPage = () => {
         setFilters(prev => ({ ...prev, subGroup: prev.subGroup === subGroup ? 'all' : subGroup }));
         setIsSubGroupOpen(false);
     };
+
+    const handleClearFilters = () => {
+        setFilters({ dateStatus: 'all', team: 'all', subGroup: 'all' });
+        setSearchTerm('');
+    };
+
+    const hasActiveFilters = filters.team !== 'all' || filters.dateStatus !== 'all' || filters.subGroup !== 'all' || !!searchTerm;
     
     const toggleRow = async (productId) => {
         const isCurrentlyExpanded = !!expandedRows[productId];
@@ -405,6 +420,8 @@ const InventorySummaryPage = () => {
             return;
         }
 
+        // Đánh dấu đang expand ngay lập tức để tránh double-click
+        setExpandedRows(prev => ({ ...prev, [productId]: true }));
         setLoadingLots(prev => ({ ...prev, [productId]: true }));
         try {
             const lotsQuery = query(
@@ -461,7 +478,6 @@ const InventorySummaryPage = () => {
         } finally {
             setLoadingLots(prev => ({ ...prev, [productId]: false }));
         }
-        setExpandedRows(prev => ({ ...prev, [productId]: true }));
     };
 
     const handleNextPage = () => { 
@@ -480,7 +496,12 @@ const InventorySummaryPage = () => {
         setPage(p => p - 1);
         setExpandedRows({});
         setLotDetails({});
-        fetchData('next', prevCursor);
+        // Nếu về trang 1 (prevCursor === null), dùng 'first' thay vì 'next'
+        if (prevCursor === null) {
+            fetchData('first');
+        } else {
+            fetchData('next', prevCursor);
+        }
     };
 
     const handleExportExcel = async () => {
@@ -501,11 +522,12 @@ const InventorySummaryPage = () => {
 
     // --- HÀM MỚI: CẬP NHẬT GHI CHÚ NHANH CHO LÔ HÀNG ---
 const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
+    if (userRole !== 'owner') return; // silent guard — UI đã block qua canEdit
     try {
         const lotRef = doc(db, 'inventory_lots', lotId);
+        // Only update notes — omit lastUpdatedAt to avoid triggering onSnapshot hasNewData notification
         await updateDoc(lotRef, {
-            notes: newValue,
-            lastUpdatedAt: Timestamp.now() // Cập nhật thời gian thay đổi
+            notes: newValue
         });
         toast.success("Cập nhật Ghi chú thành công!");
 
@@ -533,7 +555,7 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
         console.error("Lỗi khi cập nhật ghi chú:", error);
         toast.error("Lỗi khi cập nhật Ghi chú.");
     }
-}, []);
+}, [userRole]); // thêm userRole vào deps để guard check luôn dùng giá trị mới nhất
 // ---------------------------------------------------
     
     const ALLOWED_EXPORT_ROLES = ['owner']; 
@@ -610,6 +632,12 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                             <FiX />
                         </button>
                     )}
+                    {/* UX 3: Show result count when searching */}
+                    {searchTerm && !loading && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', paddingLeft: '4px' }}>
+                            Tìm thấy {summaries.length} mã hàng
+                        </div>
+                    )}
                 </div>
 
                 {canExport && (
@@ -635,10 +663,62 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                         {isExporting ? 'Đang xuất...' : 'Xuất Excel (Full)'}
                     </button>
                 )}
+                {/* Nút xóa tất cả filter */}
+                {hasActiveFilters && (
+                    <button
+                        onClick={handleClearFilters}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            backgroundColor: '#f8d7da',
+                            color: '#842029',
+                            border: '1px solid #f5c2c7',
+                            borderRadius: '20px',
+                            padding: '4px 12px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                        }}
+                        title="Xóa tất cả bộ lọc và tìm kiếm"
+                    >
+                        <FiX /> Xóa tất cả filter
+                    </button>
+                )}
             </div>
 
-            {loading ? <Spinner /> : (
+            {loading ? (
+                <div style={{ padding: '40px', textAlign: 'center' }}>
+                    <SkeletonTheme baseColor="#f3f3f3" highlightColor="#ecebeb">
+                        {Array(5).fill(0).map((_, i) => (
+                            <div key={i} style={{ marginBottom: '12px' }}>
+                                <Skeleton height={48} />
+                            </div>
+                        ))}
+                    </SkeletonTheme>
+                </div>
+            ) : (
                 <>
+                    {/* UX 2: Collapse all button when multiple rows expanded */}
+                    {Object.values(expandedRows).filter(Boolean).length > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                            <button
+                                onClick={() => setExpandedRows({})}
+                                style={{
+                                    background: 'none',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '6px',
+                                    padding: '4px 12px',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    color: 'var(--text-secondary)'
+                                }}
+                            >
+                                Thu gọn tất cả
+                            </button>
+                        </div>
+                    )}
                     <div className="table-responsive-wrapper">
                         <table className="products-table">
                             <thead>
@@ -657,7 +737,15 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {summaries.map(product => (
+                                {summaries.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="11" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                            {searchTerm
+                                                ? `Không tìm thấy kết quả cho "${searchTerm}"`
+                                                : 'Không có dữ liệu tồn kho.'}
+                                        </td>
+                                    </tr>
+                                ) : summaries.map(product => (
                                     <React.Fragment key={product.id}>
                                         <tr 
     onClick={() => toggleRow(product.id)} 
@@ -700,7 +788,9 @@ const handleQuickUpdateNote = useCallback(async (lotId, newValue) => {
     }}>
         (FEFO)
     </span>
-    :
+    : — Tổng tồn: <span style={{ color: '#28a745', fontWeight: 'bold' }}>
+        {formatNumber(lotDetails[product.id].reduce((sum, lot) => sum + (lot.quantityRemaining || 0), 0))}
+    </span>
 </h4>
                                                                     <ul>
                                                                         {lotDetails[product.id].map((lot, index) => ( // <-- SỬA LỖI 1: Thêm (lot, index)

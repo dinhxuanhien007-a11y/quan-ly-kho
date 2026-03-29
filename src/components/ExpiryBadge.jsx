@@ -11,6 +11,21 @@ const ExpiryBadge = ({ expiryDate, subGroup, showProgressBar = true, compact = f
     const colorClass = getRowColorByExpiry(expiryDate, subGroup);
     const lifePercentage = calculateLifePercentage(expiryDate);
 
+    // Tính số ngày chính xác cho tooltip
+    const tooltipDays = (() => {
+        let exp;
+        if (expiryDate.toDate) exp = expiryDate.toDate();
+        else if (expiryDate instanceof Date) exp = new Date(expiryDate);
+        else return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        exp.setHours(0, 0, 0, 0);
+        const diff = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+        if (diff < 0) return `Đã quá hạn ${Math.abs(diff)} ngày`;
+        if (diff === 0) return 'Hết hạn hôm nay';
+        return `Còn chính xác ${diff} ngày`;
+    })();
+
     // Xác định màu chữ dựa trên class trả về từ utils
     let textColor = '#333';
     let icon = <FiClock style={{marginRight: '4px'}} />;
@@ -30,7 +45,7 @@ const ExpiryBadge = ({ expiryDate, subGroup, showProgressBar = true, compact = f
 
     if (compact) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', fontSize: '12px' }}>
+            <div title={tooltipDays} style={{ display: 'flex', flexDirection: 'column', fontSize: '12px', cursor: 'help' }}>
                 <span style={{ fontWeight: 'bold' }}>{formattedDate}</span>
                 <span style={{ color: textColor, fontSize: '11px' }}>{relativeTime}</span>
             </div>
@@ -38,7 +53,7 @@ const ExpiryBadge = ({ expiryDate, subGroup, showProgressBar = true, compact = f
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div title={tooltipDays} style={{ display: 'flex', flexDirection: 'column', width: '100%', cursor: 'help' }}>
             {/* Dòng 1: Ngày tháng + Icon */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
                 <span style={{ fontWeight: '600' }}>{formattedDate}</span>

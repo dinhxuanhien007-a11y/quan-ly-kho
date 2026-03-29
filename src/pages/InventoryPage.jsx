@@ -1,15 +1,13 @@
 // src/pages/InventoryPage.jsx
 import { formatNumber } from '../utils/numberUtils';
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { db } from '../firebaseConfig';
-// <-- THÊM doc, updateDoc
-import { collection, query, where, orderBy, Timestamp, getDocs, limit, startAfter, doc, updateDoc } from 'firebase/firestore'; 
+import { collection, query, where, orderBy, Timestamp, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import InventoryFilters from '../components/InventoryFilters';
 import TeamBadge from '../components/TeamBadge';
 import TempBadge from '../components/TempBadge';
 import { useAuth } from '../context/UserContext';
-import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import { useFirestorePagination } from '../hooks/useFirestorePagination';
 import { useRealtimeNotification } from '../hooks/useRealtimeNotification';
@@ -34,7 +32,7 @@ const localFuzzyNormalize = (str) => {
         .replace(/\s+/g, ""); 
 };
 
-const InventoryPage = ({ pageTitle }) => {
+const InventoryPage = () => {
     const { role: userRole } = useAuth();
     const [filters, setFilters] = useState({ team: 'all', dateStatus: 'all', subGroup: 'all' });
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +43,9 @@ const InventoryPage = ({ pageTitle }) => {
     const [allProductsCache, setAllProductsCache] = useState([]);
     const [localNoteOverrides, setLocalNoteOverrides] = useState({});
     const searchInputRef = useRef(null);
+
+    // Sort state: { key: string | null, dir: 'asc' | 'desc' }
+    const [sortConfig, setSortConfig] = useState({ key: null, dir: 'asc' });
 
     // --- PHÍM TẮT "/" ĐỂ TÌM KIẾM ---
     useEffect(() => {
@@ -78,11 +79,8 @@ const InventoryPage = ({ pageTitle }) => {
     }, []);
 
     // --- HÀM XỬ LÝ SỬA NHANH GHI CHÚ ---
-    const handleQuickUpdateNote = async (lotId, newNote) => {
-        if (userRole !== 'owner') {
-            toast.error("Bạn không có quyền sửa ghi chú!");
-            return;
-        }
+    const handleQuickUpdateNote = useCallback(async (lotId, newNote) => {
+        if (userRole !== 'owner') return; // silent guard — UI đã block qua canEdit
         try {
             const lotRef = doc(db, 'inventory_lots', lotId);
             await updateDoc(lotRef, { notes: newNote });
@@ -93,15 +91,13 @@ const InventoryPage = ({ pageTitle }) => {
                 item.id === lotId ? { ...item, notes: newNote } : item
             );
             setSearchResults(prev => updateList(prev));
-            // Cập nhật trực tiếp documents trong hook thông qua setter nếu có,
-            // hoặc dùng local override state để hiển thị ngay
             setLocalNoteOverrides(prev => ({ ...prev, [lotId]: newNote }));
             
         } catch (error) {
             console.error("Lỗi cập nhật ghi chú:", error);
             toast.error("Không thể cập nhật ghi chú.");
         }
-    };
+    }, [userRole]);
 
     // --- 2. HÀM TÌM KIẾM ---
     const performSearch = useCallback(async (term) => {
@@ -133,11 +129,13 @@ const InventoryPage = ({ pageTitle }) => {
             // Áp dụng filter dateStatus khi tìm kiếm
             if (filters.dateStatus === 'expired') {
                 constraints.push(where("expiryDate", "<", Timestamp.now()));
+                constraints.push(orderBy("expiryDate", "desc"));
             } else if (filters.dateStatus === 'near_expiry') {
                 const futureDate = new Date();
                 futureDate.setDate(futureDate.getDate() + 210);
                 constraints.push(where("expiryDate", ">=", Timestamp.now()));
                 constraints.push(where("expiryDate", "<=", Timestamp.fromDate(futureDate)));
+                constraints.push(orderBy("expiryDate", "asc"));
             }
 
             const queryPromises = [];
@@ -201,6 +199,11 @@ const InventoryPage = ({ pageTitle }) => {
         return () => clearTimeout(debounce);
     }, [searchTerm, performSearch]);
 
+    // Reset sort khi search term thay đổi để tránh confuse
+    useEffect(() => {
+        setSortConfig({ key: null, dir: 'asc' });
+    }, [searchTerm]);
+
     const baseQuery = useMemo(() => {
         if (searchTerm) return null; 
         
@@ -241,10 +244,11 @@ const InventoryPage = ({ pageTitle }) => {
         reset
     } = useFirestorePagination(baseQuery, PAGE_SIZE);
 
-    // Reset localNoteOverrides khi filter hoặc trang thay đổi
+    // Reset localNoteOverrides khi filter, trang hoặc searchTerm thay đổi
+    // Không reset khi inventory thay đổi để tránh mất note đang gõ
     useEffect(() => {
         setLocalNoteOverrides({});
-    }, [filters, page]);
+    }, [filters, page, searchTerm]);
 
     // --- TỰ ĐỘNG CUỘN LÊN ĐẦU KHI CHUYỂN TRANG ---
     useEffect(() => {
@@ -254,9 +258,61 @@ const InventoryPage = ({ pageTitle }) => {
     const { hasNewData, dismissNewData } = useRealtimeNotification(baseQuery);
 
     const dataToDisplay = useMemo(() => {
-        if (isSearching) return searchResults;
-        return inventory;
-    }, [isSearching, searchResults, inventory]);
+        let base = isSearching ? searchResults : inventory;
+
+        if (sortConfig.key) {
+            base = [...base].sort((a, b) => {
+                let valA, valB;
+                if (sortConfig.key === 'importDate') {
+                    valA = a.importDate ? a.importDate.toDate().getTime() : 0;
+                    valB = b.importDate ? b.importDate.toDate().getTime() : 0;
+                } else if (sortConfig.key === 'expiryDate') {
+                    valA = a.expiryDate ? a.expiryDate.toDate().getTime() : Infinity;
+                    valB = b.expiryDate ? b.expiryDate.toDate().getTime() : Infinity;
+                } else if (sortConfig.key === 'productId') {
+                    valA = (a.productId || '').toUpperCase();
+                    valB = (b.productId || '').toUpperCase();
+                } else if (sortConfig.key === 'quantityRemaining') {
+                    valA = a.quantityRemaining ?? 0;
+                    valB = b.quantityRemaining ?? 0;
+                } else {
+                    return 0;
+                }
+                if (valA < valB) return sortConfig.dir === 'asc' ? -1 : 1;
+                if (valA > valB) return sortConfig.dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return base;
+    }, [isSearching, searchResults, inventory, sortConfig]);
+
+    const handleSort = (key) => {
+        setSortConfig(prev =>
+            prev.key === key
+                ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+                : { key, dir: 'asc' }
+        );
+    };
+
+    const sortIndicator = (key) => {
+        if (sortConfig.key !== key) return ' ↕';
+        return sortConfig.dir === 'asc' ? ' ↑' : ' ↓';
+    };
+
+    // UX 2: count lots expiring within 30 days
+    const expiringCount = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const in30 = new Date(today);
+        in30.setDate(in30.getDate() + 30);
+        return dataToDisplay.filter(lot => {
+            if (!lot.expiryDate || !lot.expiryDate.toDate) return false;
+            const exp = lot.expiryDate.toDate();
+            exp.setHours(0, 0, 0, 0);
+            return exp >= today && exp <= in30;
+        }).length;
+    }, [dataToDisplay]);
 
     const handleRefresh = () => {
         dismissNewData();
@@ -266,6 +322,14 @@ const InventoryPage = ({ pageTitle }) => {
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));
     };
+
+    const handleClearFilters = () => {
+        setFilters({ team: 'all', dateStatus: 'all', subGroup: 'all' });
+        setSearchTerm('');
+        setIsSearching(false);
+    };
+
+    const hasActiveFilters = filters.team !== 'all' || filters.dateStatus !== 'all' || filters.subGroup !== 'all' || !!searchTerm;
 
     const handleRowClick = (lotId) => {
         setSelectedRowId(prevId => (prevId === lotId ? null : lotId));
@@ -307,56 +371,104 @@ const InventoryPage = ({ pageTitle }) => {
                     onFilterChange={handleFilterChange} 
                     activeFilters={filters}
                 />
-                <div className="search-container" style={{ position: 'relative' }}>
-                     <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Tìm theo Tên, Mã, Số lô... (Phím '/')"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-input"
-                        style={{ paddingRight: '30px' }}
-                        title="Nhấn phím '/' để focus nhanh vào ô tìm kiếm"
-                    />
-                    {searchTerm && (
-                        <button 
-                            onClick={() => {
-                                setSearchTerm('');
-                                setIsSearching(false);
-                            }}
-                            style={{
-                                position: 'absolute',
-                                right: '10px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'none',
-                                border: 'none',
-                                color: '#999',
-                                cursor: 'pointer',
-                                padding: '5px',
-                                display: 'flex'
-                            }}
-                            title="Xóa tìm kiếm"
-                        >
-                            <FiX />
-                        </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div className="search-container" style={{ position: 'relative' }}>
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            placeholder="Tìm theo Tên, Mã, Số lô... (Phím '/')"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="search-input"
+                            style={{ paddingRight: '30px' }}
+                            title="Nhấn phím '/' để focus nhanh vào ô tìm kiếm"
+                        />
+                        {searchTerm && (
+                            <button 
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setIsSearching(false);
+                                }}
+                                style={{
+                                    position: 'absolute',
+                                    right: '10px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#999',
+                                    cursor: 'pointer',
+                                    padding: '5px',
+                                    display: 'flex'
+                                }}
+                                title="Xóa tìm kiếm"
+                            >
+                                <FiX />
+                            </button>
+                        )}
+                    </div>
+                    {/* UX 1: Search result count */}
+                    {isSearching && !loading && (
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '4px' }}>
+                            Tìm thấy {dataToDisplay.length} kết quả
+                        </span>
                     )}
                 </div>
+                {/* UX 2: Expiring ≤30 days badge */}
+                {expiringCount > 0 && (
+                    <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        backgroundColor: '#fff3cd',
+                        color: '#856404',
+                        border: '1px solid #ffeeba',
+                        borderRadius: '20px',
+                        padding: '4px 12px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        ⚠️ {expiringCount} lô hết hạn trong 30 ngày
+                    </span>
+                )}
+                {/* Nút xóa tất cả filter */}
+                {hasActiveFilters && (
+                    <button
+                        onClick={handleClearFilters}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            backgroundColor: '#f8d7da',
+                            color: '#842029',
+                            border: '1px solid #f5c2c7',
+                            borderRadius: '20px',
+                            padding: '4px 12px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                        }}
+                        title="Xóa tất cả bộ lọc và tìm kiếm"
+                    >
+                        <FiX /> Xóa tất cả filter
+                    </button>
+                )}
             </div>
-
             <div className="table-container">
                 <table className="inventory-table">
                     <thead>
                         <tr>
-                            <th>Ngày nhập</th>
-                            <th>Mã hàng</th>
+                            <th onClick={() => handleSort('importDate')} style={{ cursor: 'pointer', userSelect: 'none' }}>Ngày nhập{sortIndicator('importDate')}</th>
+                            <th onClick={() => handleSort('productId')} style={{ cursor: 'pointer', userSelect: 'none' }}>Mã hàng{sortIndicator('productId')}</th>
                             <th>Tên hàng</th>
                             <th>Số lô</th>
-                            <th>HSD</th>
+                            <th onClick={() => handleSort('expiryDate')} style={{ cursor: 'pointer', userSelect: 'none' }}>HSD{sortIndicator('expiryDate')}</th>
                             <th>ĐVT</th>
                             <th>Quy cách</th>
                             <th>SL Nhập</th>
-                            <th>SL Còn lại</th>
+                            <th onClick={() => handleSort('quantityRemaining')} style={{ cursor: 'pointer', userSelect: 'none' }}>SL Còn lại{sortIndicator('quantityRemaining')}</th>
                             <th>Ghi chú</th>
                             <th>Nhiệt độ BQ</th>
                             <th>Hãng sản xuất</th>
@@ -365,7 +477,7 @@ const InventoryPage = ({ pageTitle }) => {
                         </tr>
                     </thead>
                     <tbody className="inventory-table-body">
-                        {loading && !isSearching ? (
+                        {loading ? (
                             <SkeletonTheme baseColor="#f3f3f3" highlightColor="#ecebeb">
                                 {renderSkeleton()}
                             </SkeletonTheme>
