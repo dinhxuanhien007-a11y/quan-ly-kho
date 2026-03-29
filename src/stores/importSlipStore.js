@@ -56,6 +56,22 @@ const useImportSlipStore = create(
                 return { items: state.items.filter((_, index) => index !== indexToRemove) };
             }),
 
+            duplicateItemRow: (indexToDuplicate) => set(state => {
+                const original = state.items[indexToDuplicate];
+                const duplicate = {
+                    ...original,
+                    id: Date.now() + Math.random(),
+                    lotNumber: '',
+                    expiryDate: '',
+                    quantity: '',
+                    lotStatus: 'unchecked',
+                    existingLotInfo: null,
+                };
+                const newItems = [...state.items];
+                newItems.splice(indexToDuplicate + 1, 0, duplicate);
+                return { items: newItems };
+            }),
+
             // Action chung để cập nhật một trường bất kỳ của một item
             updateItem: (index, field, value) => set(state => {
                 const newItems = [...state.items];

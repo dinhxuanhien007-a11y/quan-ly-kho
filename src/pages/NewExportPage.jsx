@@ -5,7 +5,7 @@ import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, doc, getDoc, writeBatch, serverTimestamp, increment, updateDoc } from 'firebase/firestore';
-import { FiXCircle, FiChevronDown, FiAlertCircle } from 'react-icons/fi';
+import { FiXCircle, FiChevronDown, FiAlertCircle, FiCopy } from 'react-icons/fi';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { formatDate, getExpiryStatusPrefix } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
@@ -40,13 +40,13 @@ const NewExportPage = () => {
     const {
         customerId, customerName, description, exportDate, items,
         setCustomer, setDescription, setExportDate, addNewItemRow, removeItemRow, updateItem,
-        replaceItem, handleProductSearchResult, resetSlip
+        replaceItem, handleProductSearchResult, resetSlip, duplicateItemRow
     } = useExportSlipStore();
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
-    const hasSelectedProduct = useRef(false);
+    const isSelectingProduct = useRef(false);
 
     const lotSelectRefs = useRef([]);
     const quantityInputRefs = useRef([]);
@@ -86,6 +86,23 @@ const NewExportPage = () => {
         }
         return 'Vui lòng điền đầy đủ thông tin bắt buộc (*).';
     }, [isSlipValid, customerId, customerName, items]);
+
+    // Set các selectedLotId bị dùng nhiều dòng và tổng SL vượt tồn (để highlight)
+    const lotOveruseSet = useMemo(() => {
+        const lotQtyMap = {};
+        for (const item of items) {
+            if (!item.selectedLotId || !Number(item.quantityToExport)) continue;
+            if (!lotQtyMap[item.selectedLotId]) {
+                lotQtyMap[item.selectedLotId] = { total: 0, available: item.quantityAvailableForExport };
+            }
+            lotQtyMap[item.selectedLotId].total += Number(item.quantityToExport);
+        }
+        const overused = new Set();
+        for (const [lotId, info] of Object.entries(lotQtyMap)) {
+            if (info.total > info.available) overused.add(lotId);
+        }
+        return overused;
+    }, [items]);
 
     const handleProductSearch = async (index, productOrId) => {
         const findProductData = async () => {
@@ -161,6 +178,28 @@ const NewExportPage = () => {
 
     const getValidSlipData = () => {
         const formattedDate = exportDate ? exportDate.split('-').reverse().join('/') : formatDate(new Date());
+
+        // Kiểm tra cùng lô được chọn ở nhiều dòng, tổng SL có vượt tồn không
+        const lotQtyMap = {};
+        for (const item of items) {
+            if (!item.selectedLotId || !Number(item.quantityToExport)) continue;
+            if (!lotQtyMap[item.selectedLotId]) {
+                lotQtyMap[item.selectedLotId] = {
+                    total: 0,
+                    available: item.quantityAvailableForExport,
+                    lotNumber: item.lotNumber || item.selectedLotId
+                };
+            }
+            lotQtyMap[item.selectedLotId].total += Number(item.quantityToExport);
+        }
+        for (const [, info] of Object.entries(lotQtyMap)) {
+            if (info.total > info.available) {
+                toast.warn(
+                    `Lỗi: Tổng SL xuất (${formatNumber(info.total)}) của lô "${info.lotNumber}" vượt quá tồn khả dụng (${formatNumber(info.available)}).`
+                );
+                return null;
+            }
+        }
 
         const validItemsInput = items.filter(item => {
             const qty = Number(item.quantityToExport);
@@ -274,15 +313,17 @@ const NewExportPage = () => {
         try {
             const batch = writeBatch(db);
 
-            // Dùng increment() để tránh race condition khi nhiều user xuất cùng lúc
-            // quantityAllocated chỉ trừ nếu phiếu này đã qua bước "Lưu Nháp" (đã đặt giữ trước đó).
-            // Xuất trực tiếp không qua nháp thì quantityAllocated = 0, không trừ để tránh âm.
-            for (const item of slipData.items) {
-                const lotRef = doc(db, 'inventory_lots', item.lotId);
-                const lotSnap = await getDoc(lotRef);
+            // Đọc tất cả lot song song thay vì tuần tự
+            const lotSnaps = await Promise.all(
+                slipData.items.map(item => getDoc(doc(db, 'inventory_lots', item.lotId)))
+            );
+
+            for (let i = 0; i < slipData.items.length; i++) {
+                const item = slipData.items[i];
+                const lotSnap = lotSnaps[i];
                 const currentAllocated = lotSnap.exists() ? (lotSnap.data().quantityAllocated || 0) : 0;
                 const allocatedToDeduct = Math.min(item.quantityToExport, currentAllocated);
-                batch.update(lotRef, {
+                batch.update(doc(db, 'inventory_lots', item.lotId), {
                     quantityRemaining: increment(-item.quantityToExport),
                     quantityAllocated: increment(-allocatedToDeduct),
                 });
@@ -374,7 +415,7 @@ const NewExportPage = () => {
                 </div>
             </div>
 
-            <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 0.5fr' }}>
+            <div className="item-details-grid" style={{ gridTemplateColumns: '1.5fr 2.5fr 2fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1.5fr 0.5fr 0.5fr' }}>
                 <div className="grid-header">Mã hàng (*)</div>
                 <div className="grid-header">Tên hàng</div>
                 <div className="grid-header">Số lô (*)</div>
@@ -384,6 +425,7 @@ const NewExportPage = () => {
                 <div className="grid-header">SL Xuất (*)</div>
                 <div className="grid-header">Ghi chú</div>
                 <div className="grid-header">Nhiệt độ BQ</div>
+                <div className="grid-header">Copy</div>
                 <div className="grid-header">Xóa</div>
 
                 {items.map((item, index) => (
@@ -394,14 +436,14 @@ const NewExportPage = () => {
                                 value={item.productId}
                                 onChange={(value) => updateItem(index, 'productId', value.toUpperCase())}
                                 onSelect={(product) => {
-                                    hasSelectedProduct.current = true;
+                                    isSelectingProduct.current = true;
                                     handleProductSearch(index, product);
-                                    setTimeout(() => { hasSelectedProduct.current = false; }, 150);
                                 }}
                                 onBlur={() => {
-                                    if (!hasSelectedProduct.current) {
+                                    if (!isSelectingProduct.current) {
                                         handleProductSearch(index, item.productId);
                                     }
+                                    isSelectingProduct.current = false;
                                 }}
                             />
                         </div>
@@ -440,7 +482,11 @@ const NewExportPage = () => {
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
                         <div className="grid-cell"><textarea value={item.packaging} readOnly /></div>
 
-                        <div className="grid-cell">
+                        <div className="grid-cell" style={
+                            (Number(item.quantityToExport) > item.quantityAvailableForExport && item.quantityAvailableForExport > 0)
+                            || lotOveruseSet.has(item.selectedLotId)
+                                ? { backgroundColor: '#fde8e8' } : {}
+                        }>
                             <input
                                 ref={el => quantityInputRefs.current[index] = el}
                                 type="text"
@@ -466,23 +512,37 @@ const NewExportPage = () => {
                                     }
                                 }}
                             />
-                            {item.packaging && item.conversionFactor > 1 && (
-                                <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
-                                    Quy đổi: <strong>
-                                        {formatNumber(calculateCaseCount(
-                                            Number(item.quantityToExport),
-                                            item.conversionFactor,
-                                            item.unit
-                                        ).value)}
-                                    </strong>{' '}
-                                    {calculateCaseCount(Number(item.quantityToExport), item.conversionFactor, item.unit).action === 'MULTIPLY'
-                                        ? getTargetUnit(item.packaging, item.unit)
-                                        : 'Thùng'}
+                            {item.selectedLotId && (
+                                <div style={{ marginTop: '3px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+                                    Tồn KD: <strong style={{ color: item.quantityAvailableForExport <= 0 ? '#c0392b' : 'inherit' }}>{formatNumber(item.quantityAvailableForExport)}</strong>
+                                    {lotOveruseSet.has(item.selectedLotId) && (
+                                        <span style={{ color: '#c0392b', marginLeft: '4px' }}>⚠️ Vượt tồn</span>
+                                    )}
                                 </div>
                             )}
+                            {item.packaging && item.conversionFactor > 1 && (() => {
+                                const caseResult = calculateCaseCount(Number(item.quantityToExport), item.conversionFactor, item.unit);
+                                return (
+                                    <div style={{ marginTop: '3px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+                                        Quy đổi: <strong>{formatNumber(caseResult.value)}</strong>{' '}
+                                        {caseResult.action === 'MULTIPLY' ? getTargetUnit(item.packaging, item.unit) : 'Thùng'}
+                                    </div>
+                                );
+                            })()}
                         </div>
                         <div className="grid-cell"><textarea value={item.notes || ''} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.storageTemp} readOnly /></div>
+                        <div className="grid-cell">
+                            <button
+                                type="button"
+                                className="btn-icon"
+                                onClick={() => duplicateItemRow(index)}
+                                title="Nhân đôi dòng này (giữ nguyên sản phẩm, xóa lô/SL)"
+                                style={{ color: '#007bff' }}
+                            >
+                                <FiCopy />
+                            </button>
+                        </div>
                         <div className="grid-cell">
                             <button type="button" className="btn-icon btn-delete" onClick={() => handleRemoveRowWithConfirmation(index)}><FiXCircle /></button>
                         </div>
@@ -490,6 +550,34 @@ const NewExportPage = () => {
                 ))}
             </div>
             <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
+            <button
+                onClick={() => setConfirmModal({
+                    isOpen: true,
+                    title: "Xóa tất cả dòng hàng?",
+                    message: "Thao tác này sẽ xóa toàn bộ danh sách hàng hóa và không thể hoàn tác.",
+                    onConfirm: () => { resetSlip(); setConfirmModal({ isOpen: false }); }
+                })}
+                className="btn-secondary"
+                style={{ marginTop: '10px', marginLeft: '8px', color: '#c0392b', borderColor: '#c0392b' }}
+                disabled={items.length === 0}
+            >
+                Xóa tất cả
+            </button>
+
+            {/* Tổng kết cuối bảng */}
+            {items.some(i => i.productId && Number(i.quantityToExport) > 0) && (() => {
+                const validItems = items.filter(i => i.productId && Number(i.quantityToExport) > 0);
+                const uniqueProducts = new Set(validItems.map(i => i.productId)).size;
+                const overQty = validItems.filter(i => Number(i.quantityToExport) > i.quantityAvailableForExport).length;
+                return (
+                    <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                        <span>Số dòng: <strong>{validItems.length}</strong></span>
+                        <span>Mã hàng: <strong>{uniqueProducts}</strong></span>
+                        <span>Tổng SL xuất: <strong>{validItems.reduce((s, i) => s + Number(i.quantityToExport), 0).toLocaleString('vi-VN')}</strong></span>
+                        {overQty > 0 && <span style={{ color: '#c0392b' }}>⚠️ Vượt tồn: <strong>{overQty}</strong> dòng</span>}
+                    </div>
+                );
+            })()}
 
             <div className="page-actions">
                 <button

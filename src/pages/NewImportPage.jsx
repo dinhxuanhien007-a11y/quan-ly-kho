@@ -2,19 +2,17 @@
 import { formatNumber, parseFormattedNumber, calculateCaseCount } from '../utils/numberUtils'; // <-- THÊM calculateCaseCount
 import ProductAutocomplete from '../components/ProductAutocomplete';
 import SupplierAutocomplete from '../components/SupplierAutocomplete';
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, addDoc, serverTimestamp, Timestamp, query, where, getDocs, updateDoc, increment, writeBatch } from 'firebase/firestore';
 import AddNewProductAndLotModal from '../components/AddNewProductAndLotModal';
 import AddNewLotModal from '../components/AddNewLotModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { parseDateString, formatExpiryDate, formatDate } from '../utils/dateUtils';
-import { FiInfo, FiXCircle, FiUpload } from 'react-icons/fi'; 
+import { FiInfo, FiXCircle, FiUpload, FiCopy } from 'react-icons/fi'; 
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import useImportSlipStore from '../stores/importSlipStore';
-
-// src/pages/NewExportPage.jsx (Thêm hàm này dưới các import)
 
 /**
  * Xác định đơn vị cần hiển thị khi quy đổi.
@@ -22,8 +20,6 @@ import useImportSlipStore from '../stores/importSlipStore';
  * @param {string} currentUnit - ĐVT hiện tại của item.
  * @returns {string} - Đơn vị quy đổi (vd: Lọ, Thùng, Test).
  */
-// src/pages/NewExportPage.jsx (Áp dụng tương tự cho NewImportPage.jsx)
-// Thay thế hàm getTargetUnit
 
 const getTargetUnit = (packagingStr, currentUnit) => {
     if (!packagingStr || !currentUnit) return 'Đơn vị';
@@ -333,45 +329,39 @@ const parseICUPackingList = async (file) => {
     };
 
     // Regex trích xuất từng dòng hàng ICU
-    // Format mỗi dòng: [N)] [ITEM CODE] [LOT]/ [DD-MON-YYYY] ... [Qty Per UOM] ...
-    // Ví dụ: "1) 4619PG 6142088/ 30-JUN-2028 PRO-VENT... 200 2800 14 38.10"
-    // Format mỗi dòng ICU:
-// [N)] [ITEM CODE] [LOT]/ [DD-MON-YYYY] [description...] [Qty Per UOM] [Qty EA] [Qty Case] [Net Weight]
-// Ví dụ: "1) 4041E 6132032/ 30-APR-2028 LINE DRAW... 200 8000 40"
-// Ta cần: Qty EA = số thứ 2 sau HSD (8000), không phải số thứ 1 (200)
-const lineRegex = /(\d+)\)\s+([A-Z0-9]+)\s+(\d+)\s*\/\s*(\d{2}-[A-Z]{3}-\d{4})/g;
+    // Format: [N)] [ITEM CODE] [LOT]/ [DD-MON-YYYY] [description...] [Qty Per UOM] [Qty EA] [Qty Case]
+    // Ví dụ: "1) 4041E 6132032/ 30-APR-2028 LINE DRAW... 200 8000 40"
+    // Ta cần: Qty EA = số thứ 2 sau HSD (8000), không phải số thứ 1 (200)
+    const lineRegex = /(\d+)\)\s+([A-Z0-9]+)\s+(\d+)\s*\/\s*(\d{2}-[A-Z]{3}-\d{4})/g;
 
-const rawItems = [];
-let match;
+    const rawItems = [];
+    let match;
 
-while ((match = lineRegex.exec(fullText)) !== null) {
-    const productId = match[2].trim();
-    const lotNumber = match[3].trim();
-    const expiryRaw = match[4].trim();
+    while ((match = lineRegex.exec(fullText)) !== null) {
+        const productId = match[2].trim();
+        const lotNumber = match[3].trim();
+        const expiryRaw = match[4].trim();
 
-    if (!productId || /^\d+$/.test(productId)) continue;
+        if (!productId || /^\d+$/.test(productId)) continue;
 
-    const expiryDate = convertICUDate(expiryRaw);
-    if (!expiryDate) continue;
+        const expiryDate = convertICUDate(expiryRaw);
+        if (!expiryDate) continue;
 
-    // Lấy phần text SAU vị trí match để tìm số lượng
-    const afterMatch = fullText.slice(match.index + match[0].length, match.index + match[0].length + 300);
+        // Lấy phần text SAU vị trí match để tìm số lượng
+        const afterMatch = fullText.slice(match.index + match[0].length, match.index + match[0].length + 300);
 
-    // Tìm pattern: [200] [QtyEA] [QtyCase]
-    // Qty Per UOM luôn là 200, theo sau là Qty EA rồi Qty Case
-    // Dùng regex tìm "200 [số] [số]" — bỏ qua Order No và Packing No
-    // Order No dạng 7 chữ số (9229330), Packing No dạng M+số
-    // Ta chỉ lấy các số KHÔNG có chữ đứng trước và có độ dài hợp lý
-    const qtyPattern = /\b(200)\s+(\d{1,6})\s+(\d{1,3})\b/;
-    const qtyMatch = afterMatch.match(qtyPattern);
+        // Tìm pattern: [200] [QtyEA] [QtyCase]
+        // Qty Per UOM luôn là 200, theo sau là Qty EA rồi Qty Case
+        const qtyPattern = /\b(200)\s+(\d{1,6})\s+(\d{1,3})\b/;
+        const qtyMatch = afterMatch.match(qtyPattern);
 
-    if (!qtyMatch) continue;
+        if (!qtyMatch) continue;
 
-    const qtyEA = parseInt(qtyMatch[2], 10);
-    if (isNaN(qtyEA) || qtyEA <= 0) continue;
+        const qtyEA = parseInt(qtyMatch[2], 10);
+        if (isNaN(qtyEA) || qtyEA <= 0) continue;
 
-    rawItems.push({ productId, lotNumber, expiryDate, quantity: qtyEA });
-}
+        rawItems.push({ productId, lotNumber, expiryDate, quantity: qtyEA });
+    }
 
     // Gộp các dòng cùng mã hàng + cùng lot + cùng HSD → cộng dồn số lượng
     const aggregatedMap = new Map();
@@ -447,13 +437,12 @@ const parseSchulkePackingList = async (file) => {
     if (headerIdx === -1) return [];
 
     // Tìm tọa độ các cột từ header rows (header có thể trải 2-3 dòng)
-    let batchHeader = null, expiryHeader = null, bottlesHeader = null, palletsHeader = null;
+    let batchHeader = null, expiryHeader = null, bottlesHeader = null;
     for (let i = headerIdx; i < Math.min(headerIdx + 4, allRows.length); i++) {
         const row = allRows[i];
         if (!batchHeader) batchHeader = row.words.find(w => w.text === 'Batch');
         if (!expiryHeader) expiryHeader = row.words.find(w => w.text === 'Expiry');
         if (!bottlesHeader) bottlesHeader = row.words.find(w => w.text === 'Bottles');
-        if (!palletsHeader) palletsHeader = row.words.find(w => w.text === 'Pallets');
     }
 
     if (!bottlesHeader) return [];
@@ -545,7 +534,7 @@ const NewImportPage = () => {
         supplierId, supplierName, description, items, importDate,
         setSupplier, setDescription, setImportDate, addNewItemRow, updateItem,
         handleProductSearchResult, handleLotCheckResult, declareNewLot,
-        fillNewProductData, resetSlip, removeItemRow
+        fillNewProductData, resetSlip, removeItemRow, duplicateItemRow
     } = useImportSlipStore();
 
     const [isSaving, setIsSaving] = useState(false);
@@ -554,6 +543,7 @@ const NewImportPage = () => {
     const [confirmModal, setConfirmModal] = useState({ isOpen: false });
     const [focusedInputIndex, setFocusedInputIndex] = useState(null);
     const [isParsingPDF, setIsParsingPDF] = useState(false);
+    const [parsingSource, setParsingSource] = useState(null); // 'bd' | 'icu' | 'pharma' | 'schulke'
     const pdfInputRef = useRef(null);
     const icuPdfInputRef = useRef(null);
     const pharmaPdfInputRef = useRef(null);
@@ -691,10 +681,38 @@ const NewImportPage = () => {
         }
     };
 
+    const handleProductSearch = async (index, productOrId) => {
+        if (!productOrId) return;
+
+        let productData = null;
+        if (typeof productOrId === 'object' && productOrId !== null) {
+            productData = productOrId;
+        } else {
+            const productId = String(productOrId).trim().toUpperCase();
+            if (!productId) return;
+            try {
+                const productRef = doc(db, 'products', productId);
+                const productSnap = await getDoc(productRef);
+                if (productSnap.exists()) {
+                    productData = { id: productSnap.id, ...productSnap.data() };
+                }
+            } catch (error) {
+                console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+                toast.error("Lỗi khi tìm kiếm sản phẩm!");
+            }
+        }
+
+        handleProductSearchResult(index, productData, !!productData);
+        if (productData) {
+            updateItem(index, 'productId', productData.id);
+            setTimeout(() => lotNumberInputRefs.current[index]?.focus(), 0);
+        }
+    };
+
     // --- BẮT ĐẦU THAY ĐỔI: Cập nhật hàm checkExistingLot ---
-    const checkExistingLot = async (index) => {
-            const currentItem = items[index];
-            if (!currentItem.productId || !currentItem.lotNumber) return;
+    const checkExistingLot = useCallback(async (index) => {
+            const currentItem = useImportSlipStore.getState().items[index];
+            if (!currentItem || !currentItem.productId || !currentItem.lotNumber) return;
 
             // Nếu chưa có thông tin sản phẩm, load trước
             if (!currentItem.productName) {
@@ -734,36 +752,8 @@ const NewImportPage = () => {
             } catch (error) {
                 console.error("Lỗi khi kiểm tra lô tồn tại: ", error);
             }
-        };
+    }, [handleLotCheckResult, handleProductSearchResult, updateItem]);
     // --- KẾT THÚC THAY ĐỔI ---
-
-    const handleProductSearch = async (index, productOrId) => {
-        if (!productOrId) return;
-
-        let productData = null;
-        if (typeof productOrId === 'object' && productOrId !== null) {
-            productData = productOrId;
-        } else {
-            const productId = String(productOrId).trim().toUpperCase();
-            if (!productId) return;
-            try {
-                const productRef = doc(db, 'products', productId);
-                const productSnap = await getDoc(productRef);
-                if (productSnap.exists()) {
-                    productData = { id: productSnap.id, ...productSnap.data() };
-                }
-            } catch (error) {
-                console.error("Lỗi khi tìm kiếm sản phẩm:", error);
-                toast.error("Lỗi khi tìm kiếm sản phẩm!");
-            }
-        }
-
-        handleProductSearchResult(index, productData, !!productData);
-        if (productData) {
-            updateItem(index, 'productId', productData.id);
-            setTimeout(() => lotNumberInputRefs.current[index]?.focus(), 0);
-        }
-    };
 
     const handleNewLotDeclared = (expiry) => {
         const { index } = newLotModal;
@@ -800,11 +790,11 @@ const NewImportPage = () => {
     }
 
     setIsParsingPDF(true);
+    setParsingSource('bd');
     toast.info("Đang đọc Packing List...");
 
     try {
         const parsedItems = await parseBDPackingList(file);
-
         if (parsedItems.length === 0) {
             toast.error("Không tìm thấy dữ liệu hàng hóa trong file PDF này.");
             return;
@@ -932,6 +922,7 @@ const NewImportPage = () => {
         }
     } finally {
         setIsParsingPDF(false);
+        setParsingSource(null);
         if (pdfInputRef.current) pdfInputRef.current.value = '';
     }
 };
@@ -944,6 +935,7 @@ const handleICUPDFUpload = async (e) => {
     }
 
     setIsParsingPDF(true);
+    setParsingSource('icu');
     toast.info("Đang đọc Packing List ICU Medical...");
 
     try {
@@ -1070,6 +1062,7 @@ const handleICUPDFUpload = async (e) => {
         }
     } finally {
         setIsParsingPDF(false);
+        setParsingSource(null);
         if (icuPdfInputRef.current) icuPdfInputRef.current.value = '';
     }
 };
@@ -1260,6 +1253,7 @@ const handlePharmaPDFUpload = async (e) => {
     }
 
     setIsParsingPDF(true);
+    setParsingSource('pharma');
     toast.info("Đang đọc Packing List Pharmadesign...");
 
     try {
@@ -1385,6 +1379,7 @@ const handlePharmaPDFUpload = async (e) => {
         }
     } finally {
         setIsParsingPDF(false);
+        setParsingSource(null);
         if (pharmaPdfInputRef.current) pharmaPdfInputRef.current.value = '';
     }
 };
@@ -1397,6 +1392,7 @@ const handleSchulkePDFUpload = async (e) => {
     }
 
     setIsParsingPDF(true);
+    setParsingSource('schulke');
     toast.info("Đang đọc Packing List Schulke...");
 
     try {
@@ -1519,6 +1515,7 @@ const handleSchulkePDFUpload = async (e) => {
         }
     } finally {
         setIsParsingPDF(false);
+        setParsingSource(null);
         if (schulkePdfInputRef.current) schulkePdfInputRef.current.value = '';
     }
 };
@@ -1569,7 +1566,15 @@ const handleSchulkePDFUpload = async (e) => {
                 const subGroupValue = productDetails.subGroup || '';
 
                 const newLotData = {
-                    importDate: slipData.importDate ? (() => { const [d, m, y] = slipData.importDate.split('/'); return Timestamp.fromDate(new Date(Number(y), Number(m) - 1, Number(d))); })() : Timestamp.now(),
+                    importDate: slipData.importDate ? (() => {
+                        const parts = slipData.importDate.split('/');
+                        if (parts.length === 3) {
+                            const [d, m, y] = parts;
+                            const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+                            if (!isNaN(dateObj.getTime())) return Timestamp.fromDate(dateObj);
+                        }
+                        return Timestamp.now();
+                    })() : Timestamp.now(),
                     productId: item.productId,
                     productName: item.productName,
                     lotNumber: item.lotNumber,
@@ -1624,8 +1629,41 @@ const handleSchulkePDFUpload = async (e) => {
         });
     };
 
+    // Helper: tính màu nền dòng theo HSD (đề xuất 8)
+    const getExpiryRowStyle = (expiryDateStr) => {
+        if (!expiryDateStr || expiryDateStr.toUpperCase() === 'N/A') return {};
+        const expiry = parseDateString(expiryDateStr);
+        if (!expiry) return {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return { backgroundColor: '#fde8e8' };       // đã hết hạn - đỏ nhạt
+        if (diffDays <= 30) return { backgroundColor: '#fde8e8' };      // còn < 30 ngày - đỏ nhạt
+        if (diffDays <= 180) return { backgroundColor: '#fff8e1' };     // còn < 6 tháng - vàng nhạt
+        return {};
+    };
+
     return (
         <div>
+            {/* Loading overlay khi đang parse PDF */}
+            {isParsingPDF && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 9999,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: '16px'
+                }}>
+                    <div style={{
+                        width: '48px', height: '48px', border: '5px solid #fff',
+                        borderTopColor: '#007bff', borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite'
+                    }} />
+                    <span style={{ color: '#fff', fontSize: '16px', fontWeight: 500 }}>
+                        Đang đọc Packing List PDF, vui lòng chờ...
+                    </span>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            )}
             <ConfirmationModal 
                 isOpen={confirmModal.isOpen}
                 title={confirmModal.title}
@@ -1739,7 +1777,7 @@ const handleSchulkePDFUpload = async (e) => {
         }}
     >
         <FiUpload />
-        {isParsingPDF ? 'Đang đọc...' : 'Import BD'}
+        {parsingSource === 'bd' ? 'Đang đọc...' : isParsingPDF ? 'Vui lòng chờ...' : 'Import BD'}
     </label>
 
     {/* Nút ICU Medical */}
@@ -1769,7 +1807,7 @@ const handleSchulkePDFUpload = async (e) => {
         }}
     >
         <FiUpload />
-        {isParsingPDF ? 'Đang đọc...' : 'Import ICU Medical'}
+        {parsingSource === 'icu' ? 'Đang đọc...' : isParsingPDF ? 'Vui lòng chờ...' : 'Import ICU Medical'}
     </label>
 
     {/* Nút Pharmadesign */}
@@ -1799,7 +1837,7 @@ const handleSchulkePDFUpload = async (e) => {
         }}
     >
         <FiUpload />
-        {isParsingPDF ? 'Đang đọc...' : 'Import Pharmadesign'}
+        {parsingSource === 'pharma' ? 'Đang đọc...' : isParsingPDF ? 'Vui lòng chờ...' : 'Import Pharmadesign'}
     </label>
 
     {/* Nút Schulke */}
@@ -1829,13 +1867,13 @@ const handleSchulkePDFUpload = async (e) => {
         }}
     >
         <FiUpload />
-        {isParsingPDF ? 'Đang đọc...' : 'Import Schulke'}
+        {parsingSource === 'schulke' ? 'Đang đọc...' : isParsingPDF ? 'Vui lòng chờ...' : 'Import Schulke'}
     </label>
 </div>
 {/* ===== KẾT THÚC NÚT IMPORT ===== */}
 
             <h2>Chi tiết hàng hóa</h2>
-            <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 1fr 0.5fr' }}>
+            <div className="item-details-grid" style={{ gridTemplateColumns: '1.2fr 2fr 1.1fr 1.2fr 0.8fr 1.5fr 1fr 1.5fr 1fr 1fr 0.5fr 0.5fr' }}>
                 <div className="grid-header">Mã hàng (*)</div>
                 <div className="grid-header">Tên hàng</div>
                 <div className="grid-header">Số lô</div>
@@ -1846,14 +1884,17 @@ const handleSchulkePDFUpload = async (e) => {
                 <div className="grid-header">Ghi chú</div>
                 <div className="grid-header">Team</div>
                 <div className="grid-header">Nhóm Hàng</div>
+                <div className="grid-header">Copy</div>
                 <div className="grid-header">Xóa</div>
 
-                {items.map((item, index) => (
+                {items.map((item, index) => {
+                    const expiryStyle = getExpiryRowStyle(item.expiryDate);
+                    return (
                     <React.Fragment key={item.id}>
                         <div className="grid-cell" style={{ 
     flexDirection: 'column', 
     alignItems: 'flex-start',
-    backgroundColor: item.productNotFound ? '#fff3cd' : 'transparent',
+    backgroundColor: item.productNotFound ? '#fff3cd' : (expiryStyle.backgroundColor || 'transparent'),
     borderRadius: '4px'
 }}>
     <ProductAutocomplete
@@ -1879,7 +1920,7 @@ const handleSchulkePDFUpload = async (e) => {
                                 ref={el => lotNumberInputRefs.current[index] = el}
                                 type="text"
                                 value={item.lotNumber}
-                                onChange={e => updateItem(index, 'lotNumber', e.target.value)}
+                                onChange={e => updateItem(index, 'lotNumber', e.target.value.toUpperCase())}
                                 onBlur={() => checkExistingLot(index)}
                                 onKeyDown={e => handleLotNumberKeyDown(e, index)}
                             />
@@ -1895,7 +1936,7 @@ const handleSchulkePDFUpload = async (e) => {
                                 </button>
                             )}
                         </div>
-                        <div className="grid-cell">
+                        <div className="grid-cell" style={expiryStyle}>
                             <input 
                                 type="text" 
                                 placeholder="dd/mm/yyyy" 
@@ -1903,7 +1944,7 @@ const handleSchulkePDFUpload = async (e) => {
                                 onChange={e => updateItem(index, 'expiryDate', e.target.value)} 
                                 onBlur={e => handleExpiryDateBlur(index, e.target.value)}
                                 readOnly={item.lotStatus === 'exists'}
-                                style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : '#fff', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
+                                style={{backgroundColor: item.lotStatus === 'exists' ? '#f0f0f0' : 'transparent', cursor: item.lotStatus === 'exists' ? 'not-allowed' : 'text'}}
                             />
                         </div>
                         <div className="grid-cell"><input type="text" value={item.unit} readOnly /></div>
@@ -1926,23 +1967,17 @@ const handleSchulkePDFUpload = async (e) => {
                                 }}
                             />
                             {/* HIỂN THỊ SỐ KIỆN */}
-{item.packaging && item.conversionFactor > 1 && (
-    <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
-        Quy đổi: <strong>
-            {/* LƯU Ý: LẤY ĐƠN VỊ VÀ KẾT QUẢ TỪ HÀM calculateCaseCount */}
-            {formatNumber(calculateCaseCount(
-                Number(item.quantity), 
-                item.conversionFactor, 
-                item.unit
-            ).value)}
-        </strong> 
-        
-        {/* ĐƠN VỊ HIỂN THỊ */}
-        {calculateCaseCount(Number(item.quantity), item.conversionFactor, item.unit).action === 'MULTIPLY'
-            ? getTargetUnit(item.packaging, item.unit) // Logic Lọ/Test
-            : 'Thùng'} 
-    </div>
-)}
+{item.packaging && item.conversionFactor > 1 && (() => {
+    const caseResult = calculateCaseCount(Number(item.quantity), item.conversionFactor, item.unit);
+    return (
+        <div style={{ marginTop: '5px', fontSize: '12px', color: '#6c757d', textAlign: 'center' }}>
+            Quy đổi: <strong>{formatNumber(caseResult.value)}</strong>{' '}
+            {caseResult.action === 'MULTIPLY'
+                ? getTargetUnit(item.packaging, item.unit)
+                : 'Thùng'}
+        </div>
+    );
+})()}
                         </div>
                         <div className="grid-cell"><textarea value={item.notes} onChange={e => updateItem(index, 'notes', e.target.value)} /></div>
                         <div className="grid-cell"><input type="text" value={item.team} readOnly /></div>
@@ -1959,6 +1994,17 @@ const handleSchulkePDFUpload = async (e) => {
 </div>
 {/* ===== KẾT THÚC KHỐI CHÈN ===== */}
                         <div className="grid-cell">
+                            <button
+                                type="button"
+                                className="btn-icon"
+                                onClick={() => duplicateItemRow(index)}
+                                title="Nhân đôi dòng này (giữ nguyên sản phẩm, xóa lô/HSD/SL)"
+                                style={{ color: '#007bff' }}
+                            >
+                                <FiCopy />
+                            </button>
+                        </div>
+                        <div className="grid-cell">
                             <button 
                                 type="button" 
                                 className="btn-icon btn-delete" 
@@ -1969,10 +2015,45 @@ const handleSchulkePDFUpload = async (e) => {
                             </button>
                         </div>
                     </React.Fragment>
-                ))}
+                    );
+                })}
             </div>
 
             <button ref={addRowButtonRef} onClick={addNewItemRow} className="btn-secondary" style={{ marginTop: '10px' }}>+ Thêm dòng</button>
+            <button
+                onClick={() => setConfirmModal({
+                    isOpen: true,
+                    title: "Xóa tất cả dòng hàng?",
+                    message: "Thao tác này sẽ xóa toàn bộ danh sách hàng hóa và không thể hoàn tác.",
+                    onConfirm: () => { resetSlip(); setConfirmModal({ isOpen: false }); }
+                })}
+                className="btn-secondary"
+                style={{ marginTop: '10px', marginLeft: '8px', color: '#c0392b', borderColor: '#c0392b' }}
+                disabled={items.length === 0}
+            >
+                Xóa tất cả
+            </button>
+
+            {/* Tổng kết cuối bảng */}
+            {items.some(i => i.productId && Number(i.quantity) > 0) && (() => {
+                const validItems = items.filter(i => i.productId && Number(i.quantity) > 0);
+                const uniqueProducts = new Set(validItems.map(i => i.productId)).size;
+                const newLots = validItems.filter(i => i.lotStatus === 'declared' || i.lotStatus === 'new').length;
+                const existingLots = validItems.filter(i => i.lotStatus === 'exists').length;
+                const warnings = validItems.filter(i => i.productNotFound || (() => {
+                    const s = getExpiryRowStyle(i.expiryDate);
+                    return !!s.backgroundColor;
+                })()).length;
+                return (
+                    <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                        <span>Số dòng: <strong>{validItems.length}</strong></span>
+                        <span>Mã hàng: <strong>{uniqueProducts}</strong></span>
+                        <span>Tổng SL: <strong>{validItems.reduce((s, i) => s + Number(i.quantity), 0).toLocaleString('vi-VN')}</strong></span>
+                        <span>Lô mới: <strong>{newLots}</strong> / Lô cũ: <strong>{existingLots}</strong></span>
+                        {warnings > 0 && <span style={{ color: '#e65100' }}>⚠️ Cảnh báo: <strong>{warnings}</strong></span>}
+                    </div>
+                );
+            })()}
             
             <div className="page-actions">
                 <button 

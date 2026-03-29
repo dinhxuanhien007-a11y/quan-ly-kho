@@ -184,6 +184,23 @@ try {
             // Các hàm còn lại giữ nguyên
             addNewItemRow: () => set(state => ({ items: [...state.items, { ...initialItemState, id: Date.now() }] })),
             removeItemRow: (indexToRemove) => set(state => { if (state.items.length <= 1) return {}; return { items: state.items.filter((_, index) => index !== indexToRemove) }; }),
+            duplicateItemRow: (indexToDuplicate) => set(state => {
+                const original = state.items[indexToDuplicate];
+                const duplicate = {
+                    ...original,
+                    id: Date.now() + Math.random(),
+                    selectedLotId: '',
+                    lotNumber: '',
+                    expiryDate: '',
+                    displayLotText: '',
+                    quantityAvailableForExport: 0,
+                    quantityToExport: '',
+                    // Giữ nguyên availableLots để user chọn lô khác mà không cần load lại
+                };
+                const newItems = [...state.items];
+                newItems.splice(indexToDuplicate + 1, 0, duplicate);
+                return { items: newItems };
+            }),
             replaceItem: (index, newItemData) => set(state => { const newItems = [...state.items]; newItems[index] = { ...newItems[index], ...newItemData }; return { items: newItems }; }),
             resetSlip: () => set({ customerId: '', customerName: '', description: '', exportDate: new Date().toISOString().split('T')[0], items: [{ ...initialItemState, id: Date.now() }] })
         }),
