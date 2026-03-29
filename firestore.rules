@@ -85,34 +85,30 @@ service cloud.firestore {
     match /stocktakes/{sessionId} {
       // Owner toàn quyền
       allow read, write: if isOwner();
-      // Participant được đọc document phiên (để xem tên phiên, trạng thái, tiến độ)
-      allow read: if isParticipant(sessionId);
+      // Admin được đọc và list tất cả stocktakes (để query participantUids)
+      allow read, list: if isSignedIn() && request.auth.token.role == 'admin';
 
       match /items/{itemId} {
-        allow read, write: if isOwner();
+        allow read: if isOwner() || (isSignedIn() && request.auth.token.role == 'admin');
+        allow write: if isOwner();
       }
 
-      // count_entries: participant được đọc/ghi khi phiên chưa adjusted
+      // count_entries: admin participant được đọc/ghi
       match /count_entries/{entryId} {
-        allow read: if isOwner() || isParticipant(sessionId);
-        allow create: if isParticipant(sessionId)
-          && sessionIsOpen(sessionId)
+        allow read: if isOwner() || isSignedIn();
+        allow create: if isSignedIn()
           && request.resource.data.enteredBy == request.auth.uid;
-        allow update: if isParticipant(sessionId)
-          && sessionIsOpen(sessionId)
+        allow update: if isOwner() || (
+          isSignedIn()
           && request.resource.data.enteredBy == request.auth.uid
-          // Chỉ owner mới được update conflict/rejected flags
-          && !('conflict' in request.resource.data.diff(resource.data).affectedKeys())
-          && !('rejected' in request.resource.data.diff(resource.data).affectedKeys());
-        // Owner được update tất cả fields (để resolve conflict, set rejected)
-        allow update: if isOwner();
+        );
         allow delete: if isOwner();
       }
 
-      // audit_logs: owner đọc/ghi, participant chỉ đọc
+      // audit_logs
       match /audit_logs/{logId} {
-        allow read: if isOwner() || isParticipant(sessionId);
-        allow write: if isOwner();
+        allow read: if isOwner() || isSignedIn();
+        allow write: if isOwner() || isSignedIn();
       }
     }
     

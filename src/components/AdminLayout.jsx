@@ -20,6 +20,7 @@ const NewExportPage = lazy(() => import('../pages/NewExportPage'));
 const ExportListPage = lazy(() => import('../pages/ExportListPage'));
 const StocktakeListPage = lazy(() => import('../pages/StocktakeListPage'));
 const StocktakeSessionPage = lazy(() => import('../pages/StocktakeSessionPage'));
+const CollaborativeStocktakePage = lazy(() => import('../pages/CollaborativeStocktakePage'));
 const LotTracePage = lazy(() => import('../pages/LotTracePage'));
 const DataImportPage = lazy(() => import('../pages/DataImportPage'));
 const UsersPage = lazy(() => import('../pages/UsersPage'));
@@ -80,6 +81,7 @@ const AdminLayout = () => {
             <Route path="/exports" element={<ExportListPage />} />
             <Route path="/stocktakes" element={<StocktakeListPage />} />
             <Route path="/stocktakes/:sessionId" element={<StocktakeSessionPage />} />
+            <Route path="/stocktakes/:sessionId/collaborate" element={<CollaborativeStocktakePage />} />
             <Route path="/lot-trace" element={<LotTracePage />} />
             <Route path="/import-data" element={<DataImportPage />} />
             <Route path="/users" element={<UsersPage />} />

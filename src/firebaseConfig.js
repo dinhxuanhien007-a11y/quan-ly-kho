@@ -4,7 +4,6 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
 import { getDatabase } from "firebase/database";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // Đọc thông tin cấu hình từ biến môi trường
 const firebaseConfig = {
@@ -20,11 +19,12 @@ const firebaseConfig = {
 // Khởi tạo các dịch vụ Firebase
 const app = initializeApp(firebaseConfig);
 
-// Bật App Check với reCAPTCHA v3
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-  isTokenAutoRefreshEnabled: true,
-});
+// App Check tạm thời tắt để debug lỗi đăng nhập mobile
+// TODO: Bật lại sau khi fix xong
+// initializeAppCheck(app, {
+//   provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+//   isTokenAutoRefreshEnabled: true,
+// });
 
 const db = getFirestore(app);
 const auth = getAuth(app);

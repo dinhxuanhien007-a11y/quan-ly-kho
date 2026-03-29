@@ -1,7 +1,7 @@
 // src/components/ViewerLayout.jsx
 
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Routes, Route } from 'react-router-dom';
 import { useAuth } from '../context/UserContext';
 import { useResponsive } from '../hooks/useResponsive';
 import FloatingCalculator from './FloatingCalculator';
@@ -19,6 +19,7 @@ const InventoryPage = lazy(() => import('../pages/InventoryPage'));
 const InventorySummaryPage = lazy(() => import('../pages/InventorySummaryPage'));
 const MobileInventoryPage = lazy(() => import('../pages/MobileInventoryPage'));
 const InventoryReconciliationPage = lazy(() => import('../pages/InventoryReconciliationPage'));
+const CollaborativeStocktakePage = lazy(() => import('../pages/CollaborativeStocktakePage'));
 
 const ViewerLayout = () => {
     const { role, user, userData } = useAuth();
@@ -39,7 +40,10 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     // Subscribe phiên kiểm kê cộng tác active khi user là admin
     useEffect(() => {
         if (!user?.uid || role !== 'admin') return;
-        const unsubscribe = subscribeToActiveSessions(user.uid, setActiveSessions);
+        const unsubscribe = subscribeToActiveSessions(user.uid, (sessions) => {
+            console.log('activeSessions:', sessions.length, sessions.map(s => s.name));
+            setActiveSessions(sessions);
+        });
         return () => unsubscribe();
     }, [user?.uid, role]);
 
@@ -90,8 +94,17 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
     if (isMobile) {
         return (
             <div style={{ padding: '10px' }}>
+                {role === 'admin' && activeSessions.length > 0 && !location.pathname.includes('/collaborate') && (
+                    <ParticipantBanner
+                        sessions={activeSessions}
+                        onNavigate={(id) => navigate(`/stocktakes/${id}/collaborate`)}
+                    />
+                )}
                 <Suspense fallback={<div className="loading-screen">Đang tải...</div>}>
-                    <MobileInventoryPage />
+                    <Routes>
+                        <Route path="/stocktakes/:sessionId/collaborate" element={<CollaborativeStocktakePage />} />
+                        <Route path="*" element={<MobileInventoryPage />} />
+                    </Routes>
                 </Suspense>
             </div>
         );
@@ -191,13 +204,15 @@ const isReconcilePage = location.pathname === '/doi-chieu-ton-kho';
 
 <div className="viewer-main-content">
     <Suspense fallback={<div className="loading-screen">Đang tải...</div>}>
-        {isReconcilePage ? (
-            <InventoryReconciliationPage />
-        ) : (
-            (viewMode === 'detail' && canViewDetail)
-                ? <InventoryPage />
-                : <InventorySummaryPage />
-        )}
+        <Routes>
+            <Route path="/stocktakes/:sessionId/collaborate" element={<CollaborativeStocktakePage />} />
+            <Route path="/doi-chieu-ton-kho" element={<InventoryReconciliationPage />} />
+            <Route path="*" element={
+                (viewMode === 'detail' && canViewDetail)
+                    ? <InventoryPage />
+                    : <InventorySummaryPage />
+            } />
+        </Routes>
     </Suspense>
 </div>
 

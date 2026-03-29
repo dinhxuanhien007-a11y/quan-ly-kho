@@ -1,5 +1,5 @@
 // src/pages/StocktakeSessionPage.jsx
-import { FiPrinter } from 'react-icons/fi';
+import { FiPrinter, FiUsers, FiAlertTriangle } from 'react-icons/fi';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
@@ -7,12 +7,16 @@ import { doc, getDoc, updateDoc, writeBatch, collection, serverTimestamp, query,
 import '../styles/StocktakePage.css';
 import AddUnlistedItemModal from '../components/AddUnlistedItemModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import ConflictResolutionModal from '../components/ConflictResolutionModal';
 import { formatDate, parseDateString, getRowColorByExpiry } from '../utils/dateUtils';
 import { toast } from 'react-toastify';
 import StatusBadge from '../components/StatusBadge';
 import Spinner from '../components/Spinner';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import useStocktakeStore from '../stores/stocktakeStore';
+import { subscribeToCountEntries, reconcileSession } from '../services/collaborativeStocktakeService';
+import { useAuth } from '../context/UserContext';
+import { formatNumber } from '../utils/numberUtils';
 
 const PAGE_SIZE = 50;
 
@@ -38,7 +42,7 @@ const CountInput = ({ item, onCountSubmit, onResetCount, inputRef }) => {
     const { id, countedQty, isNew } = item;
     const updateItemCountInUI = useStocktakeStore(state => state.updateItemCountInUI);
     const sessionData = useStocktakeStore(state => state.sessionData);
-    const isSessionInProgress = sessionData?.status === 'in_progress';
+    const isSessionInProgress = sessionData?.status === 'in_progress' || sessionData?.status === 'active';
     const hasCounted = countedQty !== null && countedQty !== undefined && countedQty !== '';
 
     const handleKeyDown = (e) => {
@@ -85,7 +89,7 @@ const CountInput = ({ item, onCountSubmit, onResetCount, inputRef }) => {
 const NoteInput = ({ item, onNoteSubmit }) => {
     const { id, countNote } = item;
     const sessionData = useStocktakeStore(state => state.sessionData);
-    const isSessionInProgress = sessionData?.status === 'in_progress';
+    const isSessionInProgress = sessionData?.status === 'in_progress' || sessionData?.status === 'active';
     const [localNote, setLocalNote] = React.useState(countNote || '');
 
     React.useEffect(() => { setLocalNote(countNote || ''); }, [countNote]);
@@ -143,6 +147,11 @@ const StocktakeSessionPage = () => {
     const [suggestions, setSuggestions] = useState([]); // gợi ý mã hàng khi gõ
     const [productIdCache, setProductIdCache] = useState([]); // cache toàn bộ productId của phiên
     const [isCacheLoading, setIsCacheLoading] = useState(true); // trạng thái load cache
+
+    // --- COLLABORATIVE STATE ---
+    const [collabEntries, setCollabEntries] = useState([]);
+    const [conflictModal, setConflictModal] = useState({ isOpen: false, conflict: null });
+    const { user } = useAuth();
 
     const tableContainerRef = useRef(null); // ref để scroll lên đầu bảng khi chuyển trang
     const firstCountInputRef = useRef(null); // ref để auto-focus ô đếm đầu tiên sau search
@@ -290,6 +299,15 @@ const StocktakeSessionPage = () => {
             clearStore();
         };
     }, [sessionId, navigate, initializeSession, clearStore, fetchStatsAndDiscrepancies]);
+
+    // Subscribe count_entries realtime khi phiên là collaborative
+    useEffect(() => {
+        if (!sessionId || !sessionData?.isCollaborative) return;
+        const unsubscribe = subscribeToCountEntries(sessionId, (entries) => {
+            setCollabEntries(entries);
+        });
+        return () => unsubscribe();
+    }, [sessionId, sessionData?.isCollaborative]);
 
     // Load danh sách lô hàng lần đầu
     useEffect(() => {
@@ -552,10 +570,62 @@ const StocktakeSessionPage = () => {
         });
     };
 
+    // --- COLLABORATIVE HELPERS ---
+    const collabConflicts = collabEntries.filter(e => e.conflict === true && e.rejected !== true);
+    const hasUnresolvedConflicts = collabConflicts.length > 0;
+
+    // Tính progress từ count_entries cho phiên collaborative
+    const collabCountedLots = new Set(collabEntries.filter(e => !e.rejected).map(e => e.lotId)).size;
+    const collabProgressPercent = summaryStats.totalItems > 0
+        ? Math.round((collabCountedLots / summaryStats.totalItems) * 100)
+        : 0;
+
+    // Nhóm entries theo người nhập
+    const entriesByParticipant = collabEntries.reduce((acc, entry) => {
+        if (entry.rejected) return acc;
+        const key = entry.enteredBy;
+        if (!acc[key]) acc[key] = { email: entry.enteredByEmail || entry.enteredBy, count: 0 };
+        acc[key].count++;
+        return acc;
+    }, {});
+
+    // Nhóm conflicts theo lotId để hiển thị trong modal
+    const conflictsByLot = collabConflicts.reduce((acc, entry) => {
+        if (!acc[entry.lotId]) acc[entry.lotId] = { lotId: entry.lotId, productId: entry.productId, productName: entry.productName, lotNumber: entry.lotNumber, entries: [] };
+        acc[entry.lotId].entries.push(entry);
+        return acc;
+    }, {});
+
+    const handleCollabReconcile = async () => {
+        setConfirmModal({ isOpen: false });
+        try {
+            const result = await reconcileSession(sessionId, user.uid);
+            setSessionStatus('adjusted');
+            toast.success(`Đã áp dụng kết quả kiểm kê! ${result.discrepancyCount} lô có chênh lệch được điều chỉnh.`);
+            loadAdjustmentHistory();
+        } catch (err) {
+            toast.error(err.message || 'Lỗi khi áp dụng kết quả');
+        }
+    };
+
+    const promptForCollabReconcile = () => {
+        if (hasUnresolvedConflicts) {
+            toast.warn(`Còn ${collabConflicts.length} xung đột chưa giải quyết. Vui lòng giải quyết trước khi áp dụng.`);
+            return;
+        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Áp dụng kết quả kiểm kê cộng tác?",
+            message: `Đã có ${collabCountedLots} lô được kiểm kê. Xác nhận sẽ cập nhật tồn kho theo số liệu đã đếm. Thao tác này không thể hoàn tác.`,
+            onConfirm: handleCollabReconcile,
+            confirmText: "Xác nhận áp dụng"
+        });
+    };
+
     if (loading) return <Spinner />;
     if (!sessionData) return <div>Không tìm thấy dữ liệu cho phiên kiểm kê này.</div>;
 
-    const isSessionInProgress = sessionData.status === 'in_progress';
+    const isSessionInProgress = sessionData.status === 'in_progress' || sessionData.status === 'active';
 
     // Lọc items theo filterMode
     const filteredItems = items.filter(item => {
@@ -672,6 +742,14 @@ const StocktakeSessionPage = () => {
                     onAddItem={handleAddUnlistedItem}
                 />
             )}
+            {conflictModal.isOpen && conflictModal.conflict && (
+                <ConflictResolutionModal
+                    sessionId={sessionId}
+                    conflict={conflictModal.conflict}
+                    onResolve={() => setConflictModal({ isOpen: false, conflict: null })}
+                    onClose={() => setConflictModal({ isOpen: false, conflict: null })}
+                />
+            )}
 
             <div className="page-header">
                 <h1>{sessionData.name} <StatusBadge status={sessionData.status} /></h1>
@@ -714,6 +792,79 @@ const StocktakeSessionPage = () => {
                     <span className="progress-bar-label">{progressPercent}% hoàn thành</span>
                 </div>
             </div>
+
+            {/* === COLLABORATIVE DASHBOARD === */}
+            {sessionData.isCollaborative && (
+                <>
+                    {/* Panel người tham gia + tiến độ cộng tác */}
+                    <div className="form-section" style={{ marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontWeight: 600, fontSize: '15px' }}>
+                            <FiUsers style={{ color: '#007bff' }} /> Kiểm kê cộng tác
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                            {(sessionData.participantEmails || []).map(email => {
+                                const uid = (sessionData.participantUids || [])[
+                                    (sessionData.participantEmails || []).indexOf(email)
+                                ];
+                                const info = entriesByParticipant[uid];
+                                return (
+                                    <div key={email} style={{ background: '#f8f9fa', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', border: '1px solid #e9ecef' }}>
+                                        <div style={{ fontWeight: 600, color: '#333' }}>{email}</div>
+                                        <div style={{ color: '#888', marginTop: '2px' }}>
+                                            {info ? `${info.count} lô đã nhập` : 'Chưa nhập'}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ flex: 1, height: '8px', background: '#e9ecef', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', borderRadius: '4px', width: `${collabProgressPercent}%`, background: collabProgressPercent >= 80 ? '#28a745' : collabProgressPercent >= 50 ? '#ffc107' : '#007bff', transition: 'width 0.3s' }} />
+                            </div>
+                            <span style={{ fontSize: '13px', color: '#555', whiteSpace: 'nowrap' }}>
+                                {collabCountedLots}/{summaryStats.totalItems} lô ({collabProgressPercent}%)
+                            </span>
+                        </div>
+                        {sessionData.status === 'active' && (
+                            <button
+                                onClick={promptForCollabReconcile}
+                                disabled={hasUnresolvedConflicts}
+                                className="btn-primary"
+                                style={{ marginTop: '12px', opacity: hasUnresolvedConflicts ? 0.5 : 1 }}
+                                title={hasUnresolvedConflicts ? `Còn ${collabConflicts.length} xung đột chưa giải quyết` : ''}
+                            >
+                                Áp dụng kết quả kiểm kê
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Panel xung đột */}
+                    {collabConflicts.length > 0 && (
+                        <div className="form-section" style={{ marginBottom: '16px', border: '1px solid #ffc107', background: '#fffdf0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontWeight: 600, fontSize: '15px', color: '#856404' }}>
+                                <FiAlertTriangle /> {collabConflicts.length} xung đột cần giải quyết
+                            </div>
+                            {Object.values(conflictsByLot).map(conflict => (
+                                conflict.entries.length >= 2 && (
+                                    <div key={conflict.lotId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0e68c' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '13px' }}>{conflict.productId}</div>
+                                            <div style={{ fontSize: '12px', color: '#888' }}>Lô: {conflict.lotNumber || 'N/A'} — {conflict.entries.length} người nhập khác nhau</div>
+                                        </div>
+                                        <button
+                                            onClick={() => setConflictModal({ isOpen: true, conflict })}
+                                            className="btn-secondary"
+                                            style={{ padding: '5px 12px', fontSize: '13px' }}
+                                        >
+                                            Giải quyết
+                                        </button>
+                                    </div>
+                                )
+                            ))}
+                        </div>
+                    )}
+                </>
+            )}
 
             <div className="controls-container">
                 <div className="search-container" style={{ position: 'relative' }}>

@@ -290,29 +290,42 @@ export const reconcileSession = async (sessionId, ownerUid) => {
  * @returns {Function} unsubscribe
  */
 export const subscribeToCountEntries = (sessionId, callback) => {
-    const q = query(
-        collection(db, 'stocktakes', sessionId, 'count_entries'),
-        orderBy('enteredAt', 'desc')
-    );
+    // Không dùng orderBy để tránh cần composite index
+    const q = collection(db, 'stocktakes', sessionId, 'count_entries');
     return onSnapshot(q, (snap) => {
         const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Sort client-side theo enteredAt
+        entries.sort((a, b) => {
+            const tA = a.enteredAt?.toMillis?.() || 0;
+            const tB = b.enteredAt?.toMillis?.() || 0;
+            return tB - tA;
+        });
         callback(entries);
+    }, (error) => {
+        console.error('subscribeToCountEntries error:', error);
+        callback([]);
     });
 };
 
 /**
- * Subscribe realtime vào các phiên active mà uid là participant.
+ * Subscribe realtime vào các phiên collaborative active mà uid là participant.
+ * Query cả 'active' và 'in_progress' để tương thích với các phiên cũ.
  * @returns {Function} unsubscribe
  */
 export const subscribeToActiveSessions = (uid, callback) => {
+    // Chỉ query theo participantUids để tránh cần composite index
     const q = query(
         collection(db, 'stocktakes'),
-        where('participantUids', 'array-contains', uid),
-        where('status', '==', 'active')
+        where('participantUids', 'array-contains', uid)
     );
     return onSnapshot(q, (snap) => {
-        const sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const sessions = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(s => s.isCollaborative === true && s.status !== 'adjusted');
         callback(sessions);
+    }, (error) => {
+        console.error('subscribeToActiveSessions error:', error);
+        callback([]);
     });
 };
 

@@ -113,7 +113,7 @@ Triển khai tính năng kiểm kho cộng tác nhiều thiết bị realtime. T
     - Firestore SDK tự queue offline writes, không cần xử lý thêm
     - _Requirements: 8.3, 8.4_
 
-- [ ] 7. ParticipantBanner + tích hợp vào ViewerLayout
+- [x] 7. ParticipantBanner + tích hợp vào ViewerLayout
   - [x] 7.1 Tạo component `src/components/ParticipantBanner.jsx`
     - Props: `sessions[]` (danh sách phiên active mà user là participant), `onNavigate(sessionId)`
     - Hiển thị banner sticky phía trên với tên phiên và nút "Tham gia" cho mỗi phiên active
@@ -127,43 +127,43 @@ Triển khai tính năng kiểm kho cộng tác nhiều thiết bị realtime. T
     - Cleanup unsubscribe khi unmount
     - _Requirements: 2.2, 4.3_
 
-- [ ] 8. ConflictResolutionModal
-  - [ ] 8.1 Tạo file `src/components/ConflictResolutionModal.jsx`
+- [x] 8. ConflictResolutionModal
+  - [x] 8.1 Tạo file `src/components/ConflictResolutionModal.jsx`
     - Props: `conflict: { lotId, entries: [entryA, entryB] }`, `onResolve(keptEntryId, rejectedEntryId)`, `onClose()`
     - Hiển thị 2 entries cạnh nhau: người nhập, số lượng, thời gian nhập
     - 2 nút "Giữ entry này" cho mỗi entry
     - Khi chọn → gọi `resolveConflict(sessionId, keptId, rejectedId)` rồi `onResolve()`
     - _Requirements: 3.4_
 
-- [ ] 9. Mở rộng StocktakeSessionPage (collaborative dashboard)
-  - [ ] 9.1 Thêm collaborative dashboard vào `src/pages/StocktakeSessionPage.jsx`
+- [x] 9. Mở rộng StocktakeSessionPage (collaborative dashboard)
+  - [x] 9.1 Thêm collaborative dashboard vào `src/pages/StocktakeSessionPage.jsx`
     - Khi `sessionData.isCollaborative === true`, subscribe `onSnapshot` vào `count_entries` qua store
     - Hiển thị panel "Người tham gia": danh sách `participantEmails` kèm số entries mỗi người đã nhập
     - Hiển thị progress bar tính từ `count_entries` (distinct non-rejected lotIds / totalLots)
     - _Requirements: 4.1, 4.2, 4.3_
 
-  - [ ] 9.2 Thêm conflict management panel
+  - [x] 9.2 Thêm conflict management panel
     - Hiển thị panel "Xung đột" với danh sách entries có `conflict: true && !rejected`
     - Nút "Giải quyết" mở `ConflictResolutionModal` với conflict tương ứng
     - Khi còn conflict, disable nút Reconciliation và hiển thị tooltip giải thích
     - _Requirements: 3.2, 3.3_
 
-  - [ ] 9.3 Thêm collaborative reconciliation flow
+  - [x] 9.3 Thêm collaborative reconciliation flow
     - Thay `handleAdjustInventory` bằng `reconcileSession` từ service khi `isCollaborative === true`
     - Sau reconcile thành công: hiển thị báo cáo tóm tắt (tổng lô kiểm, số lô chênh lệch, tổng chênh lệch)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-- [ ] 10. Routing
-  - [ ] 10.1 Thêm route `/stocktakes/:sessionId/collaborate` vào `src/components/AdminLayout.jsx`
+- [x] 10. Routing
+  - [x] 10.1 Thêm route `/stocktakes/:sessionId/collaborate` vào `src/components/AdminLayout.jsx`
     - Import lazy `CollaborativeStocktakePage`
     - Thêm `<Route path="/stocktakes/:sessionId/collaborate" element={<CollaborativeStocktakePage />} />`
     - _Requirements: 2.1_
 
-  - [ ] 10.2 Thêm route `/stocktakes/:sessionId/collaborate` vào `src/components/ViewerLayout.jsx` (mobile path cho admin)
+  - [x] 10.2 Thêm route `/stocktakes/:sessionId/collaborate` vào `src/components/ViewerLayout.jsx` (mobile path cho admin)
     - Khi `isMobile === true` và path match `/stocktakes/:sessionId/collaborate`, render `CollaborativeStocktakePage` thay vì `MobileInventoryPage`
     - _Requirements: 8.1, 8.2_
 
-- [ ] 11. Checkpoint cuối — Đảm bảo toàn bộ flow hoạt động
+- [x] 11. Checkpoint cuối — Đảm bảo toàn bộ flow hoạt động
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

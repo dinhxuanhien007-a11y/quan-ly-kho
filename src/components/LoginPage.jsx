@@ -1,54 +1,71 @@
 // src/components/LoginPage.jsx
-import React, { useState } from 'react';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-// Sửa tại đây: Chỉ cần import các hàm từ thư viện, 
-// nhưng import đối tượng 'auth' và 'functions' từ file cấu hình
-import { auth, functions } from '../firebaseConfig'; // <-- THAY ĐỔI: IMPORT functions ĐÃ CẤU HÌNH TỪ ĐÂY
-import { httpsCallable } from 'firebase/functions'; // <-- THAY ĐỔI: CHỈ GIỮ LẠI httpsCallable
+import React, { useState, useEffect } from 'react';
+import { GoogleAuthProvider, signInWithPopup, getRedirectResult } from 'firebase/auth';
+import { auth, functions } from '../firebaseConfig';
+import { httpsCallable } from 'firebase/functions';
 import { toast } from 'react-toastify';
 import styles from './LoginPage.module.css';
 import { FcGoogle } from 'react-icons/fc';
 
 function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [debugError, setDebugError] = useState('');
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      // 1. Mở cửa sổ popup để đăng nhập bằng Google
-      const result = await signInWithPopup(auth, provider);
-      
-      toast.info("Xác thực Google thành công. Đang khởi tạo vai trò...");
-      
-      // 2. Gọi Cloud Function để xử lý và cấp quyền
-      // KHÔNG CẦN GỌI const functions = getFunctions(); NỮA
-      const processUser = httpsCallable(functions, 'processNewGoogleUser'); // <-- DÙNG functions ĐÃ IMPORT
-      await processUser();
+  // Xử lý kết quả redirect (fallback nếu popup bị chặn)
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (!result) return;
 
-      // === THAY ĐỔI QUAN TRỌNG NHẤT NẰM Ở ĐÂY ===
-      // 3. Ép buộc trình duyệt lấy lại token mới nhất (có chứa "con dấu" owner)
-      await result.user.getIdToken(true); 
-      
-      toast.success("Đăng nhập và cấp quyền thành công!");
-
-      // 4. Tải lại trang để đảm bảo toàn bộ ứng dụng sử dụng quyền mới
-      window.location.reload();
-
-    } catch (error) {
-      // ... (Phần xử lý lỗi giữ nguyên)
-      let errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
-      if (error.code === 'auth/popup-closed-by-user') {
-          errorMessage = "Cửa sổ đăng nhập đã bị đóng.";
-      } else if (error.message.includes("permission-denied")) {
-          errorMessage = "Tài khoản của bạn không được phép truy cập hệ thống này.";
-          await auth.signOut();
+        setIsLoading(true);
+        toast.info("Xác thực Google thành công. Đang khởi tạo vai trò...");
+        const processUser = httpsCallable(functions, 'processNewGoogleUser');
+        await processUser();
+        await result.user.getIdToken(true);
+        toast.success("Đăng nhập thành công!");
+        window.location.reload();
+      } catch (error) {
+        const ignoredCodes = ['auth/null-user', 'auth/no-auth-event', 'auth/operation-not-supported-in-this-environment'];
+        if (!error.code || ignoredCodes.includes(error.code)) return;
+        setDebugError(`${error.code}: ${error.message}`);
+        console.error("Lỗi redirect:", error);
+        setIsLoading(false);
       }
-      
-      console.error("Lỗi đăng nhập Google:", error);
-      toast.error(errorMessage);
-      setIsLoading(false);
-    }
+    };
+    handleRedirectResult();
+  }, []);
+
+  const handleGoogleLogin = () => {
+    // Tạo provider và gọi popup ĐỒNG BỘ từ click event (không async trước)
+    // để tránh bị Safari chặn popup
+    const provider = new GoogleAuthProvider();
+    setIsLoading(true);
+
+    signInWithPopup(auth, provider)
+      .then(async (result) => {
+        toast.info("Xác thực Google thành công. Đang khởi tạo vai trò...");
+        const processUser = httpsCallable(functions, 'processNewGoogleUser');
+        await processUser();
+        await result.user.getIdToken(true);
+        toast.success("Đăng nhập và cấp quyền thành công!");
+        window.location.reload();
+      })
+      .catch(async (error) => {
+        let errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+          errorMessage = "Cửa sổ đăng nhập đã bị đóng.";
+        } else if (error.code === 'auth/popup-blocked') {
+          errorMessage = "Trình duyệt chặn popup. Vui lòng cho phép popup và thử lại.";
+        } else if (error.message?.includes("permission-denied")) {
+          errorMessage = "Tài khoản không được phép truy cập hệ thống này.";
+          await auth.signOut();
+        }
+        setDebugError(`${error.code}: ${error.message}`);
+        console.error("Lỗi đăng nhập:", error);
+        toast.error(errorMessage);
+        setIsLoading(false);
+      });
   };
 
   return (
@@ -57,6 +74,11 @@ function LoginPage() {
       <p style={{textAlign: 'center', color: '#666', marginTop: '-10px', marginBottom: '30px'}}>
         Vui lòng đăng nhập bằng tài khoản Google đã được cấp phép.
       </p>
+      {debugError && (
+        <div style={{background:'#f8d7da', border:'1px solid #dc3545', borderRadius:'6px', padding:'10px', marginBottom:'16px', fontSize:'12px', wordBreak:'break-all', color:'#721c24'}}>
+          <strong>Debug:</strong> {debugError}
+        </div>
+      )}
       <button 
         className={styles.googleLoginButton} 
         onClick={handleGoogleLogin}
